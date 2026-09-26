@@ -70,16 +70,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
         RoleClaimType = AppClaims.Role,
     };
 });
-builder.Services.AddAuthorizationBuilder()
-    .AddPolicy(Policies.Admin, p => p.RequireRole(nameof(UserRole.SystemAdmin)))
-    .AddPolicy(Policies.Manage, p => p.RequireRole(nameof(UserRole.SystemAdmin), nameof(UserRole.Supervisor)))
-    .AddPolicy(Policies.Read, p => p.RequireRole(nameof(UserRole.SystemAdmin), nameof(UserRole.Supervisor), nameof(UserRole.DepartmentManager)))
-    .AddPolicy(Policies.Collector, p => p.RequireRole(nameof(UserRole.Collector), nameof(UserRole.Employee)))
-    .AddPolicy(HrPolicies.Manage, p => p.RequireRole(nameof(UserRole.SystemAdmin), nameof(UserRole.HrManager)))
-    .AddPolicy(HrPolicies.Read, p => p.RequireRole(nameof(UserRole.SystemAdmin), nameof(UserRole.HrManager),
-        nameof(UserRole.HrOfficer), nameof(UserRole.DepartmentManager)))
-    .AddPolicy(HrPolicies.Self, p => p.RequireRole(nameof(UserRole.SystemAdmin), nameof(UserRole.HrManager),
-        nameof(UserRole.HrOfficer), nameof(UserRole.DepartmentManager), nameof(UserRole.Employee)));
+builder.Services.AddAppAuthorization();
 
 builder.Services.AddRateLimiter(o =>
 {

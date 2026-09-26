@@ -43,8 +43,9 @@ test.describe('smoke (no backend)', () => {
   });
 
   test('a user with both modules lands on the picker', async ({ page }) => {
-    await mockJson(page, '**/api/auth/login', session('SystemAdmin'));
+    // Playwright tries the most recently registered route first, so the catch-all goes in before the login mock.
     await mockJson(page, '**/api/**', []);
+    await mockJson(page, '**/api/auth/login', session('SystemAdmin'));
     await page.goto('/login');
     await page.getByLabel('الرقم الوظيفي').fill('1001');
     await page.getByLabel('كلمة المرور').fill('Test@1234');
@@ -56,8 +57,9 @@ test.describe('smoke (no backend)', () => {
   });
 
   test('an HR-only user skips the picker and goes straight to HR', async ({ page }) => {
-    await mockJson(page, '**/api/auth/login', session('HrManager'));
+    // Playwright tries the most recently registered route first, so the catch-all goes in before the login mock.
     await mockJson(page, '**/api/**', []);
+    await mockJson(page, '**/api/auth/login', session('HrManager'));
     await page.goto('/login');
     await page.getByLabel('الرقم الوظيفي').fill('1005');
     await page.getByLabel('كلمة المرور').fill('Test@1234');
@@ -94,8 +96,9 @@ test.describe('smoke (no backend)', () => {
   });
 
   test('signing out clears the session and protected routes bounce to login', async ({ page }) => {
-    await mockJson(page, '**/api/auth/login', session('HrManager'));
+    // Playwright tries the most recently registered route first, so the catch-all goes in before the login mock.
     await mockJson(page, '**/api/**', []);
+    await mockJson(page, '**/api/auth/login', session('HrManager'));
     await page.goto('/login');
     await page.getByLabel('الرقم الوظيفي').fill('1005');
     await page.getByLabel('كلمة المرور').fill('Test@1234');

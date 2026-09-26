@@ -22,7 +22,7 @@ public sealed record SaveLocationRequest(
 
 [ApiController]
 [Route("api/locations")]
-[Authorize(Policy = Policies.Read)]
+[Authorize(Policy = Policies.ReadAny)]
 public sealed class LocationsController(AppDbContext db, IClock clock, AccessScope scope) : ControllerBase
 {
     [HttpGet]

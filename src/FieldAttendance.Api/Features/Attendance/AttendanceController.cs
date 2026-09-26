@@ -18,7 +18,7 @@ public sealed record ExitDto(DateTimeOffset ExitAt, DateTimeOffset? ReturnAt, Da
 
 [ApiController]
 [Route("api/attendance")]
-[Authorize(Policy = Policies.Read)]
+[Authorize(Policy = Policies.ReadAny)]
 public sealed class AttendanceController(AppDbContext db, AccessScope scope) : ControllerBase
 {
     private const int MaxDays = 62;

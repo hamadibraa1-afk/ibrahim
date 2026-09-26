@@ -27,12 +27,12 @@ public sealed record ResetPasswordRequest([Required] string Password);
 public sealed record SetLocationsRequest(IReadOnlyList<Guid> LocationIds);
 
 /// <summary>
-/// User accounts for every role. Reading is open to supervisors and department managers;
+/// User accounts for every role. Reading is open to supervisors, department managers and HR;
 /// creating, editing and deleting accounts is restricted to the system administrator.
 /// </summary>
 [ApiController]
 [Route("api/employees")]
-[Authorize(Policy = Policies.Read)]
+[Authorize(Policy = Policies.ReadAny)]
 public sealed class EmployeesController(AppDbContext db, ICurrentUser me, IClock clock, AccessScope scope) : ControllerBase
 {
     [HttpGet]

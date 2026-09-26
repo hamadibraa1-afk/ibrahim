@@ -71,6 +71,12 @@ public static class Policies
     public const string Manage = nameof(Manage);
     /// <summary>Read access, including department managers who only review.</summary>
     public const string Read = nameof(Read);
+    /// <summary>
+    /// Read access shared by both modules: field readers plus HR staff. The HR module shows the same
+    /// attendance log, sites and people as the field module, and AccessScope already treats HR as
+    /// seeing everyone; this policy lets those requests reach that code.
+    /// </summary>
+    public const string ReadAny = nameof(ReadAny);
     public const string Collector = nameof(Collector);
 }
 
