@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { collectorGuard, employeeGuard, hrGuard, officeGuard, signedInGuard } from './core/auth';
+import { employeeGuard, hrGuard, officeGuard, signedInGuard } from './core/auth';
 
 export const routes: Routes = [
   { path: 'login', loadComponent: () => import('./pages/login').then(m => m.LoginPage) },
@@ -50,7 +50,8 @@ export const routes: Routes = [
     ],
   },
   {
-    path: 'me', canActivate: [collectorGuard],
+    // Signed-in is enough: the server decides from the caller's records whether there is a shift to show.
+    path: 'me', canActivate: [signedInGuard],
     loadComponent: () => import('./layout/collector-shell').then(m => m.CollectorShell),
     children: [
       { path: '', loadComponent: () => import('./pages/collector/today').then(m => m.TodayPage) },

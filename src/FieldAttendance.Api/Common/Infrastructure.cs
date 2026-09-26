@@ -77,7 +77,13 @@ public static class Policies
     /// seeing everyone; this policy lets those requests reach that code.
     /// </summary>
     public const string ReadAny = nameof(ReadAny);
-    public const string Collector = nameof(Collector);
+    /// <summary>
+    /// The caller acting on their own records under /api/me. Deliberately not a role list: role
+    /// decides what you may do to other people's records, never whether you can see your own.
+    /// Whether the caller is someone the organisation keeps attendance for is checked against
+    /// their records by <see cref="SelfServiceScope"/>, not here.
+    /// </summary>
+    public const string SelfService = nameof(SelfService);
 }
 
 /// <summary>Stable error shape for the Angular client: { code, message, data? }.</summary>

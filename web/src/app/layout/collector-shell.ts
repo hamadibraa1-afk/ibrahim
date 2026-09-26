@@ -38,9 +38,11 @@ import { Icon } from './nav-icon';
 export class CollectorShell {
   readonly auth = inject(Auth);
   readonly i18n = inject(I18n);
+  /** Office staff check in here too; they need a way back to the portal they came from. */
   readonly nav = [
     { path: '/me', label: 'nav.today', icon: 'today', exact: true },
     { path: '/me/schedule', label: 'nav.mySchedule', icon: 'schedule' },
     { path: '/me/requests', label: 'nav.myRequests', icon: 'requests' },
+    ...(this.auth.role() === 'Collector' ? [] : [{ path: '/my', label: 'my.portal', icon: 'people', exact: false }]),
   ];
 }

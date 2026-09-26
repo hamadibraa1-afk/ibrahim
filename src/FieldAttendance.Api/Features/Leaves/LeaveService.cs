@@ -105,9 +105,17 @@ public sealed class LeaveService(AppDbContext db, ScheduleSnapshotLoader loader,
                 $"The employee already has attendance on {worked.Count} day(s) in this period.");
     }
 
-    /// <summary>Where the request stands right now, for the employee to follow.</summary>
-    public Task<IReadOnlyList<ApprovalStepView>> TimelineAsync(Guid id, CancellationToken ct) =>
-        approvals.TimelineAsync(RequestKind.Leave, id, ct);
+    /// <summary>
+    /// Where the request stands right now, for the employee to follow. The owner check matters:
+    /// the timeline carries approver names and their notes, and the id arrives from the URL.
+    /// </summary>
+    public async Task<IReadOnlyList<ApprovalStepView>> TimelineAsync(Guid id, Guid? employeeId, CancellationToken ct)
+    {
+        var leave = await Find(id, ct);
+        if (employeeId is { } owner && leave.EmployeeId != owner)
+            throw new DomainException("request.not_found", "Request not found.");
+        return await approvals.TimelineAsync(RequestKind.Leave, id, ct);
+    }
 
     public async Task CancelAsync(Guid id, Guid? employeeId, CancellationToken ct)
     {

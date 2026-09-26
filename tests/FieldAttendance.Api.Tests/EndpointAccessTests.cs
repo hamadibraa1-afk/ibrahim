@@ -31,7 +31,7 @@ public sealed class EndpointAccessTests
             .Select(a => a.Policy).OfType<string>().ToList();
         Assert.NotEmpty(policies);
 
-        var user = new ClaimsPrincipal(new ClaimsIdentity([new Claim(AppClaims.Role, role.ToString())], "test", AppClaims.Name, AppClaims.Role));
+        var user = new ClaimsPrincipal(new ClaimsIdentity([new Claim(AppClaims.UserId, Guid.NewGuid().ToString()), new Claim(AppClaims.Role, role.ToString())], "test", AppClaims.Name, AppClaims.Role));
         foreach (var policy in policies)
             if (!(await Authorization.AuthorizeAsync(user, null, policy)).Succeeded) return false;
         return true;
@@ -73,5 +73,22 @@ public sealed class EndpointAccessTests
     {
         Assert.True(await CanCall(role, typeof(AttendanceController), nameof(AttendanceController.List)));
         Assert.True(await CanCall(role, typeof(LocationsController), nameof(LocationsController.List)));
+    }
+
+    /// <summary>Self-service is gated by the caller's records, never by role, so every role reaches it.</summary>
+    [Theory]
+    [MemberData(nameof(AllRoles))]
+    public async Task Every_role_reaches_its_own_self_service(UserRole role)
+    {
+        Assert.True(await CanCall(role, typeof(MyAttendanceController), nameof(MyAttendanceController.Today)));
+        Assert.True(await CanCall(role, typeof(FieldAttendance.Api.Features.Leaves.MyLeavesController),
+            nameof(FieldAttendance.Api.Features.Leaves.MyLeavesController.Submit)));
+    }
+
+    public static TheoryData<UserRole> AllRoles()
+    {
+        var data = new TheoryData<UserRole>();
+        foreach (var role in Enum.GetValues<UserRole>()) data.Add(role);
+        return data;
     }
 }

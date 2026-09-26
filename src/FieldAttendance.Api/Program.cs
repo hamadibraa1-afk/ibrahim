@@ -27,6 +27,7 @@ builder.Services.AddSingleton<IClock, SystemClock>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, HttpCurrentUser>();
 builder.Services.AddScoped<AccessScope>();
+builder.Services.AddScoped<SelfServiceScope>();
 builder.Services.AddScoped<PayrollLock>();
 
 builder.Services.AddDbContext<AppDbContext>(o =>
@@ -163,3 +164,7 @@ using (var scope = app.Services.CreateScope())
 }
 
 await app.RunAsync();
+
+// Top-level statements generate an internal Program; the integration tests host the real
+// pipeline through WebApplicationFactory<Program>, which needs to see it.
+public partial class Program;

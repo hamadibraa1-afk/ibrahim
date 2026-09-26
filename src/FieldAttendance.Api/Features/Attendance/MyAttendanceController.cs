@@ -37,7 +37,7 @@ public sealed record MyScheduleDayDto(DateOnly Date, string LocationNameAr, stri
 
 [ApiController]
 [Route("api/me")]
-[Authorize(Policy = Policies.Collector)]
+[Authorize(Policy = Policies.SelfService)]
 public sealed class MyAttendanceController(
     AppDbContext db, ICurrentUser me, IClock clock, RecalculationService recalculator, PermissionService permissions,
     ScheduleSnapshotLoader loader, IOptions<AttendanceOptions> options) : ControllerBase

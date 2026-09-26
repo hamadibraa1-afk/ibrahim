@@ -256,7 +256,7 @@ const D: Record<string, [string, string]> = {
   'notif.kind.DeductionProposed': ['مقترحات خصم بانتظار القرار', 'Deduction proposals awaiting a decision'],
   'notif.kind.PayrollBlocked': ['دورة الرواتب متوقفة على بنود معلّقة', 'Payroll is blocked by pending items'],
   'notif.kind.WarningIssued': ['صدر إنذار', 'A warning was issued'],
-  'my.portal': ['حسابي', 'My account'], 'my.overview': ['نظرة عامة', 'Overview'],
+  'my.portal': ['حسابي', 'My account'], 'my.overview': ['نظرة عامة', 'Overview'], 'my.checkIn': ['تسجيل الحضور', 'Check in'],
   'my.attendance': ['حضوري', 'My attendance'], 'my.requests': ['طلباتي', 'My requests'],
   'my.payslips': ['كشوف رواتبي', 'My payslips'], 'my.profile': ['ملفي', 'My profile'],
   'my.today': ['اليوم', 'Today'], 'my.presentDays': ['أيام الحضور', 'Present days'],

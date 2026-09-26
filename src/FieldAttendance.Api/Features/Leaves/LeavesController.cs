@@ -47,7 +47,7 @@ public sealed class LeaveRequestsController(LeaveService leaves, ApprovalService
     }
 
     [HttpGet("{id:guid}/timeline")]
-    public Task<IReadOnlyList<ApprovalStepView>> Timeline(Guid id, CancellationToken ct) => leaves.TimelineAsync(id, ct);
+    public Task<IReadOnlyList<ApprovalStepView>> Timeline(Guid id, CancellationToken ct) => leaves.TimelineAsync(id, null, ct);
 
     [HttpPost]
     [Authorize(Policy = Policies.Manage)]
@@ -87,22 +87,30 @@ public sealed class LeaveRequestsController(LeaveService leaves, ApprovalService
 
 [ApiController]
 [Route("api/me/leaves")]
-[Authorize(Policy = Policies.Collector)]
-public sealed class MyLeavesController(LeaveService leaves, ICurrentUser me) : ControllerBase
+[Authorize(Policy = Policies.SelfService)]
+public sealed class MyLeavesController(LeaveService leaves, ICurrentUser me, SelfServiceScope self) : ControllerBase
 {
     [HttpGet]
     public Task<IReadOnlyList<LeaveDto>> Mine(CancellationToken ct) => leaves.ListAsync(me.RequiredId, null, ct);
 
     /// <summary>Who has signed and who holds the request now.</summary>
     [HttpGet("{id:guid}/timeline")]
-    public Task<IReadOnlyList<ApprovalStepView>> Timeline(Guid id, CancellationToken ct) => leaves.TimelineAsync(id, ct);
+    public Task<IReadOnlyList<ApprovalStepView>> Timeline(Guid id, CancellationToken ct) => leaves.TimelineAsync(id, me.RequiredId, ct);
 
+    /// <summary>
+    /// Balances are synthesised from the leave types, so without this check an account with no
+    /// employment record would be shown an allowance it can never take.
+    /// </summary>
     [HttpGet("balances")]
-    public Task<IReadOnlyList<LeaveBalanceDto>> Balances(CancellationToken ct) => leaves.BalancesAsync(me.RequiredId, ct);
+    public async Task<IReadOnlyList<LeaveBalanceDto>> Balances(CancellationToken ct) =>
+        await self.HasEmploymentRecordAsync(ct) ? await leaves.BalancesAsync(me.RequiredId, ct) : [];
 
     [HttpPost]
     public async Task<IActionResult> Submit(SubmitLeaveRequest r, CancellationToken ct)
     {
+        // Leave, unlike a permission, is not tied to a scheduled shift, so nothing else stops an
+        // account with no employment record from filing one into the approvers' inbox.
+        await self.EnsureEmploymentRecordAsync(ct);
         await leaves.SubmitAsync(me.RequiredId, me.RequiredId, r, ct);
         return NoContent();
     }

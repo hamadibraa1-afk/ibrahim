@@ -74,7 +74,6 @@ const guard = (allowed: Role[]): CanActivateFn => () => {
 
 export const officeGuard = guard(FIELD_OFFICE);
 export const hrGuard = guard(HR_OFFICE);
-export const collectorGuard = guard(SELF_SERVICE);
 export const employeeGuard = guard([...OFFICE_SELF, 'HrManager', 'HrOfficer', 'DepartmentManager', 'SystemAdmin']);
 export const signedInGuard: CanActivateFn = () => {
   const auth = inject(Auth);

@@ -34,8 +34,25 @@ public sealed class ScheduleSnapshotLoader(AppDbContext db)
         return new ScheduleSnapshot(await assignments.ToListAsync(ct), await overrides.ToListAsync(ct), await leaves.ToListAsync(ct), templates);
     }
 
+    /// <summary>The field planning grid: collectors only.</summary>
     public async Task<List<Guid>> ActiveCollectorIdsAsync(CancellationToken ct) =>
         await db.Users.Where(u => u.IsActive && u.Role == UserRole.Collector).Select(u => u.Id).ToListAsync(ct);
+
+    /// <summary>
+    /// Everyone the schedule can produce a shift for in the range, whatever their role. Office staff
+    /// reach the engine through assignments too (OfficeSchedulePlanner), so selecting by the
+    /// Collector role left every office employee without a daily record: unable to check in, and
+    /// never marked absent.
+    /// </summary>
+    public async Task<List<Guid>> ScheduledEmployeeIdsAsync(DateOnly from, DateOnly to, CancellationToken ct)
+    {
+        var assigned = db.Assignments
+            .Where(a => a.IsActive && a.StartDate <= to && (a.EndDate == null || a.EndDate >= from)).Select(a => a.EmployeeId);
+        var covering = db.AssignmentOverrides
+            .Where(o => o.IsActive && o.LocationId != null && o.FromDate <= to && o.ToDate >= from).Select(o => o.EmployeeId);
+        var candidates = assigned.Union(covering);
+        return await db.Users.Where(u => u.IsActive && candidates.Contains(u.Id)).Select(u => u.Id).ToListAsync(ct);
+    }
 }
 
 /// <summary>
@@ -51,7 +68,7 @@ public sealed class MaterializationService(AppDbContext db, ScheduleSnapshotLoad
         if (from < today) from = today;
         if (to < from) return;
 
-        var employees = employeeIds?.ToList() ?? await loader.ActiveCollectorIdsAsync(ct);
+        var employees = employeeIds?.ToList() ?? await loader.ScheduledEmployeeIdsAsync(from, to, ct);
         if (employees.Count == 0) return;
 
         var snapshot = await loader.LoadAsync(employees, from, to, ct);
