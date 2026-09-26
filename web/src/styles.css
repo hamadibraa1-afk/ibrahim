@@ -1,0 +1,141 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---------- Design tokens ---------- */
+@layer base {
+  :root {
+    --c-bg: 245 248 245; --c-surface: 255 255 255; --c-raised: 238 244 239; --c-line: 219 229 221;
+    --c-ink: 18 32 24; --c-muted: 95 110 100;
+    --c-brand: 0 133 64; --c-brand-ink: 255 255 255; --c-brand-soft: 214 240 224; --c-accent: 224 127 46;
+    --c-ok: 21 128 61; --c-ok-soft: 220 252 231;
+    --c-warn: 161 98 7; --c-warn-soft: 254 243 199;
+    --c-bad: 185 28 28; --c-bad-soft: 254 226 226;
+    --c-info: 29 78 216; --c-info-soft: 219 234 254;
+    color-scheme: light;
+
+    /* Aliases kept for component-level styles that predate the Tailwind layer. */
+    --bg: rgb(var(--c-bg)); --surface: rgb(var(--c-surface)); --surface-2: rgb(var(--c-raised));
+    --text: rgb(var(--c-ink)); --muted: rgb(var(--c-muted)); --border: rgb(var(--c-line));
+    --primary: rgb(var(--c-brand)); --primary-ink: rgb(var(--c-brand-ink)); --primary-soft: rgb(var(--c-brand-soft)); --accent: rgb(var(--c-accent));
+    --green: rgb(var(--c-ok)); --green-soft: rgb(var(--c-ok-soft));
+    --yellow: rgb(var(--c-warn)); --yellow-soft: rgb(var(--c-warn-soft));
+    --red: rgb(var(--c-bad)); --red-soft: rgb(var(--c-bad-soft));
+    --blue: rgb(var(--c-info)); --blue-soft: rgb(var(--c-info-soft));
+    --grey: rgb(var(--c-muted)); --grey-soft: rgb(var(--c-raised));
+    --radius: 0.875rem;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --c-bg: 9 20 14; --c-surface: 19 31 24; --c-raised: 27 42 33; --c-line: 41 60 47;
+      --c-ink: 230 240 233; --c-muted: 155 176 162;
+      --c-brand: 45 190 110; --c-brand-ink: 3 28 15; --c-brand-soft: 12 50 31; --c-accent: 240 158 84;
+      --c-ok: 74 222 128; --c-ok-soft: 18 53 31;
+      --c-warn: 250 204 21; --c-warn-soft: 58 49 16;
+      --c-bad: 248 113 113; --c-bad-soft: 61 23 23;
+      --c-info: 147 197 253; --c-info-soft: 26 42 69;
+      color-scheme: dark;
+    }
+  }
+
+  html, body { @apply h-full; }
+  body { @apply bg-bg text-ink font-sans text-[15px] leading-relaxed antialiased; }
+  h1 { @apply text-xl font-bold tracking-tight; }
+  h2 { @apply text-base font-semibold tracking-tight; }
+  * { @apply border-line; }
+  ::selection { @apply bg-brand/20; }
+
+  /* Focus that is visible in both themes without shouting */
+  :where(a, button, input, select, textarea):focus-visible {
+    @apply outline-none ring-2 ring-brand/60 ring-offset-2 ring-offset-bg;
+  }
+}
+
+/* ---------- Shared primitives ----------
+   Repeated patterns live here so every screen stays consistent; layout and
+   one-off spacing use utilities directly in the templates. */
+@layer components {
+  .card { @apply bg-surface border border-line rounded-xl shadow-card; }
+  .card-pad { @apply card p-5; }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-line bg-surface px-4 py-2
+           text-sm font-medium text-ink whitespace-nowrap transition-all duration-150
+           hover:bg-raised hover:border-line active:scale-[.97] disabled:opacity-45 disabled:pointer-events-none;
+  }
+  .btn.primary { @apply bg-brand text-brand-ink border-brand shadow-card hover:bg-brand/90 hover:shadow-lift hover:-translate-y-px; }
+  .btn.danger { @apply text-bad border-bad/40 hover:bg-bad-soft hover:border-bad/60; }
+  .btn.ghost { @apply border-transparent bg-transparent hover:bg-raised; }
+  .btn.sm { @apply px-3 py-1 text-xs rounded-md; }
+  .btn.big { @apply w-full px-5 py-3.5 text-base rounded-xl font-semibold; }
+
+  label { @apply block text-xs font-medium text-muted mb-1.5; }
+  input, select, textarea {
+    @apply w-full rounded-lg border border-line bg-surface px-3 py-2 text-ink placeholder:text-muted/70
+           transition-colors duration-150 hover:border-brand/40 focus:border-brand;
+  }
+  input[type='checkbox'] { @apply w-4 h-4 accent-[rgb(var(--c-brand))] align-middle; }
+  .field { @apply mb-3; }
+  .row { @apply flex flex-wrap gap-3 items-end; }
+  .row > .field { @apply flex-1 min-w-[10rem]; }
+
+  .badge { @apply inline-flex items-center gap-1 rounded-full bg-raised px-2.5 py-0.5 text-xs font-semibold text-muted; }
+  .badge.green { @apply bg-ok-soft text-ok; }
+  .badge.yellow { @apply bg-warn-soft text-warn; }
+  .badge.red { @apply bg-bad-soft text-bad; }
+  .badge.blue { @apply bg-info-soft text-info; }
+
+  .alert { @apply rounded-lg bg-warn-soft text-warn px-3.5 py-2.5 text-sm mb-3 animate-fade-in; }
+  .alert.red { @apply bg-bad-soft text-bad; }
+  .alert.blue { @apply bg-info-soft text-info; }
+
+  .toolbar { @apply flex flex-wrap items-center gap-2 mb-4; }
+  .toolbar .spacer { @apply flex-1; }
+  .muted { @apply text-muted; }
+  .small { @apply text-xs; }
+
+  .table-wrap { @apply card overflow-auto; }
+  table { @apply w-full border-collapse text-sm; }
+  th, td { @apply px-3 py-2.5 text-start align-middle whitespace-nowrap border-b border-line; }
+  th { @apply sticky top-0 z-10 bg-raised text-xs font-semibold text-muted; }
+  tbody tr { @apply transition-colors hover:bg-raised/60; }
+  tbody tr:last-child td { @apply border-b-0; }
+  tr.inactive td { @apply opacity-50; }
+  tfoot td { @apply bg-raised font-semibold; }
+
+  .tabs { @apply flex gap-1 border-b border-line mb-4; }
+  .tabs button { @apply px-4 py-2.5 text-sm text-muted border-b-2 border-transparent transition-colors hover:text-ink; }
+  .tabs button.active { @apply text-brand border-brand font-semibold; }
+
+  .modal-back { @apply fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/40 backdrop-blur-sm animate-fade-in; }
+  .modal { @apply card w-full max-w-xl max-h-[90vh] overflow-auto p-6 shadow-pop rounded-2xl animate-scale-in; }
+  .modal.wide { @apply max-w-3xl; }
+  .modal-head { @apply flex items-center justify-between gap-3 mb-4; }
+  .modal-foot { @apply flex flex-wrap justify-end gap-2 mt-6 pt-4 border-t border-line; }
+
+  .grid-cards { @apply grid gap-3 mb-6 [grid-template-columns:repeat(auto-fill,minmax(11rem,1fr))]; }
+  .stat { @apply card p-4 no-underline text-ink transition-all duration-150 hover:-translate-y-0.5 hover:shadow-lift hover:border-brand/40; }
+  .stat .num { @apply text-3xl font-bold tracking-tight tabular-nums; }
+  .stat .lbl { @apply text-xs text-muted mt-1; }
+
+  .skeleton { @apply relative overflow-hidden rounded-lg bg-raised; }
+  .skeleton::after {
+    @apply absolute inset-0 bg-gradient-to-r from-transparent via-surface/70 to-transparent;
+    content: ''; animation: shimmer 1.4s infinite;
+  }
+}
+
+@layer utilities {
+  .tabular { font-variant-numeric: tabular-nums; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { scrollbar-width: none; }
+}
+
+/* Print: only the QR card */
+@media print {
+  body * { visibility: hidden; }
+  .print-only, .print-only * { visibility: visible; }
+  .print-only { display: block; position: absolute; inset: 0; }
+}
+.print-only { display: none; }

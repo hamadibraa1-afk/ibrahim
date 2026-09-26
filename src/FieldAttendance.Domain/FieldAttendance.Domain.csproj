@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Pure domain: no package references, no EF Core, no ASP.NET. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="FieldAttendance.Domain.Tests" />
+  </ItemGroup>
+</Project>
