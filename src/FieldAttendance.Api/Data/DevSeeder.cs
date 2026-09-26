@@ -189,7 +189,7 @@ public static class DevSeeder
         db.AddRange(titles); db.AddRange(grades); db.AddRange(contracts);
 
         // Two patterns: the standard week, and a shorter Thursday that proves days may differ.
-        var standard = new WorkSchedule("دوام إداري", "Office hours", 10, 30, false);
+        var standard = new WorkSchedule("دوام إداري", "Office hours", 10, 30, false, flexMinutes: 30);
         foreach (var day in new[] { DayOfWeek.Sunday, DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday })
             standard.SetDay(day, new TimeOnly(8, 0), new TimeOnly(16, 0), 30);
         standard.SetDay(DayOfWeek.Thursday, new TimeOnly(8, 0), new TimeOnly(14, 0), 0);
@@ -202,6 +202,7 @@ public static class DevSeeder
         // Office attendance runs through the field engine, so each pattern becomes a shift template.
         var officeShift = new ShiftTemplate("دوام إداري 08:00 - 16:00", "Office 08:00 - 16:00",
             new TimeOnly(8, 0), new TimeOnly(16, 0), 30, 10, false, 30);
+        officeShift.SetFlex(standard.FlexMinutes);
         var branchShift = new ShiftTemplate("دوام الفروع 07:30 - 15:30", "Branch 07:30 - 15:30",
             new TimeOnly(7, 30), new TimeOnly(15, 30), 30, 15, false, 30);
         db.AddRange(officeShift, branchShift);

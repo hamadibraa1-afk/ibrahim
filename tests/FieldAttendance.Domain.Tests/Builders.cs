@@ -41,6 +41,7 @@ internal static class Builders
     {
         var t = template ?? Morning();
         return new AttendanceRecord(new ResolvedShift(Employee, TestTime.Day0, LocationA, t.Id, t.WindowFor(TestTime.Day0),
-            t.BreakMinutes, t.GraceMinutes, t.CountEarlyArrivalAsOvertime, t.EarlyCheckInMinutes, ShiftSource.BaseAssignment, Guid.NewGuid(), null, onLeave));
+            t.BreakMinutes, t.GraceMinutes, t.CountEarlyArrivalAsOvertime, t.EarlyCheckInMinutes, ShiftSource.BaseAssignment, Guid.NewGuid(), null, onLeave,
+            t.FlexMinutes));
     }
 }

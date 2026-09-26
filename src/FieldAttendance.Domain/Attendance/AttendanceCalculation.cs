@@ -20,7 +20,8 @@ public sealed record AttendanceCalculationInput(
     CheckOutType? CheckOutType,
     IReadOnlyList<ExitSpan> Exits,
     IReadOnlyList<TimeInterval> ApprovedLateWindows,
-    IReadOnlyList<TimeInterval> ApprovedEarlyDepartureWindows);
+    IReadOnlyList<TimeInterval> ApprovedEarlyDepartureWindows,
+    int FlexMinutes = 0);
 
 /// <summary>All values in whole minutes. See spec section 3.8.</summary>
 public sealed record AttendanceCalculationResult(

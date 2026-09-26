@@ -26,6 +26,13 @@ public sealed class ShiftTemplate : Entity
     /// <summary>How long before the shift starts an employee may check in. 0 = only from the start time.</summary>
     public int EarlyCheckInMinutes { get; private set; }
 
+    /// <summary>
+    /// Flexible hours, in minutes either side of the start. 0 = a fixed day. Set on its own rather
+    /// than through <see cref="SetRules"/>: office templates also appear in the field shifts screen,
+    /// and an edit there must not silently turn flexible hours off.
+    /// </summary>
+    public int FlexMinutes { get; private set; }
+
     public bool CrossesMidnight => EndTime <= StartTime;
 
     /// <summary>TimeOnly subtraction wraps past midnight, so 22:00 → 06:00 is 480 minutes.</summary>
@@ -56,6 +63,8 @@ public sealed class ShiftTemplate : Entity
         CountEarlyArrivalAsOvertime = countEarlyArrivalAsOvertime;
         EarlyCheckInMinutes = Guard.InRange(earlyCheckInMinutes, 0, 240, "shift.early_check_in");
     }
+
+    public void SetFlex(int flexMinutes) => FlexMinutes = Guard.InRange(flexMinutes, 0, 120, "shift.flex");
 
     public TimeInterval WindowFor(DateOnly shiftDate) => ShiftTiming.Window(shiftDate, StartTime, EndTime);
 }

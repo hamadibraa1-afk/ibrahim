@@ -103,7 +103,7 @@ public sealed class MaterializationService(AppDbContext db, ScheduleSnapshotLoad
     private static bool NeedsUpdate(AttendanceRecord r, ResolvedShift s) =>
         r.LocationId != s.LocationId || r.ShiftTemplateId != s.ShiftTemplateId || r.ScheduledEnd != s.Window.End
         || r.BreakMinutes != s.BreakMinutes || r.GraceMinutes != s.GraceMinutes
-        || r.CountEarlyArrivalAsOvertime != s.CountEarlyArrivalAsOvertime
+        || r.CountEarlyArrivalAsOvertime != s.CountEarlyArrivalAsOvertime || r.FlexMinutes != s.FlexMinutes
         || (r.Status == AttendanceStatus.OnLeave) != s.IsOnLeave;
 }
 

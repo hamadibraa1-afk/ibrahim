@@ -2,8 +2,9 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { Api } from '../../core/api';
 import { TPipe } from '../../core/i18n';
 import { Ui } from '../../core/ui';
+import { dayIndex } from '../../core/format';
 
-interface ScheduleDay { day: number; startTime: string; endTime: string; breakMinutes: number; }
+interface ScheduleDay { day: string | number; startTime: string; endTime: string; breakMinutes: number; }
 interface Profile {
   fullName: string; employeeNumber: string; email: string | null; phone: string; role: string;
   jobTitle: string | null; department: string | null; section: string | null; branch: string | null;
@@ -47,7 +48,7 @@ interface Profile {
         <div class="divide-y divide-line">
           @for (d of p.scheduleDays; track d.day) {
             <div class="flex items-center gap-3 py-2 text-sm">
-              <span class="w-24 font-semibold">{{ ('day.' + d.day) | t }}</span>
+              <span class="w-24 font-semibold">{{ ('day.' + dayIndex(d.day)) | t }}</span>
               <span class="tabular" dir="ltr">{{ d.startTime.substring(0,5) }}–{{ d.endTime.substring(0,5) }}</span>
             </div>
           } @empty { <p class="py-2 text-muted">{{ 'common.empty' | t }}</p> }
@@ -66,6 +67,7 @@ interface Profile {
     }`,
 })
 export class MyProfilePage implements OnInit {
+  readonly dayIndex = dayIndex;
   private readonly api = inject(Api);
   private readonly ui = inject(Ui);
   readonly data = signal<Profile | null>(null);

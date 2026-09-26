@@ -66,7 +66,7 @@ internal static class DevSeederHistory
                 var record = new AttendanceRecord(new ResolvedShift(target.Employee, date, target.Branch.Id,
                     target.Shift.Id, window, day.BreakMinutes, target.Schedule.GraceMinutes,
                     target.Schedule.CountEarlyArrivalAsOvertime, target.Schedule.EarlyCheckInMinutes,
-                    ShiftSource.BaseAssignment, Guid.NewGuid(), null, false));
+                    ShiftSource.BaseAssignment, Guid.NewGuid(), null, false, target.Schedule.FlexMinutes));
 
                 if (onLeave.Contains(date)) record.MarkOnLeave();
                 else FillDay(record, window, date, target, random, discipline, now, approverId, result);
@@ -135,17 +135,21 @@ internal static class DevSeederHistory
             return;
         }
 
-        // Always past the grace period, so the excused/unexcused distinction is actually visible.
-        // Inside grace there is no lateness at all, and the permission would have nothing to excuse.
-        var grace = target.Schedule.GraceMinutes;
+        // Always past the tolerance (flexible hours, or else grace), so the excused/unexcused
+        // distinction is actually visible. Inside it there is no lateness at all, and the
+        // permission would have nothing to excuse.
+        var tolerance = target.Schedule.FlexMinutes > 0 ? target.Schedule.FlexMinutes : target.Schedule.GraceMinutes;
         var lateMinutes = roll >= OnTime && roll < LateUnexcused
-            ? random.Next(grace + 5, grace + 50)
+            ? random.Next(tolerance + 5, tolerance + 50)
             : random.Next(-18, 4);
         var earlyMinutes = roll >= LateUnexcused && roll < EarlyUnexcused ? random.Next(25, 75) : 0;
         var overtime = earlyMinutes == 0 && random.Next(100) < 12 ? random.Next(20, 95) : 0;
 
+        // Leaving is measured from the day as the employee actually started it: under flexible hours
+        // someone in at 07:45 is done at 15:45, and staying to 16:00 is not overtime they chose.
         var checkIn = window.Start.AddMinutes(lateMinutes);
-        var checkOut = window.End.AddMinutes(overtime - earlyMinutes);
+        var end = FlexibleHours.EffectiveWindow(window, checkIn, target.Schedule.FlexMinutes).End;
+        var checkOut = end.AddMinutes(overtime - earlyMinutes);
         if (checkOut <= checkIn) checkOut = checkIn.AddMinutes(30);
 
         record.CheckIn(checkIn, NearBranch(target.Branch, random), accuracy: random.Next(6, 28),

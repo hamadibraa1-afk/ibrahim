@@ -27,7 +27,7 @@ public static class AttendancePolicies
         if (record.HasCheckedIn || record.Status != AttendanceStatus.Scheduled)
             return null;
 
-        var expected = record.ScheduledStart.AddMinutes(record.GraceMinutes);
+        var expected = record.LateAfter;
         foreach (var window in approvedLateWindows)
         {
             if (window.End > expected) expected = window.End;

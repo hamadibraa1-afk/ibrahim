@@ -80,6 +80,6 @@ public static class ScheduleResolver
 
         return new ResolvedShift(employeeId, date, locationId, shiftTemplateId, template.WindowFor(date),
             template.BreakMinutes, template.GraceMinutes, template.CountEarlyArrivalAsOvertime, template.EarlyCheckInMinutes,
-            source, sourceId, overrideType, isOnLeave);
+            source, sourceId, overrideType, isOnLeave, template.FlexMinutes);
     }
 }

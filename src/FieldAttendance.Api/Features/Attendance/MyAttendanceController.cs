@@ -30,7 +30,7 @@ public sealed record TodayShiftDto(
     int LocationRadius, string ShiftNameAr, string ShiftNameEn, DateTimeOffset ScheduledStart, DateTimeOffset ScheduledEnd, string Status,
     DateTimeOffset? CheckInAt, DateTimeOffset? CheckOutAt, string? CheckOutType, DateTimeOffset? OpenExitAt, DateTimeOffset? OpenExitReturnBy,
     int LateUnexcused, int EarlyUnexcused, int NetWorkMinutes, int OvertimeMinutes, bool HasPendingException,
-    IReadOnlyList<PermissionDto> Permissions);
+    IReadOnlyList<PermissionDto> Permissions, int FlexMinutes, DateTimeOffset? ExpectedCheckOutAt);
 
 public sealed record MyScheduleDayDto(DateOnly Date, string LocationNameAr, string LocationNameEn, string ShiftNameAr, string ShiftNameEn,
     DateTimeOffset Start, DateTimeOffset End, bool IsOnLeave, double Latitude, double Longitude);
@@ -40,7 +40,7 @@ public sealed record MyScheduleDayDto(DateOnly Date, string LocationNameAr, stri
 [Authorize(Policy = Policies.SelfService)]
 public sealed class MyAttendanceController(
     AppDbContext db, ICurrentUser me, IClock clock, RecalculationService recalculator, PermissionService permissions,
-    ScheduleSnapshotLoader loader, IOptions<AttendanceOptions> options) : ControllerBase
+    ScheduleSnapshotLoader loader, IOptions<AttendanceOptions> options, ComplianceService compliance) : ControllerBase
 {
     [HttpGet("today")]
     public async Task<IReadOnlyList<TodayShiftDto>> Today(CancellationToken ct)
@@ -72,9 +72,18 @@ public sealed class MyAttendanceController(
                 open?.ExitAt, open?.PermissionEnd, r.LateUnexcused, r.EarlyUnexcused, r.NetWorkMinutes, r.OvertimeMinutes,
                 pending.Contains(r.Id),
                 perms.Where(p => p.ShiftDate == r.ShiftDate && RecalculationService.TryInterval(p, r.ScheduledWindow) is not null)
-                     .Select(ToDto).ToList());
+                     .Select(ToDto).ToList(),
+                r.FlexMinutes,
+                // Under flexible hours the end moves with the arrival, so the employee is told
+                // their own leaving time rather than left to work it out from the schedule.
+                r.HasCheckedIn ? r.EffectiveWindow.End : null);
         }).ToList();
     }
+
+    /// <summary>Month-to-date compliance; an account with no attendance simply has no figure yet.</summary>
+    [HttpGet("compliance")]
+    public Task<ComplianceDto> Compliance([FromQuery] int? year, [FromQuery] int? month, CancellationToken ct) =>
+        compliance.ForMonthAsync(me.RequiredId, year, month, ct);
 
     [HttpGet("schedule")]
     public async Task<IReadOnlyList<MyScheduleDayDto>> Schedule(CancellationToken ct)

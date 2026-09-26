@@ -88,7 +88,7 @@ public sealed class OfficeScheduleService(
         {
             var shiftId = await schedule.EnsureShiftTemplateAsync(group.Start, group.End, ct,
                 group.BreakMinutes, workSchedule.GraceMinutes, workSchedule.EarlyCheckInMinutes,
-                workSchedule.CountEarlyArrivalAsOvertime);
+                workSchedule.CountEarlyArrivalAsOvertime, workSchedule.FlexMinutes);
             plan.Add((branchLocationId, shiftId, group.Days));
         }
         return plan;

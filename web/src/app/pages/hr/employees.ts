@@ -6,6 +6,7 @@ import { Backdrop } from '../../core/backdrop';
 import { uaeToday } from '../../core/format';
 import { I18n, TPipe } from '../../core/i18n';
 import { Ui } from '../../core/ui';
+import { Compliance, ComplianceMeter } from '../../layout/compliance-meter';
 
 interface Row {
   id: string; fullName: string; employeeNumber: string; role: string; phone: string | null;
@@ -19,7 +20,7 @@ interface SalaryRow { oldSalary: number; newSalary: number; effectiveFrom: strin
 @Component({
   selector: 'app-hr-employees',
   standalone: true,
-  imports: [FormsModule, TPipe, Backdrop],
+  imports: [FormsModule, TPipe, Backdrop, ComplianceMeter],
   template: `
     <div class="toolbar"><h1 class="m-0">{{ 'hr.nav.employees' | t }}</h1><span class="spacer"></span>
       @if (auth.canManageHr()) { <button class="btn primary" (click)="openNew()">+ {{ 'hr.emp.new' | t }}</button> }
@@ -123,6 +124,7 @@ interface SalaryRow { oldSalary: number; newSalary: number; effectiveFrom: strin
         }
 
         @if (tab() === 'schedule') {
+          @if (compliance(); as c) { <div class="mb-4"><app-compliance-meter [data]="c" /></div> }
           <div class="row">
             <div class="field"><label>{{ 'hr.emp.schedule' | t }}</label>
               <select [(ngModel)]="scheduleId"><option [ngValue]="null">—</option>
@@ -214,6 +216,7 @@ export class HrEmployeesPage implements OnInit {
   readonly detail = signal<Detail | null>(null);
   readonly creating = signal<any>(null);
   readonly tab = signal('data');
+  readonly compliance = signal<Compliance | null>(null);
   readonly busy = signal(false);
   readonly error = signal<string | null>(null);
   readonly statuses = ['Active', 'Suspended', 'Ended'];
@@ -280,6 +283,11 @@ export class HrEmployeesPage implements OnInit {
 
   async setTab(key: string, d: Detail): Promise<void> {
     this.tab.set(key);
+    if (key === 'schedule') {
+      this.compliance.set(null);
+      try { this.compliance.set(await this.api.get<Compliance>(`hr/employees/${d.row.id}/compliance`)); }
+      catch { this.compliance.set(null); }
+    }
     if (key === 'salary' && this.auth.canManageHr()) {
       try { this.history.set(await this.api.get<SalaryRow[]>(`hr/employees/${d.row.id}/salary-history`)); }
       catch { this.history.set([]); }

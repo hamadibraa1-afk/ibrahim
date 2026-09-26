@@ -38,6 +38,7 @@ builder.Services.AddScoped<ScheduleSnapshotLoader>();
 builder.Services.AddScoped<MaterializationService>();
 builder.Services.AddScoped<RecalculationService>();
 builder.Services.AddScoped<AttendanceJobs>();
+builder.Services.AddScoped<ComplianceService>();
 builder.Services.AddScoped<ScheduleService>();
 builder.Services.AddScoped<PermissionService>();
 builder.Services.AddScoped<FieldAttendance.Api.Features.Leaves.LeaveService>();

@@ -3,12 +3,12 @@ import { FormsModule } from '@angular/forms';
 import { Api } from '../../core/api';
 import { Auth } from '../../core/auth';
 import { Backdrop } from '../../core/backdrop';
-import { hmin, timeInput, toTimeOnly } from '../../core/format';
+import { dayIndex, hmin, timeInput, toTimeOnly } from '../../core/format';
 import { I18n, TPipe } from '../../core/i18n';
 import { Ui } from '../../core/ui';
 
-interface Day { day: number; startTime: string; endTime: string; breakMinutes: number; }
-interface Schedule { id: string; nameAr: string; nameEn: string; graceMinutes: number; earlyCheckInMinutes: number; countEarlyArrivalAsOvertime: boolean; weeklyMinutes: number; employeeCount: number; days: Day[]; rowVersion: string; }
+interface Day { day: string | number; startTime: string; endTime: string; breakMinutes: number; }
+interface Schedule { id: string; nameAr: string; nameEn: string; graceMinutes: number; earlyCheckInMinutes: number; flexMinutes: number; countEarlyArrivalAsOvertime: boolean; weeklyMinutes: number; employeeCount: number; days: Day[]; rowVersion: string; }
 
 @Component({
   selector: 'app-hr-schedules',
@@ -34,7 +34,7 @@ interface Schedule { id: string; nameAr: string; nameEn: string; graceMinutes: n
           <div class="divide-y divide-line px-4">
             @for (d of s.days; track d.day) {
               <div class="flex items-center gap-3 py-2 text-sm">
-                <span class="w-20 font-semibold">{{ ('day.' + d.day) | t }}</span>
+                <span class="w-20 font-semibold">{{ ('day.' + dayIndex(d.day)) | t }}</span>
                 <span class="tabular" dir="ltr">{{ d.startTime.substring(0,5) }}–{{ d.endTime.substring(0,5) }}</span>
                 @if (d.breakMinutes) { <span class="muted small">{{ 'shift.break' | t }}: {{ d.breakMinutes }}</span> }
               </div>
@@ -42,7 +42,8 @@ interface Schedule { id: string; nameAr: string; nameEn: string; graceMinutes: n
           </div>
           <footer class="flex flex-wrap gap-4 border-t border-line px-4 py-3 text-xs text-muted">
             <span>{{ 'hr.sch.weekly' | t }}: {{ hmin(s.weeklyMinutes) }}</span>
-            <span>{{ 'shift.grace' | t }}: {{ s.graceMinutes }}</span>
+            @if (s.flexMinutes) { <span>{{ 'me.flex' | t }}: <span dir="ltr">±{{ s.flexMinutes }}</span></span> }
+            @else { <span>{{ 'shift.grace' | t }}: {{ s.graceMinutes }}</span> }
             <span>{{ 'shift.earlyWindow' | t }}: {{ s.earlyCheckInMinutes }}</span>
           </footer>
         </section>
@@ -58,7 +59,10 @@ interface Schedule { id: string; nameAr: string; nameEn: string; graceMinutes: n
           <div class="field"><label>{{ 'loc.nameEn' | t }} *</label><input dir="ltr" [(ngModel)]="f.nameEn"></div>
         </div>
         <div class="row">
-          <div class="field"><label>{{ 'shift.grace' | t }}</label><input type="number" min="0" max="120" [(ngModel)]="f.graceMinutes"></div>
+          <div class="field"><label for="sch-flex">{{ 'sch.flex' | t }}</label>
+            <input id="sch-flex" type="number" min="0" max="120" [(ngModel)]="f.flexMinutes" aria-describedby="sch-flex-hint">
+            <p id="sch-flex-hint" class="mt-1 text-xs text-muted">{{ 'sch.flexHint' | t }}</p></div>
+          <div class="field"><label>{{ 'shift.grace' | t }}</label><input type="number" min="0" max="120" [(ngModel)]="f.graceMinutes" [disabled]="+f.flexMinutes > 0"></div>
           <div class="field"><label>{{ 'shift.earlyWindow' | t }}</label><input type="number" min="0" max="240" [(ngModel)]="f.earlyCheckInMinutes"></div>
         </div>
         <label class="flex items-center gap-2 text-ink mb-4">
@@ -88,6 +92,7 @@ interface Schedule { id: string; nameAr: string; nameEn: string; graceMinutes: n
     }`,
 })
 export class HrSchedulesPage implements OnInit {
+  readonly dayIndex = dayIndex;
   readonly auth = inject(Auth);
   readonly i18n = inject(I18n);
   private readonly api = inject(Api);
@@ -108,7 +113,7 @@ export class HrSchedulesPage implements OnInit {
   open(s: Schedule | null): void {
     this.error.set(null);
     const days = [0, 1, 2, 3, 4, 5, 6].map(day => {
-      const existing = s?.days.find(d => d.day === day);
+      const existing = s?.days.find(d => dayIndex(d.day) === day);
       return {
         day, on: !!existing,
         start: existing ? timeInput(existing.startTime) : '08:00',
@@ -118,7 +123,7 @@ export class HrSchedulesPage implements OnInit {
     });
     this.editing.set(s
       ? { ...s, days }
-      : { id: '', nameAr: '', nameEn: '', graceMinutes: 10, earlyCheckInMinutes: 30, countEarlyArrivalAsOvertime: false, days, rowVersion: '' });
+      : { id: '', nameAr: '', nameEn: '', graceMinutes: 10, earlyCheckInMinutes: 30, flexMinutes: 0, countEarlyArrivalAsOvertime: false, days, rowVersion: '' });
   }
 
   valid(f: any): boolean {
@@ -131,7 +136,7 @@ export class HrSchedulesPage implements OnInit {
     this.error.set(null);
     const body = {
       nameAr: f.nameAr, nameEn: f.nameEn, graceMinutes: +f.graceMinutes || 0,
-      earlyCheckInMinutes: +f.earlyCheckInMinutes || 0, countEarlyArrivalAsOvertime: !!f.countEarlyArrivalAsOvertime,
+      earlyCheckInMinutes: +f.earlyCheckInMinutes || 0, flexMinutes: +f.flexMinutes || 0, countEarlyArrivalAsOvertime: !!f.countEarlyArrivalAsOvertime,
       days: f.days.filter((d: any) => d.on).map((d: any) => ({
         day: d.day, startTime: toTimeOnly(d.start), endTime: toTimeOnly(d.end), breakMinutes: +d.breakMinutes || 0,
       })),

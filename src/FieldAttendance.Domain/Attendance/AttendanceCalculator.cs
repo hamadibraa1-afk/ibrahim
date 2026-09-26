@@ -18,9 +18,10 @@ public static class AttendanceCalculator
         if (input.CheckInAt is not { } rawCheckIn)
             return AttendanceCalculationResult.Empty;
 
-        var shift = input.ScheduledWindow;
         var checkIn = UaeTime.TruncateToMinute(rawCheckIn);
-        var (lateTotal, lateExcused) = Late(shift, checkIn, input.GraceMinutes, input.ApprovedLateWindows);
+        var shift = FlexibleHours.EffectiveWindow(input.ScheduledWindow, checkIn, input.FlexMinutes);
+        var grace = FlexibleHours.EffectiveGrace(input.GraceMinutes, input.FlexMinutes);
+        var (lateTotal, lateExcused) = Late(shift, checkIn, grace, input.ApprovedLateWindows);
 
         // Still on shift: only lateness is final. Hours are computed at check-out.
         if (input.CheckOutAt is not { } rawCheckOut)

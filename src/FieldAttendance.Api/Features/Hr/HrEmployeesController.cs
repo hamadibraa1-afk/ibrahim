@@ -53,7 +53,7 @@ public sealed record SalaryHistoryRow(decimal OldSalary, decimal NewSalary, Date
 [Route("api/hr/employees")]
 [Authorize(Policy = HrPolicies.Read)]
 public sealed class HrEmployeesController(AppDbContext db, OfficeScheduleService office, AccessScope scope,
-    ICurrentUser me, IClock clock) : ControllerBase
+    ICurrentUser me, IClock clock, Attendance.ComplianceService compliance) : ControllerBase
 {
     private static readonly UserRole[] OfficeRoles =
         [UserRole.Employee, UserRole.HrOfficer, UserRole.HrManager, UserRole.DepartmentManager, UserRole.SystemAdmin];
@@ -169,6 +169,18 @@ public sealed class HrEmployeesController(AppDbContext db, OfficeScheduleService
         db.SalaryChanges.Add(profile.ChangeSalary(r.NewSalary, r.EffectiveFrom, r.Reason, me.RequiredId));
         await db.SaveChangesAsync(ct);
         return NoContent();
+    }
+
+    /// <summary>
+    /// Readable by anyone with an HR view, within the usual scope: a department manager sees
+    /// their own people only. Unlike salary, compliance is not restricted to HR managers.
+    /// </summary>
+    [HttpGet("{id:guid}/compliance")]
+    public async Task<Attendance.ComplianceDto> Compliance(Guid id, [FromQuery] int? year, [FromQuery] int? month, CancellationToken ct)
+    {
+        var profile = await Find(id, ct);
+        await scope.EnsureCanSeeEmployeeAsync(profile.UserId, ct);
+        return await compliance.ForMonthAsync(profile.UserId, year, month, ct);
     }
 
     [HttpGet("{id:guid}/salary-history")]

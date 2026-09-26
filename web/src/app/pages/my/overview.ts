@@ -4,6 +4,7 @@ import { Api } from '../../core/api';
 import { hm, hmin, uaeToday } from '../../core/format';
 import { I18n, TPipe } from '../../core/i18n';
 import { Ui } from '../../core/ui';
+import { Compliance, ComplianceMeter } from '../../layout/compliance-meter';
 
 interface Day { date: string; locationName: string; scheduledStart: string; scheduledEnd: string; checkInAt: string | null; checkOutAt: string | null; status: string; netWorkMinutes: number; lateUnexcused: number; overtimeMinutes: number; }
 interface Month { year: number; month: number; scheduledDays: number; presentDays: number; absentDays: number; leaveDays: number; netWorkMinutes: number; lateMinutes: number; overtimeMinutes: number; days: Day[]; }
@@ -14,7 +15,7 @@ interface Warning { id: string; levelName: string; reason: string; issuedAt: str
 @Component({
   selector: 'app-my-overview',
   standalone: true,
-  imports: [RouterLink, TPipe],
+  imports: [RouterLink, TPipe, ComplianceMeter],
   template: `
     @if (profile(); as p) {
       <section class="card-pad mb-4">
@@ -27,6 +28,8 @@ interface Warning { id: string; levelName: string; reason: string; issuedAt: str
         </div>
       </section>
     }
+
+    @if (compliance(); as c) { <div class="mb-4"><app-compliance-meter [data]="c" /></div> }
 
     @if (today(); as t) {
       <section class="card-pad mb-4">
@@ -87,9 +90,12 @@ export class MyOverviewPage implements OnInit {
   readonly month = signal<Month | null>(null);
   readonly warnings = signal<Warning[]>([]);
   readonly returns = signal<Return[]>([]);
+  readonly compliance = signal<Compliance | null>(null);
   readonly today = computed(() => this.month()?.days.find(d => d.date === uaeToday()) ?? null);
 
   async ngOnInit(): Promise<void> {
+    // Loaded on its own: if the figure cannot be fetched, the rest of the page still shows.
+    this.api.get<Compliance>('me/compliance').then(c => this.compliance.set(c), () => this.compliance.set(null));
     try {
       const [profile, month, warnings, returns] = await Promise.all([
         this.api.get<Profile>('my/profile'),

@@ -35,6 +35,7 @@ public sealed class AttendanceRecord : Entity
     public int GraceMinutes { get; private set; }
     public bool CountEarlyArrivalAsOvertime { get; private set; }
     public int EarlyCheckInMinutes { get; private set; }
+    public int FlexMinutes { get; private set; }
 
     public DateTimeOffset? CheckInAt { get; private set; }
     public double? CheckInLat { get; private set; }
@@ -64,6 +65,12 @@ public sealed class AttendanceRecord : Entity
     public IReadOnlyCollection<TemporaryExit> Exits => _exits.AsReadOnly();
 
     public TimeInterval ScheduledWindow => new(ScheduledStart, ScheduledEnd);
+
+    /// <summary>The day as this employee is actually expected to work it: moved by flexible hours once they check in.</summary>
+    public TimeInterval EffectiveWindow => FlexibleHours.EffectiveWindow(ScheduledWindow, CheckInAt, FlexMinutes);
+
+    /// <summary>Past this instant, an arrival is late. Flexible hours replace the grace period rather than adding to it.</summary>
+    public DateTimeOffset LateAfter => ScheduledStart.AddMinutes(FlexMinutes > 0 ? FlexMinutes : GraceMinutes);
     public TemporaryExit? OpenExit => _exits.FirstOrDefault(e => e.ReturnAt is null);
     public bool HasCheckedIn => CheckInAt is not null;
     public bool IsOpen => HasCheckedIn && CheckOutAt is null;
@@ -86,6 +93,7 @@ public sealed class AttendanceRecord : Entity
         GraceMinutes = shift.GraceMinutes;
         CountEarlyArrivalAsOvertime = shift.CountEarlyArrivalAsOvertime;
         EarlyCheckInMinutes = shift.EarlyCheckInMinutes;
+        FlexMinutes = shift.FlexMinutes;
         Status = shift.IsOnLeave ? AttendanceStatus.OnLeave : AttendanceStatus.Scheduled;
     }
 
@@ -97,7 +105,8 @@ public sealed class AttendanceRecord : Entity
             throw new DomainException("attendance.already_checked_in", "Already checked in for this shift.");
         if (at >= ScheduledEnd)
             throw new DomainException("attendance.shift_ended", "This shift has already ended.");
-        if (type == Enums.CheckInType.Normal && at < ScheduledStart.AddMinutes(-EarlyCheckInMinutes))
+        // Flexible hours are a promise that arriving that early is on time, so check-in has to be open by then.
+        if (type == Enums.CheckInType.Normal && at < ScheduledStart.AddMinutes(-Math.Max(EarlyCheckInMinutes, FlexMinutes)))
             throw new DomainException("attendance.too_early", "Check-in opens shortly before the shift starts.");
 
         CheckInAt = at;
@@ -154,7 +163,10 @@ public sealed class AttendanceRecord : Entity
     /// </summary>
     public bool AutoClose(DateTimeOffset now, int delayMinutes)
     {
-        if (!IsOpen || now < ScheduledEnd.AddMinutes(delayMinutes))
+        // The personal end, not the scheduled one: someone who started at 08:30 under flexible hours
+        // is owed the day until 16:30, and closing them at 16:00 would record half an hour short.
+        var end = EffectiveWindow.End;
+        if (!IsOpen || now < end.AddMinutes(delayMinutes))
             return false;
 
         if (OpenExit is { } exit)
@@ -164,7 +176,7 @@ public sealed class AttendanceRecord : Entity
         }
         else
         {
-            CheckOutAt = ScheduledEnd;
+            CheckOutAt = end;
             CheckOutType = Enums.CheckOutType.Auto;
         }
         Status = AttendanceStatus.CheckedOut;
@@ -201,7 +213,7 @@ public sealed class AttendanceRecord : Entity
         new(ScheduledWindow, BreakMinutes, GraceMinutes, CountEarlyArrivalAsOvertime, minimumOvertimeMinutes,
             CheckInAt, CheckOutAt, CheckOutType,
             _exits.Select(e => new ExitSpan(e.ExitAt, e.ReturnAt, e.PermissionWindow)).ToList(),
-            approvedLateWindows.ToList(), approvedEarlyDepartureWindows.ToList());
+            approvedLateWindows.ToList(), approvedEarlyDepartureWindows.ToList(), FlexMinutes);
 
     public void ApplyCalculation(AttendanceCalculationResult result)
     {

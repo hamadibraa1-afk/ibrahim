@@ -22,4 +22,5 @@ public sealed record ResolvedShift(
     ShiftSource Source,
     Guid SourceId,
     OverrideType? OverrideType,
-    bool IsOnLeave);
+    bool IsOnLeave,
+    int FlexMinutes = 0);

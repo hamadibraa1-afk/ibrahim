@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { Api } from '../../core/api';
-import { getPosition, hm, hmin, nowUaeHm, timeInput } from '../../core/format';
+import { getPosition, hm, hmin, hmShift, nowUaeHm, timeInput } from '../../core/format';
 import { I18n, TPipe } from '../../core/i18n';
 import { Ui } from '../../core/ui';
 
@@ -11,6 +11,7 @@ interface TodayShift {
   shiftNameAr: string; shiftNameEn: string; scheduledStart: string; scheduledEnd: string; status: string; checkInAt: string | null; checkOutAt: string | null;
   checkOutType: string | null; openExitAt: string | null; openExitReturnBy: string | null; lateUnexcused: number; earlyUnexcused: number;
   netWorkMinutes: number; overtimeMinutes: number; hasPendingException: boolean; permissions: Perm[];
+  flexMinutes: number; expectedCheckOutAt: string | null;
 }
 type Kind = 'CheckIn' | 'CheckOut';
 
@@ -35,6 +36,7 @@ type Kind = 'CheckIn' | 'CheckOut';
           <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
             <span>{{ i18n.pick(s.shiftNameAr, s.shiftNameEn) }}</span>
             <span class="tabular" dir="ltr">{{ hm(s.scheduledStart) }}–{{ hm(s.scheduledEnd) }}</span>
+            @if (s.flexMinutes) { <span class="badge">{{ 'me.flex' | t }}</span> }
             <a class="underline underline-offset-2" target="_blank"
                [href]="'https://www.google.com/maps?q=' + s.locationLatitude + ',' + s.locationLongitude">{{ 'common.map' | t }}</a>
           </div>
@@ -48,6 +50,10 @@ type Kind = 'CheckIn' | 'CheckOut';
             @case ('pending') { <div class="alert blue mb-0">{{ 'me.pendingApproval' | t }}</div> }
 
             @case ('before') {
+              @if (s.flexMinutes) {
+                <p class="text-sm text-muted">{{ 'me.arriveBetween' | t }}
+                  <span class="tabular font-semibold text-ink" dir="ltr">{{ hmShift(s.scheduledStart, -s.flexMinutes) }}–{{ hmShift(s.scheduledStart, s.flexMinutes) }}</span></p>
+              }
               <button class="btn primary big" [disabled]="busy()" (click)="checkIn(s)">
                 @if (busy()) { <span class="h-4 w-4 animate-spin rounded-full border-2 border-brand-ink/40 border-t-brand-ink"></span> }
                 {{ busy() ? ('me.locating' | t) : ('me.checkIn' | t) }}
@@ -63,6 +69,10 @@ type Kind = 'CheckIn' | 'CheckOut';
                 <div class="text-2xl font-bold tabular" dir="ltr">{{ hm(s.checkInAt) }}</div>
                 @if (s.lateUnexcused) {
                   <div class="mt-1 text-xs font-semibold text-bad">{{ 'att.late' | t }}: {{ hmin(s.lateUnexcused) }}</div>
+                }
+                @if (s.expectedCheckOutAt) {
+                  <div class="mt-2 border-t border-ok/20 pt-2 text-sm">{{ 'me.leaveAt' | t }}
+                    <span class="text-lg font-bold tabular" dir="ltr">{{ hm(s.expectedCheckOutAt) }}</span></div>
                 }
               </div>
               @if (activeExitPermission(s); as p) {
@@ -120,6 +130,7 @@ export class TodayPage implements OnInit, OnDestroy {
   private readonly ui = inject(Ui);
   private readonly router = inject(Router);
   readonly hm = hm;
+  readonly hmShift = hmShift;
   readonly hmin = hmin;
   readonly timeInput = timeInput;
   readonly shifts = signal<TodayShift[]>([]);

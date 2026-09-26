@@ -46,7 +46,7 @@ public sealed class DashboardController(AppDbContext db, IClock clock, AccessSco
             : r.OpenExit is not null ? "OnExit"
             : r.IsOpen ? (r.LateUnexcused > 0 ? "PresentLate" : "Present")
             : r.CheckOutAt is not null ? "CheckedOut"
-            : now > r.ScheduledStart.AddMinutes(r.GraceMinutes) && now < r.ScheduledEnd ? "NotArrived"
+            : now > r.LateAfter && now < r.ScheduledEnd ? "NotArrived"
             : "Upcoming";
 
         var board = locations.Select(l =>

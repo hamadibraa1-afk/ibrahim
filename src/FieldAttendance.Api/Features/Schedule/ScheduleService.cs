@@ -64,8 +64,14 @@ public sealed class ScheduleService(AppDbContext db, ScheduleSnapshotLoader load
         foreach (var e in db.ChangeTracker.Entries<AssignmentOverride>().Where(e => e.State is EntityState.Added or EntityState.Modified))
             overrides[e.Entity.Id] = e.Entity;
 
+        // A rule change (grace, flexible hours) creates its template in the same save as the assignments
+        // that use it; without it here, validation cannot resolve those assignments and the save fails.
+        var templates = s.ShiftTemplates.ToDictionary(p => p.Key, p => p.Value);
+        foreach (var e in db.ChangeTracker.Entries<ShiftTemplate>().Where(e => e.State == EntityState.Added))
+            templates[e.Entity.Id] = e.Entity;
+
         // Inactive (ended/cancelled) entities are filtered by Covers(); keep them so modifications win over stale copies.
-        return s with { Assignments = assignments.Values.ToList(), Overrides = overrides.Values.ToList() };
+        return s with { Assignments = assignments.Values.ToList(), Overrides = overrides.Values.ToList(), ShiftTemplates = templates };
     }
 
     /// <summary>
@@ -74,7 +80,8 @@ public sealed class ScheduleService(AppDbContext db, ScheduleSnapshotLoader load
     /// so ad-hoc assignments never duplicate templates.
     /// </summary>
     public async Task<Guid> EnsureShiftTemplateAsync(TimeOnly start, TimeOnly end, CancellationToken ct,
-        int breakMinutes = 0, int? graceMinutes = null, int earlyCheckInMinutes = 0, bool countEarlyArrivalAsOvertime = false)
+        int breakMinutes = 0, int? graceMinutes = null, int earlyCheckInMinutes = 0, bool countEarlyArrivalAsOvertime = false,
+        int flexMinutes = 0)
     {
         if (start == end)
             throw new DomainException("shift.zero_length", "Start and end time cannot be equal.");
@@ -83,12 +90,13 @@ public sealed class ScheduleService(AppDbContext db, ScheduleSnapshotLoader load
         var existing = await db.ShiftTemplates.FirstOrDefaultAsync(s => s.IsActive
             && s.StartTime == start && s.EndTime == end && s.BreakMinutes == breakMinutes
             && s.GraceMinutes == grace && s.EarlyCheckInMinutes == earlyCheckInMinutes
-            && s.CountEarlyArrivalAsOvertime == countEarlyArrivalAsOvertime, ct);
+            && s.CountEarlyArrivalAsOvertime == countEarlyArrivalAsOvertime && s.FlexMinutes == flexMinutes, ct);
         if (existing is not null) return existing.Id;
 
         var name = $"{start:HH\\:mm} - {end:HH\\:mm}";
         var template = new ShiftTemplate(name, name, start, end, breakMinutes, grace,
             countEarlyArrivalAsOvertime, earlyCheckInMinutes);
+        template.SetFlex(flexMinutes);
         db.ShiftTemplates.Add(template);
         return template.Id;
     }

@@ -15,10 +15,11 @@ public sealed class WorkSchedule : Entity
 
     private WorkSchedule() { } // EF Core
 
-    public WorkSchedule(string nameAr, string nameEn, int graceMinutes, int earlyCheckInMinutes, bool countEarlyArrivalAsOvertime)
+    public WorkSchedule(string nameAr, string nameEn, int graceMinutes, int earlyCheckInMinutes, bool countEarlyArrivalAsOvertime,
+        int flexMinutes = 0)
     {
         Rename(nameAr, nameEn);
-        SetRules(graceMinutes, earlyCheckInMinutes, countEarlyArrivalAsOvertime);
+        SetRules(graceMinutes, earlyCheckInMinutes, countEarlyArrivalAsOvertime, flexMinutes);
     }
 
     public string NameAr { get; private set; } = string.Empty;
@@ -26,6 +27,9 @@ public sealed class WorkSchedule : Entity
     public int GraceMinutes { get; private set; }
     public int EarlyCheckInMinutes { get; private set; }
     public bool CountEarlyArrivalAsOvertime { get; private set; }
+
+    /// <summary>Flexible hours, in minutes either side of each day's start. 0 = fixed hours. See <see cref="Attendance.FlexibleHours"/>.</summary>
+    public int FlexMinutes { get; private set; }
 
     public IReadOnlyCollection<WorkScheduleDay> Days => _days.AsReadOnly();
 
@@ -40,11 +44,12 @@ public sealed class WorkSchedule : Entity
         NameEn = Guard.Required(nameEn, "schedule.name_en", 120);
     }
 
-    public void SetRules(int graceMinutes, int earlyCheckInMinutes, bool countEarlyArrivalAsOvertime)
+    public void SetRules(int graceMinutes, int earlyCheckInMinutes, bool countEarlyArrivalAsOvertime, int flexMinutes = 0)
     {
         GraceMinutes = Guard.InRange(graceMinutes, 0, 120, "schedule.grace");
         EarlyCheckInMinutes = Guard.InRange(earlyCheckInMinutes, 0, 240, "schedule.early_check_in");
         CountEarlyArrivalAsOvertime = countEarlyArrivalAsOvertime;
+        FlexMinutes = Guard.InRange(flexMinutes, 0, 120, "schedule.flex");
     }
 
     /// <summary>Adds the day or replaces its times if it is already in the pattern.</summary>
