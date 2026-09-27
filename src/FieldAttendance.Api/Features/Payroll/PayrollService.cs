@@ -80,6 +80,9 @@ public sealed class PayrollService(AppDbContext db, DeductionService deductions,
             .Where(a => a.IsActive && employeeIds.Contains(a.EmployeeId) && a.FromDate <= cycle.LastDay
                         && (a.ToDate == null || a.ToDate >= cycle.FirstDay))
             .OrderBy(a => a.FromDate).ToListAsync(ct);
+        var extras = await db.ExtraPayments.AsNoTracking()
+            .Where(p => p.IsActive && p.Year == cycle.Year && p.Month == cycle.Month)
+            .OrderBy(p => p.CreatedAt).ToListAsync(ct);
 
         var existing = await db.PayrollLines.Include(l => l.Items)
             .Where(l => l.PayrollCycleId == cycle.Id).ToListAsync(ct);
@@ -122,8 +125,13 @@ public sealed class PayrollService(AppDbContext db, DeductionService deductions,
                 if (amount > 0) line.AddItem(allowance.Name, amount, false, $"monthly:{allowance.Id}");
             }
 
-            var overtime = PayrollMath.OvertimeAmount(basic, policy, line.OvertimeMinutes);
-            if (overtime > 0) line.AddItem("العمل الإضافي", overtime, false, "overtime");
+            // Recorded overtime stays on the payslip as minutes only; it is paid when HR decides to
+            // pay it, as an extra payment whose amount was fixed when it was entered.
+            foreach (var extra in extras.Where(p => p.EmployeeId == profile.UserId))
+            {
+                var label = extra.Kind == ExtraPaymentKind.Overtime ? "عمل إضافي" : "مكافأة";
+                line.AddItem($"{label}: {extra.Reason}", extra.Amount, false, $"extra:{extra.Id}");
+            }
 
             if (unpaidDays > 0)
                 line.AddItem("إجازة بدون راتب", PayrollMath.UnpaidLeaveAmount(basic, policy, unpaidDays), true, "unpaid");

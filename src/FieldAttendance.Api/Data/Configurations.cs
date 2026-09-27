@@ -275,6 +275,17 @@ internal sealed class SalaryAllowanceConfig : IEntityTypeConfiguration<SalaryAll
     }
 }
 
+internal sealed class ExtraPaymentConfig : IEntityTypeConfiguration<ExtraPayment>
+{
+    public void Configure(EntityTypeBuilder<ExtraPayment> b)
+    {
+        b.Property(x => x.Amount).HasPrecision(12, 2);
+        b.Property(x => x.Reason).HasMaxLength(300);
+        b.Ignore(x => x.FirstDay);
+        b.HasIndex(x => new { x.Year, x.Month, x.EmployeeId });
+    }
+}
+
 internal sealed class SystemSettingConfig : IEntityTypeConfiguration<SystemSetting>
 {
     public void Configure(EntityTypeBuilder<SystemSetting> b)

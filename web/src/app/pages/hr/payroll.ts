@@ -10,7 +10,8 @@ import { Ui } from '../../core/ui';
 
 interface Cycle { id: string; year: number; month: number; status: string; monthDays: number; maxDeductionPercent: number; calculatedAt: string | null; approvedAt: string | null; closedAt: string | null; lines: number; totalNet: number; }
 interface Item { label: string; amount: number; isDeduction: boolean; }
-interface Payslip { id: string; employeeName: string; employeeNumber: string | null; departmentName: string | null; basicSalary: number; scheduledDays: number; presentDays: number; absentDays: number; leaveDays: number; unpaidLeaveDays: number; lateMinutes: number; overtimeMinutes: number; earnings: number; deductions: number; cappedDeductions: number; netPay: number; items: Item[]; }
+interface Payslip { id: string; employeeId: string; employeeName: string; employeeNumber: string | null; departmentName: string | null; basicSalary: number; scheduledDays: number; presentDays: number; absentDays: number; leaveDays: number; unpaidLeaveDays: number; lateMinutes: number; overtimeMinutes: number; earnings: number; deductions: number; cappedDeductions: number; netPay: number; items: Item[]; }
+interface Extra { id: string; employeeId: string; employeeName: string; employeeNumber: string | null; kind: 'Bonus' | 'Overtime'; amount: number; overtimeMinutes: number | null; reason: string; }
 interface Blocker { code: string; count: number; }
 
 /** A payroll month: open, calculate, settle what is pending, approve, close, export. */
@@ -69,7 +70,7 @@ interface Blocker { code: string; count: number; }
       <div class="table-wrap"><table>
         <thead><tr><th>{{ 'emp.number' | t }}</th><th>{{ 'att.employee' | t }}</th><th>{{ 'hr.org.department' | t }}</th>
           <th>{{ 'hr.emp.salary' | t }}</th><th>{{ 'hr.pay.days' | t }}</th><th>{{ 'dash.absent' | t }}</th>
-          <th>{{ 'att.late' | t }}</th><th>{{ 'hr.pay.earnings' | t }}</th><th>{{ 'hr.pay.deductions' | t }}</th>
+          <th>{{ 'att.late' | t }}</th><th>{{ 'xp.recordedOt' | t }}</th><th>{{ 'hr.pay.earnings' | t }}</th><th>{{ 'hr.pay.deductions' | t }}</th>
           <th>{{ 'hr.pay.net' | t }}</th><th></th></tr></thead>
         <tbody>
           @for (p of payslips(); track p.id) {
@@ -78,19 +79,75 @@ interface Blocker { code: string; count: number; }
               <td class="tabular">{{ p.presentDays }}/{{ p.scheduledDays }}</td>
               <td class="tabular" [class.text-bad]="p.absentDays > 0">{{ p.absentDays }}</td>
               <td class="tabular">{{ hmin(p.lateMinutes) }}</td>
+              <td class="tabular">
+                @if (p.overtimeMinutes > 0) {
+                  {{ hmin(p.overtimeMinutes) }}
+                  @if (otPaid(p.employeeId)) { <span class="badge green ms-1">{{ 'xp.paid' | t }}</span> }
+                  @else if (editable(c)) { <button class="btn sm ms-1" (click)="startExtra(p, 'Overtime')">{{ 'xp.pay' | t }}</button> }
+                } @else { — }
+              </td>
               <td class="tabular">{{ p.earnings | number:'1.2-2' }}</td>
               <td class="tabular" [class.text-bad]="p.cappedDeductions > 0">{{ p.cappedDeductions | number:'1.2-2' }}</td>
               <td class="tabular font-semibold">{{ p.netPay | number:'1.2-2' }}</td>
               <td><button class="btn sm" (click)="slip.set(p)">{{ 'hr.pay.slip' | t }}</button></td></tr>
-          } @empty { <tr><td colspan="11" class="muted">{{ 'hr.pay.notCalculated' | t }}</td></tr> }
+          } @empty { <tr><td colspan="12" class="muted">{{ 'hr.pay.notCalculated' | t }}</td></tr> }
         </tbody>
         @if (payslips().length) {
-          <tfoot><tr><td colspan="7">{{ 'common.total' | t }}</td>
+          <tfoot><tr><td colspan="8">{{ 'common.total' | t }}</td>
             <td class="tabular">{{ total('earnings') | number:'1.2-2' }}</td>
             <td class="tabular">{{ total('cappedDeductions') | number:'1.2-2' }}</td>
             <td class="tabular">{{ total('netPay') | number:'1.2-2' }}</td><td></td></tr></tfoot>
         }
       </table></div>
+
+      <section class="card-pad mt-6">
+        <div class="mb-3 flex flex-wrap items-center gap-2">
+          <h2 class="flex-1">{{ 'xp.title' | t }}</h2>
+          @if (editable(c)) { <button class="btn primary" [disabled]="!payslips().length" (click)="startExtra(null, 'Bonus')">+ {{ 'xp.add' | t }}</button> }
+        </div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>{{ 'att.employee' | t }}</th><th>{{ 'xp.kind' | t }}</th><th>{{ 'xp.hours' | t }}</th>
+            <th>{{ 'xp.amount' | t }}</th><th>{{ 'common.reason' | t }}</th><th></th></tr></thead>
+          <tbody>@for (x of extras(); track x.id) {
+            <tr><td>{{ x.employeeName }}</td><td>{{ ('xp.kind.' + x.kind) | t }}</td>
+              <td class="tabular">{{ x.overtimeMinutes ? hmin(x.overtimeMinutes) : '—' }}</td>
+              <td class="tabular">{{ x.amount | number:'1.2-2' }}</td><td>{{ x.reason }}</td>
+              <td>@if (editable(c)) { <button class="btn sm danger" [disabled]="busy()" (click)="removeExtra(x)">{{ 'common.delete' | t }}</button> }</td></tr>
+          } @empty { <tr><td colspan="6" class="muted">{{ 'common.empty' | t }}</td></tr> }</tbody>
+        </table></div>
+        <p class="mt-3 text-xs text-muted">{{ (payslips().length ? 'xp.hint' : 'xp.calculateFirst') | t }}</p>
+      </section>
+    }
+
+    @if (extra(); as f) {
+      <div class="modal-back" appBackdrop (dismiss)="extra.set(null)"><div class="modal">
+        <div class="modal-head"><h2>{{ 'xp.add' | t }}</h2></div>
+        <div class="field"><label for="xp-emp">{{ 'att.employee' | t }}</label>
+          <select id="xp-emp" [(ngModel)]="f.employeeId">
+            @for (p of payslips(); track p.id) { <option [value]="p.employeeId">{{ p.employeeNumber }} — {{ p.employeeName }}</option> }
+          </select></div>
+        <div class="field"><label for="xp-kind">{{ 'xp.kind' | t }}</label>
+          <select id="xp-kind" [(ngModel)]="f.kind">
+            <option value="Bonus">{{ 'xp.kind.Bonus' | t }}</option><option value="Overtime">{{ 'xp.kind.Overtime' | t }}</option>
+          </select></div>
+        @if (f.kind === 'Overtime') {
+          <div class="field"><label for="xp-by">{{ 'xp.by' | t }}</label>
+            <select id="xp-by" [(ngModel)]="f.by"><option value="hours">{{ 'xp.byHours' | t }}</option><option value="amount">{{ 'xp.byAmount' | t }}</option></select></div>
+        }
+        @if (f.kind === 'Overtime' && f.by === 'hours') {
+          <div class="field"><label for="xp-hours">{{ 'xp.hours' | t }}</label>
+            <input id="xp-hours" type="number" min="0" step="0.5" [(ngModel)]="f.hours" aria-describedby="xp-rate">
+            <p id="xp-rate" class="mt-1 text-xs text-muted">{{ 'xp.rateHint' | t }}</p></div>
+        } @else {
+          <div class="field"><label for="xp-amount">{{ 'xp.amount' | t }}</label>
+            <input id="xp-amount" type="number" min="0" step="50" [(ngModel)]="f.amount"></div>
+        }
+        <div class="field"><label for="xp-reason">{{ 'common.reason' | t }} *</label><input id="xp-reason" [(ngModel)]="f.reason"></div>
+        <div class="modal-foot">
+          <button class="btn" (click)="extra.set(null)">{{ 'common.cancel' | t }}</button>
+          <button class="btn primary" [disabled]="busy() || !extraValid(f)" (click)="saveExtra(f)">{{ 'common.save' | t }}</button>
+        </div>
+      </div></div>
     }
 
     @if (slip(); as p) {
@@ -128,6 +185,8 @@ export class HrPayrollPage implements OnInit {
   readonly selected = signal<Cycle | null>(null);
   readonly slip = signal<Payslip | null>(null);
   readonly busy = signal(false);
+  readonly extras = signal<Extra[]>([]);
+  readonly extra = signal<any>(null);
   year = Number(uaeToday().substring(0, 4));
   month = Number(uaeToday().substring(5, 7));
 
@@ -148,12 +207,14 @@ export class HrPayrollPage implements OnInit {
   async select(c: Cycle): Promise<void> {
     this.selected.set(c);
     try {
-      const [payslips, blockers] = await Promise.all([
+      const [payslips, blockers, extras] = await Promise.all([
         this.api.get<Payslip[]>(`hr/payroll/cycles/${c.id}/payslips`),
         this.api.get<Blocker[]>(`hr/payroll/cycles/${c.id}/blockers`),
+        this.api.get<Extra[]>('hr/payroll/extra-payments', { year: c.year, month: c.month }),
       ]);
       this.payslips.set(payslips);
       this.blockers.set(blockers);
+      this.extras.set(extras);
     } catch (e) { this.ui.error(this.api.error(e).message); }
   }
 
@@ -176,6 +237,52 @@ export class HrPayrollPage implements OnInit {
     try {
       await this.api.post(`hr/payroll/cycles/${c.id}/${action}`);
       this.ui.ok(this.i18n.t('common.saved'));
+      await this.load();
+    } catch (e) { this.ui.error(this.api.error(e).message); } finally { this.busy.set(false); }
+  }
+
+  otPaid(employeeId: string): boolean { return this.extras().some(x => x.employeeId === employeeId && x.kind === 'Overtime'); }
+
+  /** Payments can change only while the month is still open; approval freezes them with the payslips. */
+  editable(c: Cycle): boolean { return this.auth.canManageHr() && (c.status === 'Draft' || c.status === 'Review'); }
+
+  startExtra(p: Payslip | null, kind: 'Bonus' | 'Overtime'): void {
+    this.extra.set({
+      employeeId: p?.employeeId ?? this.payslips()[0]?.employeeId ?? '', kind, by: 'hours',
+      hours: p ? Math.round(p.overtimeMinutes / 30) / 2 : 0, amount: 0, reason: '',
+    });
+  }
+
+  extraValid(f: any): boolean {
+    const byHours = f.kind === 'Overtime' && f.by === 'hours';
+    return !!f.employeeId && !!f.reason?.trim() && (byHours ? +f.hours > 0 : +f.amount > 0);
+  }
+
+  async saveExtra(f: any): Promise<void> {
+    const c = this.selected();
+    if (!c) return;
+    const byHours = f.kind === 'Overtime' && f.by === 'hours';
+    this.busy.set(true);
+    try {
+      await this.api.post('hr/payroll/extra-payments', {
+        employeeId: f.employeeId, year: c.year, month: c.month, kind: f.kind, reason: f.reason.trim(),
+        hours: byHours ? +f.hours : null, amount: byHours ? null : +f.amount,
+      });
+      this.extra.set(null);
+      // Recalculate so the payslips show the payment straight away.
+      await this.api.post(`hr/payroll/cycles/${c.id}/calculate`);
+      this.ui.ok(this.i18n.t('common.saved'));
+      await this.load();
+    } catch (e) { this.ui.error(this.api.error(e).message); } finally { this.busy.set(false); }
+  }
+
+  async removeExtra(x: Extra): Promise<void> {
+    const c = this.selected();
+    if (!c || !(await this.ui.confirm(this.i18n.t('common.delete') + ': ' + x.employeeName, this.i18n.t('common.deleteConfirm'), true))) return;
+    this.busy.set(true);
+    try {
+      await this.api.delete(`hr/payroll/extra-payments/${x.id}`);
+      await this.api.post(`hr/payroll/cycles/${c.id}/calculate`);
       await this.load();
     } catch (e) { this.ui.error(this.api.error(e).message); } finally { this.busy.set(false); }
   }

@@ -152,7 +152,7 @@ public sealed class PayrollController(AppDbContext db, PayrollService payroll, I
                 profile is null ? null : departments.GetValueOrDefault(profile.DepartmentId),
                 l.BasicSalary, l.ScheduledDays, l.PresentDays, l.AbsentDays, l.LeaveDays, l.UnpaidLeaveDays,
                 l.LateMinutes, l.OvertimeMinutes, l.Earnings, l.Deductions, l.CappedDeductions, l.NetPay,
-                l.Items.OrderBy(i => i.IsDeduction).Select(i => new PayslipItemDto(i.Label, i.Amount, i.IsDeduction)).ToList());
+                l.Items.OrderBy(i => i.IsDeduction).ThenBy(i => i.SourceKey == "salary" ? 0 : 1).ThenBy(i => i.Label, StringComparer.Ordinal).Select(i => new PayslipItemDto(i.Label, i.Amount, i.IsDeduction)).ToList());
         }).OrderBy(s => s.EmployeeName, StringComparer.Ordinal).ToList();
     }
 

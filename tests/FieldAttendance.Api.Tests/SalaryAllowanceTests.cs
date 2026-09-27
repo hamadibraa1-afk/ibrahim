@@ -63,7 +63,7 @@ public sealed class SalaryAllowanceTests(ApiFactory api)
         }
     }
 
-    private static async Task ApproveMonthAsync(HttpClient hr, int year, int month)
+    internal static async Task ApproveMonthAsync(HttpClient hr, int year, int month)
     {
         var opened = await hr.PostAsJsonAsync("/api/hr/payroll/cycles", new { year, month });
         Assert.True(opened.IsSuccessStatusCode, await opened.Content.ReadAsStringAsync());

@@ -37,6 +37,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options, IClock 
     public DbSet<EmployeeProfile> EmployeeProfiles => Set<EmployeeProfile>();
     public DbSet<SalaryChange> SalaryChanges => Set<SalaryChange>();
     public DbSet<SalaryAllowance> SalaryAllowances => Set<SalaryAllowance>();
+    public DbSet<ExtraPayment> ExtraPayments => Set<ExtraPayment>();
     public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
     public DbSet<DeductionType> DeductionTypes => Set<DeductionType>();
     public DbSet<WarningLevel> WarningLevels => Set<WarningLevel>();

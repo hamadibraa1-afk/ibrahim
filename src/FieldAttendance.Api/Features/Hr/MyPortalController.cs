@@ -133,7 +133,7 @@ public sealed class MyPortalController(AppDbContext db, ICurrentUser me, IClock 
         {
             var cycle = cycles.Single(c => c.Id == l.PayrollCycleId);
             return new MyPayslipDto(cycle.Year, cycle.Month, l.Earnings, l.CappedDeductions, l.NetPay, cycle.Status.ToString(),
-                l.Items.OrderBy(i => i.IsDeduction).Select(i => new PayslipLine(i.Label, i.Amount, i.IsDeduction)).ToList());
+                l.Items.OrderBy(i => i.IsDeduction).ThenBy(i => i.SourceKey == "salary" ? 0 : 1).ThenBy(i => i.Label, StringComparer.Ordinal).Select(i => new PayslipLine(i.Label, i.Amount, i.IsDeduction)).ToList());
         }).OrderByDescending(p => p.Year).ThenByDescending(p => p.Month).ToList();
     }
 }
