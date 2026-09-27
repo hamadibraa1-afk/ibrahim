@@ -1,3 +1,4 @@
+import { ModuleSwitch } from './module-switch';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { Auth } from '../core/auth';
@@ -10,7 +11,7 @@ import { Icon } from './nav-icon';
 @Component({
   selector: 'app-supervisor-shell',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, TPipe, Icon, Brand, NotificationBell],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, TPipe, Icon, Brand, NotificationBell, ModuleSwitch],
   template: `
     <div class="min-h-screen md:grid md:grid-cols-[15rem_1fr]">
       <!-- Sidebar (horizontal scroller on small screens) -->
@@ -41,6 +42,7 @@ import { Icon } from './nav-icon';
             <div class="truncate text-sm font-semibold">{{ auth.session()?.fullName }}</div>
             <div class="text-xs text-muted">{{ 'role.' + auth.role() | t }}</div>
           </div>
+          <app-module-switch />
           <app-bell />
           <button class="btn sm ghost" (click)="i18n.toggle()">{{ i18n.lang() === 'ar' ? 'English' : 'عربي' }}</button>
           <button class="btn sm ghost text-bad" (click)="auth.logout()">

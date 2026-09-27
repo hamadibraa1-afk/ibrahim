@@ -74,6 +74,8 @@ const guard = (allowed: Role[]): CanActivateFn => () => {
 
 export const officeGuard = guard(FIELD_OFFICE);
 export const hrGuard = guard(HR_OFFICE);
+/** Payroll: the HR manager and the administrator, the only roles the server gives salaries to. */
+export const hrManageGuard = guard(['SystemAdmin', 'HrManager']);
 export const signedInGuard: CanActivateFn = () => {
   const auth = inject(Auth);
   const router = inject(Router);

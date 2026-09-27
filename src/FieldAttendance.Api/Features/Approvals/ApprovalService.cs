@@ -62,14 +62,18 @@ public sealed class ApprovalService(AppDbContext db, NotificationService notific
     /// <summary>
     /// Records one decision. Returns Approved once the last level signs, Rejected on a refusal,
     /// and Pending while the request still has levels to travel.
+    ///
+    /// The cycle is fixed: only the person a step is waiting on signs it, whatever their role. The
+    /// administrator could once override any step, and so approve a field request at the supervisor's
+    /// step and then at the department manager's, without it ever reaching the office side.
     /// </summary>
     public async Task<RequestStatus> DecideAsync(RequestKind kind, Guid requestId, Guid userId, bool approve,
-        string? note, bool isHrOverride, CancellationToken ct)
+        string? note, CancellationToken ct)
     {
         var step = await CurrentStepAsync(kind, requestId, ct)
             ?? throw new DomainException("approval.no_step", "There is no step awaiting a decision.");
 
-        if (step.ApproverId is { } expected && expected != userId && !isHrOverride)
+        if (step.ApproverId != userId)
             throw new DomainException("approval.not_yours", "This step is with another approver.");
 
         if (!approve)

@@ -57,8 +57,7 @@ public sealed class LeaveService(AppDbContext db, ScheduleSnapshotLoader loader,
     /// One signature on the leave. The leave only becomes approved when the last level signs,
     /// and only then is the balance deducted and the schedule updated.
     /// </summary>
-    public async Task DecideAsync(Guid id, Guid supervisorId, bool approve, string? rejectReason, CancellationToken ct,
-        bool isHrOverride = false)
+    public async Task DecideAsync(Guid id, Guid supervisorId, bool approve, string? rejectReason, CancellationToken ct)
     {
         var leave = await Find(id, ct);
         await payrollLock.EnsureRangeOpenAsync(leave.FromDate, leave.ToDate, ct);
@@ -68,7 +67,7 @@ public sealed class LeaveService(AppDbContext db, ScheduleSnapshotLoader loader,
         if (!await approvals.HasChainAsync(RequestKind.Leave, id, ct))
             await approvals.StartAsync(RequestKind.Leave, id, leave.EmployeeId, ct);
         var outcome = await approvals.DecideAsync(RequestKind.Leave, id, supervisorId, approve,
-            approve ? null : rejectReason, isHrOverride, ct);
+            approve ? null : rejectReason, ct);
         if (outcome == RequestStatus.Pending) return; // still travelling up the chain
 
         if (approve)

@@ -16,30 +16,22 @@ public sealed class RequestInbox(AppDbContext db, ApprovalService approvals, ICu
 {
     private static bool Is(ClaimsPrincipal user, UserRole role) => user.IsInRole(role.ToString());
 
-    /// <summary>
-    /// Sees every pending leave and permission, not only their own queue: the administrator alone,
-    /// because only the administrator may sign a step that is not theirs. Everyone else's inbox is
-    /// exactly what they can act on; the HR manager used to see every pending leave, and approving
-    /// one at someone else's step could only fail.
-    /// </summary>
-    public static bool SeesAllPending(ClaimsPrincipal user) => Is(user, UserRole.SystemAdmin);
-
-    public static bool CanOverride(ClaimsPrincipal user) => Is(user, UserRole.SystemAdmin);
-
     /// <summary>Roles that review decided requests for their area; anyone else sees only what they decided.</summary>
     public static bool ReviewsHistory(ClaimsPrincipal user) =>
         Is(user, UserRole.SystemAdmin) || Is(user, UserRole.Supervisor) || Is(user, UserRole.DepartmentManager)
         || Is(user, UserRole.HrManager) || Is(user, UserRole.HrOfficer);
 
+    /// <summary>
+    /// Exceptions have no chain, so they go to whoever runs that kind of place. The administrator is
+    /// not in it: like every other request, a decision belongs to the line, not to the system account.
+    /// </summary>
     public static IReadOnlyList<LocationKind> ExceptionSites(ClaimsPrincipal user) =>
-        Is(user, UserRole.SystemAdmin) ? [LocationKind.Field, LocationKind.Office]
-        : Is(user, UserRole.Supervisor) || Is(user, UserRole.DepartmentManager) ? [LocationKind.Field]
+        Is(user, UserRole.Supervisor) || Is(user, UserRole.DepartmentManager) ? [LocationKind.Field]
         : Is(user, UserRole.HrManager) || Is(user, UserRole.HrOfficer) ? [LocationKind.Office]
         : [];
 
     public static bool CanDecideException(ClaimsPrincipal user, LocationKind site) =>
-        Is(user, UserRole.SystemAdmin)
-        || (site == LocationKind.Field && Is(user, UserRole.Supervisor))
+        (site == LocationKind.Field && Is(user, UserRole.Supervisor))
         || (site == LocationKind.Office && Is(user, UserRole.HrManager));
 
     /// <summary>Employees of one workforce, for narrowing a list; null means no narrowing.</summary>
@@ -48,8 +40,9 @@ public sealed class RequestInbox(AppDbContext db, ApprovalService approvals, ICu
             ? db.EmployeeProfiles.Where(p => p.Workforce == side).Select(p => p.UserId)
             : null;
 
-    public async Task<HashSet<Guid>> WaitingAsync(RequestKind kind, ClaimsPrincipal user, CancellationToken ct) =>
-        (await approvals.WaitingOnAsync(kind, me.RequiredId, SeesAllPending(user), ct)).ToHashSet();
+    /// <summary>The inbox is exactly what the caller can act on, for every role.</summary>
+    public async Task<HashSet<Guid>> WaitingAsync(RequestKind kind, CancellationToken ct) =>
+        (await approvals.WaitingOnAsync(kind, me.RequiredId, seeAll: false, ct)).ToHashSet();
 
     /// <summary>
     /// The badge counts only what the caller must act on: their own step in a chain, and the
@@ -57,8 +50,8 @@ public sealed class RequestInbox(AppDbContext db, ApprovalService approvals, ICu
     /// </summary>
     public async Task<PendingCountsDto> CountsAsync(ClaimsPrincipal user, CancellationToken ct)
     {
-        var permissions = (await approvals.WaitingOnAsync(RequestKind.Permission, me.RequiredId, CanOverride(user), ct)).Count;
-        var leaves = (await approvals.WaitingOnAsync(RequestKind.Leave, me.RequiredId, CanOverride(user), ct)).Count;
+        var permissions = (await WaitingAsync(RequestKind.Permission, ct)).Count;
+        var leaves = (await WaitingAsync(RequestKind.Leave, ct)).Count;
 
         var decidable = ExceptionSites(user).Where(k => CanDecideException(user, k)).ToList();
         var exceptions = 0;

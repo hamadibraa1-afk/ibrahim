@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { hrGuard, officeGuard, signedInGuard } from './core/auth';
+import { hrGuard, hrManageGuard, officeGuard, signedInGuard } from './core/auth';
 
 export const routes: Routes = [
   { path: 'login', loadComponent: () => import('./pages/login').then(m => m.LoginPage) },
@@ -30,7 +30,7 @@ export const routes: Routes = [
       { path: 'employees', loadComponent: () => import('./pages/hr/employees').then(m => m.HrEmployeesPage) },
       { path: 'attendance', loadComponent: () => import('./pages/supervisor/attendance').then(m => m.AttendancePage) },
       { path: 'discipline', loadComponent: () => import('./pages/hr/discipline').then(m => m.HrDisciplinePage) },
-      { path: 'payroll', loadComponent: () => import('./pages/hr/payroll').then(m => m.HrPayrollPage) },
+      { path: 'payroll', canActivate: [hrManageGuard], loadComponent: () => import('./pages/hr/payroll').then(m => m.HrPayrollPage) },
       { path: 'returns', loadComponent: () => import('./pages/hr/returns').then(m => m.HrReturnsPage) },
       { path: 'requests', loadComponent: () => import('./pages/supervisor/requests').then(m => m.RequestsPage) },
       { path: 'reports', loadComponent: () => import('./pages/hr/reports').then(m => m.HrReportsPage) },

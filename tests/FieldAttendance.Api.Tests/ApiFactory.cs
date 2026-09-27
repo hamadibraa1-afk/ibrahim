@@ -50,12 +50,22 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         });
     }
 
+    /// <summary>
+    /// An account with no HR record. New accounts are always created with one; this stands for data
+    /// from before that rule, which the system must still handle without an error.
+    /// </summary>
+    public const string LegacyAccount = "9999";
+
     public async Task InitializeAsync()
     {
         // Creating the server runs Program: reset, schema, demo seed. Today's records are normally
         // created by the worker removed above, so materialise them once here.
         using var scope = Services.CreateScope();
         await scope.ServiceProvider.GetRequiredService<AttendanceJobs>().MaterializeAsync(CancellationToken.None);
+
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        db.Users.Add(new Domain.Entities.User("حساب قديم بلا سجل", null, "0500009999", Domain.Enums.UserRole.Employee, LegacyAccount, "ar"));
+        await db.SaveChangesAsync();
     }
 
     Task IAsyncLifetime.DisposeAsync() => Task.CompletedTask;

@@ -54,7 +54,7 @@ public sealed class FlexAndComplianceTests(ApiFactory api)
     [Fact]
     public async Task An_account_with_no_attendance_has_no_figure_rather_than_an_error()
     {
-        var client = await api.ClientForAsync("1001");
+        var client = await api.ClientForAsync(ApiFactory.LegacyAccount);
 
         var response = await client.GetAsync("/api/me/compliance");
 

@@ -1,3 +1,4 @@
+import { ModuleSwitch } from './module-switch';
 import { Component, OnInit, computed, inject } from '@angular/core';
 import { PendingRequests } from '../core/pending';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
@@ -11,7 +12,7 @@ import { Icon } from './nav-icon';
 @Component({
   selector: 'app-my-shell',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, TPipe, Brand, Icon, NotificationBell],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, TPipe, Brand, Icon, NotificationBell, ModuleSwitch],
   template: `
     <div class="min-h-screen">
       <header class="sticky top-0 z-20 border-b border-line bg-surface/90 backdrop-blur-md">
@@ -21,6 +22,7 @@ import { Icon } from './nav-icon';
             <div class="truncate text-sm font-semibold">{{ auth.session()?.fullName }}</div>
             <div class="text-xs text-muted">{{ 'my.portal' | t }}</div>
           </div>
+          <app-module-switch />
           <app-bell />
           <button class="btn sm ghost" (click)="i18n.toggle()">{{ i18n.lang() === 'ar' ? 'English' : 'عربي' }}</button>
           <button class="btn sm ghost text-bad" (click)="auth.logout()"><app-icon name="logout" /></button>

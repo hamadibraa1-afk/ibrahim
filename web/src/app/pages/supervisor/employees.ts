@@ -1,3 +1,4 @@
+import { RouterLink } from '@angular/router';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Api } from '../../core/api';
@@ -16,7 +17,7 @@ const ROLES = ['Collector', 'Supervisor', 'SystemAdmin'];
 @Component({
   selector: 'app-employees',
   standalone: true,
-  imports: [FormsModule, TPipe, Backdrop],
+  imports: [FormsModule, TPipe, Backdrop, RouterLink],
   styles: [`
     .filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
     .role-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
@@ -25,8 +26,9 @@ const ROLES = ['Collector', 'Supervisor', 'SystemAdmin'];
   `],
   template: `
     <div class="toolbar"><h1 style="margin:0">{{ 'emp.title' | t }}</h1><span class="spacer"></span>
-      @if (auth.canAdmin()) { <button class="btn primary" (click)="open(null)">+ {{ 'emp.new' | t }}</button> }
+      @if (auth.canHr()) { <a class="btn primary" routerLink="/hr/employees">+ {{ 'emp.new' | t }}</a> }
       @else { <span class="badge">{{ 'common.viewOnly' | t }}</span> }</div>
+    <p class="mb-3 text-sm text-muted">{{ 'emp.addFromHr' | t }}</p>
 
     <div class="role-tabs">
       <button [class.active]="role() === ''" (click)="role.set('')">{{ 'common.all' | t }}</button>
@@ -89,9 +91,8 @@ const ROLES = ['Collector', 'Supervisor', 'SystemAdmin'];
           <div class="field"><label>{{ 'common.name' | t }} *</label><input [(ngModel)]="f.fullName"></div>
           <div class="field"><label>{{ 'emp.number' | t }} *</label><input dir="ltr" [(ngModel)]="f.employeeNumber"></div>
         </div>
-        @if (!f.id) { <div class="alert blue">{{ 'emp.addFromHr' | t }}</div> }
         <div class="field"><label>{{ 'role.title' | t }} *</label>
-          <select [(ngModel)]="f.role">@for (r of (f.id ? roles : newRoles); track r) { <option [value]="r">{{ 'role.' + r | t }}</option> }</select>
+          <select [(ngModel)]="f.role">@for (r of roles; track r) { <option [value]="r">{{ 'role.' + r | t }}</option> }</select>
           <div class="muted small" style="margin-top:6px">{{ 'emp.roleHint' | t }}</div></div>
         <div class="row">
           <div class="field"><label>{{ 'emp.phone' | t }} *</label><input dir="ltr" placeholder="05XXXXXXXX" [(ngModel)]="f.phone"></div>
@@ -118,8 +119,6 @@ export class EmployeesPage implements OnInit {
   private readonly ui = inject(Ui);
   private readonly i18n = inject(I18n);
   readonly roles = ROLES;
-  /** Everyone else is an employee and is added from HR with their HR record; only system accounts start here. */
-  readonly newRoles = ['SystemAdmin'];
   readonly items = signal<Person[]>([]);
   readonly role = signal('');
   readonly editing = signal<any>(null);

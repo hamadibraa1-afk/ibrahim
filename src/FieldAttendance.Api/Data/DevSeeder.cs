@@ -304,6 +304,25 @@ public static class DevSeeder
             targets.Add(new HistoryTarget(user.Id, branches[0], officeShift, standard));
         }
 
+        // Every account is an employee whatever its permissions: the system administrator works in IT,
+        // the read-only reviewer in Support Services. Each checks in and has a profile like anyone else.
+        foreach (var (user, department, title, salary) in new[]
+                 {
+                     (accounts.Admin, 0, "مطور أنظمة", 16000m),
+                     (accounts.Viewer, 5, "رئيس قسم", 15000m),
+                 })
+        {
+            var profile = new EmployeeProfile(user.Id, branches[0].Id, departments[department].Id, hire);
+            profile.SetPlacement(branches[0].Id, departments[department].Id, null, departmentManagers[department]);
+            profile.SetJob(titles.First(t => t.NameAr == title).Id, grades[0].Id, contracts[0].Id, hire);
+            profile.SetSchedule(standard.Id);
+            profile.SetPersonal("الإمارات", null, null, null, null);
+            db.Add(profile);
+            db.Add(profile.ChangeSalary(salary, hire, "الراتب عند التعيين", accounts.Admin.Id));
+            db.Add(new Assignment(user.Id, branches[0].Id, officeShift.Id, weekStart.AddDays(-90), null, standard.WorkingDays, null));
+            targets.Add(new HistoryTarget(user.Id, branches[0], officeShift, standard));
+        }
+
         var collectorTitle = titles.First(t => t.NameAr == "محصّل ميداني").Id;
         for (var i = 0; i < accounts.Collectors.Length; i++)
         {

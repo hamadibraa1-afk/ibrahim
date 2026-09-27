@@ -19,7 +19,7 @@ public sealed class SelfServiceTests(ApiFactory api)
 {
     private const string HrManager = "1005";
     private const string Collector = "2001";
-    private const string AdminWithoutProfile = "1001";
+    private const string AdminWithoutProfile = ApiFactory.LegacyAccount;
 
     private static readonly DateOnly Today = DateOnly.FromDateTime(ApiFactory.Now.ToOffset(TimeSpan.FromHours(4)).DateTime);
 

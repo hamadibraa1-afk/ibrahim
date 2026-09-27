@@ -95,19 +95,32 @@ public sealed class WorkforceTests(ApiFactory api)
         Assert.Equal(before, await ActiveAssignmentsAsync(collector));
     }
 
-    [Fact]
-    public async Task The_field_module_cannot_create_an_employee_without_an_hr_record()
+    [Theory]
+    [InlineData("Collector")]
+    [InlineData("SystemAdmin")]
+    public async Task The_field_module_creates_no_accounts_so_none_lacks_an_hr_record(string role)
     {
         var admin = await api.ClientForAsync("1001");
 
         var response = await admin.PostAsJsonAsync("/api/employees", new
         {
             fullName = "بلا سجل", employeeNumber = "9103", email = (string?)null, phone = "0501112233",
-            role = "Collector", preferredLanguage = "ar", password = "Test@1234",
+            role, preferredLanguage = "ar", password = "Test@1234",
         });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal("user.create_in_hr", (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("code").GetString());
+    }
+
+    /// <summary>Managers, supervisors and the administrator are employees too: each has an HR record, a check-in and a profile.</summary>
+    [Fact]
+    public async Task Every_account_is_an_employee_with_an_hr_record()
+    {
+        var without = await api.QueryAsync(db => db.Users
+            .Where(u => u.IsActive && u.EmployeeNumber != ApiFactory.LegacyAccount && !db.EmployeeProfiles.Any(p => p.UserId == u.Id))
+            .Select(u => u.EmployeeNumber).ToListAsync());
+
+        Assert.Empty(without);
     }
 
     private Task<int> ActiveAssignmentsAsync(Guid employee) =>

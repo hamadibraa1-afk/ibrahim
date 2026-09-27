@@ -48,22 +48,14 @@ public sealed class EmployeesController(AppDbContext db, ICurrentUser me, IClock
         return list.Select(ToDto).ToList();
     }
 
+    /// <summary>
+    /// Every account is an employee, the administrator included, so accounts are created in the HR
+    /// module together with their HR record. This endpoint stays only to say where to go instead.
+    /// </summary>
     [HttpPost]
     [Authorize(Policy = Policies.Admin)]
-    public async Task<ActionResult<EmployeeDto>> Create(CreateEmployeeRequest r, CancellationToken ct)
-    {
-        PasswordHasher.EnsureStrong(r.Password);
-        var role = ParseRole(r.Role);
-        // Everyone who works here has an HR record, created with the account in the HR module.
-        // Only system accounts, which are nobody's employment, are created here.
-        if (role != UserRole.SystemAdmin)
-            throw new DomainException("user.create_in_hr", "Employees are added from Human Resources, so each one has an HR record.");
-        var user = new User(r.FullName, r.Email, r.Phone, role, r.EmployeeNumber, r.PreferredLanguage);
-        user.SetPasswordHash(PasswordHasher.Hash(r.Password));
-        db.Users.Add(user);
-        await db.SaveChangesAsync(ct);
-        return ToDto(user);
-    }
+    public ActionResult<EmployeeDto> Create(CreateEmployeeRequest r) =>
+        throw new DomainException("user.create_in_hr", "Accounts are added from Human Resources, so each one has an HR record.");
 
     [HttpPut("{id:guid}")]
     [Authorize(Policy = Policies.Admin)]

@@ -21,6 +21,7 @@ public sealed class UnifiedPortalTests(ApiFactory api)
     [InlineData("1002", "/api/my/attendance")]
     [InlineData("3010", "/api/my/profile")]
     [InlineData("1001", "/api/my/profile")]
+    [InlineData(ApiFactory.LegacyAccount, "/api/my/profile")]
     public async Task Every_employee_opens_their_own_portal(string employeeNumber, string path)
     {
         var client = await api.ClientForAsync(employeeNumber);

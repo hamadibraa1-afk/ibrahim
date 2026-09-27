@@ -46,7 +46,7 @@ public sealed class RequestsController(AppDbContext db, PermissionService permis
 
         if (parsed == RequestStatus.Pending)
         {
-            var waiting = await inbox.WaitingAsync(RequestKind.Permission, User, ct);
+            var waiting = await inbox.WaitingAsync(RequestKind.Permission, ct);
             list = list.Where(p => waiting.Contains(p.Id)).ToList();
         }
         else if (!RequestInbox.ReviewsHistory(User))
@@ -80,14 +80,14 @@ public sealed class RequestsController(AppDbContext db, PermissionService permis
     public async Task<IActionResult> ApprovePermission(Guid id, CancellationToken ct)
     {
         await EnsurePeriodOpenAsync(id, ct);
-        await permissions.DecideAsync(id, me.RequiredId, approve: true, null, ct, RequestInbox.CanOverride(User));
+        await permissions.DecideAsync(id, me.RequiredId, approve: true, null, ct);
         return NoContent();
     }
 
     [HttpPost("permissions/{id:guid}/reject")]
     public async Task<IActionResult> RejectPermission(Guid id, RejectRequest r, CancellationToken ct)
     {
-        await permissions.DecideAsync(id, me.RequiredId, approve: false, r.Reason, ct, RequestInbox.CanOverride(User));
+        await permissions.DecideAsync(id, me.RequiredId, approve: false, r.Reason, ct);
         return NoContent();
     }
 

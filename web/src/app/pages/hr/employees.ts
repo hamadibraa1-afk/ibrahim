@@ -235,7 +235,7 @@ export class HrEmployeesPage implements OnInit {
   readonly busy = signal(false);
   readonly error = signal<string | null>(null);
   readonly statuses = ['Active', 'Suspended', 'Ended'];
-  readonly officeRoles = ['Employee', 'Supervisor', 'DepartmentManager', 'HrOfficer', 'HrManager'];
+  readonly officeRoles = ['Employee', 'Supervisor', 'DepartmentManager', 'HrOfficer', 'HrManager', 'SystemAdmin'];
   readonly tabs = [
     { key: 'data', label: 'hr.emp.tabData' },
     { key: 'schedule', label: 'hr.emp.tabSchedule' },

@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Api } from '../../core/api';
+import { Auth } from '../../core/auth';
 import { addDays, uaeToday } from '../../core/format';
 import { I18n, TPipe } from '../../core/i18n';
 import { Ui } from '../../core/ui';
@@ -47,6 +48,7 @@ interface Cycle { id: string; year: number; month: number; status: string; }
         </div>
       </section>
 
+      @if (auth.canManageHr()) {
       <section class="card-pad lg:col-span-2">
         <h2 class="mb-3">{{ 'hr.rep.payroll' | t }}</h2>
         @if (cycles().length) {
@@ -63,10 +65,12 @@ interface Cycle { id: string; year: number; month: number; status: string; }
           </div>
         } @else { <p class="muted">{{ 'hr.pay.none' | t }}</p> }
       </section>
+      }
     </div>`,
 })
 export class HrReportsPage implements OnInit {
   readonly i18n = inject(I18n);
+  readonly auth = inject(Auth);
   private readonly api = inject(Api);
   private readonly ui = inject(Ui);
   readonly departments = signal<{ id: string; nameAr: string }[]>([]);
@@ -79,7 +83,8 @@ export class HrReportsPage implements OnInit {
   async ngOnInit(): Promise<void> {
     try {
       this.departments.set(await this.api.get('hr/org/departments'));
-      const cycles = await this.api.get<Cycle[]>('hr/payroll/cycles').catch(() => []);
+      // Payroll figures are for the HR manager and the administrator; nobody else asks for them.
+      const cycles = this.auth.canManageHr() ? await this.api.get<Cycle[]>('hr/payroll/cycles').catch(() => []) : [];
       this.cycles.set(cycles);
       this.cycleId = cycles[0]?.id ?? '';
     } catch (e) { this.ui.error(this.api.error(e).message); }

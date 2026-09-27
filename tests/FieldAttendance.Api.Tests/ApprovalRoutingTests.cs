@@ -48,6 +48,24 @@ public sealed class ApprovalRoutingTests(ApiFactory api)
         Assert.Equal(RequestStatus.Pending, await StatusAsync(id));
     }
 
+    /// <summary>
+    /// The cycle is fixed: the administrator signs only a step that is theirs. Before, the
+    /// administrator could sign the supervisor's step and then the department manager's, so a field
+    /// request could be approved without ever reaching the office side.
+    /// </summary>
+    [Fact]
+    public async Task The_system_administrator_cannot_sign_someone_elses_step()
+    {
+        var id = await SubmitLateAsync("2004");
+        var admin = await api.ClientForAsync("1001");
+
+        var response = await admin.PostAsJsonAsync($"/api/requests/permissions/{id}/approve", new { });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("approval.not_yours", await CodeAsync(response));
+        Assert.Contains(id, await PendingAsync(await api.ClientForAsync("1002")));
+    }
+
     [Fact]
     public async Task An_office_request_never_reaches_the_field_supervisor()
     {

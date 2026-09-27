@@ -58,11 +58,10 @@ public sealed class PermissionService(AppDbContext db, ScheduleSnapshotLoader lo
     }
 
     /// <summary>
-    /// One signature. Only the person the permission is currently waiting on may sign (or the system
-    /// administrator overriding), and it is approved only when the last level signs.
+    /// One signature. Only the person the permission is currently waiting on may sign, and it is
+    /// approved only when the last level signs.
     /// </summary>
-    public async Task DecideAsync(Guid id, Guid supervisorId, bool approve, string? rejectReason, CancellationToken ct,
-        bool isOverride = false)
+    public async Task DecideAsync(Guid id, Guid supervisorId, bool approve, string? rejectReason, CancellationToken ct)
     {
         var p = await db.PermissionRequests.SingleOrDefaultAsync(x => x.Id == id, ct)
             ?? throw new DomainException("request.not_found", "Request not found.");
@@ -70,7 +69,7 @@ public sealed class PermissionService(AppDbContext db, ScheduleSnapshotLoader lo
         if (!await approvals.HasChainAsync(RequestKind.Permission, id, ct))
             await approvals.StartAsync(RequestKind.Permission, id, p.EmployeeId, ct);
         var outcome = await approvals.DecideAsync(RequestKind.Permission, id, supervisorId, approve,
-            approve ? null : rejectReason, isOverride, ct);
+            approve ? null : rejectReason, ct);
         if (outcome == RequestStatus.Pending) return; // still travelling up the chain
 
         if (approve) p.Approve(supervisorId, clock.Now);

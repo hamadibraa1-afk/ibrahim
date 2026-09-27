@@ -1,3 +1,4 @@
+import { ModuleSwitch } from './module-switch';
 import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { Auth } from '../core/auth';
@@ -9,7 +10,7 @@ import { Icon } from './nav-icon';
 @Component({
   selector: 'app-hr-shell',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, TPipe, Brand, Icon, NotificationBell],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, TPipe, Brand, Icon, NotificationBell, ModuleSwitch],
   template: `
     <div class="min-h-screen md:grid md:grid-cols-[15rem_1fr]">
       <aside class="bg-surface border-b md:border-b-0 md:border-e border-line md:sticky md:top-0 md:h-screen
@@ -34,9 +35,7 @@ import { Icon } from './nav-icon';
             <div class="truncate text-sm font-semibold">{{ auth.session()?.fullName }}</div>
             <div class="text-xs text-muted">{{ 'role.' + auth.role() | t }} · {{ 'select.office' | t }}</div>
           </div>
-          @if (auth.canField()) {
-            <a routerLink="/select" class="btn sm ghost">{{ 'select.switch' | t }}</a>
-          }
+          <app-module-switch />
           <app-bell />
           <button class="btn sm ghost" (click)="i18n.toggle()">{{ i18n.lang() === 'ar' ? 'English' : 'عربي' }}</button>
           <button class="btn sm ghost text-bad" (click)="auth.logout()">
@@ -50,7 +49,7 @@ import { Icon } from './nav-icon';
 export class HrShell {
   readonly auth = inject(Auth);
   readonly i18n = inject(I18n);
-  readonly nav = [
+  readonly nav: { path: string; label: string; icon: string; exact?: boolean }[] = [
     { path: '/hr', label: 'hr.nav.dashboard', icon: 'dashboard', exact: true },
     { path: '/hr/employees', label: 'hr.nav.employees', icon: 'people' },
     { path: '/hr/attendance', label: 'hr.nav.attendance', icon: 'attendance' },
@@ -58,7 +57,8 @@ export class HrShell {
     { path: '/hr/returns', label: 'hr.ret.title', icon: 'today' },
     { path: '/hr/discipline', label: 'hr.nav.discipline', icon: 'requests' },
     { path: '/hr/reports', label: 'hr.nav.reports', icon: 'ratings' },
-    { path: '/hr/payroll', label: 'hr.nav.payroll', icon: 'allowances' },
+    // Salaries are for the HR manager and the administrator only (the server enforces it too).
+    ...(this.auth.canManageHr() ? [{ path: '/hr/payroll', label: 'hr.nav.payroll', icon: 'allowances' }] : []),
     { path: '/hr/org', label: 'hr.nav.org', icon: 'locations' },
     { path: '/hr/schedules', label: 'hr.nav.schedules', icon: 'schedule' },
     { path: '/hr/settings', label: 'hr.nav.settings', icon: 'shifts' },

@@ -52,7 +52,7 @@ public sealed class LeaveRequestsController(LeaveService leaves, RequestInbox in
 
         if (parsed == RequestStatus.Pending)
         {
-            var waiting = await inbox.WaitingAsync(RequestKind.Leave, User, ct);
+            var waiting = await inbox.WaitingAsync(RequestKind.Leave, ct);
             return list.Where(l => waiting.Contains(l.Id)).ToList();
         }
         return RequestInbox.ReviewsHistory(User) ? list : list.Where(l => l.DecidedById == me.RequiredId).ToList();
@@ -76,14 +76,14 @@ public sealed class LeaveRequestsController(LeaveService leaves, RequestInbox in
     [HttpPost("{id:guid}/approve")]
     public async Task<IActionResult> Approve(Guid id, CancellationToken ct)
     {
-        await leaves.DecideAsync(id, me.RequiredId, approve: true, null, ct, isHrOverride: RequestInbox.CanOverride(User));
+        await leaves.DecideAsync(id, me.RequiredId, approve: true, null, ct);
         return NoContent();
     }
 
     [HttpPost("{id:guid}/reject")]
     public async Task<IActionResult> Reject(Guid id, RejectLeaveRequest r, CancellationToken ct)
     {
-        await leaves.DecideAsync(id, me.RequiredId, approve: false, r.Reason, ct, isHrOverride: RequestInbox.CanOverride(User));
+        await leaves.DecideAsync(id, me.RequiredId, approve: false, r.Reason, ct);
         return NoContent();
     }
 
