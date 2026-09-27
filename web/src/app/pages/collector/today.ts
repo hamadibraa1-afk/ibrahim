@@ -172,7 +172,7 @@ export class TodayPage implements OnInit, OnDestroy {
     const excused = s.permissions.some(p => p.type === 'EarlyDeparture' && p.status === 'Approved' && timeInput(p.fromTime) <= now);
     if (endsLater && !excused) {
       const go = await this.ui.confirm(this.i18n.t('me.checkOut'), this.i18n.t('me.earlyWarn'), true);
-      if (!go) { this.router.navigate(['/me/requests'], { queryParams: { type: 'EarlyDeparture' } }); return; }
+      if (!go) { this.router.navigate(['/my/requests'], { queryParams: { type: 'EarlyDeparture' } }); return; }
     }
     await this.withGps(s, 'me/check-out');
   }

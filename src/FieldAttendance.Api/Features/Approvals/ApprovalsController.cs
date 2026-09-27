@@ -94,7 +94,7 @@ public sealed class ApprovalsController(AppDbContext db, ICurrentUser me, IClock
 /// <summary>The employee's own side: report back from leave and follow a request's chain.</summary>
 [ApiController]
 [Route("api/my/returns")]
-[Authorize(Policy = HrPolicies.Self)]
+[Authorize(Policy = Policies.SelfService)]
 public sealed class MyReturnsController(AppDbContext db, ICurrentUser me) : ControllerBase
 {
     [HttpGet]

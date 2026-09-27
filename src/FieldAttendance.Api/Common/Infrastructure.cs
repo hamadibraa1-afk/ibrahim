@@ -59,8 +59,6 @@ public static class HrPolicies
     public const string Manage = nameof(Manage) + "Hr";
     /// <summary>Everyone with an HR view: HR staff, department managers, executives.</summary>
     public const string Read = nameof(Read) + "Hr";
-    /// <summary>An office employee acting on their own record.</summary>
-    public const string Self = nameof(Self) + "Hr";
 }
 
 public static class Policies

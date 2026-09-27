@@ -35,10 +35,14 @@ public sealed record ObjectionRequest(string Text);
 /// <summary>
 /// What an employee sees about themselves: their profile, their attendance, their warnings
 /// and their payslips. Nothing here can reach another person's record.
+///
+/// One portal for every employee, field and office alike: every query is the caller's own, so the
+/// gate is being signed in, not a role. It used to accept office roles only, which sent collectors
+/// to a separate app and refused them their own profile and payslips.
 /// </summary>
 [ApiController]
 [Route("api/my")]
-[Authorize(Policy = HrPolicies.Self)]
+[Authorize(Policy = Policies.SelfService)]
 public sealed class MyPortalController(AppDbContext db, ICurrentUser me, IClock clock) : ControllerBase
 {
     [HttpGet("profile")]

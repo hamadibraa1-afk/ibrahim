@@ -10,7 +10,6 @@ const KEY = 'session';
 const FIELD_OFFICE: Role[] = ['SystemAdmin', 'Supervisor', 'DepartmentManager'];
 const HR_OFFICE: Role[] = ['SystemAdmin', 'HrManager', 'HrOfficer', 'DepartmentManager'];
 const SELF_SERVICE: Role[] = ['Collector', 'Employee'];
-const OFFICE_SELF: Role[] = ['Employee'];
 
 @Injectable({ providedIn: 'root' })
 export class Auth {
@@ -41,7 +40,8 @@ export class Auth {
     const role = this.role();
     if (!role) return '/login';
     if (role === 'Employee') return '/my';
-    if (SELF_SERVICE.includes(role)) return '/me';
+    // Field staff land on check-in, the thing they open the app for; it is part of the same portal.
+    if (SELF_SERVICE.includes(role)) return '/my/today';
     if (this.canField() && this.canHr()) return '/select';
     return this.canHr() ? '/hr' : '/admin';
   }
@@ -74,7 +74,6 @@ const guard = (allowed: Role[]): CanActivateFn => () => {
 
 export const officeGuard = guard(FIELD_OFFICE);
 export const hrGuard = guard(HR_OFFICE);
-export const employeeGuard = guard([...OFFICE_SELF, 'HrManager', 'HrOfficer', 'DepartmentManager', 'SystemAdmin']);
 export const signedInGuard: CanActivateFn = () => {
   const auth = inject(Auth);
   const router = inject(Router);

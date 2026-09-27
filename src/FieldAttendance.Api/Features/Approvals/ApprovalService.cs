@@ -122,10 +122,22 @@ public sealed class ApprovalService(AppDbContext db, NotificationService notific
         if (step?.ApproverId is not { } approver) return;
 
         var name = await db.Users.AsNoTracking().Where(u => u.Id == employeeId).Select(u => u.FullName).SingleOrDefaultAsync(ct);
+        var role = await db.Users.AsNoTracking().Where(u => u.Id == approver).Select(u => u.Role).SingleAsync(ct);
         await notifications.RaiseAsync(approver, NotificationKind.RequestAwaitingYou,
             [requestId.ToString("N"), step.Order.ToString(System.Globalization.CultureInfo.InvariantCulture)],
-            name, kind.ToString(), "/admin/requests", requestId, ct);
+            name, kind.ToString(), InboxFor(role), requestId, ct);
     }
+
+    /// <summary>
+    /// The approver's own inbox. Every notification used to open the field module's inbox, which a
+    /// department manager or HR reaches only for field staff, and an employee-role approver not at all.
+    /// </summary>
+    private static string InboxFor(UserRole role) => role switch
+    {
+        UserRole.Supervisor => "/admin/requests",
+        UserRole.SystemAdmin or UserRole.HrManager or UserRole.HrOfficer or UserRole.DepartmentManager => "/hr/requests",
+        _ => "/my/approvals",
+    };
 
     private async Task NotifyEmployeeAsync(RequestKind kind, Guid requestId, Guid employeeId, bool approved, CancellationToken ct) =>
         await notifications.RaiseAsync(employeeId, NotificationKind.RequestDecided,

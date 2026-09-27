@@ -44,7 +44,8 @@ export class MyShell implements OnInit {
   readonly i18n = inject(I18n);
   readonly nav = [
     { path: '/my', label: 'my.overview', icon: 'today', exact: true },
-    { path: '/me', label: 'my.checkIn', icon: 'attendance' },
+    { path: '/my/today', label: 'my.checkIn', icon: 'attendance' },
+    { path: '/my/schedule', label: 'nav.mySchedule', icon: 'schedule' },
     { path: '/my/attendance', label: 'my.attendance', icon: 'attendance' },
     { path: '/my/requests', label: 'my.requests', icon: 'requests' },
     { path: '/my/payslips', label: 'my.payslips', icon: 'allowances' },

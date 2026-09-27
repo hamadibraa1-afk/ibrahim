@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { employeeGuard, hrGuard, officeGuard, signedInGuard } from './core/auth';
+import { hrGuard, officeGuard, signedInGuard } from './core/auth';
 
 export const routes: Routes = [
   { path: 'login', loadComponent: () => import('./pages/login').then(m => m.LoginPage) },
@@ -40,10 +40,14 @@ export const routes: Routes = [
     ],
   },
   {
-    path: 'my', canActivate: [employeeGuard],
+    // One portal for every employee, field and office. Signed-in is enough: every screen shows only
+    // the caller's own records, and where a request goes is decided by the server, not the screen.
+    path: 'my', canActivate: [signedInGuard],
     loadComponent: () => import('./layout/my-shell').then(m => m.MyShell),
     children: [
       { path: '', loadComponent: () => import('./pages/my/overview').then(m => m.MyOverviewPage) },
+      { path: 'today', loadComponent: () => import('./pages/collector/today').then(m => m.TodayPage) },
+      { path: 'schedule', loadComponent: () => import('./pages/collector/my-schedule').then(m => m.MySchedulePage) },
       { path: 'attendance', loadComponent: () => import('./pages/my/attendance').then(m => m.MyAttendancePage) },
       { path: 'requests', loadComponent: () => import('./pages/collector/my-requests').then(m => m.MyRequestsPage) },
       { path: 'payslips', loadComponent: () => import('./pages/my/payslips').then(m => m.MyPayslipsPage) },
@@ -51,14 +55,15 @@ export const routes: Routes = [
       { path: 'profile', loadComponent: () => import('./pages/my/profile').then(m => m.MyProfilePage) },
     ],
   },
+  // The collector app was a second portal with its own requests screen. Its addresses stay valid
+  // (bookmarks, home-screen shortcuts on phones) and lead into the one portal.
+  { path: 'me', pathMatch: 'full', redirectTo: 'my/today' },
   {
-    // Signed-in is enough: the server decides from the caller's records whether there is a shift to show.
-    path: 'me', canActivate: [signedInGuard],
-    loadComponent: () => import('./layout/collector-shell').then(m => m.CollectorShell),
+    path: 'me',
     children: [
-      { path: '', loadComponent: () => import('./pages/collector/today').then(m => m.TodayPage) },
-      { path: 'schedule', loadComponent: () => import('./pages/collector/my-schedule').then(m => m.MySchedulePage) },
-      { path: 'requests', loadComponent: () => import('./pages/collector/my-requests').then(m => m.MyRequestsPage) },
+      { path: 'schedule', redirectTo: '/my/schedule' },
+      { path: 'requests', redirectTo: '/my/requests' },
+      { path: '**', redirectTo: '/my/today' },
     ],
   },
   { path: '', pathMatch: 'full', redirectTo: 'login' },
