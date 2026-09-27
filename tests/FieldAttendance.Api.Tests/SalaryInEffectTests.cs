@@ -35,6 +35,45 @@ public sealed class SalaryInEffectTests(ApiFactory api)
         Assert.Equal(employee.BasicSalary + 1000m, october.GetProperty("basicSalary").GetDecimal());
     }
 
+    [Fact]
+    public async Task A_percentage_raise_is_worked_out_from_the_salary_on_its_own_date()
+    {
+        var hr = await api.ClientForAsync("1005");
+        var employee = await api.QueryAsync(db => (
+            from p in db.EmployeeProfiles join u in db.Users on p.UserId equals u.Id
+            where u.Role == UserRole.Employee && p.Workforce == Workforce.Office
+            orderby u.EmployeeNumber descending
+            select new { p.Id, p.UserId, p.BasicSalary }).Skip(1).FirstAsync());
+
+        // Changes already agreed for October and December; then 10% from November, which must
+        // build on October's figure, not on December's (the latest one entered).
+        await hr.PostAsJsonAsync($"/api/hr/employees/{employee.Id}/salary",
+            new { newSalary = employee.BasicSalary + 1000m, effectiveFrom = new DateOnly(2026, 10, 1), reason = "ترقية" });
+        await hr.PostAsJsonAsync($"/api/hr/employees/{employee.Id}/salary",
+            new { newSalary = employee.BasicSalary + 3000m, effectiveFrom = new DateOnly(2026, 12, 1), reason = "ترقية" });
+        var raise = await hr.PostAsJsonAsync($"/api/hr/employees/{employee.Id}/raise",
+            new { kind = "Percent", value = 10m, effectiveFrom = new DateOnly(2026, 11, 1), reason = "علاوة سنوية" });
+        Assert.True(raise.IsSuccessStatusCode, await raise.Content.ReadAsStringAsync());
+
+        var latest = await api.QueryAsync(db => db.SalaryChanges
+            .Where(s => s.EmployeeId == employee.UserId && s.EffectiveFrom == new DateOnly(2026, 11, 1)).SingleAsync());
+
+        Assert.Equal(employee.BasicSalary + 1000m, latest.OldSalary);
+        Assert.Equal(Math.Round((employee.BasicSalary + 1000m) * 1.1m, 2), latest.NewSalary);
+    }
+
+    [Fact]
+    public async Task Only_the_hr_manager_can_give_a_raise()
+    {
+        var officer = await api.ClientForAsync("1006");
+        var someone = await api.QueryAsync(db => db.EmployeeProfiles.Select(p => p.Id).FirstAsync());
+
+        var response = await officer.PostAsJsonAsync($"/api/hr/employees/{someone}/raise",
+            new { kind = "Amount", value = 500m, effectiveFrom = new DateOnly(2026, 10, 1), reason = "x" });
+
+        Assert.Equal(System.Net.HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
     private static async Task<JsonElement> PayslipAsync(HttpClient hr, int year, int month, Guid employeeId)
     {
         var cycles = (await hr.GetFromJsonAsync<JsonElement[]>("/api/hr/payroll/cycles"))!;

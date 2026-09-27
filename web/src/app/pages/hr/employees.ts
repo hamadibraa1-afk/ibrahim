@@ -151,10 +151,23 @@ interface SalaryRow { oldSalary: number; newSalary: number; effectiveFrom: strin
             </div>
             @if (auth.canManageHr()) {
               <div class="row">
-                <div class="field"><label>{{ 'hr.emp.newSalary' | t }}</label><input type="number" min="0" step="50" [(ngModel)]="newSalary"></div>
+                <div class="field"><label for="sal-mode">{{ 'sal.mode' | t }}</label>
+                  <select id="sal-mode" [(ngModel)]="salaryMode">
+                    <option value="set">{{ 'hr.emp.newSalary' | t }}</option>
+                    <option value="Amount">{{ 'sal.raiseAmount' | t }}</option>
+                    <option value="Percent">{{ 'sal.raisePercent' | t }}</option>
+                  </select></div>
+                @if (salaryMode === 'set') {
+                  <div class="field"><label for="sal-new">{{ 'hr.emp.newSalary' | t }}</label><input id="sal-new" type="number" min="0" step="50" [(ngModel)]="newSalary"></div>
+                } @else {
+                  <div class="field"><label for="sal-raise">{{ (salaryMode === 'Percent' ? 'sal.percent' : 'sal.amount') | t }}</label>
+                    <input id="sal-raise" type="number" min="0" [step]="salaryMode === 'Percent' ? 0.5 : 50" [(ngModel)]="raiseValue"
+                           aria-describedby="sal-preview">
+                    <p id="sal-preview" class="mt-1 text-xs text-muted">{{ 'sal.after' | t }}: <span class="tabular">{{ raisedPreview(d) }}</span></p></div>
+                }
                 <div class="field"><label>{{ 'sch.effective' | t }}</label><input type="date" [(ngModel)]="effectiveFrom"></div>
                 <div class="field"><label>{{ 'common.reason' | t }}</label><input [(ngModel)]="salaryReason"></div>
-                <button class="btn primary mb-3" [disabled]="busy() || !salaryReason.trim()" (click)="saveSalary(d)">{{ 'common.save' | t }}</button>
+                <button class="btn primary mb-3" [disabled]="busy() || !salaryReason.trim() || (salaryMode !== 'set' && !(+raiseValue > 0))" (click)="saveSalary(d)">{{ 'common.save' | t }}</button>
               </div>
             }
             <div class="table-wrap"><table>
@@ -249,6 +262,8 @@ export class HrEmployeesPage implements OnInit {
   effectiveFrom = uaeToday();
   newSalary = 0;
   salaryReason = '';
+  salaryMode: 'set' | 'Amount' | 'Percent' = 'set';
+  raiseValue = 0;
 
   readonly filtered = computed(() => {
     const q = this.q.trim().toLowerCase();
@@ -295,6 +310,8 @@ export class HrEmployeesPage implements OnInit {
     this.effectiveFrom = uaeToday();
     this.newSalary = detail.basicSalary ?? 0;
     this.salaryReason = '';
+    this.salaryMode = 'set';
+    this.raiseValue = 0;
   }
 
   async setTab(key: string, d: Detail): Promise<void> {
@@ -370,11 +387,21 @@ export class HrEmployeesPage implements OnInit {
     } catch (e) { this.error.set(this.api.error(e).message); } finally { this.busy.set(false); }
   }
 
+  /** A guide only: the server applies the raise to the salary in effect on the chosen date. */
+  raisedPreview(d: Detail): string {
+    const base = +(d['basicSalary'] ?? 0), v = +this.raiseValue || 0;
+    const after = this.salaryMode === 'Percent' ? base * (1 + v / 100) : base + v;
+    return (Math.round(after * 100) / 100).toFixed(2);
+  }
+
   async saveSalary(d: Detail): Promise<void> {
     this.busy.set(true);
     this.error.set(null);
     try {
-      await this.api.post(`hr/employees/${d.row.id}/salary`, { newSalary: +this.newSalary, effectiveFrom: this.effectiveFrom, reason: this.salaryReason });
+      if (this.salaryMode === 'set')
+        await this.api.post(`hr/employees/${d.row.id}/salary`, { newSalary: +this.newSalary, effectiveFrom: this.effectiveFrom, reason: this.salaryReason });
+      else // The server works the figure out from the salary on the effective date.
+        await this.api.post(`hr/employees/${d.row.id}/raise`, { kind: this.salaryMode, value: +this.raiseValue, effectiveFrom: this.effectiveFrom, reason: this.salaryReason });
       this.ui.ok(this.i18n.t('common.saved'));
       await this.open(d.row);
       await this.setTab('salary', d);

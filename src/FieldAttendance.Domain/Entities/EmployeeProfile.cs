@@ -119,15 +119,19 @@ public sealed class EmployeeProfile : Entity
         Iban = Guard.Optional(iban, "profile.iban", 40)?.Replace(" ", string.Empty, StringComparison.Ordinal).ToUpperInvariant();
     }
 
-    /// <summary>Returns the history entry to store alongside the new figure.</summary>
-    public SalaryChange ChangeSalary(decimal newSalary, DateOnly effectiveFrom, string reason, Guid decidedBy)
+    /// <summary>
+    /// Returns the history entry to store alongside the new figure. <paramref name="replacing"/> is the
+    /// salary in effect just before <paramref name="effectiveFrom"/>; it differs from BasicSalary (the
+    /// latest figure entered) when another change is already dated in the future.
+    /// </summary>
+    public SalaryChange ChangeSalary(decimal newSalary, DateOnly effectiveFrom, string reason, Guid decidedBy, decimal? replacing = null)
     {
         if (newSalary < 0 || newSalary > 1_000_000)
             throw new DomainException("profile.salary_range", "Salary is out of range.");
         if (effectiveFrom < HireDate)
             throw new DomainException("profile.salary_before_hire", "Effective date cannot be before the hire date.");
 
-        var change = new SalaryChange(UserId, BasicSalary, newSalary, effectiveFrom, reason, decidedBy);
+        var change = new SalaryChange(UserId, replacing ?? BasicSalary, newSalary, effectiveFrom, reason, decidedBy);
         BasicSalary = newSalary;
         return change;
     }

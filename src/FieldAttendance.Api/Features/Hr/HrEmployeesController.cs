@@ -40,6 +40,8 @@ public sealed record AssignScheduleRequest(Guid? WorkScheduleId, DateOnly Effect
 
 public sealed record ChangeSalaryRequest([Range(0, 1000000)] decimal NewSalary, DateOnly EffectiveFrom, [Required] string Reason);
 
+public sealed record RaiseRequest(Domain.Payroll.RaiseKind Kind, [Range(0.01, 1000000)] decimal Value, DateOnly EffectiveFrom, [Required] string Reason);
+
 public sealed record EndServiceRequest(DateOnly EndDate, [Required] string Reason);
 
 public sealed record SalaryHistoryRow(decimal OldSalary, decimal NewSalary, DateOnly EffectiveFrom, string Reason,
@@ -170,7 +172,24 @@ public sealed class HrEmployeesController(AppDbContext db, OfficeScheduleService
     public async Task<IActionResult> ChangeSalary(Guid id, ChangeSalaryRequest r, CancellationToken ct)
     {
         var profile = await Find(id, ct);
-        db.SalaryChanges.Add(profile.ChangeSalary(r.NewSalary, r.EffectiveFrom, r.Reason, me.RequiredId));
+        var before = await salaries.OnAsync(profile, r.EffectiveFrom, ct);
+        db.SalaryChanges.Add(profile.ChangeSalary(r.NewSalary, r.EffectiveFrom, r.Reason, me.RequiredId, before));
+        await db.SaveChangesAsync(ct);
+        return NoContent();
+    }
+
+    /// <summary>
+    /// A raise by amount or percentage. The server works out the new basic from the salary in
+    /// effect on the raise's own date, so it stacks correctly on a change already agreed before it.
+    /// </summary>
+    [HttpPost("{id:guid}/raise")]
+    [Authorize(Policy = HrPolicies.Manage)]
+    public async Task<IActionResult> Raise(Guid id, RaiseRequest r, CancellationToken ct)
+    {
+        var profile = await Find(id, ct);
+        var before = await salaries.OnAsync(profile, r.EffectiveFrom, ct);
+        var after = Domain.Payroll.SalaryRaise.Apply(before, r.Kind, r.Value);
+        db.SalaryChanges.Add(profile.ChangeSalary(after, r.EffectiveFrom, r.Reason, me.RequiredId, before));
         await db.SaveChangesAsync(ct);
         return NoContent();
     }
