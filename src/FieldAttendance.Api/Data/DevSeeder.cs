@@ -235,6 +235,9 @@ public static class DevSeeder
             if (seed.IsDepartmentManager) department.SetManager(user.Id);
 
             db.Add(profile.ChangeSalary(seed.Salary, hire, "الراتب عند التعيين", accounts.Admin.Id));
+            // Demo fixed allowances, so payslips show them as lines beside the basic.
+            db.Add(new SalaryAllowance(user.Id, "بدل مواصلات", 500m, hire, null));
+            if (seed.IsDepartmentManager) db.Add(new SalaryAllowance(user.Id, "بدل سكن", 2500m, hire, null));
             db.Add(new Assignment(user.Id, branch.Id, shift.Id, weekStart.AddDays(-90), null,
                 schedule.WorkingDays, null));
 

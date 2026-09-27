@@ -98,7 +98,7 @@ interface Blocker { code: string; count: number; }
         <div class="modal-head"><h2>{{ 'hr.pay.slip' | t }} — {{ p.employeeName }}</h2>
           <button class="btn sm" (click)="slip.set(null)">{{ 'common.close' | t }}</button></div>
         <div class="divide-y divide-line">
-          @for (i of p.items; track i.label) {
+          @for (i of p.items; track $index) {
             <div class="flex items-center gap-3 py-2 text-sm">
               <span class="flex-1">{{ i.label }}</span>
               <span class="tabular" [class.text-bad]="i.isDeduction">{{ i.isDeduction ? '−' : '+' }} {{ i.amount | number:'1.2-2' }}</span>

@@ -265,6 +265,16 @@ internal sealed class SalaryChangeConfig : IEntityTypeConfiguration<SalaryChange
     }
 }
 
+internal sealed class SalaryAllowanceConfig : IEntityTypeConfiguration<SalaryAllowance>
+{
+    public void Configure(EntityTypeBuilder<SalaryAllowance> b)
+    {
+        b.Property(x => x.Name).HasMaxLength(100);
+        b.Property(x => x.MonthlyAmount).HasPrecision(12, 2);
+        b.HasIndex(x => new { x.EmployeeId, x.FromDate });
+    }
+}
+
 internal sealed class SystemSettingConfig : IEntityTypeConfiguration<SystemSetting>
 {
     public void Configure(EntityTypeBuilder<SystemSetting> b)

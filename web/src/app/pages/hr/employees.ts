@@ -16,6 +16,7 @@ interface Row {
 }
 interface Detail extends Record<string, any> { row: Row; }
 interface Named { id: string; nameAr: string; nameEn: string; }
+interface Allowance { id: string; name: string; monthlyAmount: number; fromDate: string; toDate: string | null; }
 interface SalaryRow { oldSalary: number; newSalary: number; effectiveFrom: string; reason: string; decidedByName: string | null; }
 
 @Component({
@@ -170,6 +171,35 @@ interface SalaryRow { oldSalary: number; newSalary: number; effectiveFrom: strin
                 <button class="btn primary mb-3" [disabled]="busy() || !salaryReason.trim() || (salaryMode !== 'set' && !(+raiseValue > 0))" (click)="saveSalary(d)">{{ 'common.save' | t }}</button>
               </div>
             }
+            @if (auth.canManageHr()) {
+              <h3 class="mb-2 mt-2 text-sm font-semibold">{{ 'alw.title' | t }}</h3>
+              <div class="table-wrap mb-3"><table>
+                <thead><tr><th>{{ 'alw.name' | t }}</th><th>{{ 'alw.monthly' | t }}</th><th>{{ 'common.from' | t }}</th>
+                  <th>{{ 'common.to' | t }}</th><th>{{ 'alw.stopAfter' | t }}</th></tr></thead>
+                <tbody>@for (a of allowances(); track a.id) {
+                  <tr><td>{{ a.name }}</td><td class="tabular">{{ a.monthlyAmount }}</td><td dir="ltr">{{ a.fromDate }}</td>
+                    <td dir="ltr">{{ a.toDate ?? ('alw.ongoing' | t) }}</td>
+                    <td><div class="flex items-center gap-2">
+                      <input type="date" class="w-40" [(ngModel)]="stopDates[a.id]" [attr.aria-label]="'alw.stopAfter' | t">
+                      <button class="btn sm" [disabled]="busy() || !stopDates[a.id]" (click)="endAllowance(d, a)">{{ 'alw.stop' | t }}</button>
+                    </div></td></tr>
+                } @empty { <tr><td colspan="5" class="muted">{{ 'common.empty' | t }}</td></tr> }</tbody></table></div>
+              <div class="row">
+                <div class="field"><label for="alw-name">{{ 'alw.name' | t }}</label>
+                  <input id="alw-name" list="alw-names" [(ngModel)]="newAllowance.name">
+                  <datalist id="alw-names">@for (n of allowanceNames; track n) { <option [value]="i18n.t(n)"></option> }</datalist></div>
+                <div class="field"><label for="alw-amount">{{ 'alw.monthly' | t }}</label>
+                  <input id="alw-amount" type="number" min="0" step="50" [(ngModel)]="newAllowance.monthlyAmount"></div>
+                <div class="field"><label for="alw-from">{{ 'common.from' | t }}</label>
+                  <input id="alw-from" type="date" [(ngModel)]="newAllowance.fromDate"></div>
+                <div class="field"><label for="alw-to">{{ 'common.to' | t }}</label>
+                  <input id="alw-to" type="date" [(ngModel)]="newAllowance.toDate"></div>
+                <button class="btn primary mb-3" [disabled]="busy() || !newAllowance.name.trim() || !(+newAllowance.monthlyAmount > 0) || !newAllowance.fromDate"
+                        (click)="addAllowance(d)">{{ 'common.add' | t }}</button>
+              </div>
+              <p class="mb-4 text-xs text-muted">{{ 'alw.hint' | t }}</p>
+              <h3 class="mb-2 text-sm font-semibold">{{ 'alw.history' | t }}</h3>
+            }
             <div class="table-wrap"><table>
               <thead><tr><th>{{ 'sch.effective' | t }}</th><th>{{ 'hr.emp.from' | t }}</th><th>{{ 'hr.emp.to' | t }}</th>
                 <th>{{ 'common.reason' | t }}</th><th>{{ 'req.decidedBy' | t }}</th></tr></thead>
@@ -263,6 +293,10 @@ export class HrEmployeesPage implements OnInit {
   newSalary = 0;
   salaryReason = '';
   salaryMode: 'set' | 'Amount' | 'Percent' = 'set';
+  readonly allowances = signal<Allowance[]>([]);
+  readonly allowanceNames = ['alw.housing', 'alw.transport', 'alw.social', 'alw.phone'];
+  newAllowance = { name: '', monthlyAmount: 0, fromDate: '', toDate: '' };
+  stopDates: Record<string, string> = {};
   raiseValue = 0;
 
   readonly filtered = computed(() => {
@@ -322,8 +356,16 @@ export class HrEmployeesPage implements OnInit {
       catch { this.compliance.set(null); }
     }
     if (key === 'salary' && this.auth.canManageHr()) {
-      try { this.history.set(await this.api.get<SalaryRow[]>(`hr/employees/${d.row.id}/salary-history`)); }
-      catch { this.history.set([]); }
+      this.newAllowance = { name: '', monthlyAmount: 0, fromDate: uaeToday(), toDate: '' };
+      try {
+        const [history, allowances] = await Promise.all([
+          this.api.get<SalaryRow[]>(`hr/employees/${d.row.id}/salary-history`),
+          this.api.get<Allowance[]>(`hr/employees/${d.row.id}/allowances`)]);
+        this.history.set(history);
+        this.allowances.set(allowances);
+        this.stopDates = Object.fromEntries(allowances.map(a => [a.id, '']));
+      }
+      catch { this.history.set([]); this.allowances.set([]); }
     }
   }
 
@@ -404,6 +446,28 @@ export class HrEmployeesPage implements OnInit {
         await this.api.post(`hr/employees/${d.row.id}/raise`, { kind: this.salaryMode, value: +this.raiseValue, effectiveFrom: this.effectiveFrom, reason: this.salaryReason });
       this.ui.ok(this.i18n.t('common.saved'));
       await this.open(d.row);
+      await this.setTab('salary', d);
+    } catch (e) { this.error.set(this.api.error(e).message); } finally { this.busy.set(false); }
+  }
+
+  async addAllowance(d: Detail): Promise<void> {
+    this.busy.set(true);
+    this.error.set(null);
+    const a = this.newAllowance;
+    try {
+      await this.api.post(`hr/employees/${d.row.id}/allowances`,
+        { name: a.name.trim(), monthlyAmount: +a.monthlyAmount, fromDate: a.fromDate, toDate: a.toDate || null });
+      this.ui.ok(this.i18n.t('common.saved'));
+      await this.setTab('salary', d);
+    } catch (e) { this.error.set(this.api.error(e).message); } finally { this.busy.set(false); }
+  }
+
+  async endAllowance(d: Detail, a: Allowance): Promise<void> {
+    this.busy.set(true);
+    this.error.set(null);
+    try {
+      await this.api.post(`hr/employees/${d.row.id}/allowances/${a.id}/end`, { lastDay: this.stopDates[a.id] });
+      this.ui.ok(this.i18n.t('common.saved'));
       await this.setTab('salary', d);
     } catch (e) { this.error.set(this.api.error(e).message); } finally { this.busy.set(false); }
   }

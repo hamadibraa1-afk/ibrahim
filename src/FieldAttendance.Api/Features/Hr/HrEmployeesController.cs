@@ -42,6 +42,12 @@ public sealed record ChangeSalaryRequest([Range(0, 1000000)] decimal NewSalary, 
 
 public sealed record RaiseRequest(Domain.Payroll.RaiseKind Kind, [Range(0.01, 1000000)] decimal Value, DateOnly EffectiveFrom, [Required] string Reason);
 
+public sealed record SalaryAllowanceDto(Guid Id, string Name, decimal MonthlyAmount, DateOnly FromDate, DateOnly? ToDate);
+
+public sealed record AddAllowanceRequest([Required] string Name, [Range(0.01, 1000000)] decimal MonthlyAmount, DateOnly FromDate, DateOnly? ToDate);
+
+public sealed record EndAllowanceRequest(DateOnly LastDay);
+
 public sealed record EndServiceRequest(DateOnly EndDate, [Required] string Reason);
 
 public sealed record SalaryHistoryRow(decimal OldSalary, decimal NewSalary, DateOnly EffectiveFrom, string Reason,
@@ -56,7 +62,8 @@ public sealed record SalaryHistoryRow(decimal OldSalary, decimal NewSalary, Date
 [Route("api/hr/employees")]
 [Authorize(Policy = HrPolicies.Read)]
 public sealed class HrEmployeesController(AppDbContext db, OfficeScheduleService office, AccessScope scope,
-    ICurrentUser me, IClock clock, Attendance.ComplianceService compliance, Payroll.SalaryLookup salaries) : ControllerBase
+    ICurrentUser me, IClock clock, Attendance.ComplianceService compliance, Payroll.SalaryLookup salaries,
+    PayrollLock payrollLock) : ControllerBase
 {
     private static readonly UserRole[] OfficeRoles =
         [UserRole.Employee, UserRole.HrOfficer, UserRole.HrManager, UserRole.DepartmentManager, UserRole.SystemAdmin, UserRole.Supervisor];
@@ -172,6 +179,7 @@ public sealed class HrEmployeesController(AppDbContext db, OfficeScheduleService
     public async Task<IActionResult> ChangeSalary(Guid id, ChangeSalaryRequest r, CancellationToken ct)
     {
         var profile = await Find(id, ct);
+        await payrollLock.EnsureOpenAsync(r.EffectiveFrom, ct);
         var before = await salaries.OnAsync(profile, r.EffectiveFrom, ct);
         db.SalaryChanges.Add(profile.ChangeSalary(r.NewSalary, r.EffectiveFrom, r.Reason, me.RequiredId, before));
         await db.SaveChangesAsync(ct);
@@ -187,9 +195,52 @@ public sealed class HrEmployeesController(AppDbContext db, OfficeScheduleService
     public async Task<IActionResult> Raise(Guid id, RaiseRequest r, CancellationToken ct)
     {
         var profile = await Find(id, ct);
+        await payrollLock.EnsureOpenAsync(r.EffectiveFrom, ct);
         var before = await salaries.OnAsync(profile, r.EffectiveFrom, ct);
         var after = Domain.Payroll.SalaryRaise.Apply(before, r.Kind, r.Value);
         db.SalaryChanges.Add(profile.ChangeSalary(after, r.EffectiveFrom, r.Reason, me.RequiredId, before));
+        await db.SaveChangesAsync(ct);
+        return NoContent();
+    }
+
+    /// <summary>Fixed monthly allowances. Salary data, so HR managers and the system admin only.</summary>
+    [HttpGet("{id:guid}/allowances")]
+    [Authorize(Policy = HrPolicies.Manage)]
+    public async Task<IReadOnlyList<SalaryAllowanceDto>> Allowances(Guid id, CancellationToken ct)
+    {
+        var profile = await Find(id, ct);
+        return await db.SalaryAllowances.AsNoTracking()
+            .Where(a => a.EmployeeId == profile.UserId && a.IsActive).OrderByDescending(a => a.FromDate)
+            .Select(a => new SalaryAllowanceDto(a.Id, a.Name, a.MonthlyAmount, a.FromDate, a.ToDate)).ToListAsync(ct);
+    }
+
+    [HttpPost("{id:guid}/allowances")]
+    [Authorize(Policy = HrPolicies.Manage)]
+    public async Task<ActionResult<SalaryAllowanceDto>> AddAllowance(Guid id, AddAllowanceRequest r, CancellationToken ct)
+    {
+        var profile = await Find(id, ct);
+        // A settled month's payslips are frozen; an allowance reaching back into one would not match them.
+        await payrollLock.EnsureOpenAsync(r.FromDate, ct);
+        var allowance = new SalaryAllowance(profile.UserId, r.Name, r.MonthlyAmount, r.FromDate, r.ToDate);
+        db.SalaryAllowances.Add(allowance);
+        await db.SaveChangesAsync(ct);
+        return new SalaryAllowanceDto(allowance.Id, allowance.Name, allowance.MonthlyAmount, allowance.FromDate, allowance.ToDate);
+    }
+
+    /// <summary>Stops an allowance after a day. Months already paid keep it; the record stays as history.</summary>
+    [HttpPost("{id:guid}/allowances/{allowanceId:guid}/end")]
+    [Authorize(Policy = HrPolicies.Manage)]
+    public async Task<IActionResult> EndAllowance(Guid id, Guid allowanceId, EndAllowanceRequest r, CancellationToken ct)
+    {
+        var profile = await Find(id, ct);
+        var allowance = await db.SalaryAllowances.SingleOrDefaultAsync(a => a.Id == allowanceId && a.EmployeeId == profile.UserId && a.IsActive, ct)
+            ?? throw new DomainException("salary_allowance.not_found", "Allowance not found.");
+
+        var firstUnpaid = r.LastDay.AddDays(1);
+        await payrollLock.EnsureRangeOpenAsync(firstUnpaid, allowance.ToDate is { } to && to > firstUnpaid ? to : firstUnpaid, ct);
+        // Ended before it began: nothing was ever owed, so it is withdrawn rather than given a date.
+        if (r.LastDay < allowance.FromDate) allowance.Deactivate();
+        else allowance.EndOn(r.LastDay);
         await db.SaveChangesAsync(ct);
         return NoContent();
     }

@@ -74,7 +74,7 @@ public sealed class SalaryInEffectTests(ApiFactory api)
         Assert.Equal(System.Net.HttpStatusCode.Forbidden, response.StatusCode);
     }
 
-    private static async Task<JsonElement> PayslipAsync(HttpClient hr, int year, int month, Guid employeeId)
+    internal static async Task<JsonElement> PayslipAsync(HttpClient hr, int year, int month, Guid employeeId)
     {
         var cycles = (await hr.GetFromJsonAsync<JsonElement[]>("/api/hr/payroll/cycles"))!;
         var cycle = cycles.FirstOrDefault(c => c.GetProperty("year").GetInt32() == year && c.GetProperty("month").GetInt32() == month);

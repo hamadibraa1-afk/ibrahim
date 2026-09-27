@@ -76,6 +76,10 @@ public sealed class PayrollService(AppDbContext db, DeductionService deductions,
         var allowanceTypes = await db.AllowanceTypes.AsNoTracking().ToDictionaryAsync(t => t.Id, ct);
         var unpaidLeaves = await UnpaidLeaveDaysAsync(cycle, employeeIds, ct);
         var salarySteps = await salaries.StepsAsync(employeeIds, ct);
+        var monthly = await db.SalaryAllowances.AsNoTracking()
+            .Where(a => a.IsActive && employeeIds.Contains(a.EmployeeId) && a.FromDate <= cycle.LastDay
+                        && (a.ToDate == null || a.ToDate >= cycle.FirstDay))
+            .OrderBy(a => a.FromDate).ToListAsync(ct);
 
         var existing = await db.PayrollLines.Include(l => l.Items)
             .Where(l => l.PayrollCycleId == cycle.Id).ToListAsync(ct);
@@ -108,6 +112,14 @@ public sealed class PayrollService(AppDbContext db, DeductionService deductions,
                 if (!allowanceTypes.TryGetValue(allowance.AllowanceTypeId, out var type) || type.DailyAmount is not { } daily) continue;
                 var covered = CoveredDays(allowance.FromDate, allowance.ToDate, cycle.FirstDay, cycle.LastDay);
                 if (covered > 0) line.AddItem(type.NameAr, daily * covered, false, $"allowance:{allowance.Id}");
+            }
+
+            // Fixed monthly allowances: separate lines, outside the basic, so the deduction
+            // ceiling and every deduction stay priced from the basic alone.
+            foreach (var allowance in monthly.Where(a => a.EmployeeId == profile.UserId))
+            {
+                var amount = allowance.AmountFor(cycle.FirstDay, cycle.LastDay);
+                if (amount > 0) line.AddItem(allowance.Name, amount, false, $"monthly:{allowance.Id}");
             }
 
             var overtime = PayrollMath.OvertimeAmount(basic, policy, line.OvertimeMinutes);
