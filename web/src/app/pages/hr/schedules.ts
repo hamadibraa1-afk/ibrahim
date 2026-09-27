@@ -3,11 +3,13 @@ import { FormsModule } from '@angular/forms';
 import { Api } from '../../core/api';
 import { Auth } from '../../core/auth';
 import { Backdrop } from '../../core/backdrop';
-import { dayIndex, hmin, timeInput, toTimeOnly } from '../../core/format';
+import { addDays, dayIndex, hmin, timeInput, toTimeOnly, uaeToday } from '../../core/format';
 import { I18n, TPipe } from '../../core/i18n';
 import { Ui } from '../../core/ui';
 
 interface Day { day: string | number; startTime: string; endTime: string; breakMinutes: number; }
+interface Member { profileId: string; fullName: string; employeeNumber: string; departmentNameAr: string; departmentNameEn: string; }
+interface Candidate { id: string; fullName: string; employeeNumber: string; departmentName: string; scheduleName: string | null; }
 interface Schedule { id: string; nameAr: string; nameEn: string; graceMinutes: number; earlyCheckInMinutes: number; flexMinutes: number; countEarlyArrivalAsOvertime: boolean; weeklyMinutes: number; employeeCount: number; days: Day[]; rowVersion: string; }
 
 @Component({
@@ -25,7 +27,7 @@ interface Schedule { id: string; nameAr: string; nameEn: string; graceMinutes: n
         <section class="card overflow-hidden">
           <header class="flex items-center gap-2 border-b border-line px-4 py-3">
             <h2 class="flex-1">{{ s.nameAr }}</h2>
-            <span class="badge">{{ s.employeeCount }}</span>
+            <button class="btn sm" (click)="openMembers(s)">{{ 'sch.members' | t }} <span class="badge">{{ s.employeeCount }}</span></button>
             @if (auth.canManageHr()) {
               <button class="btn sm" (click)="open(s)">{{ 'common.edit' | t }}</button>
               <button class="btn sm danger" (click)="remove(s)">{{ 'common.delete' | t }}</button>
@@ -49,6 +51,55 @@ interface Schedule { id: string; nameAr: string; nameEn: string; graceMinutes: n
         </section>
       } @empty { <div class="card-pad muted">{{ 'common.empty' | t }}</div> }
     </div>
+
+    @if (group(); as g) {
+      <div class="modal-back" appBackdrop (dismiss)="group.set(null)"><div class="modal wide">
+        <div class="modal-head"><h2>{{ 'sch.members' | t }}: {{ g.nameAr }}</h2></div>
+        @if (error()) { <div class="alert red">{{ error() }}</div> }
+        <h3 class="mb-2 text-sm font-semibold">{{ 'sch.onThis' | t }} ({{ members().length }})</h3>
+        <div class="mb-4 max-h-56 divide-y divide-line overflow-y-auto rounded border border-line">
+          @for (m of members(); track m.profileId) {
+            <div class="flex items-center gap-3 px-3 py-2 text-sm">
+              <span class="tabular muted" dir="ltr">{{ m.employeeNumber }}</span>
+              <span class="flex-1">{{ m.fullName }}</span>
+              <span class="muted small">{{ i18n.lang() === 'ar' ? m.departmentNameAr : m.departmentNameEn }}</span>
+            </div>
+          } @empty { <div class="px-3 py-2 muted small">{{ 'common.empty' | t }}</div> }
+        </div>
+
+        @if (auth.canManageHr()) {
+          <h3 class="mb-2 text-sm font-semibold">{{ 'sch.moveHere' | t }}</h3>
+          <div class="row">
+            <div class="field"><label for="sch-find">{{ 'common.search' | t }}</label>
+              <input id="sch-find" [(ngModel)]="find"></div>
+            <div class="field"><label for="sch-from">{{ 'sch.effective' | t }}</label>
+              <input id="sch-from" type="date" [(ngModel)]="effectiveFrom" [min]="today"></div>
+          </div>
+          <div class="max-h-64 divide-y divide-line overflow-y-auto rounded border border-line">
+            @for (c of candidates(); track c.id) {
+              @if (matches(c)) {
+                <label class="m-0 flex items-center gap-3 px-3 py-2 text-sm text-ink">
+                  <input type="checkbox" [checked]="picked().has(c.id)" (change)="toggle(c.id)">
+                  <span class="tabular muted" dir="ltr">{{ c.employeeNumber }}</span>
+                  <span class="flex-1">{{ c.fullName }}</span>
+                  <span class="muted small">{{ c.departmentName }}</span>
+                  <span class="badge">{{ c.scheduleName ?? ('sch.none' | t) }}</span>
+                </label>
+              }
+            } @empty { <div class="px-3 py-2 muted small">{{ 'common.empty' | t }}</div> }
+          </div>
+          <p class="mt-2 text-xs text-muted">{{ 'sch.moveHint' | t }}</p>
+        }
+
+        <div class="modal-foot">
+          <button class="btn" (click)="group.set(null)">{{ 'common.close' | t }}</button>
+          @if (auth.canManageHr()) {
+            <button class="btn primary" [disabled]="busy() || !picked().size || !effectiveFrom" (click)="assign(g)">
+              {{ 'sch.moveSelected' | t }} ({{ picked().size }})</button>
+          }
+        </div>
+      </div></div>
+    }
 
     @if (editing(); as f) {
       <div class="modal-back" appBackdrop (dismiss)="editing.set(null)"><div class="modal wide">
@@ -103,7 +154,57 @@ export class HrSchedulesPage implements OnInit {
   readonly busy = signal(false);
   readonly error = signal<string | null>(null);
 
+  readonly group = signal<Schedule | null>(null);
+  readonly members = signal<Member[]>([]);
+  readonly candidates = signal<Candidate[]>([]);
+  readonly picked = signal<Set<string>>(new Set());
+  readonly today = uaeToday();
+  find = '';
+  effectiveFrom = '';
+
   ngOnInit(): void { this.load(); }
+
+  async openMembers(s: Schedule): Promise<void> {
+    this.error.set(null);
+    this.find = '';
+    this.effectiveFrom = addDays(this.today, 1);
+    this.picked.set(new Set());
+    this.members.set([]);
+    this.candidates.set([]);
+    this.group.set(s);
+    try {
+      const members = await this.api.get<Member[]>(`hr/work-schedules/${s.id}/members`);
+      this.members.set(members);
+      if (this.auth.canManageHr()) {
+        // Only office staff can join a work schedule; field staff are rostered by the field module.
+        const onThis = new Set(members.map(m => m.profileId));
+        const office = await this.api.get<Candidate[]>('hr/employees', { workforce: 'Office' });
+        this.candidates.set(office.filter(c => !onThis.has(c.id)));
+      }
+    } catch (e) { this.error.set(this.api.error(e).message); }
+  }
+
+  matches(c: Candidate): boolean {
+    const q = this.find.trim().toLowerCase();
+    return !q || c.fullName.toLowerCase().includes(q) || c.employeeNumber.includes(q) || c.departmentName.toLowerCase().includes(q);
+  }
+
+  toggle(id: string): void {
+    const next = new Set(this.picked());
+    if (next.has(id)) next.delete(id); else next.add(id);
+    this.picked.set(next);
+  }
+
+  async assign(s: Schedule): Promise<void> {
+    this.busy.set(true);
+    this.error.set(null);
+    try {
+      await this.api.post(`hr/work-schedules/${s.id}/members`, { profileIds: [...this.picked()], effectiveFrom: this.effectiveFrom });
+      this.ui.ok(this.i18n.t('common.saved'));
+      await this.load();
+      await this.openMembers(this.items().find(x => x.id === s.id) ?? s);
+    } catch (e) { this.error.set(this.api.error(e).message); } finally { this.busy.set(false); }
+  }
 
   async load(): Promise<void> {
     try { this.items.set(await this.api.get<Schedule[]>('hr/work-schedules')); }

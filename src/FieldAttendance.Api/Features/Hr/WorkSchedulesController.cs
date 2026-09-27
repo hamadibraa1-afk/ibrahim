@@ -19,6 +19,10 @@ public sealed record SaveWorkScheduleRequest([Required] string NameAr, [Required
     [Range(0, 120)] int GraceMinutes, [Range(0, 240)] int EarlyCheckInMinutes, bool CountEarlyArrivalAsOvertime,
     IReadOnlyList<ScheduleDayDto> Days, byte[]? RowVersion, [Range(0, 120)] int FlexMinutes = 0);
 
+public sealed record ScheduleMemberDto(Guid ProfileId, Guid UserId, string FullName, string EmployeeNumber, string DepartmentNameAr, string DepartmentNameEn);
+
+public sealed record AssignMembersRequest([Required, MinLength(1)] IReadOnlyList<Guid> ProfileIds, DateOnly EffectiveFrom);
+
 /// <summary>Fixed weekly patterns for office staff. Changing one re-applies it to everyone on it.</summary>
 [ApiController]
 [Route("api/hr/work-schedules")]
@@ -58,13 +62,58 @@ public sealed class WorkSchedulesController(AppDbContext db, OfficeScheduleServi
         schedule.Rename(r.NameAr, r.NameEn);
         schedule.SetRules(r.GraceMinutes, r.EarlyCheckInMinutes, r.CountEarlyArrivalAsOvertime, r.FlexMinutes);
         ApplyDays(schedule, r.Days);
-        await db.SaveChangesAsync(ct);
 
-        foreach (var profile in await db.EmployeeProfiles.Where(p => p.WorkScheduleId == id && p.IsActive).ToListAsync(ct))
-            await office.ApplyAsync(profile, clock.Today, ct);
+        // One transaction: if a later employee's days fail validation, the schedule and the
+        // employees already re-planned roll back with it instead of staying half-applied.
+        await InTransactionAsync(async () =>
+        {
+            await db.SaveChangesAsync(ct);
+            foreach (var profile in await db.EmployeeProfiles.Where(p => p.WorkScheduleId == id && p.IsActive).ToListAsync(ct))
+                await office.ApplyAsync(profile, clock.Today, ct);
+        }, ct);
 
         var count = await db.EmployeeProfiles.CountAsync(p => p.WorkScheduleId == id && p.IsActive, ct);
         return ToDto(schedule, count);
+    }
+
+    /// <summary>The employees on this schedule: the group it defines.</summary>
+    [HttpGet("{id:guid}/members")]
+    public async Task<IReadOnlyList<ScheduleMemberDto>> Members(Guid id, CancellationToken ct) =>
+        await (from p in db.EmployeeProfiles.AsNoTracking()
+               join u in db.Users.AsNoTracking() on p.UserId equals u.Id
+               join d in db.Departments.AsNoTracking() on p.DepartmentId equals d.Id
+               where p.WorkScheduleId == id && p.IsActive
+               orderby u.EmployeeNumber
+               select new ScheduleMemberDto(p.Id, u.Id, u.FullName, u.EmployeeNumber, d.NameAr, d.NameEn))
+            .ToListAsync(ct);
+
+    /// <summary>
+    /// Moves several office employees onto this schedule from a date. Every profile is checked
+    /// before anything changes, and the moves share one transaction, so the group is all or nothing.
+    /// </summary>
+    [HttpPost("{id:guid}/members")]
+    [Authorize(Policy = HrPolicies.Manage)]
+    public async Task<IActionResult> AssignMembers(Guid id, AssignMembersRequest r, CancellationToken ct)
+    {
+        if (!await db.WorkSchedules.AnyAsync(s => s.Id == id && s.IsActive, ct))
+            throw new DomainException("schedule.not_found", "Work schedule not found.");
+
+        var ids = r.ProfileIds.Distinct().ToList();
+        var profiles = await db.EmployeeProfiles.Where(p => ids.Contains(p.Id) && p.IsActive).ToListAsync(ct);
+        if (profiles.Count != ids.Count)
+            throw new DomainException("profile.not_found", "Employee not found.");
+
+        // SetSchedule refuses field staff; doing it for everyone first means a single field
+        // profile in the list stops the whole change before anything is saved.
+        foreach (var profile in profiles) profile.SetSchedule(id);
+
+        await InTransactionAsync(async () =>
+        {
+            await db.SaveChangesAsync(ct);
+            foreach (var profile in profiles)
+                await office.ApplyAsync(profile, r.EffectiveFrom, ct);
+        }, ct);
+        return NoContent();
     }
 
     [HttpDelete("{id:guid}")]
@@ -79,6 +128,15 @@ public sealed class WorkSchedulesController(AppDbContext db, OfficeScheduleServi
         await db.SaveChangesAsync(ct);
         return NoContent();
     }
+
+    private Task InTransactionAsync(Func<Task> work, CancellationToken ct) =>
+        // Retries are on (EnableRetryOnFailure), so a user transaction must run inside the strategy.
+        db.Database.CreateExecutionStrategy().ExecuteAsync(async () =>
+        {
+            await using var tx = await db.Database.BeginTransactionAsync(ct);
+            await work();
+            await tx.CommitAsync(ct);
+        });
 
     private static void ApplyDays(WorkSchedule schedule, IReadOnlyList<ScheduleDayDto> days)
     {
