@@ -54,7 +54,7 @@ public sealed record SalaryHistoryRow(decimal OldSalary, decimal NewSalary, Date
 [Route("api/hr/employees")]
 [Authorize(Policy = HrPolicies.Read)]
 public sealed class HrEmployeesController(AppDbContext db, OfficeScheduleService office, AccessScope scope,
-    ICurrentUser me, IClock clock, Attendance.ComplianceService compliance) : ControllerBase
+    ICurrentUser me, IClock clock, Attendance.ComplianceService compliance, Payroll.SalaryLookup salaries) : ControllerBase
 {
     private static readonly UserRole[] OfficeRoles =
         [UserRole.Employee, UserRole.HrOfficer, UserRole.HrManager, UserRole.DepartmentManager, UserRole.SystemAdmin, UserRole.Supervisor];
@@ -98,7 +98,8 @@ public sealed class HrEmployeesController(AppDbContext db, OfficeScheduleService
             profile.Nationality, profile.BirthDate, profile.IdNumber, profile.IdExpiry, profile.PassportNumber,
             profile.PassportExpiry, profile.ResidencyNumber, profile.ResidencyExpiry, profile.Iban,
             profile.EmergencyContactName, profile.EmergencyContactPhone, profile.Notes,
-            showSalary ? profile.BasicSalary : null, profile.EndDate, profile.EndReason, profile.RowVersion);
+            // Today's figure: a raise entered for next month shows in the history, not here yet.
+            showSalary ? await salaries.OnAsync(profile, clock.Today, ct) : null, profile.EndDate, profile.EndReason, profile.RowVersion);
     }
 
     [HttpPost]

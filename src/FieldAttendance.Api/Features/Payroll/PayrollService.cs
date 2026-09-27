@@ -16,7 +16,7 @@ public sealed record PayrollBlocker(string Code, string Detail, int Count);
 /// allowances and unpaid leave. Nothing is invented here, and nothing is taken from an
 /// employee without an approved decision behind it.
 /// </summary>
-public sealed class PayrollService(AppDbContext db, DeductionService deductions, IClock clock)
+public sealed class PayrollService(AppDbContext db, DeductionService deductions, SalaryLookup salaries, IClock clock)
 {
     public async Task<PayrollCycle> OpenAsync(int year, int month, Guid userId, CancellationToken ct)
     {
@@ -75,6 +75,7 @@ public sealed class PayrollService(AppDbContext db, DeductionService deductions,
             .Where(a => a.IsActive && a.FromDate <= cycle.LastDay && a.ToDate >= cycle.FirstDay).ToListAsync(ct);
         var allowanceTypes = await db.AllowanceTypes.AsNoTracking().ToDictionaryAsync(t => t.Id, ct);
         var unpaidLeaves = await UnpaidLeaveDaysAsync(cycle, employeeIds, ct);
+        var salarySteps = await salaries.StepsAsync(employeeIds, ct);
 
         var existing = await db.PayrollLines.Include(l => l.Items)
             .Where(l => l.PayrollCycleId == cycle.Id).ToListAsync(ct);
@@ -84,7 +85,11 @@ public sealed class PayrollService(AppDbContext db, DeductionService deductions,
         foreach (var profile in profiles)
         {
             var days = attendance.Where(r => r.EmployeeId == profile.UserId).ToList();
-            var line = new PayrollLine(cycle.Id, profile.UserId, profile.BasicSalary);
+            // The month's basic comes from salary history: a raise dated next month is not paid now,
+            // and one starting mid-month is paid for the days it covers.
+            var basic = SalaryTimeline.ForPeriod(salarySteps.GetValueOrDefault(profile.UserId, []),
+                cycle.FirstDay, cycle.LastDay, profile.BasicSalary);
+            var line = new PayrollLine(cycle.Id, profile.UserId, basic);
 
             var unpaidDays = unpaidLeaves.GetValueOrDefault(profile.UserId);
             line.SetAttendance(
@@ -96,7 +101,7 @@ public sealed class PayrollService(AppDbContext db, DeductionService deductions,
                 lateMinutes: days.Sum(r => r.LateUnexcused),
                 overtimeMinutes: days.Sum(r => r.OvertimeMinutes));
 
-            line.AddItem("الراتب الأساسي", profile.BasicSalary, isDeduction: false, "salary");
+            line.AddItem("الراتب الأساسي", basic, isDeduction: false, "salary");
 
             foreach (var allowance in allowances.Where(a => a.EmployeeId == profile.UserId))
             {
@@ -105,11 +110,11 @@ public sealed class PayrollService(AppDbContext db, DeductionService deductions,
                 if (covered > 0) line.AddItem(type.NameAr, daily * covered, false, $"allowance:{allowance.Id}");
             }
 
-            var overtime = PayrollMath.OvertimeAmount(profile.BasicSalary, policy, line.OvertimeMinutes);
+            var overtime = PayrollMath.OvertimeAmount(basic, policy, line.OvertimeMinutes);
             if (overtime > 0) line.AddItem("العمل الإضافي", overtime, false, "overtime");
 
             if (unpaidDays > 0)
-                line.AddItem("إجازة بدون راتب", PayrollMath.UnpaidLeaveAmount(profile.BasicSalary, policy, unpaidDays), true, "unpaid");
+                line.AddItem("إجازة بدون راتب", PayrollMath.UnpaidLeaveAmount(basic, policy, unpaidDays), true, "unpaid");
 
             foreach (var proposal in approvedDeductions.Where(p => p.EmployeeId == profile.UserId))
             {
@@ -121,7 +126,7 @@ public sealed class PayrollService(AppDbContext db, DeductionService deductions,
             var requested = line.Items.Where(i => i.IsDeduction && i.SourceKey != "unpaid").Sum(i => i.Amount);
             var unpaidAmount = line.Items.Where(i => i.SourceKey == "unpaid").Sum(i => i.Amount);
             // Unpaid leave is absence of work, not a penalty, so the disciplinary ceiling applies to the rest.
-            var capped = PayrollMath.CapDeductions(profile.BasicSalary, policy, requested) + unpaidAmount;
+            var capped = PayrollMath.CapDeductions(basic, policy, requested) + unpaidAmount;
             line.Total(capped);
 
             db.PayrollLines.Add(line);

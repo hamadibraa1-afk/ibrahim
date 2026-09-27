@@ -13,7 +13,7 @@ namespace FieldAttendance.Api.Features.Discipline;
 /// person, who may approve it, reduce it, replace it with a warning, or cancel it.
 /// Scanning is idempotent — the same day can be scanned repeatedly without duplicating anything.
 /// </summary>
-public sealed class DeductionService(AppDbContext db, PayrollLock payrollLock)
+public sealed class DeductionService(AppDbContext db, PayrollLock payrollLock, Payroll.SalaryLookup salaries)
 {
     public async Task<int> ScanAsync(DateOnly from, DateOnly to, Guid? employeeId, CancellationToken ct)
     {
@@ -62,14 +62,14 @@ public sealed class DeductionService(AppDbContext db, PayrollLock payrollLock)
         return created;
     }
 
-    /// <summary>Money value of a proposal, from that employee's own salary.</summary>
+    /// <summary>Money value of a proposal, from the salary that employee had on the day it concerns.</summary>
     public async Task<decimal> AmountAsync(DeductionProposal proposal, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(proposal);
         var type = await db.DeductionTypes.AsNoTracking().SingleAsync(t => t.Id == proposal.DeductionTypeId, ct);
         var profile = await db.EmployeeProfiles.AsNoTracking()
             .SingleOrDefaultAsync(p => p.UserId == proposal.EmployeeId, ct);
-        var salary = profile?.BasicSalary ?? 0m;
+        var salary = profile is null ? 0m : await salaries.OnAsync(profile, proposal.OnDate, ct);
         var policy = await PolicyAsync(ct);
         return PayrollMath.DeductionAmount(salary, policy, type.Unit, proposal.Units);
     }

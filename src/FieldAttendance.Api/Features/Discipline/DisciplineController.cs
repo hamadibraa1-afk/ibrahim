@@ -51,7 +51,7 @@ public sealed record RespondRequest([Required] string Response);
 [ApiController]
 [Route("api/hr/discipline")]
 [Authorize(Policy = HrPolicies.Read)]
-public sealed class DisciplineController(AppDbContext db, DeductionService deductions, PayrollLock payrollLock,
+public sealed class DisciplineController(AppDbContext db, DeductionService deductions, Payroll.SalaryLookup salaryLookup, PayrollLock payrollLock,
     AccessScope scope, ICurrentUser me, IClock clock) : ControllerBase
 {
     [HttpGet("types")]
@@ -158,6 +158,7 @@ public sealed class DisciplineController(AppDbContext db, DeductionService deduc
         var types = await db.DeductionTypes.AsNoTracking().ToDictionaryAsync(t => t.Id, ct);
         var users = await db.Users.AsNoTracking().ToDictionaryAsync(u => u.Id, ct);
         var salaries = await db.EmployeeProfiles.AsNoTracking().ToDictionaryAsync(p => p.UserId, p => p.BasicSalary, ct);
+        var steps = await salaryLookup.StepsAsync(list.Select(p => p.EmployeeId).Distinct().ToList(), ct);
         var policy = await deductions.PolicyAsync(ct);
 
         return list.Select(p =>
@@ -165,7 +166,8 @@ public sealed class DisciplineController(AppDbContext db, DeductionService deduc
             var type = types.GetValueOrDefault(p.DeductionTypeId);
             var user = users.GetValueOrDefault(p.EmployeeId);
             var amount = type is null ? 0m
-                : Domain.Payroll.PayrollMath.DeductionAmount(salaries.GetValueOrDefault(p.EmployeeId), policy, type.Unit, p.Units);
+                : Domain.Payroll.PayrollMath.DeductionAmount(Domain.Payroll.SalaryTimeline.On(steps.GetValueOrDefault(p.EmployeeId, []), p.OnDate,
+                    salaries.GetValueOrDefault(p.EmployeeId)), policy, type.Unit, p.Units);
             return new ProposalDto(p.Id, p.EmployeeId, user?.FullName ?? "?", user?.EmployeeNumber, p.DeductionTypeId,
                 type?.NameAr ?? "?", type?.Unit.ToString() ?? "Day", p.Units, p.OnDate, p.Reason, p.Status.ToString(),
                 amount, p.ApprovedAmount, p.DecidedBy is { } d ? users.GetValueOrDefault(d)?.FullName : null,
