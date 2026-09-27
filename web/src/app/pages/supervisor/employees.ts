@@ -7,7 +7,11 @@ import { Ui } from '../../core/ui';
 import { Backdrop } from '../../core/backdrop';
 
 interface Person { id: string; fullName: string; employeeNumber: string; email: string | null; phone: string; role: string; preferredLanguage: string; isActive: boolean; rowVersion: string; }
-const ROLES = ['SystemAdmin', 'Supervisor', 'DepartmentManager', 'Collector'];
+/**
+ * The field module's people: collectors, the supervisors who run their sites, and system accounts.
+ * Office staff (department managers, HR, employees) are managed in the HR module.
+ */
+const ROLES = ['Collector', 'Supervisor', 'SystemAdmin'];
 
 @Component({
   selector: 'app-employees',
@@ -130,7 +134,7 @@ export class EmployeesPage implements OnInit {
     const q = this.q.trim().toLowerCase();
     const role = this.role();
     return this.items()
-      .filter(p => !role || p.role === role)
+      .filter(p => role ? p.role === role : ROLES.includes(p.role))
       .filter(p => !q || [p.fullName, p.employeeNumber, p.phone, p.email ?? ''].some(v => v.toLowerCase().includes(q)));
   });
 
@@ -144,7 +148,7 @@ export class EmployeesPage implements OnInit {
   /** A supervisor with no sites selected supervises every site. */
   async openSites(p: Person): Promise<void> {
     const [locations, selected] = await Promise.all([
-      this.api.get<{ id: string; nameAr: string }[]>('locations'),
+      this.api.get<{ id: string; nameAr: string }[]>('locations', { kind: 'Field' }),
       this.api.get<string[]>(`employees/${p.id}/locations`),
     ]);
     this.locations.set(locations);

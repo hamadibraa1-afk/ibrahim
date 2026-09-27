@@ -15,7 +15,7 @@ export const routes: Routes = [
       { path: 'locations', loadComponent: () => import('./pages/supervisor/locations').then(m => m.LocationsPage) },
       { path: 'shifts', loadComponent: () => import('./pages/supervisor/shifts').then(m => m.ShiftsPage) },
       { path: 'schedule', loadComponent: () => import('./pages/supervisor/schedule').then(m => m.SchedulePage) },
-      { path: 'attendance', loadComponent: () => import('./pages/supervisor/attendance').then(m => m.AttendancePage) },
+      { path: 'attendance', data: { workforce: 'Field' }, loadComponent: () => import('./pages/supervisor/attendance').then(m => m.AttendancePage) },
       { path: 'requests', loadComponent: () => import('./pages/supervisor/requests').then(m => m.RequestsPage) },
       { path: 'feedback', loadComponent: () => import('./pages/supervisor/feedback').then(m => m.FeedbackAdminPage) },
       { path: 'allowances', loadComponent: () => import('./pages/supervisor/allowances').then(m => m.AllowancesPage) },

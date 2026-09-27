@@ -32,12 +32,16 @@ public sealed class DashboardController(AppDbContext db, IClock clock, AccessSco
         var yesterday = today.AddDays(-1);
         var startOfDay = Domain.Time.UaeTime.At(today, TimeOnly.MinValue);
 
+        // The field dashboard is the field sites only. Office branches, and the office staff who work
+        // at them, belong to the HR module; showing them here mixed the two workforces on one board.
+        var fieldSites = db.Locations.Where(l => l.Kind == LocationKind.Field).Select(l => l.Id);
         var records = await db.AttendanceRecords.AsNoTracking().Include(r => r.Exits)
+            .Where(r => fieldSites.Contains(r.LocationId))
             .Where(r => r.ShiftDate == today || (r.ShiftDate == yesterday && (r.ScheduledEnd > now || (r.CheckOutAt == null && r.CheckInAt != null))))
             .ToListAsync(ct);
         var users = await db.Users.AsNoTracking().Where(u => u.Role == UserRole.Collector).ToDictionaryAsync(u => u.Id, ct);
         var scoped = await scope.LocationIdsAsync(ct);
-        var locations = await db.Locations.AsNoTracking().Where(l => l.IsActive).OrderBy(l => l.NameAr).ToListAsync(ct);
+        var locations = await db.Locations.AsNoTracking().Where(l => l.IsActive && l.Kind == LocationKind.Field).OrderBy(l => l.NameAr).ToListAsync(ct);
         if (scoped is not null) locations = locations.Where(l => scoped.Contains(l.Id)).ToList();
 
         string StateOf(Domain.Entities.AttendanceRecord r) =>

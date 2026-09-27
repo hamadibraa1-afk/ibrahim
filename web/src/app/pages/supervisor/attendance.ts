@@ -27,6 +27,11 @@ interface Named { id: string; nameAr?: string; nameEn?: string; fullName?: strin
       <div class="field"><label>{{ 'common.to' | t }}</label><input type="date" [(ngModel)]="to"></div>
       <div class="field"><label>{{ 'att.employee' | t }}</label><select [(ngModel)]="employeeId"><option value="">{{ 'common.all' | t }}</option>
         @for (e of employees(); track e.id) { <option [value]="e.id">{{ e.fullName }}</option> }</select></div>
+      @if (!workforce()) {
+        <div class="field"><label for="att-wf">{{ 'wf.title' | t }}</label>
+          <select id="att-wf" [(ngModel)]="side" (change)="load()"><option value="">{{ 'common.all' | t }}</option>
+            <option value="Office">{{ 'wf.Office' | t }}</option><option value="Field">{{ 'wf.Field' | t }}</option></select></div>
+      }
       <div class="field"><label>{{ 'att.location' | t }}</label><select [(ngModel)]="locationId"><option value="">{{ 'common.all' | t }}</option>
         @for (l of locations(); track l.id) { <option [value]="l.id">{{ i18n.pick(l.nameAr!, l.nameEn!) }}</option> }</select></div>
       <button class="btn primary" style="margin-bottom:12px" (click)="load()">{{ 'common.search' | t }}</button>
@@ -103,6 +108,12 @@ export class AttendancePage implements OnInit {
   readonly locations = signal<Named[]>([]);
   readonly detail = signal<Row | null>(null);
   readonly view = input<string>();
+  /**
+   * Set by the route. The field module fixes it to Field, so office staff never appear there;
+   * HR leaves it empty and sees everyone, with a filter to narrow to one workforce.
+   */
+  readonly workforce = input<string>('');
+  side = '';
   private readonly statusFilter = signal('');
   readonly chips = [
     { key: 'present', label: 'dash.present' }, { key: 'late', label: 'att.filterLate' }, { key: 'Absent', label: 'dash.absent' },
@@ -138,7 +149,11 @@ export class AttendancePage implements OnInit {
   setFilter(key: string): void { this.status = key; this.statusFilter.set(key); }
 
   async ngOnInit(): Promise<void> {
-    const [e, l] = await Promise.all([this.api.get<Named[]>('employees', { role: 'Collector' }), this.api.get<Named[]>('locations')]);
+    const field = this.workforce() === 'Field';
+    const [e, l] = await Promise.all([
+      this.api.get<Named[]>('employees', field ? { role: 'Collector' } : {}),
+      this.api.get<Named[]>('locations', field ? { kind: 'Field' } : {}),
+    ]);
     this.employees.set(e);
     this.locations.set(l);
     await this.load();
@@ -146,7 +161,10 @@ export class AttendancePage implements OnInit {
 
   async load(): Promise<void> {
     try {
-      this.rows.set(await this.api.get<Row[]>('attendance', { from: this.from, to: this.to, employeeId: this.employeeId, locationId: this.locationId }));
+      this.rows.set(await this.api.get<Row[]>('attendance', {
+        from: this.from, to: this.to, employeeId: this.employeeId, locationId: this.locationId,
+        workforce: this.workforce() || this.side,
+      }));
       this.statusFilter.set(this.status);
     } catch (e) { this.ui.error(this.api.error(e).message); }
   }

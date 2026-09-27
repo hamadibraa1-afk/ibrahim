@@ -25,7 +25,7 @@ public sealed class AttendanceController(AppDbContext db, AccessScope scope) : C
 
     [HttpGet]
     public async Task<IReadOnlyList<AttendanceRowDto>> List([FromQuery] DateOnly from, [FromQuery] DateOnly to,
-        [FromQuery] Guid? employeeId, [FromQuery] Guid? locationId, CancellationToken ct)
+        [FromQuery] Guid? employeeId, [FromQuery] Guid? locationId, [FromQuery] string? workforce, CancellationToken ct)
     {
         if (to < from || to.DayNumber - from.DayNumber >= MaxDays)
             throw new DomainException("attendance.range_invalid", $"Range must be 1–{MaxDays} days.");
@@ -43,6 +43,15 @@ public sealed class AttendanceController(AppDbContext db, AccessScope scope) : C
             if (allowed is not null) query = query.Where(r => allowed.Contains(r.EmployeeId));
         }
         if (locationId is { } l) query = query.Where(r => r.LocationId == l);
+
+        // Where the day was worked decides the workforce: a field site or an office branch. The field
+        // module asks for Field; HR may ask for either, or leave it out to see everyone.
+        if (Enum.TryParse<Domain.Enums.Workforce>(workforce, true, out var side))
+        {
+            var kind = side == Domain.Enums.Workforce.Field ? Domain.Enums.LocationKind.Field : Domain.Enums.LocationKind.Office;
+            var sites = db.Locations.Where(x => x.Kind == kind).Select(x => x.Id);
+            query = query.Where(r => sites.Contains(r.LocationId));
+        }
 
         var scopedLocations = await scope.LocationIdsAsync(ct);
         if (scopedLocations is not null) query = query.Where(r => scopedLocations.Contains(r.LocationId));

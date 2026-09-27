@@ -225,7 +225,7 @@ export class SchedulePage implements OnInit {
   f = { locationId: '', shiftId: '', from: '', to: '', days: 31, reason: '', replacementId: '' };
 
   async ngOnInit(): Promise<void> {
-    const [l, s] = await Promise.all([this.api.get<Named[]>('locations'), this.api.get<Named[]>('shifts')]);
+    const [l, s] = await Promise.all([this.api.get<Named[]>('locations', { kind: 'Field' }), this.api.get<Named[]>('shifts')]);
     this.locations.set(l);
     this.shifts.set(s);
     await this.load();
