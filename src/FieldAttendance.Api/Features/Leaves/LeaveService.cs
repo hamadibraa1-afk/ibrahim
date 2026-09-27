@@ -14,7 +14,7 @@ public sealed record SubmitLeaveRequest(Guid LeaveTypeId, DateOnly FromDate, Dat
 
 public sealed record LeaveDto(Guid Id, Guid EmployeeId, string? EmployeeName, Guid LeaveTypeId, string LeaveTypeName,
     DateOnly FromDate, DateOnly ToDate, int WorkingDays, string Status, string? Reason, string? RejectReason,
-    string? DecidedByName, DateTimeOffset CreatedAt);
+    string? DecidedByName, DateTimeOffset CreatedAt, Guid? DecidedById = null);
 
 public sealed record LeaveBalanceDto(Guid LeaveTypeId, string LeaveTypeName, int Year, int? TotalDays, int UsedDays, int? RemainingDays);
 
@@ -63,13 +63,13 @@ public sealed class LeaveService(AppDbContext db, ScheduleSnapshotLoader loader,
         var leave = await Find(id, ct);
         await payrollLock.EnsureRangeOpenAsync(leave.FromDate, leave.ToDate, ct);
         if (approve) await EnsureNoAttendanceConflictAsync(leave, ct);
-        var hasChain = await db.ApprovalSteps.AnyAsync(s => s.Kind == RequestKind.Leave && s.RequestId == id, ct);
-        if (hasChain)
-        {
-            var outcome = await approvals.DecideAsync(RequestKind.Leave, id, supervisorId, approve,
-                approve ? null : rejectReason, isHrOverride, ct);
-            if (outcome == RequestStatus.Pending) return; // still travelling up the chain
-        }
+        // A pending leave without a chain (filed before chains existed) gets one now, so the same rule
+        // holds for every leave: only the person it is waiting on may sign.
+        if (!await approvals.HasChainAsync(RequestKind.Leave, id, ct))
+            await approvals.StartAsync(RequestKind.Leave, id, leave.EmployeeId, ct);
+        var outcome = await approvals.DecideAsync(RequestKind.Leave, id, supervisorId, approve,
+            approve ? null : rejectReason, isHrOverride, ct);
+        if (outcome == RequestStatus.Pending) return; // still travelling up the chain
 
         if (approve)
         {
@@ -166,7 +166,7 @@ public sealed class LeaveService(AppDbContext db, ScheduleSnapshotLoader loader,
         return list.Select(l => new LeaveDto(l.Id, l.EmployeeId, names.GetValueOrDefault(l.EmployeeId),
             l.LeaveTypeId, types.GetValueOrDefault(l.LeaveTypeId, "?"), l.FromDate, l.ToDate, l.WorkingDays,
             l.Status.ToString(), l.Reason, l.RejectReason,
-            l.DecidedBy is { } d ? names.GetValueOrDefault(d) : null, l.CreatedAt)).ToList();
+            l.DecidedBy is { } d ? names.GetValueOrDefault(d) : null, l.CreatedAt, l.DecidedBy)).ToList();
     }
 
     /// <summary>Balance rows are created on first use from the type's annual allowance; unlimited types have none.</summary>

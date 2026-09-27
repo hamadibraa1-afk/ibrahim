@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using FieldAttendance.Api.Common;
 using FieldAttendance.Api.Data;
 using FieldAttendance.Api.Features.Approvals;
+using FieldAttendance.Api.Features.Requests;
 using FieldAttendance.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -26,24 +27,35 @@ public sealed class LeaveTypesController(AppDbContext db) : ControllerBase
             .Select(t => new LeaveTypeDto(t.Id, t.NameAr, t.NameEn, t.AnnualBalanceDays, t.IsActive)).ToListAsync(ct);
 }
 
-/// <summary>Supervisor inbox for leave requests.</summary>
+/// <summary>
+/// The leave inbox for every approver: supervisors, section heads, line and department managers, HR.
+/// Approvers are people rather than roles, so the gate is the chain itself: only the person a leave
+/// is waiting on may sign it.
+/// </summary>
 [ApiController]
 [Route("api/requests/leaves")]
-[Authorize(Policy = Policies.Read)]
-public sealed class LeaveRequestsController(LeaveService leaves, ApprovalService approvals, ICurrentUser me) : ControllerBase
+[Authorize(Policy = Policies.Approver)]
+public sealed class LeaveRequestsController(LeaveService leaves, RequestInbox inbox, ICurrentUser me) : ControllerBase
 {
-    /// <summary>Pending requests are filtered to the ones actually waiting on this approver.</summary>
+    /// <summary>Pending: the ones waiting on this approver. Decided: the reviewer's view, or only what the caller decided.</summary>
     [HttpGet]
-    public async Task<IReadOnlyList<LeaveDto>> List([FromQuery] string status = "Pending", CancellationToken ct = default)
+    public async Task<IReadOnlyList<LeaveDto>> List([FromQuery] string status = "Pending", [FromQuery] string? workforce = null,
+        CancellationToken ct = default)
     {
         var parsed = Enum.TryParse<RequestStatus>(status, true, out var s) ? s : RequestStatus.Pending;
         var list = await leaves.ListAsync(null, parsed, ct);
-        if (parsed != RequestStatus.Pending) return list;
+        if (inbox.EmployeesOf(workforce) is { } side)
+        {
+            var ids = side.ToHashSet();
+            list = list.Where(l => ids.Contains(l.EmployeeId)).ToList();
+        }
 
-        var isHr = User.IsInRole(nameof(UserRole.HrManager)) || User.IsInRole(nameof(UserRole.SystemAdmin));
-        var mine = await approvals.WaitingOnAsync(RequestKind.Leave, me.RequiredId, isHr, ct);
-        var waiting = mine.ToHashSet();
-        return list.Where(l => waiting.Contains(l.Id)).ToList();
+        if (parsed == RequestStatus.Pending)
+        {
+            var waiting = await inbox.WaitingAsync(RequestKind.Leave, User, ct);
+            return list.Where(l => waiting.Contains(l.Id)).ToList();
+        }
+        return RequestInbox.ReviewsHistory(User) ? list : list.Where(l => l.DecidedById == me.RequiredId).ToList();
     }
 
     [HttpGet("{id:guid}/timeline")]
@@ -57,21 +69,21 @@ public sealed class LeaveRequestsController(LeaveService leaves, ApprovalService
         return NoContent();
     }
 
+    /// <summary>
+    /// Open to any approver: a department manager or HR signing their step was refused here by a
+    /// supervisors-only policy, which left office leave stuck at the second level.
+    /// </summary>
     [HttpPost("{id:guid}/approve")]
-    [Authorize(Policy = Policies.Manage)]
     public async Task<IActionResult> Approve(Guid id, CancellationToken ct)
     {
-        await leaves.DecideAsync(id, me.RequiredId, approve: true, null, ct,
-            isHrOverride: User.IsInRole(nameof(UserRole.SystemAdmin)));
+        await leaves.DecideAsync(id, me.RequiredId, approve: true, null, ct, isHrOverride: RequestInbox.CanOverride(User));
         return NoContent();
     }
 
     [HttpPost("{id:guid}/reject")]
-    [Authorize(Policy = Policies.Manage)]
     public async Task<IActionResult> Reject(Guid id, RejectLeaveRequest r, CancellationToken ct)
     {
-        await leaves.DecideAsync(id, me.RequiredId, approve: false, r.Reason, ct,
-            isHrOverride: User.IsInRole(nameof(UserRole.SystemAdmin)));
+        await leaves.DecideAsync(id, me.RequiredId, approve: false, r.Reason, ct, isHrOverride: RequestInbox.CanOverride(User));
         return NoContent();
     }
 

@@ -13,14 +13,22 @@ public sealed class ApprovalFlow : Entity
 
     private ApprovalFlow() { } // EF Core
 
-    public ApprovalFlow(RequestKind kind, string nameAr, string nameEn, int escalationHours)
+    public ApprovalFlow(RequestKind kind, string nameAr, string nameEn, int escalationHours, Workforce? workforce = null)
     {
         Kind = kind;
+        Workforce = workforce;
         Rename(nameAr, nameEn);
         SetEscalation(escalationHours);
     }
 
     public RequestKind Kind { get; private set; }
+
+    /// <summary>
+    /// The workforce this chain is for; null is the chain for anyone without one of their own.
+    /// Field requests go supervisor, then the supervisor's department manager, which is not the
+    /// office chain, so the two are configured separately.
+    /// </summary>
+    public Workforce? Workforce { get; private set; }
     public string NameAr { get; private set; } = string.Empty;
     public string NameEn { get; private set; } = string.Empty;
 

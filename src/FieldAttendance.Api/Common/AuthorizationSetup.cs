@@ -17,6 +17,7 @@ public static class AuthorizationSetup
             .AddPolicy(Policies.ReadAny, p => p.RequireRole(nameof(UserRole.SystemAdmin), nameof(UserRole.Supervisor),
                 nameof(UserRole.DepartmentManager), nameof(UserRole.HrManager), nameof(UserRole.HrOfficer)))
             .AddPolicy(Policies.SelfService, p => p.RequireAuthenticatedUser().RequireClaim(AppClaims.UserId))
+            .AddPolicy(Policies.Approver, p => p.RequireAuthenticatedUser().RequireClaim(AppClaims.UserId))
             .AddPolicy(HrPolicies.Manage, p => p.RequireRole(nameof(UserRole.SystemAdmin), nameof(UserRole.HrManager)))
             .AddPolicy(HrPolicies.Read, p => p.RequireRole(nameof(UserRole.SystemAdmin), nameof(UserRole.HrManager),
                 nameof(UserRole.HrOfficer), nameof(UserRole.DepartmentManager)))

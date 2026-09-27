@@ -22,24 +22,42 @@ public sealed record PendingCountsDto(int Permissions, int Exceptions, int Leave
 
 [ApiController]
 [Route("api/requests")]
-[Authorize(Policy = Policies.Read)]
+[Authorize(Policy = Policies.Approver)]
 public sealed class RequestsController(AppDbContext db, PermissionService permissions, RecalculationService recalculator,
-    ICurrentUser me, IClock clock, AccessScope scope, PayrollLock payrollLock) : ControllerBase
+    ICurrentUser me, IClock clock, AccessScope scope, PayrollLock payrollLock, RequestInbox inbox) : ControllerBase
 {
+    /// <summary>What the caller has to act on, and nothing else: office requests no longer count on a field supervisor's badge.</summary>
     [HttpGet("pending-counts")]
-    public async Task<PendingCountsDto> PendingCounts(CancellationToken ct) => new(
-        await db.PermissionRequests.CountAsync(p => p.IsActive && p.Status == RequestStatus.Pending, ct),
-        await db.AttendanceExceptionRequests.CountAsync(e => e.IsActive && e.Status == RequestStatus.Pending, ct),
-        await db.LeaveRequests.CountAsync(l => l.IsActive && l.Status == RequestStatus.Pending, ct));
+    public Task<PendingCountsDto> PendingCounts(CancellationToken ct) => inbox.CountsAsync(User, ct);
 
+    /// <summary>
+    /// Pending: what is waiting on the caller in the approval chain. Decided: the caller's area for
+    /// reviewers, otherwise only what the caller decided. <paramref name="workforce"/> narrows to
+    /// field or office staff (the field module always asks for Field).
+    /// </summary>
     [HttpGet("permissions")]
-    public async Task<IReadOnlyList<PermissionDto>> Permissions([FromQuery] string status = "Pending", CancellationToken ct = default)
+    public async Task<IReadOnlyList<PermissionDto>> Permissions([FromQuery] string status = "Pending", [FromQuery] string? workforce = null,
+        CancellationToken ct = default)
     {
         var parsed = ParseStatus(status);
-        var list = await db.PermissionRequests.AsNoTracking().Where(p => p.IsActive && p.Status == parsed)
-            .OrderBy(p => p.ShiftDate).ThenBy(p => p.CreatedAt).Take(500).ToListAsync(ct);
-        var allowed = await scope.EmployeeIdsAsync(ct);
-        if (allowed is not null) list = list.Where(p => allowed.Contains(p.EmployeeId)).ToList();
+        var query = db.PermissionRequests.AsNoTracking().Where(p => p.IsActive && p.Status == parsed);
+        if (inbox.EmployeesOf(workforce) is { } side) query = query.Where(p => side.Contains(p.EmployeeId));
+        var list = await query.OrderBy(p => p.ShiftDate).ThenBy(p => p.CreatedAt).Take(500).ToListAsync(ct);
+
+        if (parsed == RequestStatus.Pending)
+        {
+            var waiting = await inbox.WaitingAsync(RequestKind.Permission, User, ct);
+            list = list.Where(p => waiting.Contains(p.Id)).ToList();
+        }
+        else if (!RequestInbox.ReviewsHistory(User))
+        {
+            list = list.Where(p => p.DecidedBy == me.RequiredId).ToList();
+        }
+        else
+        {
+            var allowed = await scope.EmployeeIdsAsync(ct);
+            if (allowed is not null) list = list.Where(p => allowed.Contains(p.EmployeeId)).ToList();
+        }
         var names = await NamesAsync(list.Select(p => p.EmployeeId).Concat(list.Where(p => p.DecidedBy != null).Select(p => p.DecidedBy!.Value)), ct);
         return list.Select(p => MyAttendanceController.ToDto(p) with
         {
@@ -57,28 +75,37 @@ public sealed class RequestsController(AppDbContext db, PermissionService permis
         return MyAttendanceController.ToDto(p);
     }
 
+    /// <summary>Only the person the permission is waiting on may sign; ApprovalService enforces it.</summary>
     [HttpPost("permissions/{id:guid}/approve")]
-    [Authorize(Policy = Policies.Manage)]
     public async Task<IActionResult> ApprovePermission(Guid id, CancellationToken ct)
     {
         await EnsurePeriodOpenAsync(id, ct);
-        await permissions.DecideAsync(id, me.RequiredId, approve: true, null, ct);
+        await permissions.DecideAsync(id, me.RequiredId, approve: true, null, ct, RequestInbox.CanOverride(User));
         return NoContent();
     }
 
     [HttpPost("permissions/{id:guid}/reject")]
-    [Authorize(Policy = Policies.Manage)]
     public async Task<IActionResult> RejectPermission(Guid id, RejectRequest r, CancellationToken ct)
     {
-        await permissions.DecideAsync(id, me.RequiredId, approve: false, r.Reason, ct);
+        await permissions.DecideAsync(id, me.RequiredId, approve: false, r.Reason, ct, RequestInbox.CanOverride(User));
         return NoContent();
     }
 
+    /// <summary>Exceptions at field sites go to supervisors, at office branches to HR; see <see cref="RequestInbox"/>.</summary>
     [HttpGet("exceptions")]
-    public async Task<IReadOnlyList<ExceptionDto>> Exceptions([FromQuery] string status = "Pending", CancellationToken ct = default)
+    public async Task<IReadOnlyList<ExceptionDto>> Exceptions([FromQuery] string status = "Pending", [FromQuery] string? workforce = null,
+        CancellationToken ct = default)
     {
         var parsed = ParseStatus(status);
-        var list = await db.AttendanceExceptionRequests.AsNoTracking().Where(e => e.IsActive && e.Status == parsed)
+        var kinds = RequestInbox.ExceptionSites(User).ToList();
+        if (Enum.TryParse<Workforce>(workforce, true, out var side))
+            kinds = kinds.Where(k => k == (side == Workforce.Field ? LocationKind.Field : LocationKind.Office)).ToList();
+        if (kinds.Count == 0) return [];
+
+        var sites = db.Locations.Where(l => kinds.Contains(l.Kind)).Select(l => l.Id);
+        var records = db.AttendanceRecords.Where(r => sites.Contains(r.LocationId)).Select(r => r.Id);
+        var list = await db.AttendanceExceptionRequests.AsNoTracking()
+            .Where(e => e.IsActive && e.Status == parsed && records.Contains(e.AttendanceRecordId))
             .OrderBy(e => e.RequestedAt).Take(500).ToListAsync(ct);
         var allowed = await scope.EmployeeIdsAsync(ct);
         if (allowed is not null) list = list.Where(e => allowed.Contains(e.EmployeeId)).ToList();
@@ -99,12 +126,12 @@ public sealed class RequestsController(AppDbContext db, PermissionService permis
 
     /// <summary>Records the check-in/out at the moment the employee asked, not the approval time (spec 3.3).</summary>
     [HttpPost("exceptions/{id:guid}/approve")]
-    [Authorize(Policy = Policies.Manage)]
     public async Task<IActionResult> ApproveException(Guid id, CancellationToken ct)
     {
         var e = await db.AttendanceExceptionRequests.SingleOrDefaultAsync(x => x.Id == id, ct)
             ?? throw new DomainException("request.not_found", "Request not found.");
         var record = await db.AttendanceRecords.Include(r => r.Exits).SingleAsync(r => r.Id == e.AttendanceRecordId, ct);
+        await EnsureCanDecideExceptionAsync(e.EmployeeId, record.LocationId, ct);
         await payrollLock.EnsureOpenAsync(record.ShiftDate, ct);
 
         e.Approve(me.RequiredId, clock.Now);
@@ -120,11 +147,12 @@ public sealed class RequestsController(AppDbContext db, PermissionService permis
     }
 
     [HttpPost("exceptions/{id:guid}/reject")]
-    [Authorize(Policy = Policies.Manage)]
     public async Task<IActionResult> RejectException(Guid id, RejectRequest r, CancellationToken ct)
     {
         var e = await db.AttendanceExceptionRequests.SingleOrDefaultAsync(x => x.Id == id, ct)
             ?? throw new DomainException("request.not_found", "Request not found.");
+        var locationId = await db.AttendanceRecords.Where(x => x.Id == e.AttendanceRecordId).Select(x => x.LocationId).SingleAsync(ct);
+        await EnsureCanDecideExceptionAsync(e.EmployeeId, locationId, ct);
         e.Reject(me.RequiredId, clock.Now, r.Reason);
         await db.SaveChangesAsync(ct);
         return NoContent();
@@ -138,6 +166,19 @@ public sealed class RequestsController(AppDbContext db, PermissionService permis
 
     private static RequestStatus ParseStatus(string status) =>
         Enum.TryParse<RequestStatus>(status, true, out var s) ? s : RequestStatus.Pending;
+
+    /// <summary>
+    /// A field exception is the supervisor's to decide, and only for their own sites' staff; an office
+    /// one is HR's. Before, any supervisor could decide any exception whose id they had.
+    /// </summary>
+    private async Task EnsureCanDecideExceptionAsync(Guid employeeId, Guid locationId, CancellationToken ct)
+    {
+        var kind = await db.Locations.Where(l => l.Id == locationId).Select(l => l.Kind).SingleAsync(ct);
+        if (!RequestInbox.CanDecideException(User, kind))
+            throw new DomainException("access.forbidden", "This request is decided by someone else.");
+        if (kind == LocationKind.Field && await scope.EmployeeIdsAsync(ct) is { } allowed && !allowed.Contains(employeeId))
+            throw new DomainException("access.forbidden", "This request is decided by someone else.");
+    }
 
     /// <summary>A permission for a month whose payroll is settled can no longer change the numbers.</summary>
     private async Task EnsurePeriodOpenAsync(Guid permissionId, CancellationToken ct)

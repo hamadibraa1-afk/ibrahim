@@ -41,6 +41,7 @@ builder.Services.AddScoped<AttendanceJobs>();
 builder.Services.AddScoped<ComplianceService>();
 builder.Services.AddScoped<ScheduleService>();
 builder.Services.AddScoped<PermissionService>();
+builder.Services.AddScoped<FieldAttendance.Api.Features.Requests.RequestInbox>();
 builder.Services.AddScoped<FieldAttendance.Api.Features.Leaves.LeaveService>();
 builder.Services.AddScoped<FieldAttendance.Api.Features.Hr.OfficeScheduleService>();
 builder.Services.AddScoped<FieldAttendance.Api.Features.Discipline.DeductionService>();
@@ -166,6 +167,11 @@ using (var scope = app.Services.CreateScope())
 
     if (app.Environment.IsDevelopment() && config.GetValue<bool>("SeedDemoData"))
         await DevSeeder.SeedAsync(db, scope.ServiceProvider.GetRequiredService<IClock>());
+
+    // Pending requests filed before permissions went through approval chains would otherwise sit
+    // in nobody's inbox. Idempotent, so it is safe on every start and in production.
+    await scope.ServiceProvider.GetRequiredService<FieldAttendance.Api.Features.Approvals.ApprovalService>()
+        .StartMissingChainsAsync(CancellationToken.None);
 }
 
 await app.RunAsync();

@@ -1,4 +1,5 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, computed, inject } from '@angular/core';
+import { PendingRequests } from '../core/pending';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { Auth } from '../core/auth';
 import { I18n, TPipe } from '../core/i18n';
@@ -25,7 +26,7 @@ import { Icon } from './nav-icon';
           <button class="btn sm ghost text-bad" (click)="auth.logout()"><app-icon name="logout" /></button>
         </div>
         <nav class="mx-auto flex w-full max-w-4xl gap-1 overflow-x-auto no-scrollbar px-2">
-          @for (item of nav; track item.path) {
+          @for (item of items(); track item.path) {
             <a [routerLink]="item.path" routerLinkActive="!text-brand !border-brand font-semibold"
                [routerLinkActiveOptions]="{ exact: item.exact === true }"
                class="whitespace-nowrap border-b-2 border-transparent px-3 py-2.5 text-sm text-muted no-underline transition-colors hover:text-ink">
@@ -37,7 +38,8 @@ import { Icon } from './nav-icon';
       <main class="mx-auto w-full max-w-4xl p-4"><router-outlet /></main>
     </div>`,
 })
-export class MyShell {
+export class MyShell implements OnInit {
+  readonly pending = inject(PendingRequests);
   readonly auth = inject(Auth);
   readonly i18n = inject(I18n);
   readonly nav = [
@@ -48,4 +50,9 @@ export class MyShell {
     { path: '/my/payslips', label: 'my.payslips', icon: 'allowances' },
     { path: '/my/profile', label: 'my.profile', icon: 'people' },
   ];
+  readonly items = computed(() => this.pending.count() > 0
+    ? [...this.nav, { path: '/my/approvals', label: 'my.approvals', icon: 'requests' }]
+    : this.nav);
+
+  ngOnInit(): void { this.pending.refresh(); }
 }

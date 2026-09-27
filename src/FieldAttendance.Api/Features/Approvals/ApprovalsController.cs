@@ -10,10 +10,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FieldAttendance.Api.Features.Approvals;
 
-public sealed record FlowDto(Guid Id, string Kind, string NameAr, string NameEn, int EscalationHours, IReadOnlyList<string> Stages, byte[] RowVersion);
+public sealed record FlowDto(Guid Id, string Kind, string NameAr, string NameEn, int EscalationHours, IReadOnlyList<string> Stages,
+    byte[] RowVersion, string? Workforce);
 
+/// <param name="Workforce">Field or Office for that workforce's own chain; empty for the general one.</param>
 public sealed record SaveFlowRequest([Required] string Kind, [Required] string NameAr, [Required] string NameEn,
-    [Range(0, 720)] int EscalationHours, IReadOnlyList<string> Stages, byte[]? RowVersion);
+    [Range(0, 720)] int EscalationHours, IReadOnlyList<string> Stages, byte[]? RowVersion, string? Workforce = null);
 
 public sealed record ReturnDto(Guid Id, Guid EmployeeId, string EmployeeName, Guid LeaveRequestId, DateOnly ExpectedDate,
     DateOnly? ActualDate, string Status, int LateDays, string? Note, string? ConfirmedByName, bool IsOverdue);
@@ -30,9 +32,9 @@ public sealed class ApprovalsController(AppDbContext db, ICurrentUser me, IClock
     public async Task<IReadOnlyList<FlowDto>> Flows(CancellationToken ct) =>
         (await db.ApprovalFlows.AsNoTracking().Include(f => f.Levels).Where(f => f.IsActive).ToListAsync(ct))
         .Select(f => new FlowDto(f.Id, f.Kind.ToString(), f.NameAr, f.NameEn, f.EscalationHours,
-            f.Stages().Select(s => s.ToString()).ToList(), f.RowVersion)).ToList();
+            f.Stages().Select(s => s.ToString()).ToList(), f.RowVersion, f.Workforce?.ToString())).ToList();
 
-    /// <summary>One chain per request kind: saving replaces the existing one for that kind.</summary>
+    /// <summary>One chain per request kind and workforce: saving replaces the existing one for that pair.</summary>
     [HttpPut("flows")]
     [Authorize(Policy = HrPolicies.Manage)]
     public async Task<IActionResult> SaveFlow(SaveFlowRequest r, CancellationToken ct)
@@ -42,10 +44,12 @@ public sealed class ApprovalsController(AppDbContext db, ICurrentUser me, IClock
         var stages = (r.Stages ?? []).Select(s => Enum.TryParse<ApprovalStage>(s, true, out var stage) ? stage
             : throw new DomainException("flow.stage", "Unknown approval level.")).ToList();
 
-        var flow = await db.ApprovalFlows.Include(f => f.Levels).FirstOrDefaultAsync(f => f.Kind == kind && f.IsActive, ct);
+        Workforce? workforce = Enum.TryParse<Workforce>(r.Workforce, true, out var w) ? w : null;
+        var flow = await db.ApprovalFlows.Include(f => f.Levels)
+            .FirstOrDefaultAsync(f => f.Kind == kind && f.Workforce == workforce && f.IsActive, ct);
         if (flow is null)
         {
-            flow = new ApprovalFlow(kind, r.NameAr, r.NameEn, r.EscalationHours);
+            flow = new ApprovalFlow(kind, r.NameAr, r.NameEn, r.EscalationHours, workforce);
             db.ApprovalFlows.Add(flow);
         }
         else

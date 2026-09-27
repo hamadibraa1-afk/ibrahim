@@ -84,6 +84,13 @@ public static class Policies
     /// their records by <see cref="SelfServiceScope"/>, not here.
     /// </summary>
     public const string SelfService = nameof(SelfService);
+
+    /// <summary>
+    /// Deciding on a request in an approval chain. Approvers are people, not roles: a section head or
+    /// a line manager may hold the plain Employee role. ApprovalService refuses anyone but the person
+    /// the request is currently waiting on, so this only requires a signed-in user.
+    /// </summary>
+    public const string Approver = nameof(Approver);
 }
 
 /// <summary>Stable error shape for the Angular client: { code, message, data? }.</summary>

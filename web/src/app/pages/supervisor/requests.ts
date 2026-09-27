@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Api } from '../../core/api';
 import { hm, timeInput, toTimeOnly, uaeToday } from '../../core/format';
@@ -20,8 +20,7 @@ interface Exc { id: string; employeeName: string; kind: string; requestedAt: str
     <div class="toolbar"><h1 style="margin:0">{{ 'req.title' | t }}</h1><span class="spacer"></span>
       <select style="width:auto" [(ngModel)]="status" (change)="load()">
         @for (s of ['Pending','Approved','Rejected','Cancelled']; track s) { <option [value]="s">{{ 'rs.' + s | t }}</option> }</select>
-      @if (auth.canManage()) { <button class="btn primary" (click)="openOnBehalf()">+ {{ 'req.onBehalf' | t }}</button> }
-      @else { <span class="badge">{{ 'common.viewOnly' | t }}</span> }</div>
+      @if (workforce() === 'Field' && auth.canManage()) { <button class="btn primary" (click)="openOnBehalf()">+ {{ 'req.onBehalf' | t }}</button> }</div>
     <div class="tabs">
       <button [class.active]="tab() === 'p'" (click)="tab.set('p')">{{ 'req.permissions' | t }} ({{ perms().length }})</button>
       <button [class.active]="tab() === 'l'" (click)="tab.set('l')">{{ 'leave.title' | t }} ({{ leaves().length }})</button>
@@ -58,13 +57,12 @@ interface Exc { id: string; employeeName: string; kind: string; requestedAt: str
                 @if (l.rejectReason) { <div class="small muted">{{ l.rejectReason }}</div> }</td>
               <td>
                 <button class="btn sm ghost" (click)="showChain(l)">{{ 'flow.chain' | t }}</button>
-                @if (auth.canManage()) {
                 @if (l.status === 'Pending') {
                   <button class="btn sm primary" (click)="decide('leaves', l.id, true)">{{ 'req.approve' | t }}</button>
                   <button class="btn sm danger" (click)="decide('leaves', l.id, false)">{{ 'req.reject' | t }}</button>
-                } @else if (l.status === 'Approved') {
+                } @else if (l.status === 'Approved' && auth.canManage()) {
                   <button class="btn sm danger" (click)="cancelLeave(l)">{{ 'leave.cancel' | t }}</button>
-                } }</td></tr>
+                }</td></tr>
           } @empty { <tr><td colspan="8" class="muted">{{ 'common.empty' | t }}</td></tr> }
         </tbody></table></div>
     } @else {
@@ -137,6 +135,12 @@ export class RequestsPage implements OnInit {
   readonly hm = hm;
   readonly timeInput = timeInput;
   readonly tab = signal<'p' | 'l' | 'e'>('p');
+  /**
+   * Set by the route: Field in the field module, so office requests never show there. Elsewhere
+   * (HR, an employee who approves) it is empty: the pending lists are already exactly what waits
+   * on the viewer, office or field alike.
+   */
+  readonly workforce = input<string>('');
   readonly perms = signal<Perm[]>([]);
   readonly excs = signal<Exc[]>([]);
   readonly leaves = signal<Leave[]>([]);
@@ -151,9 +155,9 @@ export class RequestsPage implements OnInit {
   async load(): Promise<void> {
     try {
       const [p, e, l] = await Promise.all([
-        this.api.get<Perm[]>('requests/permissions', { status: this.status }),
-        this.api.get<Exc[]>('requests/exceptions', { status: this.status }),
-        this.api.get<Leave[]>('requests/leaves', { status: this.status }),
+        this.api.get<Perm[]>('requests/permissions', { status: this.status, workforce: this.workforce() }),
+        this.api.get<Exc[]>('requests/exceptions', { status: this.status, workforce: this.workforce() }),
+        this.api.get<Leave[]>('requests/leaves', { status: this.status, workforce: this.workforce() }),
       ]);
       this.perms.set(p);
       this.excs.set(e);

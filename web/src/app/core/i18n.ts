@@ -159,6 +159,7 @@ const D: Record<string, [string, string]> = {
   'me.pendingApproval': ['طلبك بانتظار قرار المشرف', 'Awaiting supervisor decision'],
   'me.earlyWarn': ['لا يوجد إذن انصراف مبكر، وسيُسجَّل انصرافًا مبكرًا غير مبرر. متابعة؟', 'Without a permission this is recorded as unexcused. Continue?'],
   'me.checkedInAt': ['سجّلت حضورك الساعة', 'Checked in at'],
+  'my.approvals': ['الموافقات', 'Approvals'],
   'wf.title': ['القطاع', 'Workforce'], 'wf.Office': ['إداري', 'Office'], 'wf.Field': ['ميداني', 'Field'],
   'wf.fieldScheduleNote': ['الموظف الميداني يُجدول على المواقع من وحدة العمل الميداني، لا بجدول دوام إداري.', 'Field staff are rostered to sites from the field module, not by an office work schedule.'],
   'emp.addFromHr': ['يُضاف الموظفون من الموارد البشرية حتى يكون لكل موظف سجل وظيفي. هنا تُنشأ حسابات النظام فقط.', 'Employees are added from Human Resources so each one has an HR record. Only system accounts are created here.'],

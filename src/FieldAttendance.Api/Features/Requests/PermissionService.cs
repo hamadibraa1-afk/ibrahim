@@ -12,7 +12,8 @@ namespace FieldAttendance.Api.Features.Requests;
 
 public sealed record SubmitPermissionRequest(string Type, DateOnly ShiftDate, TimeOnly? FromTime, TimeOnly? ToTime, string Reason);
 
-public sealed class PermissionService(AppDbContext db, ScheduleSnapshotLoader loader, RecalculationService recalculator, IClock clock)
+public sealed class PermissionService(AppDbContext db, ScheduleSnapshotLoader loader, RecalculationService recalculator, IClock clock,
+    Approvals.ApprovalService approvals)
 {
     public async Task<PermissionRequest> SubmitAsync(Guid employeeId, Guid submittedBy, SubmitPermissionRequest r, CancellationToken ct)
     {
@@ -50,13 +51,28 @@ public sealed class PermissionService(AppDbContext db, ScheduleSnapshotLoader lo
         if (request is null) throw lastError!;
         db.PermissionRequests.Add(request);
         await db.SaveChangesAsync(ct);
+
+        // Same routing as leave: the chain for the employee's workforce decides who signs.
+        await approvals.StartAsync(RequestKind.Permission, request.Id, employeeId, ct);
         return request;
     }
 
-    public async Task DecideAsync(Guid id, Guid supervisorId, bool approve, string? rejectReason, CancellationToken ct)
+    /// <summary>
+    /// One signature. Only the person the permission is currently waiting on may sign (or the system
+    /// administrator overriding), and it is approved only when the last level signs.
+    /// </summary>
+    public async Task DecideAsync(Guid id, Guid supervisorId, bool approve, string? rejectReason, CancellationToken ct,
+        bool isOverride = false)
     {
         var p = await db.PermissionRequests.SingleOrDefaultAsync(x => x.Id == id, ct)
             ?? throw new DomainException("request.not_found", "Request not found.");
+
+        if (!await approvals.HasChainAsync(RequestKind.Permission, id, ct))
+            await approvals.StartAsync(RequestKind.Permission, id, p.EmployeeId, ct);
+        var outcome = await approvals.DecideAsync(RequestKind.Permission, id, supervisorId, approve,
+            approve ? null : rejectReason, isOverride, ct);
+        if (outcome == RequestStatus.Pending) return; // still travelling up the chain
+
         if (approve) p.Approve(supervisorId, clock.Now);
         else p.Reject(supervisorId, clock.Now, rejectReason ?? string.Empty);
         await db.SaveChangesAsync(ct);

@@ -54,6 +54,7 @@ export class HrShell {
     { path: '/hr', label: 'hr.nav.dashboard', icon: 'dashboard', exact: true },
     { path: '/hr/employees', label: 'hr.nav.employees', icon: 'people' },
     { path: '/hr/attendance', label: 'hr.nav.attendance', icon: 'attendance' },
+    { path: '/hr/requests', label: 'req.title', icon: 'requests' },
     { path: '/hr/returns', label: 'hr.ret.title', icon: 'today' },
     { path: '/hr/discipline', label: 'hr.nav.discipline', icon: 'requests' },
     { path: '/hr/reports', label: 'hr.nav.reports', icon: 'ratings' },

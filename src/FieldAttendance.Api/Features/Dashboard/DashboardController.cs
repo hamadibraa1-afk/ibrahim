@@ -21,7 +21,7 @@ public sealed record DashboardDto(DashboardCardsDto Cards, IReadOnlyList<BoardLo
 [ApiController]
 [Route("api/dashboard")]
 [Authorize(Policy = Policies.Read)]
-public sealed class DashboardController(AppDbContext db, IClock clock, AccessScope scope) : ControllerBase
+public sealed class DashboardController(AppDbContext db, IClock clock, AccessScope scope, Requests.RequestInbox inbox) : ControllerBase
 {
     /// <summary>Live state for today. The Angular page polls this every 30 seconds.</summary>
     [HttpGet]
@@ -77,9 +77,10 @@ public sealed class DashboardController(AppDbContext db, IClock clock, AccessSco
         var ratingsToday = await db.Ratings.AsNoTracking()
             .Where(r => r.IncludedInAverage && r.ScannedAt >= startOfDay)
             .Select(r => r.Stars).ToListAsync(ct);
-        var pending = await db.PermissionRequests.CountAsync(p => p.IsActive && p.Status == RequestStatus.Pending, ct)
-                    + await db.AttendanceExceptionRequests.CountAsync(e => e.IsActive && e.Status == RequestStatus.Pending, ct)
-                    + await db.LeaveRequests.CountAsync(l => l.IsActive && l.Status == RequestStatus.Pending, ct);
+        // What the viewer has to act on, the same figure as the badge; it used to count every
+        // pending request in the organisation, office ones included.
+        var counts = await inbox.CountsAsync(User, ct);
+        var pending = counts.Permissions + counts.Exceptions + counts.Leaves;
         var allStates = board.SelectMany(b => b.Employees).ToList();
 
         var cards = new DashboardCardsDto(

@@ -21,7 +21,9 @@ public sealed class ApprovalService(AppDbContext db, NotificationService notific
     /// <summary>Creates the chain for a submitted request. Returns true when it is already fully approved.</summary>
     public async Task<bool> StartAsync(RequestKind kind, Guid requestId, Guid employeeId, CancellationToken ct)
     {
-        var stages = await StagesAsync(kind, ct);
+        var workforce = await db.EmployeeProfiles.AsNoTracking().Where(p => p.UserId == employeeId)
+            .Select(p => (Workforce?)p.Workforce).SingleOrDefaultAsync(ct);
+        var stages = await StagesAsync(kind, workforce, ct);
         var approvers = await ApproversAsync(employeeId, ct);
 
         var order = 0;
@@ -32,6 +34,17 @@ public sealed class ApprovalService(AppDbContext db, NotificationService notific
             var step = new ApprovalStep(kind, requestId, employeeId, order, stage, approver);
             if (approver is null) step.Skip("لا يوجد شاغل لهذا المستوى");
             db.ApprovalSteps.Add(step);
+        }
+
+        // Every level empty (no manager on record, or the only approver is the requester) used to
+        // leave the request pending with nobody to decide it. HR, or failing that the executive,
+        // takes it, so a person always decides. NotSelf already keeps the requester out of both.
+        if (!stages.Any(s => approvers.GetValueOrDefault(s) is not null))
+        {
+            var (stage, fallback) = approvers[ApprovalStage.Hr] is { } hr
+                ? (ApprovalStage.Hr, (Guid?)hr) : (ApprovalStage.Executive, approvers[ApprovalStage.Executive]);
+            if (fallback is not null)
+                db.ApprovalSteps.Add(new ApprovalStep(kind, requestId, employeeId, order + 1, stage, fallback));
         }
 
         await db.SaveChangesAsync(ct);
@@ -119,13 +132,40 @@ public sealed class ApprovalService(AppDbContext db, NotificationService notific
             [requestId.ToString("N"), approved ? "approved" : "rejected"],
             null, approved ? "approved" : "rejected", "/my/requests", requestId, ct);
 
-    /// <summary>The chain for a kind, falling back to a single HR level when none is configured yet.</summary>
-    private async Task<IReadOnlyList<ApprovalStage>> StagesAsync(RequestKind kind, CancellationToken ct)
+    /// <summary>
+    /// The chain for a kind and workforce: the workforce's own chain, else the general one, else a
+    /// single HR level when none is configured yet.
+    /// </summary>
+    private async Task<IReadOnlyList<ApprovalStage>> StagesAsync(RequestKind kind, Workforce? workforce, CancellationToken ct)
     {
-        var flow = await db.ApprovalFlows.AsNoTracking().Include(f => f.Levels)
-            .FirstOrDefaultAsync(f => f.Kind == kind && f.IsActive, ct);
+        var flows = await db.ApprovalFlows.AsNoTracking().Include(f => f.Levels)
+            .Where(f => f.Kind == kind && f.IsActive).ToListAsync(ct);
+        var flow = flows.FirstOrDefault(f => workforce is not null && f.Workforce == workforce)
+                   ?? flows.FirstOrDefault(f => f.Workforce == null);
         return flow is null || flow.Levels.Count == 0 ? [ApprovalStage.Hr] : flow.Stages();
     }
+
+    /// <summary>
+    /// Gives every pending leave and permission that has no chain one now. Requests filed before
+    /// permissions went through approval chains, or created outside the services, would otherwise
+    /// sit in nobody's inbox. Idempotent; run at startup.
+    /// </summary>
+    public async Task StartMissingChainsAsync(CancellationToken ct)
+    {
+        var chained = db.ApprovalSteps.Select(s => s.RequestId);
+        var leaves = await db.LeaveRequests.AsNoTracking()
+            .Where(l => l.IsActive && l.Status == RequestStatus.Pending && !chained.Contains(l.Id))
+            .Select(l => new { l.Id, l.EmployeeId }).ToListAsync(ct);
+        var permissions = await db.PermissionRequests.AsNoTracking()
+            .Where(p => p.IsActive && p.Status == RequestStatus.Pending && !chained.Contains(p.Id))
+            .Select(p => new { p.Id, p.EmployeeId }).ToListAsync(ct);
+
+        foreach (var l in leaves) await StartAsync(RequestKind.Leave, l.Id, l.EmployeeId, ct);
+        foreach (var p in permissions) await StartAsync(RequestKind.Permission, p.Id, p.EmployeeId, ct);
+    }
+
+    public Task<bool> HasChainAsync(RequestKind kind, Guid requestId, CancellationToken ct) =>
+        db.ApprovalSteps.AnyAsync(s => s.Kind == kind && s.RequestId == requestId, ct);
 
     /// <summary>Who fills each level for this employee.</summary>
     private async Task<Dictionary<ApprovalStage, Guid?>> ApproversAsync(Guid employeeId, CancellationToken ct)

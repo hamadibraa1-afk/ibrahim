@@ -364,7 +364,13 @@ public static class DevSeeder
         leaveFlow.SetLevels([ApprovalStage.SectionHead, ApprovalStage.DepartmentManager, ApprovalStage.Hr]);
         var permissionFlow = new ApprovalFlow(RequestKind.Permission, "مسار اعتماد الأذونات", "Permission approval", 8);
         permissionFlow.SetLevels([ApprovalStage.LineManager]);
-        db.AddRange(leaveFlow, permissionFlow);
+
+        // Field staff: their supervisor first, then the supervisor's department manager.
+        var fieldLeave = new ApprovalFlow(RequestKind.Leave, "مسار إجازات الميدان", "Field leave approval", 48, Workforce.Field);
+        fieldLeave.SetLevels([ApprovalStage.LineManager, ApprovalStage.DepartmentManager]);
+        var fieldPermission = new ApprovalFlow(RequestKind.Permission, "مسار أذونات الميدان", "Field permission approval", 8, Workforce.Field);
+        fieldPermission.SetLevels([ApprovalStage.LineManager, ApprovalStage.DepartmentManager]);
+        db.AddRange(leaveFlow, permissionFlow, fieldLeave, fieldPermission);
     }
 
     // ---------------------------------------------------------------- requests and customer voice
