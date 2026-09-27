@@ -53,7 +53,11 @@ builder.Services.AddHostedService<FieldAttendance.Api.Features.Notifications.Not
 builder.Services.AddHostedService<AttendanceWorker>();
 
 builder.Services.AddControllers()
-    .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+    .AddJsonOptions(o =>
+    {
+        o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        o.JsonSerializerOptions.Converters.Add(new OrgTimeJsonConverter());
+    });
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
 {
