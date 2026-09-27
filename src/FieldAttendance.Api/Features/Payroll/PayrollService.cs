@@ -160,7 +160,7 @@ public sealed class PayrollService(AppDbContext db, DeductionService deductions,
     private async Task<Dictionary<Guid, int>> UnpaidLeaveDaysAsync(PayrollCycle cycle, IReadOnlyCollection<Guid> employeeIds, CancellationToken ct)
     {
         var unpaidTypes = await db.LeaveTypes.AsNoTracking()
-            .Where(t => t.NameEn.Contains("Unpaid") || t.NameAr.Contains("بدون راتب"))
+            .Where(t => !t.IsPaid)
             .Select(t => t.Id).ToListAsync(ct);
         if (unpaidTypes.Count == 0) return [];
 

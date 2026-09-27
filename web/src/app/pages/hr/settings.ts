@@ -7,7 +7,8 @@ import { addDays, uaeToday } from '../../core/format';
 import { I18n, TPipe } from '../../core/i18n';
 import { Ui } from '../../core/ui';
 
-interface Lookup { id: string; nameAr: string; nameEn: string; notes: string | null; sortOrder: number; isActive: boolean; rowVersion: string; }
+interface Lookup { id: string; nameAr: string; nameEn: string; notes?: string | null; sortOrder?: number; isActive: boolean; rowVersion: string;
+  annualBalanceDays?: number | null; isPaid?: boolean; requiresAttachment?: boolean; }
 interface Holiday { id: string; nameAr: string; nameEn: string; fromDate: string; toDate: string; days: number; }
 
 /** Every configurable list in one place: HR adds and renames values without a code change. */
@@ -42,17 +43,24 @@ interface Holiday { id: string; nameAr: string; nameEn: string; fromDate: string
         <label class="flex items-center gap-2 m-0"><input type="checkbox" [(ngModel)]="includeInactive" (change)="load()">{{ 'common.showDeleted' | t }}</label>
       </div>
       <div class="table-wrap"><table>
-        <thead><tr><th>{{ 'loc.nameAr' | t }}</th><th>{{ 'loc.nameEn' | t }}</th><th>{{ 'sch.notes' | t }}</th><th></th></tr></thead>
+        <thead><tr><th>{{ 'loc.nameAr' | t }}</th><th>{{ 'loc.nameEn' | t }}</th>
+          @if (isLeave()) { <th>{{ 'lt.balance' | t }}</th><th>{{ 'lt.pay' | t }}</th><th>{{ 'lt.document' | t }}</th> }
+          @else { <th>{{ 'sch.notes' | t }}</th> }<th></th></tr></thead>
         <tbody>
           @for (x of items(); track x.id) {
             <tr [class.inactive]="!x.isActive">
               <td>{{ x.nameAr }} @if (!x.isActive) { <span class="badge">{{ 'common.deleted' | t }}</span> }</td>
-              <td dir="ltr">{{ x.nameEn }}</td><td class="whitespace-normal">{{ x.notes }}</td>
+              <td dir="ltr">{{ x.nameEn }}</td>
+              @if (isLeave()) {
+                <td class="tabular">{{ x.annualBalanceDays ?? ('leave.unlimited' | t) }}</td>
+                <td><span class="badge" [class.green]="x.isPaid" [class.yellow]="!x.isPaid">{{ (x.isPaid ? 'lt.paid' : 'lt.unpaid') | t }}</span></td>
+                <td>{{ (x.requiresAttachment ? 'lt.required' : 'lt.optional') | t }}</td>
+              } @else { <td class="whitespace-normal">{{ x.notes }}</td> }
               <td>@if (auth.canManageHr()) {
                 <button class="btn sm" (click)="openLookup(x)">{{ 'common.edit' | t }}</button>
                 @if (x.isActive) { <button class="btn sm danger" (click)="removeLookup(x)">{{ 'common.delete' | t }}</button> }
                 @else { <button class="btn sm" (click)="restoreLookup(x)">{{ 'common.restore' | t }}</button> } }</td></tr>
-          } @empty { <tr><td colspan="4" class="muted">{{ 'common.empty' | t }}</td></tr> }
+          } @empty { <tr><td [attr.colspan]="isLeave() ? 6 : 4" class="muted">{{ 'common.empty' | t }}</td></tr> }
         </tbody></table></div>
     }
 
@@ -64,7 +72,16 @@ interface Holiday { id: string; nameAr: string; nameEn: string; fromDate: string
           <div class="field"><label>{{ 'loc.nameAr' | t }} *</label><input [(ngModel)]="f.nameAr"></div>
           <div class="field"><label>{{ 'loc.nameEn' | t }} *</label><input dir="ltr" [(ngModel)]="f.nameEn"></div>
         </div>
-        <div class="field"><label>{{ 'sch.notes' | t }}</label><input [(ngModel)]="f.notes"></div>
+        @if (isLeave()) {
+          <div class="field"><label for="lt-balance">{{ 'lt.balance' | t }}</label>
+            <input id="lt-balance" type="number" min="0" max="366" [(ngModel)]="f.annualBalanceDays" aria-describedby="lt-balance-hint">
+            <p id="lt-balance-hint" class="mt-1 text-xs text-muted">{{ 'lt.balanceHint' | t }}</p></div>
+          <label class="mb-2 flex items-center gap-2 text-ink"><input type="checkbox" [(ngModel)]="f.isPaid">{{ 'lt.isPaid' | t }}</label>
+          <p class="mb-3 text-xs text-muted">{{ 'lt.isPaidHint' | t }}</p>
+          <label class="mb-4 flex items-center gap-2 text-ink"><input type="checkbox" [(ngModel)]="f.requiresAttachment">{{ 'lt.requiresAttachment' | t }}</label>
+        } @else {
+          <div class="field"><label>{{ 'sch.notes' | t }}</label><input [(ngModel)]="f.notes"></div>
+        }
         <div class="modal-foot">
           <button class="btn" (click)="editing.set(null)">{{ 'common.cancel' | t }}</button>
           <button class="btn primary" [disabled]="busy() || !f.nameAr?.trim() || !f.nameEn?.trim()" (click)="saveLookup(f)">{{ 'common.save' | t }}</button>
@@ -100,6 +117,7 @@ export class HrSettingsPage implements OnInit {
     { key: 'job-titles', label: 'hr.set.jobTitles' },
     { key: 'grades', label: 'hr.set.grades' },
     { key: 'contract-types', label: 'hr.set.contracts' },
+    { key: 'leave-types', label: 'lt.title' },
     { key: 'holidays', label: 'hr.set.holidays' },
   ];
   readonly set = signal('job-titles');
@@ -113,27 +131,36 @@ export class HrSettingsPage implements OnInit {
 
   ngOnInit(): void { this.load(); }
 
+  /** Leave types have their own endpoint and fields: allowance, paid or not, and a required document. */
+  isLeave(): boolean { return this.set() === 'leave-types'; }
+
+  private base(): string { return this.isLeave() ? 'hr/leave-types' : `hr/lookups/${this.set()}`; }
+
   setSet(key: string): void { this.set.set(key); this.load(); }
 
   async load(): Promise<void> {
     try {
       if (this.set() === 'holidays') this.holidays.set(await this.api.get<Holiday[]>('hr/org/holidays'));
-      else this.items.set(await this.api.get<Lookup[]>(`hr/lookups/${this.set()}`, { includeInactive: this.includeInactive }));
+      else this.items.set(await this.api.get<Lookup[]>(this.base(), { includeInactive: this.includeInactive }));
     } catch (e) { this.ui.error(this.api.error(e).message); }
   }
 
   openLookup(x: Lookup | null): void {
     this.error.set(null);
-    this.editing.set(x ? { ...x } : { id: '', nameAr: '', nameEn: '', notes: '', sortOrder: 0, rowVersion: '' });
+    this.editing.set(x ? { ...x } : { id: '', nameAr: '', nameEn: '', notes: '', sortOrder: 0, rowVersion: '',
+      annualBalanceDays: null, isPaid: true, requiresAttachment: false });
   }
 
   async saveLookup(f: any): Promise<void> {
     this.busy.set(true);
     this.error.set(null);
-    const body = { nameAr: f.nameAr, nameEn: f.nameEn, notes: f.notes || null, sortOrder: +f.sortOrder || 0, rowVersion: f.rowVersion };
+    const body = this.isLeave()
+      ? { nameAr: f.nameAr, nameEn: f.nameEn, annualBalanceDays: f.annualBalanceDays === null || f.annualBalanceDays === '' ? null : +f.annualBalanceDays,
+          isPaid: !!f.isPaid, requiresAttachment: !!f.requiresAttachment, rowVersion: f.rowVersion || null }
+      : { nameAr: f.nameAr, nameEn: f.nameEn, notes: f.notes || null, sortOrder: +f.sortOrder || 0, rowVersion: f.rowVersion };
     try {
-      if (f.id) await this.api.put(`hr/lookups/${this.set()}/${f.id}`, body);
-      else await this.api.post(`hr/lookups/${this.set()}`, body);
+      if (f.id) await this.api.put(`${this.base()}/${f.id}`, body);
+      else await this.api.post(this.base(), body);
       this.editing.set(null);
       this.ui.ok(this.i18n.t('common.saved'));
       await this.load();
@@ -142,12 +169,12 @@ export class HrSettingsPage implements OnInit {
 
   async removeLookup(x: Lookup): Promise<void> {
     if (!(await this.ui.confirm(this.i18n.t('common.delete') + ': ' + x.nameAr, this.i18n.t('common.deleteConfirm'), true))) return;
-    try { await this.api.delete(`hr/lookups/${this.set()}/${x.id}`); await this.load(); }
+    try { await this.api.delete(`${this.base()}/${x.id}`); await this.load(); }
     catch (e) { this.ui.error(this.api.error(e).message); }
   }
 
   async restoreLookup(x: Lookup): Promise<void> {
-    try { await this.api.post(`hr/lookups/${this.set()}/${x.id}/restore`); await this.load(); }
+    try { await this.api.post(`${this.base()}/${x.id}/restore`); await this.load(); }
     catch (e) { this.ui.error(this.api.error(e).message); }
   }
 

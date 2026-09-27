@@ -286,6 +286,17 @@ internal sealed class ExtraPaymentConfig : IEntityTypeConfiguration<ExtraPayment
     }
 }
 
+internal sealed class LeaveAttachmentConfig : IEntityTypeConfiguration<LeaveAttachment>
+{
+    public void Configure(EntityTypeBuilder<LeaveAttachment> b)
+    {
+        b.Property(x => x.FileName).HasMaxLength(200);
+        b.Property(x => x.ContentType).HasMaxLength(100);
+        b.Property(x => x.Content).HasMaxLength(LeaveAttachment.MaxBytes);
+        b.HasIndex(x => x.LeaveRequestId);
+    }
+}
+
 internal sealed class SystemSettingConfig : IEntityTypeConfiguration<SystemSetting>
 {
     public void Configure(EntityTypeBuilder<SystemSetting> b)

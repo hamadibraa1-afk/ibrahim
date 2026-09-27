@@ -47,6 +47,7 @@ builder.Services.AddScoped<FieldAttendance.Api.Features.Hr.OfficeScheduleService
 builder.Services.AddScoped<FieldAttendance.Api.Features.Discipline.DeductionService>();
 builder.Services.AddScoped<FieldAttendance.Api.Features.Payroll.PayrollService>();
 builder.Services.AddScoped<FieldAttendance.Api.Features.Payroll.SalaryLookup>();
+builder.Services.AddScoped<FieldAttendance.Api.Features.Leaves.LeaveAttachmentService>();
 builder.Services.AddScoped<FieldAttendance.Api.Features.Approvals.ApprovalService>();
 builder.Services.AddScoped<FieldAttendance.Api.Features.Notifications.NotificationService>();
 builder.Services.AddScoped<FieldAttendance.Api.Features.Notifications.INotificationChannel, FieldAttendance.Api.Features.Notifications.LoggingEmailChannel>();

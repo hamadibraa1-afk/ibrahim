@@ -17,6 +17,13 @@ export class Api {
   post<T = void>(url: string, body: any = {}): Promise<T> { return firstValueFrom(this.http.post<T>(AppConfig.apiBase + '/api/' + url, body)); }
   put<T = void>(url: string, body: any): Promise<T> { return firstValueFrom(this.http.put<T>(AppConfig.apiBase + '/api/' + url, body)); }
   delete<T = void>(url: string): Promise<T> { return firstValueFrom(this.http.delete<T>(AppConfig.apiBase + '/api/' + url)); }
+  /** A file as a Blob, through the same authenticated client as every other call. */
+  blob(url: string): Promise<Blob> { return firstValueFrom(this.http.get(AppConfig.apiBase + '/api/' + url, { responseType: 'blob' })); }
+  upload<T = void>(url: string, file: File, field = 'file'): Promise<T> {
+    const form = new FormData();
+    form.append(field, file, file.name);
+    return firstValueFrom(this.http.post<T>(AppConfig.apiBase + '/api/' + url, form));
+  }
 
   error(err: unknown): ApiError {
     if (err instanceof HttpErrorResponse) {

@@ -7,15 +7,16 @@ import { Ui } from '../../core/ui';
 import { Auth } from '../../core/auth';
 import { PendingRequests } from '../../core/pending';
 import { Backdrop } from '../../core/backdrop';
+import { LeaveDocuments } from '../../layout/leave-documents';
 
 interface Perm { id: string; type: string; shiftDate: string; fromTime: string | null; toTime: string | null; status: string; reason: string | null; rejectReason: string | null; createdAt: string; employeeName: string | null; decidedByName: string | null; }
-interface Leave { id: string; employeeName: string | null; leaveTypeName: string; fromDate: string; toDate: string; workingDays: number; status: string; reason: string | null; rejectReason: string | null; decidedByName: string | null; }
+interface Leave { id: string; isPaid: boolean; requiresAttachment: boolean; attachmentCount: number; employeeName: string | null; leaveTypeName: string; fromDate: string; toDate: string; workingDays: number; status: string; reason: string | null; rejectReason: string | null; decidedByName: string | null; }
 interface Exc { id: string; employeeName: string; kind: string; requestedAt: string; locationName: string; latitude: number; longitude: number; distanceMeters: number; locationRadius: number; reason: string | null; status: string; rejectReason: string | null; decidedByName: string | null; }
 
 @Component({
   selector: 'app-requests',
   standalone: true,
-  imports: [FormsModule, TPipe, Backdrop],
+  imports: [FormsModule, TPipe, Backdrop, LeaveDocuments],
   template: `
     <div class="toolbar"><h1 style="margin:0">{{ 'req.title' | t }}</h1><span class="spacer"></span>
       <select style="width:auto" [(ngModel)]="status" (change)="load()">
@@ -49,7 +50,9 @@ interface Exc { id: string; employeeName: string; kind: string; requestedAt: str
           <th>{{ 'leave.days' | t }}</th><th>{{ 'common.reason' | t }}</th><th>{{ 'common.status' | t }}</th><th>{{ 'common.actions' | t }}</th></tr></thead>
         <tbody>
           @for (l of leaves(); track l.id) {
-            <tr><td>{{ l.employeeName }}</td><td>{{ l.leaveTypeName }}</td>
+            <tr><td>{{ l.employeeName }}</td><td>{{ l.leaveTypeName }}
+                @if (!l.isPaid) { <span class="badge yellow">{{ 'lt.unpaid' | t }}</span> }
+                @if (l.requiresAttachment && !l.attachmentCount) { <div class="small text-warn">{{ 'leave.docMissing' | t }}</div> }</td>
               <td dir="ltr">{{ l.fromDate }}</td><td dir="ltr">{{ l.toDate }}</td>
               <td class="tabular font-semibold">{{ l.workingDays }}</td>
               <td class="whitespace-normal">{{ l.reason }}</td>
@@ -57,8 +60,9 @@ interface Exc { id: string; employeeName: string; kind: string; requestedAt: str
                 @if (l.rejectReason) { <div class="small muted">{{ l.rejectReason }}</div> }</td>
               <td>
                 <button class="btn sm ghost" (click)="showChain(l)">{{ 'flow.chain' | t }}</button>
+                <button class="btn sm" [disabled]="!l.attachmentCount" (click)="docsFor.set(l)">{{ 'doc.title' | t }} ({{ l.attachmentCount }})</button>
                 @if (l.status === 'Pending') {
-                  <button class="btn sm primary" (click)="decide('leaves', l.id, true)">{{ 'req.approve' | t }}</button>
+                  <button class="btn sm primary" [disabled]="l.requiresAttachment && !l.attachmentCount" (click)="decide('leaves', l.id, true)">{{ 'req.approve' | t }}</button>
                   <button class="btn sm danger" (click)="decide('leaves', l.id, false)">{{ 'req.reject' | t }}</button>
                 } @else if (l.status === 'Approved' && auth.canManage()) {
                   <button class="btn sm danger" (click)="cancelLeave(l)">{{ 'leave.cancel' | t }}</button>
@@ -82,6 +86,8 @@ interface Exc { id: string; employeeName: string; kind: string; requestedAt: str
           } @empty { <tr><td colspan="8" class="muted">{{ 'common.empty' | t }}</td></tr> }
         </tbody></table></div>
     }
+
+    @if (docsFor(); as l) { <app-leave-documents [leaveId]="l.id" (closed)="docsFor.set(null)" /> }
 
     @if (chain(); as steps) {
       <div class="modal-back" appBackdrop (dismiss)="chain.set(null)"><div class="modal">
@@ -144,6 +150,7 @@ export class RequestsPage implements OnInit {
   readonly perms = signal<Perm[]>([]);
   readonly excs = signal<Exc[]>([]);
   readonly leaves = signal<Leave[]>([]);
+  readonly docsFor = signal<Leave | null>(null);
   readonly chain = signal<any[] | null>(null);
   readonly employees = signal<{ id: string; fullName: string }[]>([]);
   readonly onBehalf = signal(false);

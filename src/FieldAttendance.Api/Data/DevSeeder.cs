@@ -126,8 +126,8 @@ public static class DevSeeder
         var leaveTypes = new[]
         {
             new LeaveType("إجازة سنوية", "Annual leave", 30),
-            new LeaveType("إجازة مرضية", "Sick leave", 15),
-            new LeaveType("إجازة بدون راتب", "Unpaid leave", null),
+            new LeaveType("إجازة مرضية", "Sick leave", 15, isPaid: true, requiresAttachment: true),
+            new LeaveType("إجازة بدون راتب", "Unpaid leave", null, isPaid: false),
         };
         db.AddRange(leaveTypes);
 

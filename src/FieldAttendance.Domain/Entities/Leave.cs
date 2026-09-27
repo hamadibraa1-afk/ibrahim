@@ -7,7 +7,8 @@ public sealed class LeaveType : Entity
 {
     private LeaveType() { } // EF Core
 
-    public LeaveType(string nameAr, string nameEn, int? annualBalanceDays) => Update(nameAr, nameEn, annualBalanceDays);
+    public LeaveType(string nameAr, string nameEn, int? annualBalanceDays, bool isPaid = true, bool requiresAttachment = false) =>
+        Update(nameAr, nameEn, annualBalanceDays, isPaid, requiresAttachment);
 
     public string NameAr { get; private set; } = string.Empty;
     public string NameEn { get; private set; } = string.Empty;
@@ -15,11 +16,22 @@ public sealed class LeaveType : Entity
     /// <summary>Null = unlimited (no balance tracking).</summary>
     public int? AnnualBalanceDays { get; private set; }
 
-    public void Update(string nameAr, string nameEn, int? annualBalanceDays)
+    /// <summary>
+    /// Whether the salary continues during this leave. Payroll deducts the days of an unpaid type;
+    /// it reads this flag, never the type's name, so a type can be called anything.
+    /// </summary>
+    public bool IsPaid { get; private set; } = true;
+
+    /// <summary>A supporting document (such as a medical report) must be attached before the leave can be approved.</summary>
+    public bool RequiresAttachment { get; private set; }
+
+    public void Update(string nameAr, string nameEn, int? annualBalanceDays, bool isPaid, bool requiresAttachment)
     {
         NameAr = Guard.Required(nameAr, "leave_type.name_ar", 100);
         NameEn = Guard.Required(nameEn, "leave_type.name_en", 100);
         AnnualBalanceDays = annualBalanceDays is { } days ? Guard.InRange(days, 0, 366, "leave_type.balance") : null;
+        IsPaid = isPaid;
+        RequiresAttachment = requiresAttachment;
     }
 }
 

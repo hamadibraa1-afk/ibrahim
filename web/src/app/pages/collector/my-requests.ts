@@ -4,15 +4,16 @@ import { Api } from '../../core/api';
 import { timeInput, toTimeOnly, uaeToday } from '../../core/format';
 import { I18n, TPipe } from '../../core/i18n';
 import { Ui } from '../../core/ui';
+import { LeaveDocuments } from '../../layout/leave-documents';
 
-interface Leave { id: string; leaveTypeName: string; fromDate: string; toDate: string; workingDays: number; status: string; reason: string | null; rejectReason: string | null; }
-interface Balance { leaveTypeId: string; leaveTypeName: string; totalDays: number | null; usedDays: number; remainingDays: number | null; }
+interface Leave { id: string; isPaid: boolean; requiresAttachment: boolean; attachmentCount: number; leaveTypeName: string; fromDate: string; toDate: string; workingDays: number; status: string; reason: string | null; rejectReason: string | null; }
+interface Balance { isPaid: boolean; requiresAttachment: boolean; leaveTypeId: string; leaveTypeName: string; totalDays: number | null; usedDays: number; remainingDays: number | null; }
 interface Perm { id: string; type: string; shiftDate: string; fromTime: string | null; toTime: string | null; status: string; reason: string | null; rejectReason: string | null; }
 
 @Component({
   selector: 'app-my-requests',
   standalone: true,
-  imports: [FormsModule, TPipe],
+  imports: [FormsModule, TPipe, LeaveDocuments],
   template: `
     <h1>{{ 'nav.myRequests' | t }}</h1>
     <div class="card" style="margin-bottom:14px">
@@ -23,12 +24,24 @@ interface Perm { id: string; type: string; shiftDate: string; fromTime: string |
 
       @if (f.type === 'Leave') {
         <div class="field"><label>{{ 'leave.type' | t }}</label>
-          <select [(ngModel)]="f.leaveTypeId">@for (b of balances(); track b.leaveTypeId) { <option [value]="b.leaveTypeId">{{ b.leaveTypeName }}</option> }</select></div>
+          <select [(ngModel)]="f.leaveTypeId">@for (b of balances(); track b.leaveTypeId) {
+            <option [value]="b.leaveTypeId">{{ b.leaveTypeName }} — {{ (b.isPaid ? 'lt.paid' : 'lt.unpaid') | t }}</option> }</select></div>
+        @if (selectedType(); as st) {
+          <div class="alert mb-3" [class.blue]="st.isPaid">
+            {{ (st.isPaid ? 'leave.paidNote' : 'leave.unpaidNote') | t }}
+            @if (st.requiresAttachment) { <div class="mt-1 font-semibold">{{ 'leave.docRequired' | t }}</div> }
+          </div>
+        }
         <div class="row">
           <div class="field"><label>{{ 'common.from' | t }}</label><input type="date" [(ngModel)]="f.fromDate"></div>
           <div class="field"><label>{{ 'common.to' | t }}</label><input type="date" [(ngModel)]="f.toDate" [min]="f.fromDate"></div>
         </div>
         <p class="mb-3 text-xs text-muted">{{ 'leave.daysHint' | t }}</p>
+        <div class="field"><label for="leave-files">{{ 'doc.add' | t }}@if (selectedType()?.requiresAttachment) { * }</label>
+          <input id="leave-files" type="file" multiple accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                 (change)="pick($event)" aria-describedby="leave-files-hint">
+          <p id="leave-files-hint" class="mt-1 text-xs text-muted">{{ 'doc.hint' | t }}</p>
+          @for (file of files; track file.name) { <div class="text-xs">📎 {{ file.name }}</div> }</div>
       } @else {
         <div class="field"><label>{{ 'common.date' | t }}</label><input type="date" [(ngModel)]="f.shiftDate"></div>
         <div class="row">
@@ -46,7 +59,7 @@ interface Perm { id: string; type: string; shiftDate: string; fromTime: string |
         <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
           @for (b of balances(); track b.leaveTypeId) {
             <div class="rounded-xl bg-raised px-3 py-2.5">
-              <div class="text-[11px] text-muted">{{ b.leaveTypeName }}</div>
+              <div class="text-[11px] text-muted">{{ b.leaveTypeName }}@if (!b.isPaid) { · {{ 'lt.unpaid' | t }} }</div>
               <div class="font-semibold tabular">{{ b.remainingDays ?? ('leave.unlimited' | t) }}</div>
               <div class="text-[11px] text-muted tabular">{{ 'leave.used' | t }}: {{ b.usedDays }}</div>
             </div>
@@ -58,16 +71,27 @@ interface Perm { id: string; type: string; shiftDate: string; fromTime: string |
     @for (l of leaves(); track l.id) {
       <div class="card-pad mb-2.5">
         <div class="flex items-center justify-between gap-2">
-          <strong>{{ 'leave.title' | t }} — {{ l.leaveTypeName }}</strong>
+          <strong>{{ 'leave.title' | t }} — {{ l.leaveTypeName }}
+            @if (!l.isPaid) { <span class="badge yellow">{{ 'lt.unpaid' | t }}</span> }</strong>
           <span class="badge" [class.green]="l.status === 'Approved'" [class.red]="l.status === 'Rejected'" [class.yellow]="l.status === 'Pending'">{{ 'rs.' + l.status | t }}</span>
         </div>
         <div class="text-xs text-muted tabular" dir="ltr">{{ l.fromDate }} → {{ l.toDate }} · {{ l.workingDays }}</div>
         @if (l.reason) { <div class="text-sm mt-1">{{ l.reason }}</div> }
         @if (l.rejectReason) { <div class="text-sm text-bad mt-1">{{ l.rejectReason }}</div> }
-        @if (l.status === 'Pending' || l.status === 'Approved') {
-          <button class="btn sm mt-2" (click)="cancelLeave(l)">{{ 'common.cancel' | t }}</button>
+        @if (l.requiresAttachment && !l.attachmentCount && l.status === 'Pending') {
+          <div class="mt-1 text-sm text-warn">{{ 'leave.docMissing' | t }}</div>
         }
+        <div class="mt-2 flex flex-wrap gap-2">
+          <button class="btn sm" (click)="docsFor.set(l)">{{ 'doc.title' | t }} ({{ l.attachmentCount }})</button>
+          @if (l.status === 'Pending' || l.status === 'Approved') {
+            <button class="btn sm" (click)="cancelLeave(l)">{{ 'common.cancel' | t }}</button>
+          }
+        </div>
       </div>
+    }
+
+    @if (docsFor(); as l) {
+      <app-leave-documents [leaveId]="l.id" [editable]="l.status === 'Pending'" (closed)="docsFor.set(null); load()" />
     }
 
     @for (p of items(); track p.id) {
@@ -95,6 +119,8 @@ export class MyRequestsPage implements OnInit {
   readonly leaves = signal<Leave[]>([]);
   readonly balances = signal<Balance[]>([]);
   readonly busy = signal(false);
+  readonly docsFor = signal<Leave | null>(null);
+  files: File[] = [];
   f = { type: 'Late', shiftDate: uaeToday(), fromTime: '', toTime: '', reason: '', leaveTypeId: '', fromDate: uaeToday(), toDate: uaeToday() };
 
   ngOnInit(): void {
@@ -105,9 +131,14 @@ export class MyRequestsPage implements OnInit {
 
   valid(): boolean {
     const f = this.f;
-    if (f.type === 'Leave') return !!f.leaveTypeId && !!f.fromDate && !!f.toDate && f.toDate >= f.fromDate;
+    if (f.type === 'Leave') return !!f.leaveTypeId && !!f.fromDate && !!f.toDate && f.toDate >= f.fromDate
+      && (!this.selectedType()?.requiresAttachment || this.files.length > 0);
     return !!f.reason.trim() && !!f.shiftDate && (f.type === 'Late' || !!f.fromTime) && (f.type === 'EarlyDeparture' || !!f.toTime);
   }
+
+  selectedType(): Balance | undefined { return this.balances().find(b => b.leaveTypeId === this.f.leaveTypeId); }
+
+  pick(event: Event): void { this.files = Array.from((event.target as HTMLInputElement).files ?? []); }
 
   async load(): Promise<void> {
     const [perms, leaves, balances] = await Promise.all([
@@ -131,7 +162,11 @@ export class MyRequestsPage implements OnInit {
     this.busy.set(true);
     try {
       if (this.f.type === 'Leave') {
-        await this.api.post('me/leaves', { leaveTypeId: this.f.leaveTypeId, fromDate: this.f.fromDate, toDate: this.f.toDate, reason: this.f.reason || null });
+        const leave = await this.api.post<{ id: string }>('me/leaves', { leaveTypeId: this.f.leaveTypeId, fromDate: this.f.fromDate, toDate: this.f.toDate, reason: this.f.reason || null });
+        // The request exists now; a file that fails to upload can still be added from its card.
+        try { for (const file of this.files) await this.api.upload(`me/leaves/${leave.id}/attachments`, file); }
+        catch (e) { this.ui.error(this.api.error(e).message); }
+        this.files = [];
       } else {
         await this.api.post('me/permissions', { type: this.f.type, shiftDate: this.f.shiftDate, reason: this.f.reason, fromTime: this.f.type === 'Late' ? null : toTimeOnly(this.f.fromTime), toTime: this.f.type === 'EarlyDeparture' ? null : toTimeOnly(this.f.toTime) });
       }
