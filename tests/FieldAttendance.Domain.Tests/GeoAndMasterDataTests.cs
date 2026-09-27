@@ -101,3 +101,31 @@ public class GeoAndMasterDataTests
     public void InvalidEmail_IsRejected() =>
         Assert.Throws<DomainException>(() => new User("Ali", "not-an-email", "0501234567", UserRole.Supervisor, "1002", "ar"));
 }
+
+public class WorkforceTests
+{
+    private static Entities.EmployeeProfile Profile(Enums.Workforce workforce) =>
+        new(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), new DateOnly(2025, 1, 1), workforce);
+
+    [Fact]
+    public void A_profile_is_office_staff_unless_said_otherwise() =>
+        Assert.Equal(Enums.Workforce.Office, new Entities.EmployeeProfile(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), new DateOnly(2025, 1, 1)).Workforce);
+
+    [Fact]
+    public void Field_staff_cannot_be_given_an_office_work_schedule()
+    {
+        var ex = Assert.Throws<Common.DomainException>(() => Profile(Enums.Workforce.Field).SetSchedule(Guid.NewGuid()));
+        Assert.Equal("profile.field_schedule", ex.Code);
+    }
+
+    [Fact]
+    public void Moving_someone_to_the_field_drops_their_office_schedule()
+    {
+        var profile = Profile(Enums.Workforce.Office);
+        profile.SetSchedule(Guid.NewGuid());
+
+        profile.SetWorkforce(Enums.Workforce.Field);
+
+        Assert.Null(profile.WorkScheduleId);
+    }
+}

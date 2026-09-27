@@ -33,6 +33,13 @@ public enum ExceptionKind { CheckIn = 1, CheckOut = 2 }
 /// <summary>Field sites hold collectors; office sites are branches where administrative staff work.</summary>
 public enum LocationKind { Field = 1, Office = 2 }
 
+/// <summary>
+/// Which side of the organisation someone works on. Office staff are scheduled by a weekly work
+/// schedule and managed in the HR module; field staff are rostered to sites by the field module.
+/// Both have an HR record, so HR sees every salary and every attendance day.
+/// </summary>
+public enum Workforce { Office = 1, Field = 2 }
+
 /// <summary>Where an employee stands in their working life, not their attendance for a day.</summary>
 public enum EmploymentStatus { Active = 1, OnLeave = 2, Suspended = 3, Ended = 4 }
 

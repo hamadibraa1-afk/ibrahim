@@ -285,6 +285,39 @@ public static class DevSeeder
                 profiles[i].SetPlacement(branches[seed.Branch].Id, departments[seed.Department].Id, null, manager);
         }
 
+        // Field operations belong to Fundraising. The supervisors are office staff of that department,
+        // under its manager; each collector is field staff reporting to the supervisor of their site.
+        // That chain is what their requests travel: supervisor first, then the department manager.
+        var fundraising = departments[7];
+        var fundraisingManager = departmentManagers[7];
+        var supervisorTitle = titles.First(t => t.NameAr == "مشرف ميداني").Id;
+        foreach (var (user, salary) in new[] { (accounts.Supervisor, 12000m), (accounts.MosqueSupervisor, 11500m) })
+        {
+            var profile = new EmployeeProfile(user.Id, branches[0].Id, fundraising.Id, hire);
+            profile.SetPlacement(branches[0].Id, fundraising.Id, null, fundraisingManager);
+            profile.SetJob(supervisorTitle, grades[1].Id, contracts[0].Id, hire);
+            profile.SetSchedule(standard.Id);
+            profile.SetPersonal("الإمارات", null, null, null, null);
+            db.Add(profile);
+            db.Add(profile.ChangeSalary(salary, hire, "الراتب عند التعيين", accounts.Admin.Id));
+            db.Add(new Assignment(user.Id, branches[0].Id, officeShift.Id, weekStart.AddDays(-90), null, standard.WorkingDays, null));
+            targets.Add(new HistoryTarget(user.Id, branches[0], officeShift, standard));
+        }
+
+        var collectorTitle = titles.First(t => t.NameAr == "محصّل ميداني").Id;
+        for (var i = 0; i < accounts.Collectors.Length; i++)
+        {
+            var collector = accounts.Collectors[i];
+            // Collectors 12 and 13 work the King Faisal mosque site, which the mosque supervisor runs.
+            var supervisor = i is 11 or 12 ? accounts.MosqueSupervisor : accounts.Supervisor;
+            var profile = new EmployeeProfile(collector.Id, branches[0].Id, fundraising.Id, hire, Workforce.Field);
+            profile.SetPlacement(branches[0].Id, fundraising.Id, null, supervisor.Id);
+            profile.SetJob(collectorTitle, grades[2].Id, contracts[i % 2].Id, hire);
+            profile.SetPersonal("الإمارات", null, null, null, null);
+            db.Add(profile);
+            db.Add(profile.ChangeSalary(4200m + (i % 5 * 300m), hire, "الراتب عند التعيين", accounts.Admin.Id));
+        }
+
         // Expiring documents, so the HR reminder list is not empty on day one.
         profiles[9].SetDocuments("784198500123456", weekStart.AddDays(25), "P4521889", weekStart.AddDays(70), null, weekStart.AddDays(18), "AE070331234567890123456");
         profiles[14].SetDocuments("784199100654321", weekStart.AddDays(120), "N8812355", weekStart.AddDays(32), null, null, "AE120331234567890999888");

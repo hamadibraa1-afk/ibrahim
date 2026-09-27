@@ -26,6 +26,9 @@ public sealed class OfficeScheduleService(
     public async Task ApplyAsync(EmployeeProfile profile, DateOnly effectiveFrom, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(profile);
+        // Field staff are rostered by the field module. With no office schedule, the code below
+        // would end every one of their site assignments, so it must not run for them at all.
+        if (profile.Workforce == Domain.Enums.Workforce.Field) return;
         if (effectiveFrom < clock.Today) effectiveFrom = clock.Today;
 
         var current = await db.Assignments

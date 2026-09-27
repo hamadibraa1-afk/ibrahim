@@ -13,7 +13,7 @@ namespace FieldAttendance.Api.Features.Hr;
 
 public sealed record HrEmployeeRow(Guid Id, string FullName, string EmployeeNumber, string Role, string? Phone,
     Guid DepartmentId, string DepartmentName, string? SectionName, string? JobTitleName, string BranchName,
-    string? ManagerName, DateOnly HireDate, string Status, string? ScheduleName, bool IsActive);
+    string? ManagerName, DateOnly HireDate, string Status, string? ScheduleName, bool IsActive, string Workforce);
 
 public sealed record HrEmployeeDetail(HrEmployeeRow Row, Guid BranchLocationId, Guid? SectionId, Guid? JobTitleId,
     Guid? GradeId, Guid? ContractTypeId, Guid? ManagerId, Guid? WorkScheduleId, string? Email, string? Nationality,
@@ -26,7 +26,7 @@ public sealed record CreateHrEmployeeRequest(
     [Required] string FullName, [Required] string EmployeeNumber, [Required] string Phone, [EmailAddress] string? Email,
     [Required] string Role, [Required] string PreferredLanguage, [Required] string Password,
     Guid BranchLocationId, Guid DepartmentId, Guid? SectionId, Guid? JobTitleId, Guid? GradeId, Guid? ContractTypeId,
-    Guid? ManagerId, Guid? WorkScheduleId, DateOnly HireDate, decimal BasicSalary);
+    Guid? ManagerId, Guid? WorkScheduleId, DateOnly HireDate, decimal BasicSalary, string? Workforce = null);
 
 public sealed record UpdateHrEmployeeRequest(
     [Required] string FullName, [Required] string Phone, [EmailAddress] string? Email, [Required] string PreferredLanguage,
@@ -46,8 +46,9 @@ public sealed record SalaryHistoryRow(decimal OldSalary, decimal NewSalary, Date
     string? DecidedByName, DateTimeOffset At);
 
 /// <summary>
-/// Office employees: the HR record plus the login account, created together so an
-/// employee never exists with one and not the other.
+/// Every employee, office and field: the HR record plus the login account, created together so an
+/// employee never exists with one and not the other. HR sees both workforces; the field module
+/// rosters field staff to sites, and office staff follow a weekly work schedule.
 /// </summary>
 [ApiController]
 [Route("api/hr/employees")]
@@ -56,14 +57,15 @@ public sealed class HrEmployeesController(AppDbContext db, OfficeScheduleService
     ICurrentUser me, IClock clock, Attendance.ComplianceService compliance) : ControllerBase
 {
     private static readonly UserRole[] OfficeRoles =
-        [UserRole.Employee, UserRole.HrOfficer, UserRole.HrManager, UserRole.DepartmentManager, UserRole.SystemAdmin];
+        [UserRole.Employee, UserRole.HrOfficer, UserRole.HrManager, UserRole.DepartmentManager, UserRole.SystemAdmin, UserRole.Supervisor];
 
     [HttpGet]
     public async Task<IReadOnlyList<HrEmployeeRow>> List([FromQuery] Guid? departmentId, [FromQuery] string? status,
-        [FromQuery] bool includeEnded, CancellationToken ct)
+        [FromQuery] bool includeEnded, [FromQuery] string? workforce, CancellationToken ct)
     {
         var profiles = await db.EmployeeProfiles.AsNoTracking().ToListAsync(ct);
         if (departmentId is { } d) profiles = profiles.Where(p => p.DepartmentId == d).ToList();
+        if (Enum.TryParse<Workforce>(workforce, true, out var side)) profiles = profiles.Where(p => p.Workforce == side).ToList();
 
         // A department manager's list is their own department, never the whole organisation.
         if (!scope.SeesEveryone && scope.IsDepartmentManager && me.Id is { } managerId)
@@ -103,7 +105,8 @@ public sealed class HrEmployeesController(AppDbContext db, OfficeScheduleService
     [Authorize(Policy = HrPolicies.Manage)]
     public async Task<IActionResult> Create(CreateHrEmployeeRequest r, CancellationToken ct)
     {
-        var role = ParseOfficeRole(r.Role);
+        var workforce = Enum.TryParse<Workforce>(r.Workforce, true, out var w) ? w : Workforce.Office;
+        var role = ParseRole(r.Role, workforce);
         PasswordHasher.EnsureStrong(r.Password);
         await EnsureReferencesAsync(r.BranchLocationId, r.DepartmentId, r.SectionId, r.WorkScheduleId, r.ManagerId, ct);
 
@@ -111,7 +114,7 @@ public sealed class HrEmployeesController(AppDbContext db, OfficeScheduleService
         user.SetPasswordHash(PasswordHasher.Hash(r.Password));
         db.Users.Add(user);
 
-        var profile = new EmployeeProfile(user.Id, r.BranchLocationId, r.DepartmentId, r.HireDate);
+        var profile = new EmployeeProfile(user.Id, r.BranchLocationId, r.DepartmentId, r.HireDate, workforce);
         profile.SetPlacement(r.BranchLocationId, r.DepartmentId, r.SectionId, r.ManagerId);
         profile.SetJob(r.JobTitleId, r.GradeId, r.ContractTypeId, r.HireDate);
         profile.SetSchedule(r.WorkScheduleId);
@@ -239,8 +242,10 @@ public sealed class HrEmployeesController(AppDbContext db, OfficeScheduleService
         await db.EmployeeProfiles.SingleOrDefaultAsync(p => p.Id == id, ct)
         ?? throw new DomainException("employee.not_found", "Employee not found.");
 
-    private static UserRole ParseOfficeRole(string role) =>
-        Enum.TryParse<UserRole>(role, true, out var parsed) && OfficeRoles.Contains(parsed)
+    /// <summary>Field staff sign in to the collector app, so their account is always a collector.</summary>
+    private static UserRole ParseRole(string role, Workforce workforce) =>
+        workforce == Workforce.Field ? UserRole.Collector
+        : Enum.TryParse<UserRole>(role, true, out var parsed) && OfficeRoles.Contains(parsed)
             ? parsed
             : throw new DomainException("user.invalid_role", "This role is not an office role.");
 
@@ -283,6 +288,6 @@ public sealed class HrEmployeesController(AppDbContext db, OfficeScheduleService
             p.ManagerId is { } m ? c.Users.GetValueOrDefault(m)?.FullName : null,
             p.HireDate, p.Status.ToString(),
             p.WorkScheduleId is { } w ? c.Schedules.GetValueOrDefault(w) : null,
-            p.IsActive);
+            p.IsActive, p.Workforce.ToString());
     }
 }

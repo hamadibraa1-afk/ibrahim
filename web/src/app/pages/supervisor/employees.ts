@@ -85,8 +85,9 @@ const ROLES = ['SystemAdmin', 'Supervisor', 'DepartmentManager', 'Collector'];
           <div class="field"><label>{{ 'common.name' | t }} *</label><input [(ngModel)]="f.fullName"></div>
           <div class="field"><label>{{ 'emp.number' | t }} *</label><input dir="ltr" [(ngModel)]="f.employeeNumber"></div>
         </div>
+        @if (!f.id) { <div class="alert blue">{{ 'emp.addFromHr' | t }}</div> }
         <div class="field"><label>{{ 'role.title' | t }} *</label>
-          <select [(ngModel)]="f.role">@for (r of roles; track r) { <option [value]="r">{{ 'role.' + r | t }}</option> }</select>
+          <select [(ngModel)]="f.role">@for (r of (f.id ? roles : newRoles); track r) { <option [value]="r">{{ 'role.' + r | t }}</option> }</select>
           <div class="muted small" style="margin-top:6px">{{ 'emp.roleHint' | t }}</div></div>
         <div class="row">
           <div class="field"><label>{{ 'emp.phone' | t }} *</label><input dir="ltr" placeholder="05XXXXXXXX" [(ngModel)]="f.phone"></div>
@@ -113,6 +114,8 @@ export class EmployeesPage implements OnInit {
   private readonly ui = inject(Ui);
   private readonly i18n = inject(I18n);
   readonly roles = ROLES;
+  /** Everyone else is an employee and is added from HR with their HR record; only system accounts start here. */
+  readonly newRoles = ['SystemAdmin'];
   readonly items = signal<Person[]>([]);
   readonly role = signal('');
   readonly editing = signal<any>(null);
@@ -165,7 +168,7 @@ export class EmployeesPage implements OnInit {
     this.error.set(null);
     this.editing.set(p
       ? { ...p, password: '' }
-      : { id: '', fullName: '', employeeNumber: '', email: '', phone: '', role: 'Collector', preferredLanguage: 'ar', password: '', rowVersion: '' });
+      : { id: '', fullName: '', employeeNumber: '', email: '', phone: '', role: 'SystemAdmin', preferredLanguage: 'ar', password: '', rowVersion: '' });
   }
 
   valid(f: any): boolean {

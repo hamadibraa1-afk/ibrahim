@@ -12,6 +12,7 @@ interface Row {
   id: string; fullName: string; employeeNumber: string; role: string; phone: string | null;
   departmentId: string; departmentName: string; sectionName: string | null; jobTitleName: string | null;
   branchName: string; managerName: string | null; hireDate: string; status: string; scheduleName: string | null;
+  workforce: 'Office' | 'Field';
 }
 interface Detail extends Record<string, any> { row: Row; }
 interface Named { id: string; nameAr: string; nameEn: string; }
@@ -32,6 +33,9 @@ interface SalaryRow { oldSalary: number; newSalary: number; effectiveFrom: strin
       <div class="field"><label>{{ 'hr.org.department' | t }}</label>
         <select [(ngModel)]="departmentId" (change)="load()"><option value="">{{ 'common.all' | t }}</option>
           @for (d of departments(); track d.id) { <option [value]="d.id">{{ d.nameAr }}</option> }</select></div>
+      <div class="field"><label for="emp-wf">{{ 'wf.title' | t }}</label>
+        <select id="emp-wf" [(ngModel)]="workforce" (change)="load()"><option value="">{{ 'common.all' | t }}</option>
+          <option value="Office">{{ 'wf.Office' | t }}</option><option value="Field">{{ 'wf.Field' | t }}</option></select></div>
       <div class="field"><label>{{ 'common.status' | t }}</label>
         <select [(ngModel)]="status" (change)="load()"><option value="">{{ 'common.all' | t }}</option>
           @for (s of statuses; track s) { <option [value]="s">{{ 'hr.status.' + s | t }}</option> }</select></div>
@@ -46,7 +50,8 @@ interface SalaryRow { oldSalary: number; newSalary: number; effectiveFrom: strin
         @for (r of filtered(); track r.id) {
           <tr [class.inactive]="r.status === 'Ended'">
             <td dir="ltr" class="tabular">{{ r.employeeNumber }}</td>
-            <td>{{ r.fullName }}<div class="muted small">{{ 'role.' + r.role | t }}</div></td>
+            <td>{{ r.fullName }}<div class="muted small">{{ 'role.' + r.role | t }}
+              @if (r.workforce === 'Field') { <span class="badge blue ms-1">{{ 'wf.Field' | t }}</span> }</div></td>
             <td>{{ r.jobTitleName ?? '—' }}</td>
             <td>{{ r.departmentName }}<div class="muted small">{{ r.sectionName }}</div></td>
             <td>{{ r.branchName }}</td><td>{{ r.managerName ?? '—' }}</td><td>{{ r.scheduleName ?? '—' }}</td>
@@ -125,6 +130,7 @@ interface SalaryRow { oldSalary: number; newSalary: number; effectiveFrom: strin
 
         @if (tab() === 'schedule') {
           @if (compliance(); as c) { <div class="mb-4"><app-compliance-meter [data]="c" /></div> }
+          @if (d.row.workforce === 'Field') { <p class="text-sm text-muted">{{ 'wf.fieldScheduleNote' | t }}</p> } @else {
           <div class="row">
             <div class="field"><label>{{ 'hr.emp.schedule' | t }}</label>
               <select [(ngModel)]="scheduleId"><option [ngValue]="null">—</option>
@@ -133,6 +139,7 @@ interface SalaryRow { oldSalary: number; newSalary: number; effectiveFrom: strin
             @if (auth.canManageHr()) { <button class="btn primary mb-3" [disabled]="busy()" (click)="saveSchedule(d)">{{ 'common.save' | t }}</button> }
           </div>
           <p class="text-sm text-muted">{{ 'hr.emp.scheduleHint' | t }}</p>
+          }
         }
 
         @if (tab() === 'salary') {
@@ -172,8 +179,13 @@ interface SalaryRow { oldSalary: number; newSalary: number; effectiveFrom: strin
           <div class="field"><label>{{ 'emp.phone' | t }} *</label><input dir="ltr" [(ngModel)]="f.phone"></div>
         </div>
         <div class="row">
-          <div class="field"><label>{{ 'role.title' | t }} *</label>
-            <select [(ngModel)]="f.role">@for (r of officeRoles; track r) { <option [value]="r">{{ 'role.' + r | t }}</option> }</select></div>
+          <div class="field"><label for="new-wf">{{ 'wf.title' | t }} *</label>
+            <select id="new-wf" [(ngModel)]="f.workforce"><option value="Office">{{ 'wf.Office' | t }}</option>
+              <option value="Field">{{ 'wf.Field' | t }}</option></select></div>
+          @if (f.workforce === 'Office') {
+            <div class="field"><label>{{ 'role.title' | t }} *</label>
+              <select [(ngModel)]="f.role">@for (r of officeRoles; track r) { <option [value]="r">{{ 'role.' + r | t }}</option> }</select></div>
+          }
           <div class="field"><label>{{ 'emp.password' | t }} *</label><input dir="ltr" [(ngModel)]="f.password"></div>
           <div class="field"><label>{{ 'hr.emp.hireDate' | t }} *</label><input type="date" [(ngModel)]="f.hireDate"></div>
         </div>
@@ -182,10 +194,13 @@ interface SalaryRow { oldSalary: number; newSalary: number; effectiveFrom: strin
             <select [(ngModel)]="f.branchLocationId">@for (b of branches(); track b.id) { <option [value]="b.id">{{ b.nameAr }}</option> }</select></div>
           <div class="field"><label>{{ 'hr.org.department' | t }} *</label>
             <select [(ngModel)]="f.departmentId">@for (x of departments(); track x.id) { <option [value]="x.id">{{ x.nameAr }}</option> }</select></div>
-          <div class="field"><label>{{ 'hr.emp.schedule' | t }}</label>
-            <select [(ngModel)]="f.workScheduleId"><option [ngValue]="null">—</option>
-              @for (s of schedules(); track s.id) { <option [value]="s.id">{{ s.nameAr }}</option> }</select></div>
+          @if (f.workforce === 'Office') {
+            <div class="field"><label>{{ 'hr.emp.schedule' | t }}</label>
+              <select [(ngModel)]="f.workScheduleId"><option [ngValue]="null">—</option>
+                @for (s of schedules(); track s.id) { <option [value]="s.id">{{ s.nameAr }}</option> }</select></div>
+          }
         </div>
+        @if (f.workforce === 'Field') { <p class="mb-3 text-sm text-muted">{{ 'wf.fieldScheduleNote' | t }}</p> }
         <div class="row">
           <div class="field"><label>{{ 'hr.emp.jobTitle' | t }}</label>
             <select [(ngModel)]="f.jobTitleId"><option [ngValue]="null">—</option>
@@ -220,7 +235,7 @@ export class HrEmployeesPage implements OnInit {
   readonly busy = signal(false);
   readonly error = signal<string | null>(null);
   readonly statuses = ['Active', 'Suspended', 'Ended'];
-  readonly officeRoles = ['Employee', 'DepartmentManager', 'HrOfficer', 'HrManager'];
+  readonly officeRoles = ['Employee', 'Supervisor', 'DepartmentManager', 'HrOfficer', 'HrManager'];
   readonly tabs = [
     { key: 'data', label: 'hr.emp.tabData' },
     { key: 'schedule', label: 'hr.emp.tabSchedule' },
@@ -228,6 +243,7 @@ export class HrEmployeesPage implements OnInit {
   ];
   q = '';
   departmentId = '';
+  workforce = '';
   status = '';
   scheduleId: string | null = null;
   effectiveFrom = uaeToday();
@@ -260,7 +276,7 @@ export class HrEmployeesPage implements OnInit {
   }
 
   async load(): Promise<void> {
-    try { this.rows.set(await this.api.get<Row[]>('hr/employees', { departmentId: this.departmentId, status: this.status })); }
+    try { this.rows.set(await this.api.get<Row[]>('hr/employees', { departmentId: this.departmentId, status: this.status, workforce: this.workforce })); }
     catch (e) { this.ui.error(this.api.error(e).message); }
   }
 
@@ -297,7 +313,7 @@ export class HrEmployeesPage implements OnInit {
   openNew(): void {
     this.error.set(null);
     this.creating.set({
-      fullName: '', employeeNumber: '', phone: '', email: '', role: 'Employee', preferredLanguage: 'ar', password: '',
+      fullName: '', employeeNumber: '', phone: '', email: '', role: 'Employee', workforce: 'Office', preferredLanguage: 'ar', password: '',
       branchLocationId: this.branches()[0]?.id ?? '', departmentId: this.departments()[0]?.id ?? '', sectionId: null,
       jobTitleId: null, gradeId: null, contractTypeId: null, managerId: null,
       workScheduleId: this.schedules()[0]?.id ?? null, hireDate: uaeToday(), basicSalary: 0,
@@ -313,7 +329,9 @@ export class HrEmployeesPage implements OnInit {
     this.busy.set(true);
     this.error.set(null);
     try {
-      await this.api.post('hr/employees', { ...f, email: f.email || null, basicSalary: +f.basicSalary || 0 });
+      // Field staff are rostered to sites, never given an office schedule; the server refuses one.
+      const workScheduleId = f.workforce === 'Field' ? null : f.workScheduleId;
+      await this.api.post('hr/employees', { ...f, workScheduleId, email: f.email || null, basicSalary: +f.basicSalary || 0 });
       this.creating.set(null);
       this.ui.ok(this.i18n.t('common.saved'));
       await this.load();

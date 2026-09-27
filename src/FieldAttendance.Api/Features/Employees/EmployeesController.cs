@@ -53,7 +53,12 @@ public sealed class EmployeesController(AppDbContext db, ICurrentUser me, IClock
     public async Task<ActionResult<EmployeeDto>> Create(CreateEmployeeRequest r, CancellationToken ct)
     {
         PasswordHasher.EnsureStrong(r.Password);
-        var user = new User(r.FullName, r.Email, r.Phone, ParseRole(r.Role), r.EmployeeNumber, r.PreferredLanguage);
+        var role = ParseRole(r.Role);
+        // Everyone who works here has an HR record, created with the account in the HR module.
+        // Only system accounts, which are nobody's employment, are created here.
+        if (role != UserRole.SystemAdmin)
+            throw new DomainException("user.create_in_hr", "Employees are added from Human Resources, so each one has an HR record.");
+        var user = new User(r.FullName, r.Email, r.Phone, role, r.EmployeeNumber, r.PreferredLanguage);
         user.SetPasswordHash(PasswordHasher.Hash(r.Password));
         db.Users.Add(user);
         await db.SaveChangesAsync(ct);

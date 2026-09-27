@@ -12,13 +12,18 @@ public sealed class EmployeeProfile : Entity
 {
     private EmployeeProfile() { } // EF Core
 
-    public EmployeeProfile(Guid userId, Guid branchLocationId, Guid departmentId, DateOnly hireDate)
+    public EmployeeProfile(Guid userId, Guid branchLocationId, Guid departmentId, DateOnly hireDate,
+        Workforce workforce = Workforce.Office)
     {
         UserId = Guard.NotEmpty(userId, "profile.user");
         BranchLocationId = Guard.NotEmpty(branchLocationId, "profile.branch");
         DepartmentId = Guard.NotEmpty(departmentId, "profile.department");
         HireDate = hireDate;
+        Workforce = workforce;
     }
+
+    /// <summary>Office or field. Decides who schedules the person, not whether HR sees them: HR sees both.</summary>
+    public Workforce Workforce { get; private set; } = Workforce.Office;
 
     public Guid UserId { get; private set; }
     public Guid BranchLocationId { get; private set; }
@@ -76,7 +81,22 @@ public sealed class EmployeeProfile : Entity
         HireDate = hireDate;
     }
 
-    public void SetSchedule(Guid? workScheduleId) => WorkScheduleId = workScheduleId;
+    /// <summary>
+    /// Field staff are rostered to sites by the field module. An office work schedule on them would
+    /// replace those site assignments with office ones, so it is refused rather than ignored.
+    /// </summary>
+    public void SetSchedule(Guid? workScheduleId)
+    {
+        if (workScheduleId is not null && Workforce == Workforce.Field)
+            throw new DomainException("profile.field_schedule", "Field staff are scheduled from the field module, not by an office work schedule.");
+        WorkScheduleId = workScheduleId;
+    }
+
+    public void SetWorkforce(Workforce workforce)
+    {
+        if (workforce == Workforce.Field) WorkScheduleId = null;
+        Workforce = workforce;
+    }
 
     public void SetPersonal(string? nationality, DateOnly? birthDate, string? emergencyName, string? emergencyPhone, string? notes)
     {
