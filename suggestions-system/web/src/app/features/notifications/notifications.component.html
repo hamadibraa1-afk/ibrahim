@@ -1,0 +1,46 @@
+<div class="max-w-3xl">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-lg font-extrabold text-brand-700">الإشعارات</h1>
+      <p class="text-xs text-ink-faint mt-1">
+        @if (unreadTotal > 0) { لديك {{ unreadTotal }} إشعاراً غير مقروء }
+        @else { لا توجد إشعارات غير مقروءة }
+      </p>
+    </div>
+    @if (unreadTotal > 0) {
+      <button (click)="markAllRead()" class="btn btn-ghost !py-2 !text-xs">تعليم الكل كمقروء</button>
+    }
+  </div>
+
+  <div class="card overflow-hidden">
+    @if (loading()) {
+      <div class="p-10 text-center text-sm text-ink-faint">جارِ التحميل...</div>
+    } @else if (!items().length) {
+      <div class="p-10 text-center">
+        <div class="text-3xl mb-2">🔔</div>
+        <div class="text-sm text-ink-faint">لا توجد إشعارات حتى الآن.</div>
+      </div>
+    } @else {
+      @for (n of items(); track n.id) {
+        <div (click)="markRead(n)"
+             class="flex items-start gap-3.5 px-5 py-4 border-b border-[#F3F5F4] last:border-b-0 cursor-pointer transition-colors"
+             [class.bg-brand-50]="!n.isRead"
+             [class.hover:bg-brand-50]="!n.isRead"
+             [class.hover:bg-\[\#FAFBFA\]]="n.isRead">
+          <div class="w-9 h-9 rounded-xl flex items-center justify-center text-base shrink-0" [ngClass]="style(n.type).cls">
+            {{ style(n.type).icon }}
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="text-[13px] leading-relaxed" [class.font-bold]="!n.isRead" [class.text-ink]="!n.isRead" [class.text-ink-soft]="n.isRead">
+              {{ n.message }}
+            </div>
+            <div class="text-[10.5px] text-ink-faint mt-1">{{ n.createdAt | date:'d MMMM y — h:mm a' }}</div>
+          </div>
+          @if (!n.isRead) {
+            <div class="w-2 h-2 rounded-full bg-sun-400 shrink-0 mt-2"></div>
+          }
+        </div>
+      }
+    }
+  </div>
+</div>

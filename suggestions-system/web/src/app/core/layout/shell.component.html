@@ -1,0 +1,131 @@
+<div class="flex h-screen w-screen overflow-hidden bg-[#F6F8F7]" dir="rtl">
+
+  <!-- الشريط الجانبي -->
+  <aside class="w-60 shrink-0 bg-brand-700 text-white flex flex-col">
+    <div class="flex items-center gap-2.5 px-5 py-5 border-b border-white/10">
+      <svg width="36" height="36" viewBox="0 0 64 64" fill="none" class="shrink-0">
+        <circle cx="32" cy="30" r="10.5" fill="none" stroke="#fff" stroke-width="2.6"/>
+        <g fill="#DB9357"><circle cx="28" cy="27" r="1.9"/><circle cx="36" cy="27" r="1.9"/><circle cx="32" cy="33" r="1.9"/></g>
+        <path d="M28.5 40.5 h7 M29.5 44 h5" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>
+        <path d="M15 33 C15 46, 22 53, 32 55" stroke="#8CC3A5" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+        <path d="M49 33 C49 46, 42 53, 32 55" stroke="#8CC3A5" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+      </svg>
+      <div class="leading-tight min-w-0">
+        <div class="text-[13.5px] font-extrabold">نظام الاقتراحات</div>
+        <div class="text-[10.5px] text-brand-200/80 truncate">جمعية الشارقة الخيرية</div>
+      </div>
+    </div>
+
+    <nav class="flex-1 py-3 overflow-y-auto">
+      @for (item of visibleNavItems(); track item.path) {
+        <a [routerLink]="item.path" routerLinkActive="!bg-white/10 !text-white !font-extrabold border-r-[3px] border-r-sun-400"
+           class="flex items-center gap-3 px-5 py-2.5 text-[13px] text-brand-100/85 hover:bg-white/5 border-r-[3px] border-r-transparent transition-colors">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0">
+            @switch (item.icon) {
+              @case ('list')     { <rect x="4" y="4" width="16" height="17" rx="2"/><path d="M8 9h8M8 13h8M8 17h5"/> }
+              @case ('plus')     { <circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/> }
+              @case ('check')    { <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/> }
+              @case ('users')    { <circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3 2.5-5 6-5s6 2 6 5M15 15c2.8 0 5 1.6 5 4.5"/> }
+              @case ('gavel')    { <path d="M14 4l6 6-3 3-6-6z"/><path d="M11 7L4 14l3 3 7-7"/><path d="M3 21h10"/> }
+              @case ('chart')    { <path d="M4 20V10M12 20V4M20 20v-7"/> }
+              @case ('history')  { <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/><path d="M3 12a9 9 0 001.5 5"/> }
+              @case ('sliders')  { <path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3"/><path d="M1 14h6M9 8h6M17 16h6"/> }
+              @case ('settings') { <circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 00-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 00-2-1.2L14 3h-4l-.5 2.6a7 7 0 00-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 005 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-1c.6.5 1.3.9 2 1.2L10 21h4l.5-2.6c.7-.3 1.4-.7 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z"/> }
+            }
+          </svg>
+          {{ item.label }}
+        </a>
+      }
+    </nav>
+
+    <div class="px-5 py-3 border-t border-white/10 text-[10px] text-brand-200/60">
+      SCI-M-02-F-01 · الإصدار 02
+    </div>
+  </aside>
+
+  <!-- المحتوى -->
+  <div class="flex-1 flex flex-col min-w-0">
+    <header class="h-16 bg-white border-b border-[#E9EDEB] flex items-center justify-between px-7 shrink-0">
+      <div class="text-[13px] text-ink-faint">نظام الاقتراحات الرقمي — جمعية الشارقة الخيرية</div>
+
+      <div class="flex items-center gap-2">
+        <!-- جرس الإشعارات -->
+        <a routerLink="/notifications" class="relative p-2.5 rounded-xl hover:bg-brand-50 text-ink-soft hover:text-brand-600 transition-colors"
+           title="الإشعارات">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/>
+          </svg>
+          @if (unreadCount() > 0) {
+            <span class="absolute top-1 left-1 min-w-[17px] h-[17px] px-1 rounded-full bg-sun-400 text-white
+                         text-[10px] font-extrabold flex items-center justify-center">
+              {{ unreadCount() > 99 ? '99+' : unreadCount() }}
+            </span>
+          }
+        </a>
+
+        @if (currentUser(); as user) {
+          <div class="relative">
+            <button (click)="userMenuOpen.set(!userMenuOpen())"
+                    class="flex items-center gap-2.5 pr-2 pl-1 py-1.5 rounded-xl hover:bg-brand-50 transition-colors">
+              <div class="text-left leading-tight">
+                <div class="text-[12.5px] font-bold text-ink">{{ user.arabicName }}</div>
+                <div class="text-[10.5px] text-ink-faint">{{ UserRoleLabels[user.role] }}</div>
+              </div>
+              <div class="w-9 h-9 rounded-full bg-gradient-to-br from-brand-500 to-brand-700 text-white
+                          flex items-center justify-center text-[11.5px] font-extrabold shrink-0">
+                {{ initials(user.arabicName) }}
+              </div>
+            </button>
+
+            @if (userMenuOpen()) {
+              <!-- طبقة لإغلاق القائمة عند النقر خارجها -->
+              <div class="fixed inset-0 z-40" (click)="userMenuOpen.set(false)"></div>
+              <div class="absolute left-0 mt-2 w-52 bg-white rounded-xl border border-[#E9EDEB] shadow-lift z-50 overflow-hidden">
+                <a routerLink="/profile" (click)="userMenuOpen.set(false)"
+                   class="flex items-center gap-2.5 px-4 py-3 text-[13px] text-ink hover:bg-brand-50 transition-colors">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/>
+                  </svg>
+                  الملف الشخصي
+                </a>
+                <button (click)="logout()"
+                        class="w-full flex items-center gap-2.5 px-4 py-3 text-[13px] text-red-600 hover:bg-red-50 transition-colors border-t border-[#F1F3F2]">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>
+                  </svg>
+                  تسجيل الخروج
+                </button>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </header>
+
+    <main class="flex-1 overflow-y-auto p-7">
+      <router-outlet />
+    </main>
+  </div>
+</div>
+
+<!-- تحذير قرب انتهاء الجلسة -->
+@if (session.showWarning() && auth.isLoggedIn()) {
+  <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4" dir="rtl">
+    <div class="bg-white rounded-2xl w-full max-w-md p-7 text-center">
+      <div class="w-14 h-14 rounded-full bg-amber-50 flex items-center justify-center mx-auto mb-4">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#B45309" stroke-width="2">
+          <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>
+        </svg>
+      </div>
+      <h2 class="text-base font-extrabold text-ink mb-2">جلستك على وشك الانتهاء</h2>
+      <p class="text-[13px] text-ink-soft leading-7 mb-1">
+        سيتم تسجيل خروجك تلقائياً خلال
+      </p>
+      <div class="text-2xl font-extrabold text-amber-600 mb-5" dir="ltr">{{ countdown }}</div>
+      <div class="flex gap-3">
+        <button (click)="stayLoggedIn()" class="btn btn-primary flex-1">متابعة العمل</button>
+        <button (click)="logout()" class="btn btn-ghost flex-1">تسجيل الخروج</button>
+      </div>
+    </div>
+  </div>
+}

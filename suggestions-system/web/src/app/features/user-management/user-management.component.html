@@ -1,0 +1,152 @@
+<div class="max-w-6xl">
+  <div class="flex items-center justify-between mb-5">
+    <div>
+      <h1 class="text-lg font-bold text-navy">إدارة المستخدمين</h1>
+      <p class="text-xs text-gray-400 mt-1">إضافة المستخدمين وتعديل بياناتهم وصلاحياتهم أو إيقافهم</p>
+    </div>
+    <button (click)="openAddModal()" class="bg-teal text-white text-sm font-bold px-4 py-2.5 rounded-lg hover:bg-teal-light transition-colors">
+      + إضافة مستخدم
+    </button>
+  </div>
+
+  <div class="mb-4">
+    <input [(ngModel)]="searchTerm" type="text" placeholder="بحث بالاسم، الرقم الوظيفي، أو الإدارة..."
+           class="w-80 border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-teal">
+  </div>
+
+  <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
+    <table class="w-full text-[12.5px]">
+      <thead>
+        <tr class="text-[11px] text-gray-400 bg-gray-50">
+          <th class="text-right font-normal px-5 py-3">الاسم بالعربي</th>
+          <th class="text-right font-normal px-3 py-3">Name (EN)</th>
+          <th class="text-right font-normal px-3 py-3">البريد الإلكتروني</th>
+          <th class="text-right font-normal px-3 py-3">الرقم الوظيفي</th>
+          <th class="text-right font-normal px-3 py-3">الدور</th>
+          <th class="text-right font-normal px-3 py-3">الإدارة</th>
+          <th class="text-right font-normal px-3 py-3">المسمى الوظيفي</th>
+          <th class="text-right font-normal px-3 py-3">الهاتف</th>
+          <th class="text-right font-normal px-3 py-3">الحالة</th>
+          <th class="px-3 py-3"></th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (loading) {
+          <tr><td colspan="10" class="text-center text-gray-400 py-8">جارِ التحميل...</td></tr>
+        } @else if (!filteredUsers.length) {
+          <tr><td colspan="10" class="text-center text-gray-400 py-8">لا يوجد مستخدمون مطابقون.</td></tr>
+        }
+        @for (u of filteredUsers; track u.id) {
+          <tr class="border-t border-gray-50" [ngClass]="u.status === UserStatus.Suspended ? 'opacity-50' : ''">
+            <td class="px-5 py-3 font-bold text-gray-800">{{ u.arabicName }}</td>
+            <td class="px-3 py-3 text-gray-500" dir="ltr" style="text-align: right">{{ u.englishName }}</td>
+            <td class="px-3 py-3 text-gray-500" dir="ltr" style="text-align: right">{{ u.email }}</td>
+            <td class="px-3 py-3 text-gray-500" dir="ltr" style="text-align: right">{{ u.userCode }}</td>
+            <td class="px-3 py-3">
+              <span class="badge badge-blue">{{ UserRoleLabels[u.role] }}</span>
+            </td>
+            <td class="px-3 py-3 text-gray-500">{{ u.department }}</td>
+            <td class="px-3 py-3 text-gray-500">{{ u.jobTitle }}</td>
+            <td class="px-3 py-3 text-gray-500" dir="ltr" style="text-align: right">{{ u.phoneNumber }}</td>
+            <td class="px-3 py-3">
+              @if (u.status === UserStatus.Active) {
+                <span class="badge badge-green">نشط</span>
+              } @else {
+                <span class="badge badge-red">موقوف</span>
+              }
+            </td>
+            <td class="px-3 py-3">
+              <div class="flex gap-1.5 justify-end">
+                <button (click)="openEditModal(u)" title="تعديل" class="text-[11px] text-gray-500 hover:text-navy bg-gray-100 hover:bg-gray-200 px-2.5 py-1.5 rounded-lg">تعديل</button>
+                <button (click)="resetPassword(u)" title="إعادة تعيين كلمة المرور" class="text-[11px] text-gray-500 hover:text-navy bg-gray-100 hover:bg-gray-200 px-2.5 py-1.5 rounded-lg">كلمة المرور</button>
+                <button (click)="suspendOrActivate(u)" title="إيقاف/تفعيل"
+                        class="text-[11px] px-2.5 py-1.5 rounded-lg"
+                        [ngClass]="u.status === UserStatus.Active ? 'text-amber-700 bg-amber-50 hover:bg-amber-100' : 'text-teal bg-teal-soft hover:bg-teal-soft'">
+                  {{ u.status === UserStatus.Active ? 'إيقاف' : 'تفعيل' }}
+                </button>
+                <button (click)="deleteUser(u)" title="حذف" class="text-[11px] text-red-600 bg-red-50 hover:bg-red-100 px-2.5 py-1.5 rounded-lg">حذف</button>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Add/Edit Modal -->
+@if (showModal) {
+  <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50" (click)="closeModal()">
+    <div class="bg-white rounded-2xl w-[520px] max-h-[90vh] overflow-y-auto p-7" (click)="$event.stopPropagation()">
+      <h2 class="text-base font-bold text-navy mb-5">{{ editingUser ? 'تعديل بيانات مستخدم' : 'إضافة مستخدم جديد' }}</h2>
+
+      <form [formGroup]="form" (ngSubmit)="save()" class="space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1.5">الاسم بالعربي *</label>
+            <input formControlName="arabicName" type="text" class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-teal">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1.5">الاسم بالإنجليزي *</label>
+            <input formControlName="englishName" type="text" dir="ltr" class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-teal">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1.5">البريد الإلكتروني *</label>
+            <input formControlName="email" type="email" dir="ltr" class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-teal">
+          </div>
+          @if (!editingUser) {
+            <div>
+              <label class="block text-xs font-bold text-gray-700 mb-1.5">كلمة المرور الابتدائية *</label>
+              <input formControlName="initialPassword" type="text" dir="ltr" class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-teal" placeholder="8 أحرف على الأقل">
+            </div>
+          }
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1.5">الرقم الوظيفي (User ID) *</label>
+            <input formControlName="userCode" type="text" dir="ltr" class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-teal">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1.5">دور المستخدم *</label>
+            <select formControlName="role" class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm bg-white focus:outline-none focus:border-teal">
+              @for (r of roleOptions; track r) {
+                <option [value]="r">{{ UserRoleLabels[r] }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1.5">الإدارة / القسم *</label>
+            <input formControlName="department" type="text" class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-teal">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1.5">المسمى الوظيفي *</label>
+            <input formControlName="jobTitle" type="text" class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-teal">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-gray-700 mb-1.5">رقم الهاتف *</label>
+          <input formControlName="phoneNumber" type="text" dir="ltr" class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-teal" placeholder="05xxxxxxxx">
+        </div>
+
+        @if (errorMessage) {
+          <div class="text-[12.5px] text-red-700 bg-red-50 border border-red-100 rounded-lg px-3.5 py-2.5">{{ errorMessage }}</div>
+        }
+
+        <div class="flex gap-3 pt-2">
+          <button type="submit" [disabled]="saving" class="bg-teal text-white text-sm font-bold px-6 py-2.5 rounded-lg hover:bg-teal-light disabled:opacity-50">
+            {{ saving ? 'جارِ الحفظ...' : (editingUser ? 'حفظ التعديلات' : 'إضافة المستخدم') }}
+          </button>
+          <button type="button" (click)="closeModal()" class="bg-gray-100 text-gray-600 text-sm font-bold px-6 py-2.5 rounded-lg hover:bg-gray-200">إلغاء</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

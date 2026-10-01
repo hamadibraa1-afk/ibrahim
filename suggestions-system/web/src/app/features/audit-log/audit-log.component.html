@@ -1,0 +1,88 @@
+<div class="max-w-7xl">
+  <div class="mb-5">
+    <h1 class="text-lg font-extrabold text-brand-700">سجل الإجراءات</h1>
+    <p class="text-xs text-ink-faint mt-1">كل إجراء تم على أي مقترح، مسجَّل بالتاريخ ومن نفّذه — غير قابل للتعديل</p>
+  </div>
+
+  <div class="card p-4 mb-5">
+    <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
+      <div class="lg:col-span-2">
+        <label class="field-label">بحث</label>
+        <input [(ngModel)]="search" (ngModelChange)="onSearchInput()" type="text"
+               class="field-input" placeholder="رقم المقترح، اسم المنفّذ، أو الملاحظات...">
+      </div>
+      <div>
+        <label class="field-label">نوع الإجراء</label>
+        <select [(ngModel)]="action" (ngModelChange)="load()" class="field-input">
+          <option value="">كل الإجراءات</option>
+          @for (a of actionOptions; track a) { <option [value]="a">{{ AuditActionLabels[a] }}</option> }
+        </select>
+      </div>
+      <div>
+        <label class="field-label">المنفّذ</label>
+        <select [(ngModel)]="actorId" (ngModelChange)="load()" class="field-input">
+          <option [ngValue]="null">الجميع</option>
+          @for (u of users(); track u.id) { <option [ngValue]="u.id">{{ u.arabicName }}</option> }
+        </select>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="field-label">من</label>
+          <input [(ngModel)]="from" (ngModelChange)="load()" type="date" class="field-input !px-2">
+        </div>
+        <div>
+          <label class="field-label">إلى</label>
+          <input [(ngModel)]="to" (ngModelChange)="load()" type="date" class="field-input !px-2">
+        </div>
+      </div>
+    </div>
+    <div class="flex justify-between items-center mt-3 pt-3 border-t border-[#EEF1EF]">
+      <span class="text-[11.5px] text-ink-faint">{{ logs().length }} سجل</span>
+      <button (click)="reset()" class="btn btn-ghost !py-2 !text-xs">مسح الفلاتر</button>
+    </div>
+  </div>
+
+  <div class="card overflow-hidden">
+    @if (loading()) {
+      <div class="p-10 text-center text-sm text-ink-faint">جارِ التحميل...</div>
+    } @else if (!logs().length) {
+      <div class="p-10 text-center text-sm text-ink-faint">لا توجد سجلات مطابقة.</div>
+    } @else {
+      <div class="overflow-x-auto">
+        <table class="w-full text-[12.5px]">
+          <thead>
+            <tr class="text-[11px] text-ink-faint bg-[#FAFBFA] border-b border-[#EEF1EF]">
+              <th class="text-right font-normal px-5 py-3 whitespace-nowrap">التاريخ والوقت</th>
+              <th class="text-right font-normal px-3 py-3 whitespace-nowrap">المقترح</th>
+              <th class="text-right font-normal px-3 py-3 whitespace-nowrap">الإجراء</th>
+              <th class="text-right font-normal px-3 py-3 whitespace-nowrap">المنفّذ</th>
+              <th class="text-right font-normal px-3 py-3">التفاصيل</th>
+              <th class="px-3 py-3"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (log of logs(); track log.id) {
+              <tr class="border-b border-[#F3F5F4] last:border-b-0 hover:bg-[#FAFBFA]">
+                <td class="px-5 py-3 text-ink-faint whitespace-nowrap">{{ log.createdAt | date:'yyyy/MM/dd — h:mm a' }}</td>
+                <td class="px-3 py-3 font-bold text-ink whitespace-nowrap" dir="ltr" style="text-align:right">{{ log.proposalCode }}</td>
+                <td class="px-3 py-3 whitespace-nowrap">
+                  <span class="badge" [ngClass]="styleFor(log.action)">{{ labelFor(log.action) }}</span>
+                </td>
+                <td class="px-3 py-3 text-ink-soft whitespace-nowrap">{{ log.actorName }}</td>
+                <td class="px-3 py-3 text-ink-soft">
+                  @if (log.fromStatus && log.toStatus && log.fromStatus !== log.toStatus) {
+                    <div class="text-[11px] text-ink-faint">{{ log.fromStatus }} ← {{ log.toStatus }}</div>
+                  }
+                  @if (log.notes) { <div class="mt-0.5">{{ log.notes }}</div> }
+                </td>
+                <td class="px-3 py-3 text-left">
+                  <a [routerLink]="['/proposals', log.proposalId]" class="btn btn-ghost !py-1.5 !px-3 !text-[11px]">فتح</a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>

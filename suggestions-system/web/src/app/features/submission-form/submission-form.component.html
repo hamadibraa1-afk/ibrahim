@@ -1,0 +1,217 @@
+<div class="max-w-4xl">
+  <div class="flex items-start justify-between mb-6">
+    <div>
+      <h1 class="text-lg font-extrabold text-brand-700">نموذج مقترحات الموظفين</h1>
+      <p class="text-xs text-ink-faint mt-1">Employee Suggestions Form · SCI-M-02-F-01</p>
+    </div>
+    <div class="text-[11px] text-ink-faint text-left leading-relaxed">
+      اليوم: {{ today | date:'EEEE' }}<br>
+      التاريخ: {{ today | date:'yyyy/MM/dd' }}
+    </div>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-5">
+
+    <!-- أولاً: بيانات المقترح -->
+    <div class="card overflow-hidden">
+      <div class="bg-brand-700 text-white px-5 py-2.5 text-[12.5px] font-bold">
+        أولاً: بيانات المقترح — First: The Suggestion Data
+      </div>
+      <div class="p-5">
+        <div class="text-[11px] text-ink-faint bg-[#F8FAF9] border border-[#EEF1EF] rounded-lg px-3.5 py-2.5 mb-4">
+          تُدرج بياناتك تلقائياً من حسابك، ويُنشئ النظام رقم المقترح فور الإرسال.
+        </div>
+
+        @if (auth.currentUser(); as u) {
+          <div class="grid sm:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label class="field-label">اسم الموظف / Employee Name</label>
+              <div class="field-input !bg-[#F4F6F5] !text-ink-soft">{{ u.arabicName }}</div>
+            </div>
+            <div>
+              <label class="field-label">الرقم الوظيفي / Job Number</label>
+              <div class="field-input !bg-[#F4F6F5] !text-ink-soft" dir="ltr" style="text-align:right">{{ u.userCode }}</div>
+            </div>
+            <div>
+              <label class="field-label">رقم الهاتف / Phone Number</label>
+              <div class="field-input !bg-[#F4F6F5] !text-ink-soft" dir="ltr" style="text-align:right">{{ u.phoneNumber }}</div>
+            </div>
+            <div>
+              <label class="field-label">البريد الإلكتروني / E-mail</label>
+              <div class="field-input !bg-[#F4F6F5] !text-ink-soft" dir="ltr" style="text-align:right">{{ u.email }}</div>
+            </div>
+          </div>
+        }
+
+        <div>
+          <label class="field-label">عنوان المقترح / Suggestion Title *</label>
+          <input formControlName="title" type="text" class="field-input"
+                 placeholder="مثال: أتمتة إجراءات صرف المستلزمات المكتبية">
+          @if (form.controls.title.invalid && form.controls.title.touched) {
+            <div class="text-[11.5px] text-red-600 mt-1.5">الرجاء إدخال عنوان لا يقل عن 6 أحرف.</div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- ثانياً: تفاصيل المقترح -->
+    <div class="card overflow-hidden">
+      <div class="bg-brand-700 text-white px-5 py-2.5 text-[12.5px] font-bold">
+        ثانياً: تفاصيل المقترح — Second: The Suggestion Details
+      </div>
+      <div class="p-5 space-y-4">
+        <div>
+          <label class="field-label">آلية تطبيق المقترح / Suggestion Implementation Mechanism *</label>
+          <textarea formControlName="implementationMechanism" rows="4" class="field-input"
+                    placeholder="كيف يُطبَّق المقترح عملياً؟ اذكر الخطوات والجهات المعنية..."></textarea>
+          @if (form.controls.implementationMechanism.invalid && form.controls.implementationMechanism.touched) {
+            <div class="text-[11.5px] text-red-600 mt-1.5">الرجاء توضيح آلية التطبيق بتفصيل كافٍ (20 حرفاً على الأقل).</div>
+          }
+        </div>
+
+        <div>
+          <label class="field-label">أسباب تقديم المقترح / Reasons for Submitting *</label>
+          <textarea formControlName="submissionReasons" rows="4" class="field-input"
+                    placeholder="ما المشكلة أو الفرصة التي دفعتك لتقديم هذا المقترح؟"></textarea>
+          @if (form.controls.submissionReasons.invalid && form.controls.submissionReasons.touched) {
+            <div class="text-[11.5px] text-red-600 mt-1.5">الرجاء ذكر الأسباب بتفصيل كافٍ (20 حرفاً على الأقل).</div>
+          }
+        </div>
+
+        @if (impactFields().length) {
+          <div>
+            <label class="field-label">أثر تطبيق المقترح / Impact of Implementing *</label>
+            <div class="grid sm:grid-cols-2 gap-2">
+              @for (f of impactFields(); track f.id) {
+                <label class="flex items-start gap-2.5 border border-[#E3E8E5] rounded-xl px-3.5 py-3 cursor-pointer
+                              hover:border-brand-300 hover:bg-brand-50/40 transition-colors"
+                       [class.border-brand-500]="customValues[f.fieldKey] === 'true'"
+                       [class.bg-brand-50]="customValues[f.fieldKey] === 'true'">
+                  <input type="checkbox" [checked]="customValues[f.fieldKey] === 'true'"
+                         (change)="setCheckbox(f.fieldKey, $any($event.target).checked)"
+                         class="mt-0.5 w-4 h-4 accent-brand-600 shrink-0">
+                  <span class="min-w-0">
+                    <span class="block text-[12.5px] font-bold text-ink">{{ f.labelAr }}</span>
+                    @if (f.labelEn) {
+                      <span class="block text-[10px] text-ink-faint mt-0.5" dir="ltr" style="text-align:right">{{ f.labelEn }}</span>
+                    }
+                  </span>
+                </label>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    @if (customFields().length) {
+      <!-- حقول إضافية معرَّفة من إعدادات النظام -->
+      <div class="card overflow-hidden">
+        <div class="bg-brand-600 text-white px-5 py-2.5 text-[12.5px] font-bold">
+          معلومات إضافية
+        </div>
+        <div class="p-5 space-y-4">
+          @for (f of customFields(); track f.id) {
+            <div>
+              <label class="field-label">
+                {{ f.labelAr }}@if (f.isRequired) { <span class="text-red-600"> *</span> }
+                @if (f.labelEn) { <span class="font-normal text-ink-faint"> / {{ f.labelEn }}</span> }
+              </label>
+
+              @switch (f.fieldType) {
+                @case ('TextArea') {
+                  <textarea [(ngModel)]="customValues[f.fieldKey]" [ngModelOptions]="{standalone: true}"
+                            rows="3" class="field-input" [placeholder]="f.placeholder || ''"></textarea>
+                }
+                @case ('Select') {
+                  <select [(ngModel)]="customValues[f.fieldKey]" [ngModelOptions]="{standalone: true}" class="field-input">
+                    <option value="">اختر...</option>
+                    @for (opt of f.options; track opt) { <option [value]="opt">{{ opt }}</option> }
+                  </select>
+                }
+                @case ('Checkbox') {
+                  <label class="flex items-center gap-2.5 border border-[#E3E8E5] rounded-xl px-3.5 py-3 cursor-pointer">
+                    <input type="checkbox" [checked]="customValues[f.fieldKey] === 'true'"
+                           (change)="setCheckbox(f.fieldKey, $any($event.target).checked)"
+                           class="w-4 h-4 accent-brand-600">
+                    <span class="text-[12.5px] text-ink">نعم</span>
+                  </label>
+                }
+                @case ('Number') {
+                  <input type="number" [(ngModel)]="customValues[f.fieldKey]" [ngModelOptions]="{standalone: true}"
+                         class="field-input" [placeholder]="f.placeholder || ''">
+                }
+                @case ('Date') {
+                  <input type="date" [(ngModel)]="customValues[f.fieldKey]" [ngModelOptions]="{standalone: true}"
+                         class="field-input">
+                }
+                @default {
+                  <input type="text" [(ngModel)]="customValues[f.fieldKey]" [ngModelOptions]="{standalone: true}"
+                         class="field-input" [placeholder]="f.placeholder || ''">
+                }
+              }
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- المرفقات -->
+    <div class="card overflow-hidden">
+      <div class="bg-sun-400 text-white px-5 py-2.5 text-[12.5px] font-bold">المرفقات — Attachments</div>
+      <div class="p-5">
+        <p class="text-[11.5px] text-ink-soft mb-3 leading-relaxed">
+          لإرفاق ملفات توضيحية عن المقترح (دراسة جدوى، عرض تقديمي، تصور مبدئي، شرح تفصيلي).
+        </p>
+
+        <label class="block border-2 border-dashed border-[#D8E0DB] rounded-xl p-6 text-center cursor-pointer
+                      hover:border-brand-400 hover:bg-brand-50/40 transition-colors">
+          <input type="file" multiple class="hidden" (change)="onFilesSelected($event)">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#8CA79A" stroke-width="1.8" class="mx-auto mb-2">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/>
+          </svg>
+          <div class="text-[12.5px] font-bold text-ink-soft">اسحب الملفات هنا أو اضغط للاختيار</div>
+          <div class="text-[10.5px] text-ink-faint mt-1.5">
+            عدد الملفات: ({{ selectedFiles().length }} / {{ maxFiles }})
+            · الحجم الإجمالي: ({{ formatSize(totalSize) }} / 15 MB)
+            · الحد للملف الواحد: 10 MB
+          </div>
+        </label>
+
+        @if (selectedFiles().length) {
+          <div class="space-y-1.5 mt-3">
+            @for (f of selectedFiles(); track f.name + f.size) {
+              <div class="flex items-center justify-between gap-3 bg-[#F8FAF9] border border-[#EEF1EF] rounded-xl px-3.5 py-2.5">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" class="shrink-0">
+                    <path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/>
+                  </svg>
+                  <div class="min-w-0">
+                    <div class="text-[12px] font-bold text-ink truncate">{{ f.name }}</div>
+                    <div class="text-[10px] text-ink-faint">{{ formatSize(f.size) }}</div>
+                  </div>
+                </div>
+                <button type="button" (click)="removeFile(f)" class="btn btn-danger !py-1.5 !px-3 !text-[11px] shrink-0">إزالة</button>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    @if (errorMessage()) {
+      <div class="flex items-start gap-2 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B91C1C" stroke-width="2" class="mt-0.5 shrink-0">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <span class="text-[12.5px] text-red-700">{{ errorMessage() }}</span>
+      </div>
+    }
+
+    <div class="flex gap-3 pb-4">
+      <button type="submit" [disabled]="submitting()" class="btn btn-primary !px-8">
+        {{ submitting() ? 'جارِ الإرسال...' : 'إرسال المقترح' }}
+      </button>
+    </div>
+  </form>
+</div>

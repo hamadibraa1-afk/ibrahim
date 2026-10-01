@@ -1,0 +1,87 @@
+<div class="card p-4 mb-5">
+  <div class="flex flex-wrap items-center gap-2.5">
+    <div class="relative flex-1 min-w-[220px]">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2"
+           class="absolute right-3 top-1/2 -translate-y-1/2">
+        <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/>
+      </svg>
+      <input [(ngModel)]="search" (ngModelChange)="onSearchInput()" type="text"
+             class="field-input !pr-10" placeholder="ابحث بالعنوان أو رقم المقترح أو المحتوى...">
+    </div>
+
+    <select [(ngModel)]="sort" (ngModelChange)="emit()" class="field-input !w-auto min-w-[130px]">
+      <option value="newest">الأحدث أولاً</option>
+      <option value="oldest">الأقدم أولاً</option>
+      <option value="dueSoon">الأقرب للمهلة</option>
+      <option value="title">حسب العنوان</option>
+    </select>
+
+    <button type="button" (click)="expanded.set(!expanded())"
+            class="btn btn-ghost !py-2.5 relative">
+      فلاتر متقدمة
+      @if (activeCount > 0) {
+        <span class="absolute -top-1.5 -left-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-sun-400
+                     text-white text-[10px] font-extrabold flex items-center justify-center">{{ activeCount }}</span>
+      }
+    </button>
+
+    @if (activeCount > 0) {
+      <button type="button" (click)="reset()" class="btn btn-ghost !py-2.5 !text-red-600">مسح الفلاتر</button>
+    }
+  </div>
+
+  @if (expanded()) {
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4 pt-4 border-t border-[#EEF1EF]">
+      @if (showStatus) {
+        <div>
+          <label class="field-label">الحالة</label>
+          <select [(ngModel)]="status" (ngModelChange)="emit()" class="field-input">
+            <option value="">كل الحالات</option>
+            @for (s of statusOptions; track s) {
+              <option [value]="s">{{ ProposalStatusLabels[s] }}</option>
+            }
+          </select>
+        </div>
+      }
+
+      <div>
+        <label class="field-label">الإدارة</label>
+        <select [(ngModel)]="department" (ngModelChange)="emit()" class="field-input">
+          <option value="">كل الإدارات</option>
+          @for (d of departments(); track d) { <option [value]="d">{{ d }}</option> }
+        </select>
+      </div>
+
+      @if (showClassification) {
+        <div>
+          <label class="field-label">تصنيف اللجنة</label>
+          <select [(ngModel)]="classification" (ngModelChange)="emit()" class="field-input">
+            <option value="">كل التصنيفات</option>
+            @for (c of classificationOptions; track c) {
+              <option [value]="c">{{ ClassificationLabels[c] }}</option>
+            }
+          </select>
+        </div>
+      }
+
+      <div>
+        <label class="field-label">من تاريخ</label>
+        <input [(ngModel)]="from" (ngModelChange)="emit()" type="date" class="field-input">
+      </div>
+
+      <div>
+        <label class="field-label">إلى تاريخ</label>
+        <input [(ngModel)]="to" (ngModelChange)="emit()" type="date" class="field-input">
+      </div>
+
+      @if (showOverdue) {
+        <label class="flex items-center gap-2.5 border border-[#E3E8E5] rounded-xl px-3.5 py-3 cursor-pointer
+                      hover:border-brand-300 self-end"
+               [class.border-red-300]="overdue" [class.bg-red-50]="overdue">
+          <input type="checkbox" [(ngModel)]="overdue" (ngModelChange)="emit()" class="w-4 h-4 accent-red-600">
+          <span class="text-[12.5px] font-bold text-ink">المتأخرة عن المهلة فقط</span>
+        </label>
+      }
+    </div>
+  }
+</div>

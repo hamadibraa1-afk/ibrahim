@@ -1,0 +1,160 @@
+<div class="max-w-5xl">
+  <div class="flex items-start justify-between gap-4 mb-5">
+    <div>
+      <h1 class="text-lg font-extrabold text-brand-700">إعدادات حقول النموذج</h1>
+      <p class="text-xs text-ink-faint mt-1">أضف أو عدّل حقول نموذج المقترح دون الحاجة لتعديل البرمجة</p>
+    </div>
+    <button (click)="openAdd()" class="btn btn-primary">+ إضافة حقل</button>
+  </div>
+
+  <div class="bg-brand-50 border border-brand-100 rounded-xl px-4 py-3 mb-5 text-[12px] text-brand-800 leading-6">
+    الحقول المعلَّمة بـ <span class="badge badge-gray">أساسي</span> جزء من النموذج الرسمي — يمكن تعديل تسميتها
+    وترتيبها فقط، ولا يمكن حذفها. الحقول التي تضيفها تظهر تلقائياً في نموذج التقديم وفي تفاصيل المقترح.
+  </div>
+
+  @if (loading()) {
+    <div class="card p-10 text-center text-sm text-ink-faint">جارِ التحميل...</div>
+  } @else {
+    @for (section of sectionOptions; track section) {
+      <div class="mb-5">
+        <div class="flex items-center justify-between mb-2.5">
+          <h2 class="text-[13px] font-extrabold text-ink">{{ SectionLabels[section] }}</h2>
+          <button (click)="addToSection(section)" class="btn btn-ghost !py-1.5 !px-3 !text-[11px] !text-brand-700">
+            + إضافة حقل هنا
+          </button>
+        </div>
+        <div class="card overflow-hidden">
+          @for (f of fieldsInSection(section); track f.id) {
+            <div class="flex flex-wrap items-center gap-3 px-5 py-3.5 border-b border-[#F3F5F4] last:border-b-0"
+                 [class.opacity-50]="!f.isActive">
+              <div class="flex flex-col gap-0.5 shrink-0">
+                <button (click)="move(f, -1)" class="text-ink-faint hover:text-brand-600 leading-none text-[10px]">▲</button>
+                <button (click)="move(f, 1)" class="text-ink-faint hover:text-brand-600 leading-none text-[10px]">▼</button>
+              </div>
+              <div class="flex-1 min-w-[200px]">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="text-[13px] font-bold text-ink">{{ f.labelAr }}</span>
+                  @if (f.isSystem) { <span class="badge badge-gray">أساسي</span> }
+                  @if (f.isRequired) { <span class="badge badge-amber">إلزامي</span> }
+                  @if (!f.isActive) { <span class="badge badge-red">مخفي</span> }
+                </div>
+                <div class="text-[10.5px] text-ink-faint mt-1" dir="ltr" style="text-align:right">
+                  {{ f.fieldKey }} · {{ FieldTypeLabels[f.fieldType] }}
+                  @if (f.options.length) { · {{ f.options.length }} خيارات }
+                </div>
+              </div>
+              <div class="flex gap-1.5">
+                <button (click)="openEdit(f)" class="btn btn-ghost !py-1.5 !px-3 !text-[11px]">تعديل</button>
+                <button (click)="toggleActive(f)" class="btn btn-ghost !py-1.5 !px-3 !text-[11px]">
+                  {{ f.isActive ? 'إخفاء' : 'إظهار' }}
+                </button>
+                @if (!f.isSystem) {
+                  <button (click)="remove(f)" class="btn btn-danger !py-1.5 !px-3 !text-[11px]">حذف</button>
+                }
+              </div>
+            </div>
+          } @empty {
+            <div class="px-5 py-8 text-center">
+              <div class="text-[12.5px] text-ink-faint mb-3">لا توجد حقول في هذا القسم.</div>
+              <button (click)="addToSection(section)" class="btn btn-primary !py-2 !text-xs">+ إضافة أول حقل</button>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  }
+</div>
+
+@if (showModal()) {
+  <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" (click)="close()">
+    <div class="bg-white rounded-2xl w-full max-w-lg max-h-[88vh] overflow-y-auto p-7" (click)="$event.stopPropagation()">
+      <h2 class="text-base font-extrabold text-brand-700 mb-5">{{ modalTitle }}</h2>
+
+      <form [formGroup]="form" (ngSubmit)="save()" class="space-y-4">
+        <div>
+          <label class="field-label">التسمية بالعربي *</label>
+          <input formControlName="labelAr" type="text" class="field-input"
+                 placeholder="مثال: رفع كفاءة استهلاك الطاقة">
+          @if (form.controls.labelAr.invalid && form.controls.labelAr.touched) {
+            <div class="text-[11.5px] text-red-600 mt-1.5">التسمية بالعربي إلزامية.</div>
+          }
+        </div>
+
+        <div>
+          <label class="field-label">التسمية بالإنجليزي</label>
+          <input formControlName="labelEn" type="text" dir="ltr" class="field-input">
+        </div>
+
+        <details class="border border-[#E3E8E5] rounded-xl px-3.5 py-2.5">
+          <summary class="text-[12px] font-bold text-ink-soft cursor-pointer">
+            خيارات متقدمة — المعرّف البرمجي
+          </summary>
+          <div class="mt-3">
+            <label class="field-label">مفتاح الحقل (إنجليزي، بدون مسافات)</label>
+            <input formControlName="fieldKey" type="text" dir="ltr" class="field-input">
+            <div class="text-[11px] text-ink-faint mt-1.5">
+              @if (editing()) {
+                لا يمكن تعديل المفتاح بعد الإنشاء للحفاظ على البيانات السابقة.
+              } @else {
+                يُولَّد تلقائياً — لا حاجة لتغييره إلا إن أردت معرّفاً محدداً.
+              }
+            </div>
+            @if (form.controls.fieldKey.invalid && form.controls.fieldKey.touched) {
+              <div class="text-[11.5px] text-red-600 mt-1.5">يجب أن يبدأ بحرف إنجليزي، وأن يحتوي حروفاً وأرقاماً وشرطة سفلية فقط.</div>
+            }
+          </div>
+        </details>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="field-label">نوع الحقل *</label>
+            <select formControlName="fieldType" class="field-input" [attr.disabled]="editing()?.isSystem ? true : null">
+              @for (t of typeOptions; track t) { <option [value]="t">{{ FieldTypeLabels[t] }}</option> }
+            </select>
+          </div>
+          <div>
+            <label class="field-label">القسم *</label>
+            <select formControlName="section" class="field-input" [attr.disabled]="editing()?.isSystem ? true : null">
+              @for (s of sectionOptions; track s) { <option [value]="s">{{ SectionLabels[s] }}</option> }
+            </select>
+          </div>
+        </div>
+
+        @if (form.controls.fieldType.value === 'Select') {
+          <div>
+            <label class="field-label">خيارات القائمة (خيار في كل سطر) *</label>
+            <textarea [(ngModel)]="optionsText" [ngModelOptions]="{standalone: true}" rows="4"
+                      class="field-input" placeholder="الخيار الأول&#10;الخيار الثاني"></textarea>
+          </div>
+        }
+
+        <div>
+          <label class="field-label">نص إرشادي داخل الحقل</label>
+          <input formControlName="placeholder" type="text" class="field-input">
+        </div>
+
+        <div class="flex gap-4">
+          <label class="flex items-center gap-2.5 cursor-pointer">
+            <input type="checkbox" formControlName="isRequired" class="w-4 h-4 accent-brand-600">
+            <span class="text-[12.5px] font-bold text-ink">حقل إلزامي</span>
+          </label>
+          <label class="flex items-center gap-2.5 cursor-pointer">
+            <input type="checkbox" formControlName="isActive" class="w-4 h-4 accent-brand-600">
+            <span class="text-[12.5px] font-bold text-ink">مفعَّل ويظهر في النموذج</span>
+          </label>
+        </div>
+
+        @if (errorMessage()) {
+          <div class="text-[12.5px] text-red-700 bg-red-50 border border-red-100 rounded-xl px-3.5 py-2.5">{{ errorMessage() }}</div>
+        }
+
+        <div class="flex gap-3 pt-2">
+          <button type="submit" [disabled]="saving()" class="btn btn-primary">
+            {{ saving() ? 'جارِ الحفظ...' : 'حفظ' }}
+          </button>
+          <button type="button" (click)="close()" class="btn btn-ghost">إلغاء</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

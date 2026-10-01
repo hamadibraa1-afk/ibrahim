@@ -1,0 +1,70 @@
+<div class="card overflow-hidden">
+  @if (loading) {
+    <div class="p-10 text-center text-sm text-ink-faint">جارِ التحميل...</div>
+  } @else if (!proposals.length) {
+    <div class="p-10 text-center text-sm text-ink-faint">{{ emptyMessage }}</div>
+  } @else {
+    <div class="overflow-x-auto">
+      <table class="w-full text-[12.5px]">
+        <thead>
+          <tr class="text-[11px] text-ink-faint bg-[#FAFBFA] border-b border-[#EEF1EF]">
+            <th class="text-right font-normal px-5 py-3 whitespace-nowrap">رقم المقترح</th>
+            <th class="text-right font-normal px-3 py-3">عنوان المقترح</th>
+            @if (!hideSubmitter) { <th class="text-right font-normal px-3 py-3 whitespace-nowrap">مقدّم الطلب</th> }
+            <th class="text-right font-normal px-3 py-3 whitespace-nowrap">الإدارة</th>
+            <th class="text-right font-normal px-3 py-3 whitespace-nowrap">الحالة</th>
+            @if (showClassification) { <th class="text-right font-normal px-3 py-3 whitespace-nowrap">التصنيف</th> }
+            @if (showSla) { <th class="text-right font-normal px-3 py-3 whitespace-nowrap">المهلة</th> }
+            @if (showDecision) { <th class="text-right font-normal px-3 py-3 whitespace-nowrap">مسؤول التنفيذ</th> }
+            <th class="text-right font-normal px-3 py-3 whitespace-nowrap">التاريخ</th>
+            <th class="px-3 py-3"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of proposals; track p.id) {
+            <tr class="border-b border-[#F3F5F4] last:border-b-0 hover:bg-[#FAFBFA] transition-colors">
+              <td class="px-5 py-3 text-ink-faint whitespace-nowrap" dir="ltr" style="text-align:right">{{ p.proposalCode }}</td>
+              <td class="px-3 py-3">
+                <div class="font-bold text-ink">{{ p.title }}</div>
+                <div class="flex flex-wrap gap-1.5 mt-1">
+                  @if (p.escalatedAt) { <span class="badge badge-amber">مُصعَّد</span> }
+                  @if (p.resubmitCount > 0) { <span class="badge badge-gray">أُعيد {{ p.resubmitCount }}×</span> }
+                  @if (p.attachments.length) { <span class="text-[10.5px] text-ink-faint">{{ p.attachments.length }} مرفق</span> }
+                </div>
+              </td>
+              @if (!hideSubmitter) { <td class="px-3 py-3 text-ink-soft whitespace-nowrap">{{ p.submitterName }}</td> }
+              <td class="px-3 py-3 text-ink-soft whitespace-nowrap">{{ p.department }}</td>
+              <td class="px-3 py-3"><app-status-badge [status]="p.status" /></td>
+              @if (showClassification) {
+                <td class="px-3 py-3 text-ink-soft whitespace-nowrap">
+                  @if (p.classification) { {{ ClassificationLabels[p.classification] }} } @else { — }
+                  @if (p.committeeVotes.length) {
+                    <div class="text-[10px] text-ink-faint mt-0.5">{{ signedCount(p) }}/{{ p.committeeVotes.length }} توقيع</div>
+                  }
+                </td>
+              }
+              @if (showSla) {
+                <td class="px-3 py-3 whitespace-nowrap">
+                  @if (isOverdue(p)) {
+                    <span class="badge badge-red">متأخر {{ -hoursLeft(p) }}س</span>
+                  } @else if (hoursLeft(p) <= 6) {
+                    <span class="badge badge-amber">{{ hoursLeft(p) }}س متبقية</span>
+                  } @else {
+                    <span class="text-ink-faint">{{ hoursLeft(p) }}س</span>
+                  }
+                </td>
+              }
+              @if (showDecision) { <td class="px-3 py-3 text-ink-soft whitespace-nowrap">{{ p.ownerName ?? '—' }}</td> }
+              <td class="px-3 py-3 text-ink-faint whitespace-nowrap">{{ p.submittedAt | date:'yyyy/MM/dd' }}</td>
+              <td class="px-3 py-3 text-left">
+                <a [routerLink]="['/proposals', p.id]" class="btn btn-primary !py-1.5 !px-4 !text-[11px] whitespace-nowrap">
+                  {{ actionLabel }}
+                </a>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

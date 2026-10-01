@@ -1,0 +1,34 @@
+<div class="max-w-7xl">
+  <div class="mb-5">
+    <h1 class="text-lg font-extrabold text-brand-700">القرار التنفيذي</h1>
+    <p class="text-xs text-ink-faint mt-1">المقترحات المرفوعة للإدارة التنفيذية وسجل القرارات الصادرة</p>
+  </div>
+
+  <!-- تبويبات المراحل -->
+  <div class="flex flex-wrap gap-1.5 mb-5 border-b border-[#E9EDEB]">
+    @for (tab of tabs; track tab.key) {
+      <button (click)="selectTab(tab.key)"
+              class="px-4 py-2.5 text-[12.5px] font-bold border-b-2 -mb-px transition-colors"
+              [class.border-brand-600]="activeTab() === tab.key"
+              [class.text-brand-700]="activeTab() === tab.key"
+              [class.border-transparent]="activeTab() !== tab.key"
+              [class.text-ink-faint]="activeTab() !== tab.key">
+        {{ tab.label }}
+        @if (counts()[tab.key] !== undefined) {
+          <span class="mr-1.5 px-1.5 py-0.5 rounded-full text-[10px]"
+                [class.bg-brand-100]="activeTab() === tab.key"
+                [class.text-brand-700]="activeTab() === tab.key"
+                [class.bg-\[\#F1F3F2\]]="activeTab() !== tab.key"
+                [class.text-ink-faint]="activeTab() !== tab.key">{{ counts()[tab.key] }}</span>
+        }
+      </button>
+    }
+  </div>
+
+  <app-proposal-filters [showStatus]="activeTab() === 'all'" [showClassification]="true" (filtersChange)="onFilters($event)" />
+
+  <app-proposal-table
+    [proposals]="proposals()"
+    [loading]="loading()"
+    [showClassification]="true" [showDecision]="true" actionLabel="عرض / قرار" />
+</div>

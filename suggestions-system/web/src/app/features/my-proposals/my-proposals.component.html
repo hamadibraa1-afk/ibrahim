@@ -1,0 +1,148 @@
+<div class="max-w-6xl">
+  <div class="flex items-center justify-between mb-5">
+    <div>
+      <h1 class="text-lg font-extrabold text-brand-700">مقترحاتي</h1>
+      <p class="text-xs text-ink-faint mt-1">متابعة حالة المقترحات المقدَّمة</p>
+    </div>
+    <a routerLink="/submit" class="btn btn-primary">+ تقديم مقترح جديد</a>
+  </div>
+
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
+    <div class="card p-4"><div class="text-[11px] text-ink-faint mb-1">إجمالي المقترحات</div><div class="text-xl font-extrabold text-brand-700">{{ stats.total }}</div></div>
+    <div class="card p-4"><div class="text-[11px] text-ink-faint mb-1">قيد المعالجة</div><div class="text-xl font-extrabold text-brand-700">{{ stats.inProgress }}</div></div>
+    <div class="card p-4"><div class="text-[11px] text-ink-faint mb-1">مقبولة</div><div class="text-xl font-extrabold text-brand-600">{{ stats.accepted }}</div></div>
+    <div class="card p-4"><div class="text-[11px] text-ink-faint mb-1">مرفوضة</div><div class="text-xl font-extrabold text-red-600">{{ stats.rejected }}</div></div>
+  </div>
+
+  <div class="card overflow-hidden">
+    @if (loading()) {
+      <div class="p-10 text-center text-sm text-ink-faint">جارِ التحميل...</div>
+    } @else if (!proposals().length) {
+      <div class="p-10 text-center">
+        <div class="text-sm text-ink-faint mb-3">لم تقدّم أي مقترح بعد.</div>
+        <a routerLink="/submit" class="btn btn-primary !py-2 !text-xs">تقديم أول مقترح</a>
+      </div>
+    } @else {
+      @for (p of proposals(); track p.id) {
+        <div class="border-t border-[#F3F5F4] first:border-t-0">
+          <div class="flex flex-wrap items-center gap-4 px-6 py-4">
+            <div class="flex-[1.6] min-w-[180px]">
+              <div class="text-[13.5px] font-bold text-ink">{{ p.title }}</div>
+              <div class="text-[11px] text-ink-faint mt-1">{{ p.proposalCode }} · {{ p.submittedAt | date:'d MMMM y' }}</div>
+            </div>
+
+            <div class="w-28">
+              <span class="badge" [ngClass]="ProposalStatusBadgeClass[p.status]">{{ ProposalStatusLabels[p.status] }}</span>
+            </div>
+
+            <div class="flex-[1.8] min-w-[220px] flex items-center">
+              @for (step of steps; track step.label; let i = $index) {
+                <div class="flex flex-col items-center gap-1 w-14 shrink-0">
+                  <div class="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
+                       [ngClass]="{
+                         'bg-brand-600 text-white': stepState(p, i) === 'done',
+                         'bg-sun-400 text-white': stepState(p, i) === 'now',
+                         'bg-[#E5E9E7] text-ink-faint': stepState(p, i) === 'pending',
+                         'bg-red-500 text-white': stepState(p, i) === 'rejected'
+                       }">
+                    @switch (stepState(p, i)) {
+                      @case ('done') { ✓ } @case ('rejected') { ✕ } @case ('now') { ● } @default { − }
+                    }
+                  </div>
+                  <div class="text-[8.5px] text-ink-faint">{{ step.label }}</div>
+                </div>
+                @if (i < steps.length - 1) {
+                  <div class="flex-1 h-[3px] -mt-4 min-w-[6px]" [ngClass]="stepState(p, i) === 'done' ? 'bg-brand-600' : 'bg-[#E5E9E7]'"></div>
+                }
+              }
+            </div>
+
+            <div class="flex gap-1.5 justify-end">
+              @if (p.status === ProposalStatus.ReturnedForEdit) {
+                <a [routerLink]="['/proposals', p.id, 'edit']" class="btn btn-accent !py-1.5 !px-3 !text-[11px]">تعديل وإعادة إرسال</a>
+              }
+              <a [routerLink]="['/proposals', p.id]" class="btn btn-ghost !py-1.5 !px-3 !text-[11px]">فتح</a>
+              <button (click)="deleteProposal(p)" [disabled]="!canDelete(p)"
+                      [ngClass]="canDelete(p) ? 'btn-danger' : '!bg-[#F1F3F2] !text-[#C7CDC9] cursor-not-allowed'"
+                      class="btn !py-1.5 !px-3 !text-[11px]">حذف</button>
+            </div>
+          </div>
+
+          @if (p.status === ProposalStatus.ReturnedForEdit) {
+            <div class="mx-6 mb-4 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+              <div class="text-[12.5px] font-bold text-amber-900 mb-1">أُعيد إليك للتعديل</div>
+              @if (p.screenerNotes) {
+                <div class="text-[12px] text-amber-800 leading-6">{{ p.screenerNotes }}</div>
+              }
+            </div>
+          }
+
+          @if (expandedId() === p.id) {
+            <div class="px-6 pb-5 pt-1 bg-[#FAFBFA] space-y-4">
+
+              <div class="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <div class="field-label">آلية تطبيق المقترح</div>
+                  <div class="bg-white border border-[#EEF1EF] rounded-xl p-3.5 text-[12.5px] text-ink-soft leading-7 whitespace-pre-line">{{ p.implementationMechanism }}</div>
+                </div>
+                <div>
+                  <div class="field-label">أسباب تقديم المقترح</div>
+                  <div class="bg-white border border-[#EEF1EF] rounded-xl p-3.5 text-[12.5px] text-ink-soft leading-7 whitespace-pre-line">{{ p.submissionReasons }}</div>
+                </div>
+              </div>
+
+              <div>
+                <div class="field-label">أثر تطبيق المقترح</div>
+                <div class="flex flex-wrap gap-1.5">
+                  @for (label of activeImpacts(p); track label) { <span class="badge badge-green">{{ label }}</span> }
+                </div>
+              </div>
+
+              @if (p.screenerNotes) {
+                <div class="text-[12px] bg-amber-50 border border-amber-100 rounded-xl p-3.5">
+                  <span class="font-bold text-amber-800">ملاحظات الفرز:</span>
+                  <span class="text-amber-900">{{ p.screenerNotes }}</span>
+                </div>
+              }
+              @if (p.classification) {
+                <div class="text-[12px] bg-sun-50 border border-sun-200 rounded-xl p-3.5 space-y-1.5">
+                  <div><span class="font-bold text-sun-600">تصنيف اللجنة:</span> {{ ClassificationLabels[p.classification] }}</div>
+                  @if (p.committeeRecommendation) {
+                    <div class="text-ink-soft leading-7"><span class="font-bold text-ink">التوصية:</span> {{ p.committeeRecommendation }}</div>
+                  }
+                </div>
+              }
+              @if (p.executiveDecisionNotes) {
+                <div class="text-[12px] bg-[#F1F3F2] border border-[#E3E8E5] rounded-xl p-3.5">
+                  <span class="font-bold text-ink">قرار الإدارة التنفيذية:</span>
+                  <span class="text-ink-soft">{{ p.executiveDecisionNotes }}</span>
+                </div>
+              }
+              @if (p.rejectionReason) {
+                <div class="text-[12px] bg-red-50 border border-red-100 rounded-xl p-3.5">
+                  <span class="font-bold text-red-800">سبب الرفض:</span>
+                  <span class="text-red-900">{{ p.rejectionReason }}</span>
+                </div>
+              }
+              @if (p.ownerName) {
+                <div class="text-[12px] text-ink-soft">مسؤول المتابعة والتنفيذ: <b class="text-ink">{{ p.ownerName }}</b></div>
+              }
+
+              <div>
+                <div class="field-label">المرفقات</div>
+                <app-attachment-list [proposalId]="p.id" [attachments]="p.attachments" [allowDelete]="canDelete(p)" />
+              </div>
+
+              <div class="flex flex-wrap gap-2.5 pt-1">
+                <button (click)="openForm(p)" class="btn btn-ghost !py-2 !text-xs">عرض النموذج الرسمي (PDF)</button>
+                @if (p.status === ProposalStatus.Accepted) {
+                  <button (click)="openCertificate(p)" class="btn btn-accent !py-2 !text-xs">شهادة الشكر</button>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    }
+  </div>
+</div>
