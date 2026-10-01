@@ -1,0 +1,9 @@
+bin/
+obj/
+.vs/
+*.user
+TestResults/
+api/ProposalSystem.Api/App_Data/
+*.db
+*.db-shm
+*.db-wal
