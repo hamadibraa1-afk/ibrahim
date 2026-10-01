@@ -1,4 +1,7 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { debounceTime } from 'rxjs';
+import { RealtimeService } from '../../core/services/realtime.service';
 import { CommonModule } from '@angular/common';
 import { ProposalService } from '../../core/services/proposal.service';
 import { ProposalFiltersComponent } from '../../core/components/proposal-filters.component';
@@ -15,6 +18,8 @@ interface Tab { key: string; label: string; query: ProposalQuery; }
 })
 export class ExecutiveListComponent implements OnInit {
   private proposalService = inject(ProposalService);
+  private realtime = inject(RealtimeService);
+  private destroyRef = inject(DestroyRef);
 
   readonly ProposalStatus = ProposalStatus;
   readonly tabs: Tab[] = [
@@ -30,7 +35,14 @@ export class ExecutiveListComponent implements OnInit {
   private filters: ProposalQuery = {};
   counts = signal<Record<string, number>>({});
 
-  ngOnInit() { this.load(); this.loadCounts(); }
+  ngOnInit() {
+    this.load();
+    this.loadCounts();
+    // أي انتقال في سير العمل يحدّث القائمة والأعداد لحظياً (مع تجميع الأحداث المتتابعة)
+    this.realtime.proposalChanges
+      .pipe(debounceTime(400), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => { this.load(true); this.loadCounts(); });
+  }
 
   get currentTab(): Tab {
     return this.tabs.find(t => t.key === this.activeTab()) ?? this.tabs[0];
@@ -43,8 +55,8 @@ export class ExecutiveListComponent implements OnInit {
 
   onFilters(f: ProposalQuery) { this.filters = f; this.load(); }
 
-  load() {
-    this.loading.set(true);
+  load(silent = false) {
+    if (!silent) this.loading.set(true);
     this.proposalService.getAll({ ...this.currentTab.query, ...this.filters }).subscribe({
       next: d => { this.proposals.set(d); this.loading.set(false); },
       error: () => this.loading.set(false),

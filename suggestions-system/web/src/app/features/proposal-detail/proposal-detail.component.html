@@ -17,12 +17,17 @@
           <h1 class="text-lg font-extrabold text-brand-700">{{ p.title }}</h1>
           <app-status-badge [status]="p.status" />
           @if (isOverdue(p)) { <span class="badge badge-red">متأخر {{ -hoursLeft(p) }} ساعة</span> }
-          @if (p.escalatedAt) { <span class="badge badge-amber">مُصعَّد</span> }
+          @if (p.escalationLevel > 0) {
+            <span class="badge badge-red">تصعيد تلقائي — {{ p.escalationLevel === 1 ? 'المدير المباشر' : 'الإدارة التنفيذية' }}</span>
+          } @else if (p.escalatedAt) { <span class="badge badge-amber">مُصعَّد</span> }
           @if (p.resubmitCount > 0) { <span class="badge badge-gray">أُعيد إرساله {{ p.resubmitCount }} مرة</span> }
         </div>
         <div class="text-[12px] text-ink-faint mt-1.5">
           {{ p.proposalCode }} · {{ p.department }}
-          @if (role !== UserRole.Screener) { · مقدّم الطلب: {{ p.submitterName }} }
+          · مقدّم الطلب:
+          @if (p.submitterHidden) {
+            <span class="inline-flex items-center gap-1 text-ink-soft" [title]="blindPolicy()?.description ?? ''">🔒 محجوب (مراجعة معمّاة)</span>
+          } @else { {{ p.submitterName }} }
           · {{ p.submittedAt | date:'d MMMM y' }}
         </div>
       </div>
@@ -40,6 +45,23 @@
         }
       </div>
     </div>
+
+    @if (liveUpdated()) {
+      <div class="bg-sky-50 border border-sky-100 rounded-xl px-4 py-2.5 mb-4 text-[12px] text-sky-800 flex items-center justify-between">
+        <span>⚡ تم تحديث هذا المقترح للتو من مستخدم آخر — المعروض هو أحدث حالة.</span>
+        <button (click)="liveUpdated.set(false)" class="text-sky-700 font-bold">إخفاء</button>
+      </div>
+    }
+
+    @if (reroutedToMe) {
+      <div class="bg-orange-50 border-2 border-orange-200 rounded-2xl p-5 mb-5">
+        <div class="text-[13.5px] font-extrabold text-orange-900 mb-1">أُحيل إليك هذا المقترح تلقائياً</div>
+        <div class="text-[12.5px] text-orange-800 leading-7">
+          تجاوز المقترح مهلة الفرز دون إجراء، فأعاد النظام توجيهه إليك بصفتك المدير المباشر لفريق الفرز.
+          يمكنك اتخاذ قرار الفرز أدناه — مع بقاء اسم مقدّم الطلب محجوباً.
+        </div>
+      </div>
+    }
 
     @if (p.status === ProposalStatus.ReturnedForEdit && isMine) {
       <div class="bg-amber-50 border-2 border-amber-200 rounded-2xl p-5 mb-5">
@@ -82,10 +104,13 @@
             </div>
 
             @for (cf of p.customFields; track cf.fieldId) {
+              <!-- خانات "أثر التطبيق" معروضة أعلاه كشارات -->
+              @if (cf.section !== 'Impact') {
               <div>
                 <div class="field-label">{{ cf.labelAr }}</div>
                 <div class="bg-[#F8FAF9] border border-[#EEF1EF] rounded-xl p-3.5 text-[12.5px] text-ink-soft leading-7 whitespace-pre-line">{{ cf.value || '—' }}</div>
               </div>
+              }
             }
 
             <div>
@@ -104,7 +129,12 @@
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" class="shrink-0">
                   <rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/>
                 </svg>
-                <span class="text-[12px] font-bold text-ink-soft">اسم مقدّم الطلب مخفي حفاظاً على حياد الفرز</span>
+                <div>
+                  <div class="text-[12px] font-bold text-ink-soft">اسم مقدّم الطلب وبيانات تواصله محجوبة حفاظاً على حياد الفرز — تُقيَّم الفكرة لا الشخص.</div>
+                  @if (blindPolicy(); as policy) {
+                    <div class="text-[11px] text-ink-faint mt-0.5">{{ policy.description }}</div>
+                  }
+                </div>
               </div>
               <label class="field-label">ملاحظات الفرز (إلزامية عند الإعادة أو الرفض)</label>
               <textarea [(ngModel)]="screenNotes" rows="3" class="field-input mb-4" placeholder="اكتب ملاحظاتك..."></textarea>
@@ -155,7 +185,7 @@
 
               <div class="flex flex-wrap gap-2.5">
                 <button (click)="saveStudy()" [disabled]="busy()" class="btn btn-primary">حفظ الدراسة والتوصية</button>
-                <button (click)="sign()" [disabled]="busy() || myVote?.signed || !p.committeeRecommendation" class="btn btn-accent">
+                <button (click)="sign()" [disabled]="busy() || !canSign()" class="btn btn-accent">
                   {{ myVote?.signed ? 'تم توقيعك ✓' : 'توقيع على التوصية' }}
                 </button>
               </div>
@@ -173,22 +203,34 @@
             <div class="p-5">
               <label class="field-label">ملاحظات القرار (إلزامية عند الرفض)</label>
               <textarea [(ngModel)]="execNotes" rows="3" class="field-input mb-4"></textarea>
-              <div class="flex flex-wrap gap-2.5 mb-4">
+              <div class="flex flex-wrap gap-2.5">
                 <button (click)="decide('Accepted')" [disabled]="busy()" class="btn btn-primary">الموافقة</button>
                 <button (click)="decide('Rejected')" [disabled]="busy()" class="btn btn-danger">عدم الموافقة</button>
               </div>
-              <div class="pt-4 border-t border-[#EEF1EF]">
-                <label class="field-label">مسؤول المتابعة والتنفيذ</label>
-                <div class="flex gap-2.5">
-                  <select [(ngModel)]="ownerId" class="field-input flex-1">
-                    <option [ngValue]="null" disabled>اختر موظفاً...</option>
-                    @for (u of users(); track u.id) { <option [ngValue]="u.id">{{ u.arabicName }} — {{ u.department }}</option> }
-                  </select>
-                  <button (click)="assignOwner()" [disabled]="busy()" class="btn btn-ghost">تعيين</button>
-                </div>
+              <div class="text-[11px] text-ink-faint mt-2.5">
+                عند الموافقة يُجدوَل تلقائياً قياس الأثر الفعلي بعد 3 إلى 6 أشهر لمتابعة العائد على الاستثمار.
               </div>
             </div>
           </div>
+        }
+
+        <!-- إجراء: تعيين مسؤول التنفيذ (وهو من يسجّل قياس الأثر لاحقاً) -->
+        @if (canAssignOwner()) {
+          <div class="card p-5">
+            <label class="field-label">مسؤول المتابعة والتنفيذ وقياس الأثر</label>
+            <div class="flex gap-2.5">
+              <select [(ngModel)]="ownerId" class="field-input flex-1">
+                <option [ngValue]="null" disabled>اختر موظفاً...</option>
+                @for (u of users(); track u.id) { <option [ngValue]="u.id">{{ u.arabicName }} — {{ u.department }}</option> }
+              </select>
+              <button (click)="assignOwner()" [disabled]="busy()" class="btn btn-ghost">تعيين</button>
+            </div>
+          </div>
+        }
+
+        <!-- مرحلة ما بعد التطبيق: قياس الأثر الفعلي -->
+        @if (p.impact) {
+          <app-impact-panel [proposal]="p" [fields]="measurementFields()" (updated)="onImpactUpdated($event)" />
         }
 
         <!-- إجراء: التصعيد -->
@@ -259,15 +301,20 @@
 
         @if (p.escalationNote) {
           <div class="card p-5 border-orange-200">
-            <h3 class="text-[13px] font-extrabold text-orange-600 mb-2">تصعيد</h3>
+            <h3 class="text-[13px] font-extrabold text-orange-600 mb-2">
+              تصعيد @if (p.escalationLevel > 0) { — المستوى {{ p.escalationLevel }} }
+            </h3>
             <div class="text-[12px] text-ink-soft leading-7">{{ p.escalationNote }}</div>
+            @if (p.escalatedToName) {
+              <div class="text-[12px] text-ink-soft mt-1.5">أُعيد التوجيه إلى: <b class="text-ink">{{ p.escalatedToName }}</b></div>
+            }
             <div class="text-[11px] text-ink-faint mt-2">{{ p.escalatedAt | date:'d MMMM y — h:mm a' }}</div>
           </div>
         }
 
         <div class="card p-5">
           <h3 class="text-[13px] font-extrabold text-brand-700 mb-4">سجل الإجراءات</h3>
-          <app-audit-timeline [proposalId]="p.id" />
+          <app-audit-timeline [proposalId]="p.id" [version]="p.updatedAt" />
         </div>
       </div>
     </div>

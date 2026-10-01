@@ -142,11 +142,27 @@ public sealed class HubOriginGuardMiddleware(RequestDelegate next, IOptions<Cors
     }
 }
 
-/// <summary>Defence-in-depth headers on every API response.</summary>
+/// <summary>Defence-in-depth headers on every response — the API and, when hosted here, the SPA.</summary>
 public sealed class SecurityHeadersMiddleware(RequestDelegate next)
 {
+    /// <summary>The API serves JSON and generated print documents only; nothing may load from elsewhere.</summary>
+    private const string ApiPolicy = "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'";
+
+    /// <summary>
+    /// The Angular app: own scripts only (no inline script, no eval), Google Fonts for the Arabic
+    /// typeface, and same-origin XHR/WebSocket for the API and the SignalR hub.
+    /// Inline styles are allowed because Angular injects component styles at runtime.
+    /// </summary>
+    private const string SpaPolicy =
+        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+        "font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; " +
+        "object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'";
+
     public Task InvokeAsync(HttpContext context)
     {
+        var isApi = context.Request.Path.StartsWithSegments("/api")
+                    || context.Request.Path.StartsWithSegments("/hubs")
+                    || context.Request.Path.StartsWithSegments("/health");
         context.Response.OnStarting(() =>
         {
             var h = context.Response.Headers;
@@ -156,12 +172,14 @@ public sealed class SecurityHeadersMiddleware(RequestDelegate next)
             h["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=()";
             h["Cross-Origin-Opener-Policy"] = "same-origin";
             h["Cross-Origin-Resource-Policy"] = "same-site";
-            // The API serves JSON and generated print documents only; nothing may load from elsewhere.
             if (!h.ContainsKey("Content-Security-Policy"))
-                h.ContentSecurityPolicy = "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'";
-            // Proposals and personal data must not linger in shared or proxy caches.
-            if (!h.ContainsKey("Cache-Control"))
+                h.ContentSecurityPolicy = isApi ? ApiPolicy : SpaPolicy;
+            // Proposals and personal data must not linger in shared or proxy caches. Hashed SPA
+            // bundles may be cached; index.html is revalidated so a deploy is picked up at once.
+            if (isApi && !h.ContainsKey("Cache-Control"))
                 h.CacheControl = "no-store";
+            else if (!isApi && context.Request.Path.Value is "/" or "/index.html")
+                h.CacheControl = "no-cache";
             h.Remove("Server");
             h.Remove("X-Powered-By");
             return Task.CompletedTask;

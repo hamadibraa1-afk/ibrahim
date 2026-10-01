@@ -13,7 +13,11 @@ export const SectionLabels: Record<string, string> = {
   SuggestionData: 'بيانات المقترح',
   SuggestionDetails: 'تفاصيل المقترح',
   Impact: 'أثر التطبيق',
+  ImpactMeasurement: 'قياس الأثر الفعلي بعد التطبيق (3–6 أشهر)',
 };
+
+/** حقول تظهر في نموذج تقديم المقترح؛ حقول قياس الأثر تُعبّأ لاحقاً بعد الاعتماد. */
+export const SubmissionSections = ['SuggestionData', 'SuggestionDetails', 'Impact'];
 
 export interface FormField {
   id: number;

@@ -142,6 +142,15 @@ if (!app.Environment.IsDevelopment())
 }
 app.UseMiddleware<SecurityHeadersMiddleware>();
 app.UseMiddleware<ErrorHandlingMiddleware>();
+
+// Production hosting: the built Angular app is copied to wwwroot and served from the same
+// origin, which is what lets the SameSite=Strict cookie and the XSRF header work unchanged.
+var spaHosted = File.Exists(Path.Combine(app.Environment.WebRootPath ?? Path.Combine(app.Environment.ContentRootPath, "wwwroot"), "index.html"));
+if (spaHosted)
+{
+    app.UseDefaultFiles();
+    app.UseStaticFiles();
+}
 app.UseRouting();
 app.UseCors("spa");
 app.UseRateLimiter();
@@ -153,6 +162,11 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapHub<NotificationHub>("/hubs/notifications");
 app.MapGet("/health", () => Results.Ok(new { status = "ok" })).AllowAnonymous();
+if (spaHosted)
+{
+    // Client-side routes (/proposals/12, /impact...) load the SPA; unknown /api and /hubs paths stay 404.
+    app.MapFallbackToFile("{**path:regex(^(?!api/|hubs/).*$)}", "index.html").AllowAnonymous();
+}
 
 await app.RunAsync();
 

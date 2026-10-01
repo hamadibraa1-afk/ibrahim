@@ -29,6 +29,7 @@
               @case ('gavel')    { <path d="M14 4l6 6-3 3-6-6z"/><path d="M11 7L4 14l3 3 7-7"/><path d="M3 21h10"/> }
               @case ('chart')    { <path d="M4 20V10M12 20V4M20 20v-7"/> }
               @case ('history')  { <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/><path d="M3 12a9 9 0 001.5 5"/> }
+              @case ('target')   { <circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/> }
               @case ('sliders')  { <path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3"/><path d="M1 14h6M9 8h6M17 16h6"/> }
               @case ('settings') { <circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 00-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 00-2-1.2L14 3h-4l-.5 2.6a7 7 0 00-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 005 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-1c.6.5 1.3.9 2 1.2L10 21h4l.5-2.6c.7-.3 1.4-.7 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z"/> }
             }
@@ -51,7 +52,12 @@
       <div class="flex items-center gap-2">
         <!-- جرس الإشعارات -->
         <a routerLink="/notifications" class="relative p-2.5 rounded-xl hover:bg-brand-50 text-ink-soft hover:text-brand-600 transition-colors"
-           title="الإشعارات">
+           [title]="realtime.state() === 'connected' ? 'الإشعارات — متصل لحظياً' : 'الإشعارات — جارٍ الاتصال...'">
+          <!-- مؤشر الاتصال اللحظي -->
+          <span class="absolute bottom-1.5 right-1.5 w-2 h-2 rounded-full ring-2 ring-white"
+                [class.bg-emerald-500]="realtime.state() === 'connected'"
+                [class.bg-amber-400]="realtime.state() === 'connecting' || realtime.state() === 'reconnecting'"
+                [class.bg-gray-300]="realtime.state() === 'disconnected'"></span>
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/>
           </svg>

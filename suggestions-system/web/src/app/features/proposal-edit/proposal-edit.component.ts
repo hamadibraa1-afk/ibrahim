@@ -7,7 +7,7 @@ import { AttachmentService } from '../../core/services/attachment.service';
 import { AttachmentListComponent } from '../../core/components/attachment-list.component';
 import { Proposal, ProposalStatus } from '../../core/models/proposal.model';
 import { FormSettingsService } from '../../core/services/form-settings.service';
-import { FormField } from '../../core/models/form-field.model';
+import { FormField, SubmissionSections } from '../../core/models/form-field.model';
 
 /** تعديل مقترح — يُستخدم للمسودات وللمقترحات المعادة من الفرز. */
 @Component({
@@ -68,7 +68,8 @@ export class ProposalEditComponent implements OnInit {
 
     this.formSettings.getAll(true).subscribe({
       next: fields => {
-        const active = fields.filter(f => !f.isSystem);
+        // حقول "قياس الأثر الفعلي" تُعبّأ بعد الاعتماد بأشهر، لا عند التقديم
+        const active = fields.filter(f => !f.isSystem && SubmissionSections.includes(f.section));
         this.impactFields.set(active.filter(f => f.section === 'Impact'));
         this.customFields.set(active.filter(f => f.section !== 'Impact'));
         active.forEach(f => (this.customValues[f.fieldKey] ??= f.fieldType === 'Checkbox' ? 'false' : ''));

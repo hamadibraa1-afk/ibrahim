@@ -1,35 +1,44 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule, Location } from '@angular/common';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { Observable } from 'rxjs';
 import { ProposalService } from '../../core/services/proposal.service';
 import { UserService } from '../../core/services/user.service';
 import { AuthService } from '../../core/services/auth.service';
+import { RealtimeService } from '../../core/services/realtime.service';
+import { FormSettingsService } from '../../core/services/form-settings.service';
 import { AttachmentListComponent } from '../../core/components/attachment-list.component';
 import { AuditTimelineComponent } from '../../core/components/audit-timeline.component';
 import { StatusBadgeComponent } from '../../core/components/status-badge.component';
+import { ImpactPanelComponent } from './impact-panel.component';
 import {
-  ClassificationLabels, selectedImpacts, NotApplicableReason, NotApplicableReasonLabels,
+  BlindReviewPolicy, ClassificationLabels, selectedImpacts, NotApplicableReason, NotApplicableReasonLabels,
   Proposal, ProposalClassification, ProposalStatus,
 } from '../../core/models/proposal.model';
+import { FormField } from '../../core/models/form-field.model';
 import { User, UserRole } from '../../core/models/user.model';
 
 /**
  * صفحة تفاصيل مقترح واحد — نقطة العمل المركزية.
- * تعرض الإجراءات المتاحة حسب دور المستخدم وحالة المقترح فقط.
+ * الإجراءات المتاحة يحسبها الخادم (p.actions) حسب الدور والحالة والتصعيد،
+ * والصفحة تتحدّث لحظياً عند أي انتقال للمقترح عبر SignalR.
  */
 @Component({
   selector: 'app-proposal-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, AttachmentListComponent, AuditTimelineComponent, StatusBadgeComponent],
+  imports: [CommonModule, FormsModule, RouterLink, AttachmentListComponent, AuditTimelineComponent, StatusBadgeComponent, ImpactPanelComponent],
   templateUrl: './proposal-detail.component.html',
 })
 export class ProposalDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
-  private router = inject(Router);
   private location = inject(Location);
   private proposalService = inject(ProposalService);
   private userService = inject(UserService);
+  private formSettings = inject(FormSettingsService);
+  private realtime = inject(RealtimeService);
+  private destroyRef = inject(DestroyRef);
   auth = inject(AuthService);
 
   readonly ProposalStatus = ProposalStatus;
@@ -43,8 +52,12 @@ export class ProposalDetailComponent implements OnInit {
 
   proposal = signal<Proposal | null>(null);
   users = signal<User[]>([]);
+  measurementFields = signal<FormField[]>([]);
+  blindPolicy = signal<BlindReviewPolicy | null>(null);
   loading = signal(true);
   busy = signal(false);
+  /** تحديث وصل من مستخدم آخر أثناء فتح الصفحة. */
+  liveUpdated = signal(false);
   errorMessage = signal<string | null>(null);
   successMessage = signal<string | null>(null);
 
@@ -61,13 +74,27 @@ export class ProposalDetailComponent implements OnInit {
   ngOnInit() {
     const id = Number(this.route.snapshot.paramMap.get('id'));
     this.load(id);
+    this.proposalService.blindReviewPolicy().subscribe({ next: p => this.blindPolicy.set(p), error: () => {} });
+    this.formSettings.getAll(true).subscribe({
+      next: f => this.measurementFields.set(f.filter(x => x.section === 'ImpactMeasurement')),
+      error: () => {},
+    });
     if (this.auth.role() === UserRole.Admin) {
       this.userService.getAll().subscribe(u => this.users.set(u));
     }
+
+    // تحديث لحظي: إن نقل مستخدم آخر هذا المقترح لمرحلة جديدة نعيد تحميله فوراً
+    this.realtime.changesFor(id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        if (this.busy()) return; // تغييرنا نحن — handle() يعيد التحميل بنفسه
+        this.liveUpdated.set(true);
+        this.load(id, true);
+      });
   }
 
-  load(id: number) {
-    this.loading.set(true);
+  load(id: number, silent = false) {
+    if (!silent) this.loading.set(true);
     this.proposalService.getById(id).subscribe({
       next: p => {
         this.proposal.set(p);
@@ -91,51 +118,47 @@ export class ProposalDetailComponent implements OnInit {
   }
 
   isOverdue(p: Proposal): boolean {
-    return this.hoursLeft(p) < 0 && p.status !== ProposalStatus.Accepted && p.status !== ProposalStatus.Rejected;
+    return this.hoursLeft(p) < 0
+      && p.status !== ProposalStatus.Accepted && p.status !== ProposalStatus.Rejected
+      && p.status !== ProposalStatus.ReturnedForEdit;
   }
 
-  // ---- صلاحيات الإجراءات ----
+  // ---- صلاحيات الإجراءات: من الخادم ----
   get role() { return this.auth.role(); }
   get isMine() { return this.proposal()?.submitterId === this.auth.currentUser()?.id; }
 
-  canScreen(): boolean {
+  canScreen(): boolean { return !!this.proposal()?.actions.canScreen; }
+  canStudy(): boolean { return !!this.proposal()?.actions.canStudy; }
+  canSign(): boolean { return !!this.proposal()?.actions.canSign; }
+  canDecide(): boolean { return !!this.proposal()?.actions.canDecide; }
+  canAssignOwner(): boolean { return !!this.proposal()?.actions.canAssignOwner; }
+  canEscalate(): boolean { return !!this.proposal()?.actions.canEscalate; }
+  canEdit(): boolean { return !!this.proposal()?.actions.canEdit; }
+
+  /** أُعيد توجيه المقترح إليّ تلقائياً بعد تأخر الفرز. */
+  get reroutedToMe(): boolean {
     const p = this.proposal();
-    return !!p && (this.role === UserRole.Screener || this.role === UserRole.Admin)
-      && (p.status === ProposalStatus.Submitted || p.status === ProposalStatus.UnderScreening);
+    return !!p && p.escalatedToId === this.auth.currentUser()?.id && p.actions.canScreen;
   }
-  canStudy(): boolean {
-    const p = this.proposal();
-    return !!p && (this.role === UserRole.CommitteeMember || this.role === UserRole.Admin)
-      && p.status === ProposalStatus.WithCommittee;
-  }
-  canDecide(): boolean {
-    const p = this.proposal();
-    return !!p && this.role === UserRole.Admin && p.status === ProposalStatus.PendingExecutiveDecision;
-  }
-  canEscalate(): boolean {
-    const p = this.proposal();
-    return !!p && (this.role === UserRole.Screener || this.role === UserRole.Admin) && this.isOverdue(p);
-  }
-  canEdit(): boolean {
-    const p = this.proposal();
-    return !!p && this.isMine && (p.status === ProposalStatus.Submitted || p.status === ProposalStatus.ReturnedForEdit);
-  }
+
   get myVote() {
     const uid = this.auth.currentUser()?.id;
     return this.proposal()?.committeeVotes.find(v => v.memberId === uid) ?? null;
   }
 
-  private handle(obs: any, successMsg: string, reload = true) {
+  private handle(obs: Observable<Proposal>, successMsg: string) {
     this.busy.set(true);
+    this.liveUpdated.set(false);
     this.errorMessage.set(null);
     this.successMessage.set(null);
     obs.subscribe({
-      next: (updated: Proposal) => {
-        this.busy.set(false);
+      next: updated => {
         this.successMessage.set(successMsg);
-        if (reload) this.load(updated?.id ?? this.proposal()!.id);
+        this.load(updated?.id ?? this.proposal()!.id, true);
+        // نترك نافذة قصيرة لتجاهل صدى الدفع اللحظي لتغييرنا نحن
+        setTimeout(() => this.busy.set(false), 800);
       },
-      error: (err: any) => {
+      error: (err: { error?: { message?: string } }) => {
         this.busy.set(false);
         this.errorMessage.set(err?.error?.message ?? 'تعذّر تنفيذ الإجراء.');
       },
@@ -182,7 +205,7 @@ export class ProposalDetailComponent implements OnInit {
       this.errorMessage.set('الرجاء ذكر سبب عدم الموافقة.'); return;
     }
     this.handle(this.proposalService.executiveDecision(p.id, { decision, notes: this.execNotes || undefined }),
-      decision === 'Accepted' ? 'تمت الموافقة على المقترح.' : 'تم رفض المقترح.');
+      decision === 'Accepted' ? 'تمت الموافقة على المقترح وجُدول قياس أثره الفعلي.' : 'تم رفض المقترح.');
   }
 
   assignOwner() {
@@ -194,6 +217,11 @@ export class ProposalDetailComponent implements OnInit {
     const p = this.proposal(); if (!p) return;
     if (!this.escalationNote.trim()) { this.errorMessage.set('الرجاء كتابة سبب التصعيد.'); return; }
     this.handle(this.proposalService.escalate(p.id, this.escalationNote), 'تم تصعيد المقترح لمدير النظام.');
+  }
+
+  /** حفظ/اعتماد قياس الأثر من اللوحة الفرعية. */
+  onImpactUpdated(updated: Proposal) {
+    this.proposal.set(updated);
   }
 
   openForm() { const p = this.proposal(); if (p) this.proposalService.openOfficialForm(p.id); }

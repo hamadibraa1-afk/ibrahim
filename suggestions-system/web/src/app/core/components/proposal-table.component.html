@@ -27,12 +27,20 @@
               <td class="px-3 py-3">
                 <div class="font-bold text-ink">{{ p.title }}</div>
                 <div class="flex flex-wrap gap-1.5 mt-1">
-                  @if (p.escalatedAt) { <span class="badge badge-amber">مُصعَّد</span> }
+                  @if (p.escalationLevel > 0) {
+                    <span class="badge badge-red">تصعيد تلقائي م{{ p.escalationLevel }}</span>
+                  } @else if (p.escalatedAt) { <span class="badge badge-amber">مُصعَّد</span> }
                   @if (p.resubmitCount > 0) { <span class="badge badge-gray">أُعيد {{ p.resubmitCount }}×</span> }
                   @if (p.attachments.length) { <span class="text-[10.5px] text-ink-faint">{{ p.attachments.length }} مرفق</span> }
                 </div>
               </td>
-              @if (!hideSubmitter) { <td class="px-3 py-3 text-ink-soft whitespace-nowrap">{{ p.submitterName }}</td> }
+              @if (!hideSubmitter) {
+                <td class="px-3 py-3 text-ink-soft whitespace-nowrap">
+                  @if (p.submitterHidden) {
+                    <span class="badge badge-gray" title="مراجعة معمّاة — يُكشف الاسم تلقائياً في مرحلة لاحقة">🔒 محجوب</span>
+                  } @else { {{ p.submitterName }} }
+                </td>
+              }
               <td class="px-3 py-3 text-ink-soft whitespace-nowrap">{{ p.department }}</td>
               <td class="px-3 py-3"><app-status-badge [status]="p.status" /></td>
               @if (showClassification) {

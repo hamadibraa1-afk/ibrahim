@@ -27,7 +27,7 @@ export class AttachmentService {
   }
 
   /**
-   * التنزيل يتم عبر HttpClient (وليس رابط مباشر) حتى تمر ترويسة X-User-Id
+   * التنزيل يتم عبر HttpClient (وليس رابط مباشر) حتى تمر كعكة الجلسة
    * عبر الـ interceptor ويعمل التحقق من الصلاحيات على الخادم.
    */
   download(proposalId: number, att: Attachment): void {

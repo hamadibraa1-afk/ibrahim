@@ -57,7 +57,9 @@ export class FormSettingsComponent implements OnInit {
 
   /** يولّد مفتاحاً إنجليزياً فريداً تلقائياً حتى لا يضطر المستخدم لابتكاره. */
   private generateKey(section: string): string {
-    const base = section === 'Impact' ? 'impact' : section === 'SuggestionData' ? 'data' : 'field';
+    const base = section === 'Impact' ? 'impact'
+      : section === 'ImpactMeasurement' ? 'measure'
+      : section === 'SuggestionData' ? 'data' : 'field';
     const used = new Set(this.fields().map(f => f.fieldKey.toLowerCase()));
     let n = 1;
     while (used.has(`${base}Custom${n}`.toLowerCase())) n++;

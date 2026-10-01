@@ -1,23 +1,25 @@
-import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+import { HttpErrorResponse, HttpInterceptorFn, HttpResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { catchError, throwError } from 'rxjs';
+import { catchError, tap, throwError } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 
 /**
- * يرفق رمز الجلسة مع كل طلب، ويتعامل مع انتهاء الصلاحية (401) بإخراج
- * المستخدم مرة واحدة فقط مع حفظ الصفحة التي كان فيها للعودة إليها بعد الدخول.
+ * الجلسة محفوظة في كعكة HttpOnly لا تستطيع الواجهة قراءتها؛ هنا نطلب من المتصفح إرسالها
+ * فقط، ونزامن موعد انتهاء الجلسة المنزلقة من ترويسة X-Session-Expires التي يعيدها الخادم.
+ * ونتعامل مع انتهاء الصلاحية (401) بإخراج المستخدم مرة واحدة مع حفظ الصفحة للعودة إليها.
  */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
   const router = inject(Router);
 
-  const token = auth.token;
-  const request = token
-    ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
-    : req;
-
-  return next(request).pipe(
+  return next(req.clone({ withCredentials: true })).pipe(
+    tap(event => {
+      if (event instanceof HttpResponse) {
+        const expires = event.headers.get('X-Session-Expires');
+        if (expires) auth.syncExpiry(expires);
+      }
+    }),
     catchError((err: HttpErrorResponse) => {
       const isAuthCall = req.url.includes('/auth/login')
                       || req.url.includes('/auth/logout')

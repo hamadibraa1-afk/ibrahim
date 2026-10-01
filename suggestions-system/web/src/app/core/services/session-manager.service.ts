@@ -1,11 +1,11 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { AuthService } from './auth.service';
+import { AuthService, USER_KEY } from './auth.service';
 
 /**
  * يدير دورة حياة الجلسة:
  *  - عدّاد تنازلي دقيق للوقت المتبقي
- *  - تمديد تلقائي عند نشاط المستخدم (جلسة منزلقة)
+ *  - تمديد تلقائي عند نشاط المستخدم (جلسة منزلقة 8 ساعات يفرضها الخادم)
  *  - تحذير قبل انتهاء الجلسة بدقيقتين مع خيار المتابعة
  *  - خروج تلقائي فور الانتهاء
  *  - مزامنة بين تبويبات المتصفح: الخروج من تبويب يُخرج البقية
@@ -98,7 +98,7 @@ export class SessionManagerService {
 
   private onStorage = (e: StorageEvent): void => {
     // خروج من تبويب آخر → اخرج هنا أيضاً
-    if (e.key === 'sci.proposals.token' && e.newValue === null && this.auth.isLoggedIn()) {
+    if (e.key === USER_KEY && e.newValue === null && this.auth.isLoggedIn()) {
       this.auth.clear();
       this.stop();
       this.router.navigate(['/login']);

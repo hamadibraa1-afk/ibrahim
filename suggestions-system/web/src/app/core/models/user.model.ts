@@ -29,6 +29,9 @@ export interface User {
   jobTitle: string;        // المسمى الوظيفي
   status: UserStatus;
   createdAt: string;
+  /** المدير المباشر — أول جهة يُصعَّد إليها عند تأخر الموظف عن مهلته. */
+  managerId: number | null;
+  managerName: string | null;
 }
 
 export interface CreateUserRequest {
@@ -41,6 +44,7 @@ export interface CreateUserRequest {
   phoneNumber: string;
   department: string;
   jobTitle: string;
+  managerId: number | null;
 }
 
 export interface UpdateUserRequest {
@@ -53,8 +57,11 @@ export interface UpdateUserRequest {
   phoneNumber: string;
   department: string;
   jobTitle: string;
+  managerId: number | null;
 }
 
 export interface LoginRequest { userCode: string; password: string; }
-export interface LoginResponse { token: string; expiresAt: string; user: User; }
+/** لا يحتوي الرد على رمز الجلسة — الرمز في كعكة HttpOnly لا تقرؤها الواجهة. */
+export interface LoginResponse { expiresAt: string; user: User; }
+export interface SessionResponse { expiresAt: string; }
 export interface ChangePasswordRequest { currentPassword: string; newPassword: string; }

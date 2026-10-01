@@ -28,8 +28,33 @@
         @if (s.slaBreaches > 0) {
           <a routerLink="/notifications" class="text-[10.5px] text-red-600 font-bold mt-1.5 inline-block">عرض التنبيهات ←</a>
         }
+        @if (s.escalated > 0) {
+          <div class="text-[10.5px] text-orange-600 font-bold mt-1">{{ s.escalated }} مُصعَّد للإدارة</div>
+        }
       </div>
     </div>
+
+    <!-- الأثر المؤسسي والعائد على الاستثمار -->
+    @if (impact(); as r) {
+      <a routerLink="/impact" class="card p-5 mb-5 grid grid-cols-2 lg:grid-cols-4 gap-4 hover:shadow-lift transition-shadow">
+        <div>
+          <div class="text-[11px] text-ink-faint mb-1.5">صافي المنفعة السنوية (معتمد)</div>
+          <div class="text-xl font-extrabold text-brand-700">{{ r.totalAnnualBenefit | number:'1.0-0' }} <span class="text-[11px]">درهم</span></div>
+        </div>
+        <div>
+          <div class="text-[11px] text-ink-faint mb-1.5">العائد على الاستثمار</div>
+          <div class="text-xl font-extrabold text-emerald-700">{{ r.portfolioRoiPercent !== null ? r.portfolioRoiPercent + '%' : '—' }}</div>
+        </div>
+        <div>
+          <div class="text-[11px] text-ink-faint mb-1.5">قياسات أثر معتمدة</div>
+          <div class="text-xl font-extrabold text-brand-700">{{ r.verified }} / {{ r.approvedProposals }}</div>
+        </div>
+        <div>
+          <div class="text-[11px] text-ink-faint mb-1.5">قياسات متأخرة</div>
+          <div class="text-xl font-extrabold" [class.text-red-600]="r.overdue > 0" [class.text-brand-700]="r.overdue === 0">{{ r.overdue }}</div>
+        </div>
+      </a>
+    }
 
     <!-- المراحل الحالية -->
     <div class="grid grid-cols-3 gap-4 mb-5">

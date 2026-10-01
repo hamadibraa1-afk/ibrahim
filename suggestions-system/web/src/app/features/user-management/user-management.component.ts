@@ -37,7 +37,14 @@ export class UserManagementComponent implements OnInit {
     phoneNumber: ['', Validators.required],
     department: ['', Validators.required],
     jobTitle: ['', Validators.required],
+    /** المدير المباشر — مسار التصعيد التلقائي عند تجاوز المهل. */
+    managerId: [null as number | null],
   });
+
+  /** المرشّحون لمنصب المدير المباشر: كل المستخدمين النشطين عدا المستخدم نفسه. */
+  get managerOptions(): User[] {
+    return this.users.filter(u => u.id !== this.editingUser?.id && u.status === UserStatus.Active);
+  }
 
   ngOnInit() {
     this.load();
@@ -66,7 +73,7 @@ export class UserManagementComponent implements OnInit {
     this.editingUser = null;
     this.form.reset({
       userCode: '', arabicName: '', englishName: '', email: '', initialPassword: '',
-      role: UserRole.Employee, phoneNumber: '', department: '', jobTitle: '',
+      role: UserRole.Employee, phoneNumber: '', department: '', jobTitle: '', managerId: null,
     });
     // كلمة المرور الابتدائية إلزامية عند الإضافة فقط
     this.form.controls.initialPassword.setValidators([Validators.required, Validators.minLength(8)]);
@@ -86,6 +93,7 @@ export class UserManagementComponent implements OnInit {
       phoneNumber: user.phoneNumber,
       department: user.department,
       jobTitle: user.jobTitle,
+      managerId: user.managerId,
     });
     // لا تُطلب كلمة مرور عند التعديل — تُغيَّر عبر زر "إعادة تعيين كلمة المرور"
     this.form.controls.initialPassword.clearValidators();
@@ -124,7 +132,7 @@ export class UserManagementComponent implements OnInit {
           id: this.editingUser.id,
           userCode: v.userCode, arabicName: v.arabicName, englishName: v.englishName,
           email: v.email, role: v.role, phoneNumber: v.phoneNumber,
-          department: v.department, jobTitle: v.jobTitle,
+          department: v.department, jobTitle: v.jobTitle, managerId: v.managerId,
         })
       : this.userService.create(v);
 

@@ -14,6 +14,13 @@
     <div class="card p-4"><div class="text-[11px] text-ink-faint mb-1">مرفوضة</div><div class="text-xl font-extrabold text-red-600">{{ stats.rejected }}</div></div>
   </div>
 
+  @if (assigned().length) {
+    <div class="mb-5">
+      <h2 class="text-[13px] font-extrabold text-ink mb-2.5">مُحالة إليّ</h2>
+      <app-proposal-table [proposals]="assigned()" [showSla]="true" actionLabel="عرض / إجراء" />
+    </div>
+  }
+
   <div class="card overflow-hidden">
     @if (loading()) {
       <div class="p-10 text-center text-sm text-ink-faint">جارِ التحميل...</div>

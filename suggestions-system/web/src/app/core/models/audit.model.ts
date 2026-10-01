@@ -27,6 +27,13 @@ export const AuditActionLabels: Record<string, string> = {
   AttachmentAdded: 'إضافة مرفق',
   AttachmentRemoved: 'حذف مرفق',
   Escalated: 'تصعيد بسبب التأخير',
+  AutoEscalated: 'تصعيد تلقائي (تجاوز المهلة)',
+  IdentityRevealed: 'كشف هوية مقدّم الطلب',
+  ImpactScheduled: 'جدولة قياس الأثر الفعلي',
+  ImpactWindowOpened: 'فتح نافذة قياس الأثر',
+  ImpactMeasured: 'تسجيل قياس الأثر الفعلي',
+  ImpactVerified: 'اعتماد قياس الأثر',
+  ImpactReturned: 'إعادة قياس الأثر للتصحيح',
 };
 
 export const AuditActionStyles: Record<string, string> = {
@@ -43,4 +50,11 @@ export const AuditActionStyles: Record<string, string> = {
   ExecutiveRejected: 'bg-red-50 text-red-700',
   OwnerAssigned: 'bg-teal-50 text-teal-700',
   Escalated: 'bg-orange-50 text-orange-700',
+  AutoEscalated: 'bg-orange-50 text-orange-700',
+  IdentityRevealed: 'bg-sky-50 text-sky-700',
+  ImpactScheduled: 'bg-cyan-50 text-cyan-700',
+  ImpactWindowOpened: 'bg-cyan-50 text-cyan-700',
+  ImpactMeasured: 'bg-indigo-50 text-indigo-700',
+  ImpactVerified: 'bg-emerald-50 text-emerald-700',
+  ImpactReturned: 'bg-amber-50 text-amber-700',
 };

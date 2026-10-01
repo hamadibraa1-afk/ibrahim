@@ -1,4 +1,5 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { NotificationService } from '../../core/services/notification.service';
 import { AppNotification, NotificationStyles } from '../../core/models/notification.model';
@@ -11,12 +12,19 @@ import { AppNotification, NotificationStyles } from '../../core/models/notificat
 })
 export class NotificationsComponent implements OnInit {
   private service = inject(NotificationService);
+  private destroyRef = inject(DestroyRef);
 
   readonly NotificationStyles = NotificationStyles;
   items = signal<AppNotification[]>([]);
   loading = signal(true);
 
-  ngOnInit() { this.load(); }
+  ngOnInit() {
+    this.load();
+    // الإشعار الجديد يظهر في أعلى القائمة فور وصوله عبر SignalR دون إعادة تحميل
+    this.service.received
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(n => this.items.update(list => [n, ...list.filter(x => x.id !== n.id)]));
+  }
 
   load() {
     this.loading.set(true);

@@ -6,7 +6,7 @@ import { ProposalService } from '../../core/services/proposal.service';
 import { AttachmentService } from '../../core/services/attachment.service';
 import { AuthService } from '../../core/services/auth.service';
 import { FormSettingsService } from '../../core/services/form-settings.service';
-import { FormField } from '../../core/models/form-field.model';
+import { FormField, SubmissionSections } from '../../core/models/form-field.model';
 
 @Component({
   selector: 'app-submission-form',
@@ -44,7 +44,8 @@ export class SubmissionFormComponent implements OnInit {
   ngOnInit() {
     this.formSettings.getAll(true).subscribe({
       next: fields => {
-        const active = fields.filter(f => !f.isSystem);
+        // حقول "قياس الأثر الفعلي" تُعبّأ بعد الاعتماد بأشهر، لا عند التقديم
+        const active = fields.filter(f => !f.isSystem && SubmissionSections.includes(f.section));
         // "أثر التطبيق" يُعرض كشبكة خانات اختيار في قسم مستقل
         this.impactFields.set(active.filter(f => f.section === 'Impact'));
         this.customFields.set(active.filter(f => f.section !== 'Impact'));

@@ -4,6 +4,7 @@ import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/rou
 import { AuthService } from '../services/auth.service';
 import { NotificationService } from '../services/notification.service';
 import { SessionManagerService } from '../services/session-manager.service';
+import { RealtimeService } from '../services/realtime.service';
 import { UserRole, UserRoleLabels } from '../models/user.model';
 
 interface NavItem { path: string; label: string; roles: UserRole[]; icon: string; }
@@ -19,13 +20,13 @@ export class ShellComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   notifications = inject(NotificationService);
   session = inject(SessionManagerService);
+  realtime = inject(RealtimeService);
 
   readonly UserRoleLabels = UserRoleLabels;
   readonly currentUser = this.auth.currentUser;
   readonly unreadCount = this.notifications.unreadCount;
 
   userMenuOpen = signal(false);
-  private pollTimer?: ReturnType<typeof setInterval>;
 
   private readonly navItems: NavItem[] = [
     { path: '/my-proposals', label: 'مقترحاتي', roles: [UserRole.Employee, UserRole.Screener, UserRole.CommitteeMember, UserRole.Admin], icon: 'list' },
@@ -34,6 +35,7 @@ export class ShellComponent implements OnInit, OnDestroy {
     { path: '/committee', label: 'لجنة الدراسة', roles: [UserRole.CommitteeMember, UserRole.Admin], icon: 'users' },
     { path: '/executive', label: 'القرار التنفيذي', roles: [UserRole.Admin], icon: 'gavel' },
     { path: '/dashboard', label: 'لوحة التحكم', roles: [UserRole.Admin], icon: 'chart' },
+    { path: '/impact', label: 'قياس الأثر والعائد', roles: [UserRole.Employee, UserRole.Screener, UserRole.CommitteeMember, UserRole.Admin], icon: 'target' },
     { path: '/audit', label: 'سجل الإجراءات', roles: [UserRole.Admin], icon: 'history' },
     { path: '/users', label: 'إدارة المستخدمين', roles: [UserRole.Admin], icon: 'settings' },
     { path: '/form-settings', label: 'إعدادات النموذج', roles: [UserRole.Admin], icon: 'sliders' },
@@ -46,11 +48,9 @@ export class ShellComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.session.start();
-    this.notifications.refreshUnread();
-    // تحديث دوري لعدّاد الإشعارات كل 60 ثانية — يتوقف عند الخروج
-    this.pollTimer = setInterval(() => {
-      if (this.auth.isLoggedIn()) this.notifications.refreshUnread();
-    }, 60_000);
+    // الإشعارات وعدّاد الجرس تصل لحظياً عبر SignalR — لا استطلاع دوري.
+    // العدّاد يُزامَن مرة واحدة عند بدء الاتصال وبعد كل إعادة اتصال.
+    this.realtime.start();
   }
 
   /** الوقت المتبقي على الجلسة بصيغة د:ث لعرضه في نافذة التحذير. */
@@ -62,7 +62,7 @@ export class ShellComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    if (this.pollTimer) clearInterval(this.pollTimer);
+    this.realtime.stop();
   }
 
   initials(name: string): string {
@@ -72,6 +72,7 @@ export class ShellComponent implements OnInit, OnDestroy {
   logout() {
     this.userMenuOpen.set(false);
     // الحالة تُمسح بشكل متزامن داخل logout()، لذا التوجيه يعمل من أول محاولة
+    this.realtime.stop();
     this.auth.logout();
     this.session.stop();
     this.router.navigate(['/login']);

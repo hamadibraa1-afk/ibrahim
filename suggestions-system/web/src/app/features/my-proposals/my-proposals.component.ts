@@ -1,8 +1,12 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { debounceTime } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ProposalService } from '../../core/services/proposal.service';
 import { AttachmentListComponent } from '../../core/components/attachment-list.component';
+import { ProposalTableComponent } from '../../core/components/proposal-table.component';
+import { RealtimeService } from '../../core/services/realtime.service';
 import {
   ClassificationLabels, selectedImpacts, Proposal, ProposalStatus,
   ProposalStatusBadgeClass, ProposalStatusLabels,
@@ -14,16 +18,21 @@ const STEPS: { key: ProposalStatus[]; label: string }[] = [
   { key: [ProposalStatus.WithCommittee], label: 'لجنة' },
   { key: [ProposalStatus.PendingExecutiveDecision], label: 'تنفيذي' },
   { key: [ProposalStatus.Accepted, ProposalStatus.Rejected], label: 'قرار' },
+  // مرحلة ما بعد الاعتماد: قياس الأثر الفعلي بعد 3–6 أشهر
+  { key: [], label: 'الأثر' },
 ];
+const IMPACT_STEP = 5;
 
 @Component({
   selector: 'app-my-proposals',
   standalone: true,
-  imports: [CommonModule, RouterLink, AttachmentListComponent],
+  imports: [CommonModule, RouterLink, AttachmentListComponent, ProposalTableComponent],
   templateUrl: './my-proposals.component.html',
 })
 export class MyProposalsComponent implements OnInit {
   private proposalService = inject(ProposalService);
+  private realtime = inject(RealtimeService);
+  private destroyRef = inject(DestroyRef);
 
   readonly ProposalStatusLabels = ProposalStatusLabels;
   readonly ProposalStatusBadgeClass = ProposalStatusBadgeClass;
@@ -32,6 +41,8 @@ export class MyProposalsComponent implements OnInit {
   readonly steps = STEPS;
 
   proposals = signal<Proposal[]>([]);
+  /** مقترحات أُحيلت إليّ: تنفيذ وقياس أثر، أو إعادة توجيه بعد تصعيد. */
+  assigned = signal<Proposal[]>([]);
   loading = signal(true);
   expandedId = signal<number | null>(null);
 
@@ -42,13 +53,23 @@ export class MyProposalsComponent implements OnInit {
     return { total: list.length, accepted, rejected, inProgress: list.length - accepted - rejected };
   }
 
-  ngOnInit() { this.load(); }
+  ngOnInit() {
+    this.load();
+    // تتحدّث حالة مقترحاتي لحظياً عند كل قرار (فرز، لجنة، قرار تنفيذي، قياس أثر)
+    this.realtime.proposalChanges
+      .pipe(debounceTime(400), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.load(true));
+  }
 
-  load() {
-    this.loading.set(true);
+  load(silent = false) {
+    if (!silent) this.loading.set(true);
     this.proposalService.getAll({ mine: true }).subscribe({
       next: data => { this.proposals.set(data); this.loading.set(false); },
       error: () => this.loading.set(false),
+    });
+    this.proposalService.getAll({ assignedToMe: true }).subscribe({
+      next: data => this.assigned.set(data),
+      error: () => {},
     });
   }
 
@@ -57,6 +78,11 @@ export class MyProposalsComponent implements OnInit {
   }
 
   stepState(p: Proposal, i: number): 'done' | 'now' | 'pending' | 'rejected' {
+    if (i === IMPACT_STEP) {
+      if (p.status !== ProposalStatus.Accepted) return 'pending';
+      return p.impact?.status === 'Verified' ? 'done' : 'now';
+    }
+    if (p.status === ProposalStatus.Accepted && i === IMPACT_STEP - 1) return 'done';
     const current = this.steps.findIndex(s => s.key.includes(p.status));
     if (p.status === ProposalStatus.Rejected && i === 4) return 'rejected';
     if (i < current) return 'done';

@@ -85,6 +85,12 @@ export const routes: Routes = [
         title: 'إدارة المستخدمين',
       },
       {
+        // متاح للجميع: الخادم يعيد لمدير النظام كل المقترحات، ولغيره ما أُسند إليه قياس أثره
+        path: 'impact',
+        loadComponent: () => import('./features/impact-tracking/impact-tracking.component').then(m => m.ImpactTrackingComponent),
+        title: 'قياس الأثر والعائد',
+      },
+      {
         path: 'notifications',
         loadComponent: () => import('./features/notifications/notifications.component').then(m => m.NotificationsComponent),
         title: 'الإشعارات',

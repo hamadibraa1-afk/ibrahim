@@ -25,6 +25,7 @@
           <th class="text-right font-normal px-3 py-3">الدور</th>
           <th class="text-right font-normal px-3 py-3">الإدارة</th>
           <th class="text-right font-normal px-3 py-3">المسمى الوظيفي</th>
+          <th class="text-right font-normal px-3 py-3">المدير المباشر</th>
           <th class="text-right font-normal px-3 py-3">الهاتف</th>
           <th class="text-right font-normal px-3 py-3">الحالة</th>
           <th class="px-3 py-3"></th>
@@ -32,9 +33,9 @@
       </thead>
       <tbody>
         @if (loading) {
-          <tr><td colspan="10" class="text-center text-gray-400 py-8">جارِ التحميل...</td></tr>
+          <tr><td colspan="11" class="text-center text-gray-400 py-8">جارِ التحميل...</td></tr>
         } @else if (!filteredUsers.length) {
-          <tr><td colspan="10" class="text-center text-gray-400 py-8">لا يوجد مستخدمون مطابقون.</td></tr>
+          <tr><td colspan="11" class="text-center text-gray-400 py-8">لا يوجد مستخدمون مطابقون.</td></tr>
         }
         @for (u of filteredUsers; track u.id) {
           <tr class="border-t border-gray-50" [ngClass]="u.status === UserStatus.Suspended ? 'opacity-50' : ''">
@@ -47,6 +48,7 @@
             </td>
             <td class="px-3 py-3 text-gray-500">{{ u.department }}</td>
             <td class="px-3 py-3 text-gray-500">{{ u.jobTitle }}</td>
+            <td class="px-3 py-3 text-gray-500">{{ u.managerName ?? '—' }}</td>
             <td class="px-3 py-3 text-gray-500" dir="ltr" style="text-align: right">{{ u.phoneNumber }}</td>
             <td class="px-3 py-3">
               @if (u.status === UserStatus.Active) {
@@ -129,6 +131,17 @@
             <label class="block text-xs font-bold text-gray-700 mb-1.5">المسمى الوظيفي *</label>
             <input formControlName="jobTitle" type="text" class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-teal">
           </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-gray-700 mb-1.5">المدير المباشر (مسار التصعيد)</label>
+          <select formControlName="managerId" class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm bg-white focus:outline-none focus:border-teal">
+            <option [ngValue]="null">— بدون —</option>
+            @for (m of managerOptions; track m.id) {
+              <option [ngValue]="m.id">{{ m.arabicName }} — {{ m.jobTitle }}</option>
+            }
+          </select>
+          <div class="text-[11px] text-gray-400 mt-1">إذا تأخر هذا المستخدم عن مهلة إجراء بـ 48 ساعة يُصعَّد المقترح تلقائياً إلى مديره المباشر.</div>
         </div>
 
         <div>

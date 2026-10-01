@@ -83,6 +83,106 @@ export interface CommitteeVoteDto {
   signedAt: string | null;
 }
 
+/** ما يحق للمستخدم الحالي فعله بالمقترح الآن — يحسبه الخادم، والواجهة تعرضه فقط. */
+export interface ProposalActions {
+  canEdit: boolean;
+  canDelete: boolean;
+  canScreen: boolean;
+  canStudy: boolean;
+  canSign: boolean;
+  canDecide: boolean;
+  canAssignOwner: boolean;
+  canEscalate: boolean;
+  canMeasureImpact: boolean;
+  canVerifyImpact: boolean;
+}
+
+export type ImpactAssessmentStatus = 'Scheduled' | 'Open' | 'Submitted' | 'Verified';
+
+export const ImpactStatusLabels: Record<ImpactAssessmentStatus, string> = {
+  Scheduled: 'مجدول — لم تُفتح نافذة القياس',
+  Open: 'بانتظار القياس',
+  Submitted: 'بانتظار اعتماد القياس',
+  Verified: 'معتمد',
+};
+
+export const ImpactStatusBadgeClass: Record<ImpactAssessmentStatus, string> = {
+  Scheduled: 'badge-gray',
+  Open: 'badge-blue',
+  Submitted: 'badge-purple',
+  Verified: 'badge-green',
+};
+
+/** قياس الأثر الفعلي بعد التطبيق (3 إلى 6 أشهر من الاعتماد). */
+export interface ImpactAssessment {
+  id: number;
+  status: ImpactAssessmentStatus;
+  opensAt: string;
+  dueAt: string;
+  isOverdue: boolean;
+  actualAnnualSavings: number | null;
+  actualAnnualRevenue: number | null;
+  implementationCost: number | null;
+  hoursSavedPerMonth: number | null;
+  beneficiariesReached: number | null;
+  satisfactionBefore: number | null;
+  satisfactionAfter: number | null;
+  targetAchievementPercent: number | null;
+  impactRating: number | null;
+  summary: string | null;
+  evidenceReference: string | null;
+  totalAnnualBenefit: number | null;
+  roiPercent: number | null;
+  measuredAt: string | null;
+  measuredByName: string | null;
+  verifiedAt: string | null;
+  verifiedByName: string | null;
+  reviewNotes: string | null;
+  customFields: ProposalFieldValue[];
+}
+
+export interface MeasureImpactRequest {
+  actualAnnualSavings: number | null;
+  actualAnnualRevenue: number | null;
+  implementationCost: number | null;
+  hoursSavedPerMonth: number | null;
+  beneficiariesReached: number | null;
+  satisfactionBefore: number | null;
+  satisfactionAfter: number | null;
+  targetAchievementPercent: number | null;
+  impactRating: number | null;
+  summary: string | null;
+  evidenceReference: string | null;
+  customFields?: Record<string, string>;
+}
+
+export interface ImpactReport {
+  approvedProposals: number;
+  scheduled: number;
+  open: number;
+  overdue: number;
+  awaitingVerification: number;
+  verified: number;
+  totalAnnualSavings: number;
+  totalAnnualRevenue: number;
+  totalImplementationCost: number;
+  totalAnnualBenefit: number;
+  portfolioRoiPercent: number | null;
+  totalHoursSavedPerMonth: number;
+  totalBeneficiaries: number;
+  averageTargetAchievement: number | null;
+  averageImpactRating: number | null;
+  byDepartment: { department: string; verifiedCount: number; totalAnnualBenefit: number; totalImplementationCost: number; roiPercent: number | null }[];
+  topByRoi: { proposalId: number; proposalCode: string; title: string; department: string; totalAnnualBenefit: number | null; roiPercent: number | null; impactRating: number | null }[];
+}
+
+/** سياسة المراجعة المعمّاة كما يطبّقها الخادم. */
+export interface BlindReviewPolicy {
+  stage: 'CommitteeReferral' | 'CommitteeApproval' | 'ExecutiveApproval';
+  revealOnStatus: ProposalStatus;
+  description: string;
+}
+
 export interface Proposal {
   id: number;
   proposalCode: string;
@@ -90,8 +190,12 @@ export interface Proposal {
   implementationMechanism: string;
   submissionReasons: string;
   department: string;
+  /** صفر عندما تكون الهوية محجوبة عن المستخدم الحالي. */
   submitterId: number;
   submitterName: string;
+  /** المراجعة معمّاة: الاسم وبيانات التواصل محجوبة عن هذا المستخدم حتى مرحلة الكشف. */
+  submitterHidden: boolean;
+  identityRevealedAt: string | null;
   status: ProposalStatus;
   screenerNotes: string | null;
   rejectionReason: string | null;
@@ -106,6 +210,7 @@ export interface Proposal {
   ownerId: number | null;
   ownerName: string | null;
   attachments: Attachment[];
+  stageEnteredAt: string;
   slaDueAt: string;
   submittedAt: string;
   updatedAt: string;
@@ -115,6 +220,13 @@ export interface Proposal {
   lastResubmittedAt: string | null;
   escalatedAt: string | null;
   escalationNote: string | null;
+  /** 0 لا تصعيد، 1 المدير المباشر، 2 الإدارة التنفيذية. */
+  escalationLevel: number;
+  /** المدير الذي أُعيد توجيه المقترح إليه تلقائياً لاتخاذ الإجراء. */
+  escalatedToId: number | null;
+  escalatedToName: string | null;
+  impact: ImpactAssessment | null;
+  actions: ProposalActions;
 }
 
 export interface CreateProposalRequest {
@@ -128,6 +240,9 @@ export interface CreateProposalRequest {
 /** فلاتر البحث المتاحة على قوائم المقترحات. */
 export interface ProposalQuery {
   mine?: boolean;
+  /** مقترحات أُحيلت إليّ: مسؤول تنفيذ أو مدير صُعِّد إليه المقترح. */
+  assignedToMe?: boolean;
+  escalated?: boolean;
   forScreening?: boolean;
   forCommittee?: boolean;
   forExecutiveDecision?: boolean;
@@ -169,6 +284,7 @@ export interface CommitteeStudyRequest {
   committeeRecommendation: string;
 }
 export interface ExecutiveDecisionRequest { decision: 'Accepted' | 'Rejected'; notes?: string; }
+export interface ReviewImpactRequest { approve: boolean; notes?: string; }
 export interface AssignOwnerRequest { ownerId: number; }
 
 export interface PendingByStage { screening: number; committee: number; executiveDecision: number; }
@@ -178,6 +294,7 @@ export interface DashboardStats {
   acceptanceRate: number;
   averageProcessingDays: number;
   slaBreaches: number;
+  escalated: number;
   pendingByStage: PendingByStage;
   byDepartment: { department: string; count: number }[];
   recentDecisions: Proposal[];

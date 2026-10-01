@@ -3,8 +3,9 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
-  AssignOwnerRequest, CommitteeStudyRequest, CreateProposalRequest,
-  ExecutiveDecisionRequest, Proposal, ProposalQuery, ScreenDecisionRequest, UpdateProposalRequest,
+  AssignOwnerRequest, BlindReviewPolicy, CommitteeStudyRequest, CreateProposalRequest,
+  ExecutiveDecisionRequest, ImpactReport, MeasureImpactRequest, Proposal, ProposalQuery,
+  ReviewImpactRequest, ScreenDecisionRequest, UpdateProposalRequest,
 } from '../models/proposal.model';
 
 @Injectable({ providedIn: 'root' })
@@ -46,7 +47,30 @@ export class ProposalService {
     return this.http.post<Proposal>(`${this.base}/${id}/assign-owner`, payload);
   }
 
-  /** يفتح المستند في تبويب جديد عبر HttpClient حتى يمر رمز الجلسة. */
+  /** قاعدة كشف هوية مقدّم الطلب كما يطبّقها الخادم. */
+  blindReviewPolicy(): Observable<BlindReviewPolicy> {
+    return this.http.get<BlindReviewPolicy>(`${this.base}/blind-review-policy`);
+  }
+
+  // ---- قياس الأثر الفعلي بعد التطبيق ----
+  measureImpact(id: number, payload: MeasureImpactRequest): Observable<Proposal> {
+    return this.http.put<Proposal>(`${this.base}/${id}/impact`, payload);
+  }
+  reviewImpact(id: number, payload: ReviewImpactRequest): Observable<Proposal> {
+    return this.http.post<Proposal>(`${this.base}/${id}/impact/review`, payload);
+  }
+  impactList(filters: { status?: string; overdue?: boolean } = {}): Observable<Proposal[]> {
+    let params = new HttpParams();
+    Object.entries(filters).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== '') params = params.set(k, String(v));
+    });
+    return this.http.get<Proposal[]>(`${environment.apiUrl}/impact`, { params });
+  }
+  impactReport(): Observable<ImpactReport> {
+    return this.http.get<ImpactReport>(`${environment.apiUrl}/impact/report`);
+  }
+
+  /** يفتح المستند في تبويب جديد عبر HttpClient حتى تمر كعكة الجلسة. */
   private openDoc(url: string): void {
     this.http.get(url, { responseType: 'blob' }).subscribe(blob => {
       const objectUrl = URL.createObjectURL(new Blob([blob], { type: 'text/html;charset=utf-8' }));

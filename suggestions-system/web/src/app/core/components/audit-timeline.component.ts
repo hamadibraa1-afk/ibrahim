@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, inject, signal } from '@angular/core';
+import { Component, Input, OnChanges, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuditService } from '../services/audit.service';
 import { AuditActionLabels, AuditActionStyles, AuditLog } from '../models/audit.model';
@@ -42,14 +42,16 @@ import { AuditActionLabels, AuditActionStyles, AuditLog } from '../models/audit.
     }
   `,
 })
-export class AuditTimelineComponent implements OnInit {
+export class AuditTimelineComponent implements OnChanges {
   @Input({ required: true }) proposalId!: number;
+  /** يتغيّر مع كل تحديث للمقترح (updatedAt) فيُعاد تحميل السجل تلقائياً. */
+  @Input() version: string | null = null;
 
   private service = inject(AuditService);
   logs = signal<AuditLog[]>([]);
   loading = signal(true);
 
-  ngOnInit() {
+  ngOnChanges() {
     this.service.forProposal(this.proposalId).subscribe({
       next: d => { this.logs.set(d); this.loading.set(false); },
       error: () => this.loading.set(false),

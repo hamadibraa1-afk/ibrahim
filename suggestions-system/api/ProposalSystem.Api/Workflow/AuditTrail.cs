@@ -32,7 +32,7 @@ public static class AuditActions
 /// <summary>Append-only record of who did what to which proposal.</summary>
 public sealed class AuditTrail(AppDbContext db, TimeProvider clock)
 {
-    public const string SystemActor = "النظام (مراقبة المهل)";
+    public const string SystemActor = "النظام (إجراء تلقائي)";
 
     public void Record(Proposal p, User? actor, string action, ProposalStatus? from = null, ProposalStatus? to = null, string? notes = null) =>
         db.AuditLogs.Add(new AuditLog
