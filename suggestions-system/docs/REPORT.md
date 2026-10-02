@@ -151,6 +151,31 @@ The contrast measurement exposed three bugs that already existed in the original
 
 ---
 
+## Part 3 — Departments drop-down (managed in Settings)
+
+The employee's department is no longer typed freely. The administrator maintains the list under
+**Form settings → Departments**, and the user dialog offers only those departments.
+
+| Behaviour | Evidence |
+|---|---|
+| The list starts from the departments existing accounts already have | browser run: 3 departments listed on first open |
+| Add a department in Settings | "Human Resources" and "IT" added through the UI |
+| Department field is a drop-down with exactly that list | field is a `<select>`; options = the 5 departments |
+| Server refuses a department not in the list (e.g. a typo) | test `A_user_can_only_be_given_a_department_from_the_settings_list` |
+| Renaming moves its users and proposals to the new name | test `Renaming_a_department_moves_its_users_and_proposals_with_it` |
+| A department with users can't be deleted, only deactivated; deactivated ones leave the drop-down but existing members keep it | test `A_department_in_use_cannot_be_deleted_and_a_deactivated_one_cannot_be_assigned` |
+| Existing databases get the new table automatically at startup | test `An_existing_database_without_the_new_table_gets_it_at_startup` |
+
+Backend tests: **26 / 26 pass**. Contrast check on Settings and Users after the change: 0 failures.
+
+![Departments in Settings](screenshots/departments-1-settings.png)
+
+![Department drop-down in the user dialog](screenshots/departments-2-user-dropdown.png)
+
+![Saved user with the chosen department](screenshots/departments-3-users-list.png)
+
+![Settings now shows 1 user in the new department](screenshots/departments-4-settings-after.png)
+
 ## Reproducing the evidence
 
 ```bash

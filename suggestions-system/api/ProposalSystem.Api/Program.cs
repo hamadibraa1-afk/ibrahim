@@ -142,6 +142,7 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await db.Database.EnsureCreatedAsync();
+    await SchemaUpgrader.CreateMissingTablesAsync(db, app.Logger);
     await DbSeeder.EnsureFormFieldsAsync(db);
 
     if (args.Contains("--seed-passwords", StringComparer.OrdinalIgnoreCase))
@@ -152,6 +153,7 @@ using (var scope = app.Services.CreateScope())
     }
     if (app.Environment.IsDevelopment() && config.GetValue<bool>("SeedDemoData"))
         await DbSeeder.SeedDemoUsersAsync(db, TimeProvider.System);
+    await DbSeeder.EnsureDepartmentsAsync(db);
 }
 
 // ---------------------------------------------------------------- pipeline

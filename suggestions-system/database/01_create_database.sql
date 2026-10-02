@@ -9,7 +9,10 @@
 -- الجديد في هذا الإصدار: جلسات الخادم (UserSessions)، المدير المباشر وقفل الحساب
 -- في Users، حقول التصعيد والكشف عن الهوية في Proposals، وجدول ImpactAssessments
 -- لقياس الأثر الفعلي والعائد على الاستثمار، وجدول JobLeases ليعمل مراقب المهل
--- على خادم واحد فقط عند تشغيل أكثر من نسخة.
+-- على خادم واحد فقط عند تشغيل أكثر من نسخة، وجدول Departments لقائمة الإدارات.
+--
+-- قاعدة بيانات قائمة من إصدار سابق لا تحتاج تشغيل هذا السكربت: الخادم ينشئ الجداول
+-- الناقصة تلقائياً عند الإقلاع (SchemaUpgrader) ويملأ قائمة الإدارات من إدارات المستخدمين.
 -- =============================================================================
 
 IF DB_ID(N'ProposalSystem') IS NULL
@@ -32,6 +35,16 @@ CREATE TABLE [AuditLogs] (
     [Notes] nvarchar(max) NULL,
     [CreatedAt] datetime2 NOT NULL,
     CONSTRAINT [PK_AuditLogs] PRIMARY KEY ([Id])
+);
+GO
+
+
+CREATE TABLE [Departments] (
+    [Id] int NOT NULL IDENTITY,
+    [Name] nvarchar(150) NOT NULL,
+    [IsActive] bit NOT NULL,
+    [SortOrder] int NOT NULL,
+    CONSTRAINT [PK_Departments] PRIMARY KEY ([Id])
 );
 GO
 
@@ -246,6 +259,10 @@ GO
 
 
 CREATE UNIQUE INDEX [IX_CommitteeVotes_ProposalId_MemberId] ON [CommitteeVotes] ([ProposalId], [MemberId]);
+GO
+
+
+CREATE UNIQUE INDEX [IX_Departments_Name] ON [Departments] ([Name]);
 GO
 
 

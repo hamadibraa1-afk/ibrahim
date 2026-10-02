@@ -68,6 +68,19 @@ public class User
 /// database keeps its SHA-256 hash, so a leaked database cannot be replayed as live sessions.
 /// </summary>
 /// <summary>
+/// An organisational department, maintained by the administrator in Settings. Users pick their
+/// department from this list instead of typing it, so reports group by one spelling.
+/// User.Department keeps the name (not an id) so historical proposals keep their snapshot.
+/// </summary>
+public class Department
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = "";
+    public bool IsActive { get; set; } = true;
+    public int SortOrder { get; set; }
+}
+
+/// <summary>
 /// A time-limited claim on a background job, so that with several API instances behind a load
 /// balancer only one of them runs the SLA monitor at a time.
 /// </summary>

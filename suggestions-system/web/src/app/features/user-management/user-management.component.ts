@@ -2,17 +2,23 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { UserService } from '../../core/services/user.service';
+import { DepartmentService } from '../../core/services/department.service';
+import { RouterLink } from '@angular/router';
 import { User, UserRole, UserRoleLabels, UserStatus } from '../../core/models/user.model';
 
 @Component({
   selector: 'app-user-management',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterLink],
   templateUrl: './user-management.component.html',
 })
 export class UserManagementComponent implements OnInit {
   private fb = inject(FormBuilder);
   private userService = inject(UserService);
+  private departmentService = inject(DepartmentService);
+
+  /** الإدارات المفعّلة من الإعدادات — مصدر القائمة المنسدلة. */
+  departments: string[] = [];
 
   readonly UserRole = UserRole;
   readonly UserStatus = UserStatus;
@@ -48,6 +54,19 @@ export class UserManagementComponent implements OnInit {
 
   ngOnInit() {
     this.load();
+    this.departmentService.getAll(true).subscribe({
+      next: d => (this.departments = d.map(x => x.name)),
+      error: () => {},
+    });
+  }
+
+  /**
+   * خيارات القائمة: الإدارات المفعّلة، مع إدارة المستخدم الحالية إن كانت قد أُوقفت بعد تعيينه،
+   * حتى يُحفظ تعديله دون إجباره على تغيير إدارته.
+   */
+  get departmentOptions(): string[] {
+    const current = this.editingUser?.department;
+    return current && !this.departments.includes(current) ? [current, ...this.departments] : this.departments;
   }
 
   load() {

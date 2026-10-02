@@ -58,6 +58,21 @@ public static class DbSeeder
         await db.SaveChangesAsync(ct);
     }
 
+    /// <summary>
+    /// First run of the departments list: start it from the departments the existing accounts
+    /// already have, so nothing has to be retyped. Afterwards the list is the administrator's.
+    /// </summary>
+    public static async Task EnsureDepartmentsAsync(AppDbContext db, CancellationToken ct = default)
+    {
+        if (await db.Departments.AnyAsync(ct))
+            return;
+        var names = await db.Users.Where(u => u.Department != "").Select(u => u.Department).Distinct().ToListAsync(ct);
+        var order = 0;
+        foreach (var name in names.OrderBy(n => n, StringComparer.Ordinal))
+            db.Departments.Add(new Department { Name = name.Trim(), IsActive = true, SortOrder = order++ });
+        await db.SaveChangesAsync(ct);
+    }
+
     /// <summary>Demo accounts for a fresh development database. Never runs outside Development.</summary>
     public static async Task SeedDemoUsersAsync(AppDbContext db, TimeProvider clock, CancellationToken ct = default)
     {

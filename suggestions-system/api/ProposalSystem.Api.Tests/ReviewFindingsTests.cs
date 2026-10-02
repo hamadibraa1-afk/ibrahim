@@ -43,7 +43,7 @@ public sealed class ReviewFindingsTests : IDisposable
         await admin.PostJsonAsync("/api/users", new
         {
             userCode = "EMP-3001", arabicName = "عضو لجنة ثانٍ", englishName = "Second Member", email = "m2@shjcharity.ae",
-            initialPassword = "Passw0rd!", role = "CommitteeMember", phoneNumber = "0", department = "المالية", jobTitle = "عضو",
+            initialPassword = "Passw0rd!", role = "CommitteeMember", phoneNumber = "0", department = "الإدارة المالية", jobTitle = "عضو",
         });
         var employee = await _host.LoginAsync("EMP-2001");
         var id = (await employee.PostJsonAsync("/api/proposals", NewProposal("مقترح بلجنة من عضوين"))).GetProperty("id").GetInt32();
@@ -86,7 +86,7 @@ public sealed class ReviewFindingsTests : IDisposable
         var newUser = await admin.PostJsonAsync("/api/users", new
         {
             userCode = "EMP-4001", arabicName = "مدير مؤقت", englishName = "Temp Admin", email = "t@shjcharity.ae",
-            initialPassword = "Passw0rd!", role = "Admin", phoneNumber = "0", department = "التميز", jobTitle = "مدير",
+            initialPassword = "Passw0rd!", role = "Admin", phoneNumber = "0", department = "إدارة التميز المؤسسي", jobTitle = "مدير",
         });
         var tempAdmin = await _host.LoginAsync("EMP-4001");
 

@@ -17,6 +17,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<ImpactAssessment> ImpactAssessments => Set<ImpactAssessment>();
     public DbSet<JobLease> JobLeases => Set<JobLease>();
+    public DbSet<Department> Departments => Set<Department>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder builder)
     {
@@ -120,6 +121,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.Type).HasMaxLength(40);
             e.Property(x => x.Message).HasMaxLength(600);
             e.HasOne(x => x.Proposal).WithMany().HasForeignKey(x => x.ProposalId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<Department>(e =>
+        {
+            e.HasIndex(x => x.Name).IsUnique();
+            e.Property(x => x.Name).HasMaxLength(150);
         });
 
         b.Entity<JobLease>(e =>

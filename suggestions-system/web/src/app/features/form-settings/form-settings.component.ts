@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { FormSettingsService } from '../../core/services/form-settings.service';
+import { DepartmentsSettingsComponent } from './departments-settings.component';
 import {
   FieldTypeLabels, FormField, FormFieldType, SectionLabels,
 } from '../../core/models/form-field.model';
@@ -13,7 +14,7 @@ import {
 @Component({
   selector: 'app-form-settings',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, DepartmentsSettingsComponent],
   templateUrl: './form-settings.component.html',
 })
 export class FormSettingsComponent implements OnInit {

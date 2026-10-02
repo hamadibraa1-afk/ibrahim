@@ -50,10 +50,10 @@ public sealed class UsersController(
     public async Task<List<UserDto>> GetAll(CancellationToken ct) =>
         (await db.Users.Include(u => u.Manager).OrderBy(u => u.ArabicName).ToListAsync(ct)).Select(UserDto.From).ToList();
 
-    /// <summary>Department names for the list filters; reviewers need them too.</summary>
+    /// <summary>Department names for the list filters (from the Settings list); reviewers need them too.</summary>
     [HttpGet("departments")]
     public async Task<List<string>> Departments(CancellationToken ct) =>
-        await db.Users.Where(u => u.Department != "").Select(u => u.Department).Distinct().OrderBy(d => d).ToListAsync(ct);
+        await db.Departments.Where(d => d.IsActive).OrderBy(d => d.SortOrder).ThenBy(d => d.Name).Select(d => d.Name).ToListAsync(ct);
 
     [HttpGet("{id:int}")]
     [Authorize(Roles = nameof(UserRole.Admin))]
@@ -70,6 +70,7 @@ public sealed class UsersController(
         if (await db.Users.AnyAsync(u => u.UserCode == code, ct))
             throw ApiException.Conflict("الرقم الوظيفي مستخدم بالفعل.");
         await ValidateManagerAsync(null, req.ManagerId, ct);
+        var department = await ValidateDepartmentAsync(req.Department, null, ct);
 
         var user = new User
         {
@@ -79,7 +80,7 @@ public sealed class UsersController(
             Email = req.Email.Trim(),
             Role = req.Role,
             PhoneNumber = (req.PhoneNumber ?? "").Trim(),
-            Department = (req.Department ?? "").Trim(),
+            Department = department,
             JobTitle = (req.JobTitle ?? "").Trim(),
             ManagerId = req.ManagerId,
             PasswordHash = PasswordHasher.Hash(req.InitialPassword),
@@ -102,6 +103,7 @@ public sealed class UsersController(
         if (user.Role == UserRole.Admin && req.Role != UserRole.Admin && await IsLastActiveAdminAsync(id, ct))
             throw ApiException.BadRequest("لا يمكن تغيير دور آخر مدير نظام نشط.");
         await ValidateManagerAsync(id, req.ManagerId, ct);
+        var department = await ValidateDepartmentAsync(req.Department, user.Department, ct);
 
         var roleChanged = user.Role != req.Role;
         user.UserCode = code;
@@ -110,7 +112,7 @@ public sealed class UsersController(
         user.Email = req.Email.Trim();
         user.Role = req.Role;
         user.PhoneNumber = (req.PhoneNumber ?? "").Trim();
-        user.Department = (req.Department ?? "").Trim();
+        user.Department = department;
         user.JobTitle = (req.JobTitle ?? "").Trim();
         user.ManagerId = req.ManagerId;
         if (roleChanged && req.Role != UserRole.CommitteeMember)
@@ -213,6 +215,22 @@ public sealed class UsersController(
             if (c == userId)
                 throw ApiException.BadRequest("هذا الاختيار يُنشئ حلقة في التسلسل الإداري.");
         }
+    }
+
+    /// <summary>
+    /// The department must come from the Settings list and be active. An existing user may keep a
+    /// department that was deactivated after it was assigned, so editing them doesn't force a move.
+    /// </summary>
+    private async Task<string> ValidateDepartmentAsync(string? requested, string? current, CancellationToken ct)
+    {
+        var name = (requested ?? "").Trim();
+        if (name.Length == 0)
+            throw ApiException.BadRequest("الرجاء اختيار الإدارة من القائمة.");
+        if (name == current)
+            return name;
+        if (!await db.Departments.AnyAsync(d => d.Name == name && d.IsActive, ct))
+            throw ApiException.BadRequest("الإدارة المختارة غير موجودة في قائمة الإدارات. أضفها من الإعدادات أولاً.");
+        return name;
     }
 
     private static void Validate(string? userCode, string? arabicName, string? email)
