@@ -53,6 +53,7 @@ public sealed class ProposalsController(
     AuditTrail audit,
     NotificationService notifications,
     CustomFieldWriter customFields,
+    CommitteeProgress committeeProgress,
     IOptions<ImpactTrackingOptions> impactOptions,
     TimeProvider clock) : ControllerBase
 {
@@ -139,7 +140,7 @@ public sealed class ProposalsController(
         access.EnterStage(p, ProposalStatus.Submitted, now);
         await customFields.ApplyAsync(p, req.CustomFields, [FormSections.SuggestionData, FormSections.SuggestionDetails, FormSections.Impact], true, ct);
         db.Proposals.Add(p);
-        await db.SaveChangesAsync(ct);
+        await SaveWithUniqueCodeAsync(p, now, ct);
 
         audit.Record(p, submitter, AuditActions.Created, null, ProposalStatus.Submitted);
         await NotifyScreenersAsync(p, $"مقترح جديد {p.ProposalCode} «{p.Title}» بانتظار الفرز الأولي.", ct);
@@ -293,16 +294,9 @@ public sealed class ProposalsController(
         p.UpdatedAt = now;
         audit.Record(p, actor, AuditActions.CommitteeSigned);
 
-        var admins = await notifications.UsersInRolesAsync(ct, UserRole.Admin);
-        if (p.Votes.All(v => v.Signed))
+        if (!await committeeProgress.TryCompleteAsync(p, now, ct))
         {
-            access.EnterStage(p, ProposalStatus.PendingExecutiveDecision, now);
-            RevealIfDue(p, now);
-            notifications.Notify(admins.Where(a => a != p.SubmitterId), NotificationTypes.CommitteeSigned,
-                $"اكتملت توقيعات اللجنة على المقترح {p.ProposalCode} «{p.Title}» وهو بانتظار القرار التنفيذي.", p);
-        }
-        else
-        {
+            var admins = await notifications.UsersInRolesAsync(ct, UserRole.Admin);
             notifications.Notify(admins.Where(a => a != p.SubmitterId && a != me.Id), NotificationTypes.CommitteeSigned,
                 $"وقّع {actor.ArabicName} على توصية المقترح {p.ProposalCode} ({p.Votes.Count(v => v.Signed)}/{p.Votes.Count}).", p);
         }
@@ -472,6 +466,30 @@ public sealed class ProposalsController(
     {
         var recipients = await notifications.UsersInRolesAsync(ct, UserRole.Screener, UserRole.Admin);
         notifications.Notify(recipients.Where(r => r != p.SubmitterId), NotificationTypes.NewSubmission, message, p);
+    }
+
+    /// <summary>
+    /// Two submissions at the same moment can compute the same next code; the unique index
+    /// rejects the second. Take the next free code and try again rather than failing the user.
+    /// </summary>
+    private async Task SaveWithUniqueCodeAsync(Proposal p, DateTime now, CancellationToken ct)
+    {
+        const int maxAttempts = 5;
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                await db.SaveChangesAsync(ct);
+                return;
+            }
+            catch (DbUpdateException) when (attempt < maxAttempts)
+            {
+                // Only a taken code is worth retrying; any other failure is real.
+                if (!await db.Proposals.AsNoTracking().AnyAsync(x => x.ProposalCode == p.ProposalCode, ct))
+                    throw;
+                p.ProposalCode = await NextCodeAsync(now, ct);
+            }
+        }
     }
 
     private async Task<string> NextCodeAsync(DateTime now, CancellationToken ct)

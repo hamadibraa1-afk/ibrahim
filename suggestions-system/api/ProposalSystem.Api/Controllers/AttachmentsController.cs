@@ -49,10 +49,9 @@ public sealed class AttachmentsController(
         if (p.Attachments.Sum(a => a.SizeBytes) + files.Sum(f => f.Length) > o.MaxTotalBytes)
             throw ApiException.BadRequest("الحجم الإجمالي للمرفقات يتجاوز 15 ميجابايت.");
 
-        var dir = StorageDirectory(env, o);
-        Directory.CreateDirectory(dir);
-        var now = clock.GetUtcNow().UtcDateTime;
-
+        // Validate the whole batch before touching the disk: one bad file refuses all of them,
+        // and nothing is left behind.
+        var accepted = new List<(IFormFile File, string Name, string Ext)>();
         foreach (var file in files)
         {
             var name = Path.GetFileName(file.FileName);
@@ -61,25 +60,44 @@ public sealed class AttachmentsController(
                 throw ApiException.BadRequest($"نوع الملف \"{name}\" غير مسموح به.");
             if (file.Length == 0 || file.Length > o.MaxFileBytes)
                 throw ApiException.BadRequest($"حجم الملف \"{name}\" غير مقبول (الحد 10 ميجابايت).");
-
-            // Random stored name: the user's file name never touches the file system.
-            var stored = $"{Guid.NewGuid():N}{ext}";
-            await using (var target = System.IO.File.Create(Path.Combine(dir, stored)))
-                await file.CopyToAsync(target, ct);
-
-            p.Attachments.Add(new Attachment
-            {
-                FileName = name.Length <= 260 ? name : name[^260..],
-                StoredName = stored,
-                // Content type from our own extension map, never from the client.
-                ContentType = ContentTypes.TryGetContentType(name, out var type) ? type : "application/octet-stream",
-                SizeBytes = file.Length,
-                UploadedAt = now,
-                UploadedById = me.Id,
-            });
-            audit.Record(p, p.Submitter, AuditActions.AttachmentAdded, notes: name);
+            accepted.Add((file, name, ext));
         }
-        await db.SaveChangesAsync(ct);
+
+        var dir = StorageDirectory(env, o);
+        Directory.CreateDirectory(dir);
+        var now = clock.GetUtcNow().UtcDateTime;
+        var written = new List<Attachment>();
+        try
+        {
+            foreach (var (file, name, ext) in accepted)
+            {
+                // Random stored name: the user's file name never touches the file system.
+                var stored = $"{Guid.NewGuid():N}{ext}";
+                await using (var target = System.IO.File.Create(Path.Combine(dir, stored)))
+                    await file.CopyToAsync(target, ct);
+
+                var attachment = new Attachment
+                {
+                    FileName = name.Length <= 260 ? name : name[^260..],
+                    StoredName = stored,
+                    // Content type from our own extension map, never from the client.
+                    ContentType = ContentTypes.TryGetContentType(name, out var type) ? type : "application/octet-stream",
+                    SizeBytes = file.Length,
+                    UploadedAt = now,
+                    UploadedById = me.Id,
+                };
+                written.Add(attachment);
+                p.Attachments.Add(attachment);
+                audit.Record(p, p.Submitter, AuditActions.AttachmentAdded, notes: name);
+            }
+            await db.SaveChangesAsync(ct);
+        }
+        catch
+        {
+            // A failed copy or save must not leave unreferenced files in App_Data.
+            DeleteFiles(written, HttpContext.RequestServices);
+            throw;
+        }
         return p.Attachments.OrderBy(a => a.UploadedAt).Select((a, i) => ToDto(p, a, i)).ToList();
     }
 

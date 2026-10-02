@@ -27,6 +27,7 @@ public static class AuditActions
     public const string ImpactMeasured = "ImpactMeasured";
     public const string ImpactVerified = "ImpactVerified";
     public const string ImpactReturned = "ImpactReturned";
+    public const string CommitteeSeatReleased = "CommitteeSeatReleased";
 }
 
 /// <summary>Append-only record of who did what to which proposal.</summary>

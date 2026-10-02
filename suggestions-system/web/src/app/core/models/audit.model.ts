@@ -34,6 +34,7 @@ export const AuditActionLabels: Record<string, string> = {
   ImpactMeasured: 'تسجيل قياس الأثر الفعلي',
   ImpactVerified: 'اعتماد قياس الأثر',
   ImpactReturned: 'إعادة قياس الأثر للتصحيح',
+  CommitteeSeatReleased: 'سحب مقعد عضو لجنة غير متاح',
 };
 
 export const AuditActionStyles: Record<string, string> = {
@@ -57,4 +58,5 @@ export const AuditActionStyles: Record<string, string> = {
   ImpactMeasured: 'bg-indigo-50 text-indigo-700',
   ImpactVerified: 'bg-emerald-50 text-emerald-700',
   ImpactReturned: 'bg-amber-50 text-amber-700',
+  CommitteeSeatReleased: 'bg-gray-100 text-gray-700',
 };

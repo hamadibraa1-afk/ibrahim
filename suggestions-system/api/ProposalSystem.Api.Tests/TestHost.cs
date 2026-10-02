@@ -18,13 +18,25 @@ public sealed class TestHost : WebApplicationFactory<Program>
 {
     private readonly string _dbPath = Path.Combine(Path.GetTempPath(), $"proposals-test-{Guid.NewGuid():N}.db");
 
+    private readonly Dictionary<string, string> _settings = [];
+
+    public TestHost(params (string Key, string Value)[] settings)
+    {
+        foreach (var (key, value) in settings)
+            _settings[key] = value;
+    }
+
     public FakeTimeProvider Clock { get; } = new(DateTimeOffset.UtcNow);
+
+    public string AttachmentDir { get; } = Path.Combine(Path.GetTempPath(), $"att-{Guid.NewGuid():N}");
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Development");
         builder.UseSetting("ConnectionStrings:Sqlite", $"Data Source={_dbPath}");
-        builder.UseSetting("Attachments:StoragePath", Path.Combine(Path.GetTempPath(), $"att-{Guid.NewGuid():N}"));
+        builder.UseSetting("Attachments:StoragePath", AttachmentDir);
+        foreach (var (key, value) in _settings)
+            builder.UseSetting(key, value);
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<TimeProvider>();
@@ -54,6 +66,7 @@ public sealed class TestHost : WebApplicationFactory<Program>
         base.Dispose(disposing);
         Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
         try { File.Delete(_dbPath); } catch (IOException) { }
+        try { if (Directory.Exists(AttachmentDir)) Directory.Delete(AttachmentDir, true); } catch (IOException) { }
     }
 }
 
@@ -69,6 +82,16 @@ public sealed class ApiClient(HttpClient http)
     public Task<HttpResponseMessage> GetAsync(string url) => SendAsync(HttpMethod.Get, url, null);
     public Task<HttpResponseMessage> PostAsync(string url, object? body = null) => SendAsync(HttpMethod.Post, url, body ?? new { });
     public Task<HttpResponseMessage> PutAsync(string url, object body) => SendAsync(HttpMethod.Put, url, body);
+    public Task<HttpResponseMessage> DeleteAsync(string url) => SendAsync(HttpMethod.Delete, url, null);
+
+    /// <summary>Uploads files as multipart/form-data under the "files" field, like the SPA does.</summary>
+    public Task<HttpResponseMessage> UploadAsync(string url, params (string Name, byte[] Content)[] files)
+    {
+        var form = new MultipartFormDataContent();
+        foreach (var (name, content) in files)
+            form.Add(new ByteArrayContent(content), "files", name);
+        return SendAsync(HttpMethod.Post, url, form);
+    }
 
     public async Task<T> GetJsonAsync<T>(string url)
     {
@@ -87,7 +110,9 @@ public sealed class ApiClient(HttpClient http)
     private async Task<HttpResponseMessage> SendAsync(HttpMethod method, string url, object? body)
     {
         using var req = new HttpRequestMessage(method, url);
-        if (body is not null)
+        if (body is HttpContent content)
+            req.Content = content;
+        else if (body is not null)
             req.Content = JsonContent.Create(body, options: Json);
         if (Cookies.Count > 0)
             req.Headers.Add("Cookie", string.Join("; ", Cookies.Select(c => $"{c.Key}={c.Value}")));

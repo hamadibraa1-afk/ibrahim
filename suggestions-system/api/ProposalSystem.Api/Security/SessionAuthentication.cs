@@ -64,7 +64,9 @@ public sealed class SessionAuthenticationHandler(
         });
 
         var identity = new ClaimsIdentity(claims, SessionDefaults.Scheme);
-        return AuthenticateResult.Success(new AuthenticationTicket(new ClaimsPrincipal(identity), SessionDefaults.Scheme));
+        // SignalR reads ExpiresUtc to close long-lived connections when the session ends.
+        var properties = new AuthenticationProperties { ExpiresUtc = new DateTimeOffset(session.ExpiresAt, TimeSpan.Zero) };
+        return AuthenticateResult.Success(new AuthenticationTicket(new ClaimsPrincipal(identity), properties, SessionDefaults.Scheme));
     }
 
     protected override Task HandleChallengeAsync(AuthenticationProperties properties) =>

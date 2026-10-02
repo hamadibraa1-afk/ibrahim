@@ -4,7 +4,9 @@ using Microsoft.EntityFrameworkCore;
 using ProposalSystem.Api.Common;
 using ProposalSystem.Api.Data;
 using ProposalSystem.Api.Domain;
+using ProposalSystem.Api.Realtime;
 using ProposalSystem.Api.Security;
+using ProposalSystem.Api.Workflow;
 
 namespace ProposalSystem.Api.Controllers;
 
@@ -35,7 +37,13 @@ public sealed record ResetPasswordRequest(string NewPassword);
 [ApiController]
 [Route("api/users")]
 [Authorize]
-public sealed class UsersController(AppDbContext db, SessionService sessions, CurrentUser me, TimeProvider clock) : ControllerBase
+public sealed class UsersController(
+    AppDbContext db,
+    SessionService sessions,
+    CurrentUser me,
+    CommitteeProgress committee,
+    NotificationService notifications,
+    TimeProvider clock) : ControllerBase
 {
     [HttpGet]
     [Authorize(Roles = nameof(UserRole.Admin))]
@@ -105,7 +113,10 @@ public sealed class UsersController(AppDbContext db, SessionService sessions, Cu
         user.Department = (req.Department ?? "").Trim();
         user.JobTitle = (req.JobTitle ?? "").Trim();
         user.ManagerId = req.ManagerId;
+        if (roleChanged && req.Role != UserRole.CommitteeMember)
+            await committee.ReleaseSeatsAsync(user, await Me(ct), "انتقل من عضوية اللجنة", clock.GetUtcNow().UtcDateTime, ct);
         await db.SaveChangesAsync(ct);
+        await notifications.DispatchAsync(ct);
 
         // A role change takes effect at once: the old sessions carry the old role claim.
         if (roleChanged && id != me.Id)
@@ -123,7 +134,9 @@ public sealed class UsersController(AppDbContext db, SessionService sessions, Cu
         if (user.Role == UserRole.Admin && await IsLastActiveAdminAsync(id, ct))
             throw ApiException.BadRequest("لا يمكن إيقاف آخر مدير نظام نشط.");
         user.Status = UserStatus.Suspended;
+        await committee.ReleaseSeatsAsync(user, await Me(ct), "أُوقف الحساب", clock.GetUtcNow().UtcDateTime, ct);
         await db.SaveChangesAsync(ct);
+        await notifications.DispatchAsync(ct);
         await sessions.RevokeAllAsync(id, null, ct);
         return UserDto.From(user);
     }
@@ -173,6 +186,8 @@ public sealed class UsersController(AppDbContext db, SessionService sessions, Cu
         await db.SaveChangesAsync(ct);
         return NoContent();
     }
+
+    private async Task<User> Me(CancellationToken ct) => await db.Users.FirstAsync(u => u.Id == me.Id, ct);
 
     private async Task<User> Load(int id, CancellationToken ct) =>
         await db.Users.Include(u => u.Manager).FirstOrDefaultAsync(u => u.Id == id, ct) ?? throw ApiException.NotFound("المستخدم غير موجود.");

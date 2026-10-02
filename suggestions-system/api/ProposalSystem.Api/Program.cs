@@ -16,11 +16,27 @@ var config = builder.Configuration;
 builder.WebHost.ConfigureKestrel(o => o.AddServerHeader = false);
 
 // ---------------------------------------------------------------- options
-builder.Services.Configure<SessionCookieOptions>(config.GetSection("Security:Session"));
+// Settings that contradict each other would silently break sessions, escalation or impact
+// windows, so they stop the application at startup instead.
+builder.Services.AddOptions<SessionCookieOptions>().Bind(config.GetSection("Security:Session"))
+    .Validate(o => o.IdleTimeoutHours > 0 && o.IdleTimeoutHours <= o.AbsoluteLifetimeHours,
+        "Security:Session: IdleTimeoutHours must be positive and no longer than AbsoluteLifetimeHours.")
+    .Validate(o => o.MaxFailedLogins > 0 && o.LockoutMinutes > 0,
+        "Security:Session: MaxFailedLogins and LockoutMinutes must be positive.")
+    .ValidateOnStart();
 builder.Services.Configure<CorsSettings>(config.GetSection("Security:Cors"));
 builder.Services.Configure<BlindReviewOptions>(config.GetSection("BlindReview"));
-builder.Services.Configure<SlaOptions>(config.GetSection("Sla"));
-builder.Services.Configure<ImpactTrackingOptions>(config.GetSection("ImpactTracking"));
+builder.Services.AddOptions<SlaOptions>().Bind(config.GetSection("Sla"))
+    .Validate(o => o.CheckIntervalMinutes > 0 && o.ScreeningHours > 0 && o.CommitteeHours > 0 && o.ExecutiveHours > 0
+                   && o.ReturnedForEditHours > 0 && o.ReminderRepeatHours > 0,
+        "Sla: the check interval, every stage deadline and ReminderRepeatHours must be positive.")
+    .Validate(o => o.Escalation.Level1AfterHours > 0 && o.Escalation.Level2AfterHours > o.Escalation.Level1AfterHours,
+        "Sla:Escalation: Level2AfterHours must be greater than Level1AfterHours, and both positive.")
+    .ValidateOnStart();
+builder.Services.AddOptions<ImpactTrackingOptions>().Bind(config.GetSection("ImpactTracking"))
+    .Validate(o => o.WindowOpensAfterMonths >= 0 && o.DueAfterMonths > o.WindowOpensAfterMonths,
+        "ImpactTracking: DueAfterMonths must be later than WindowOpensAfterMonths.")
+    .ValidateOnStart();
 builder.Services.Configure<AttachmentOptions>(config.GetSection("Attachments"));
 
 // ---------------------------------------------------------------- data
@@ -44,6 +60,7 @@ builder.Services.AddSingleton<ProposalMapper>();
 builder.Services.AddScoped<AuditTrail>();
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<CustomFieldWriter>();
+builder.Services.AddScoped<CommitteeProgress>();
 builder.Services.AddScoped<SlaEscalationService>();
 builder.Services.AddHostedService<SlaMonitorService>();
 
@@ -160,7 +177,9 @@ app.UseMiddleware<CsrfProtectionMiddleware>();
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapHub<NotificationHub>("/hubs/notifications");
+// A live socket must not outlive the session that opened it: it is closed when the session's
+// expiry passes, and the client's reconnect re-authenticates (and fails if signed out).
+app.MapHub<NotificationHub>("/hubs/notifications", o => o.CloseOnAuthenticationExpiration = true);
 app.MapGet("/health", () => Results.Ok(new { status = "ok" })).AllowAnonymous();
 if (spaHosted)
 {
