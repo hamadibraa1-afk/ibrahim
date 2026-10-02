@@ -8,7 +8,8 @@
 --
 -- الجديد في هذا الإصدار: جلسات الخادم (UserSessions)، المدير المباشر وقفل الحساب
 -- في Users، حقول التصعيد والكشف عن الهوية في Proposals، وجدول ImpactAssessments
--- لقياس الأثر الفعلي والعائد على الاستثمار.
+-- لقياس الأثر الفعلي والعائد على الاستثمار، وجدول JobLeases ليعمل مراقب المهل
+-- على خادم واحد فقط عند تشغيل أكثر من نسخة.
 -- =============================================================================
 
 IF DB_ID(N'ProposalSystem') IS NULL
@@ -49,6 +50,15 @@ CREATE TABLE [FormFields] (
     [SortOrder] int NOT NULL,
     [OptionsJson] nvarchar(max) NOT NULL,
     CONSTRAINT [PK_FormFields] PRIMARY KEY ([Id])
+);
+GO
+
+
+CREATE TABLE [JobLeases] (
+    [Name] nvarchar(60) NOT NULL,
+    [Holder] nvarchar(100) NOT NULL,
+    [ExpiresAt] datetime2 NOT NULL,
+    CONSTRAINT [PK_JobLeases] PRIMARY KEY ([Name])
 );
 GO
 

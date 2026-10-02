@@ -6,6 +6,7 @@ import {
 import { environment } from '../../../environments/environment';
 import { NotificationPush, ProposalChangedEvent } from '../models/notification.model';
 import { NotificationService } from './notification.service';
+import { AuthService } from './auth.service';
 
 export type RealtimeState = 'disconnected' | 'connecting' | 'connected' | 'reconnecting';
 
@@ -19,6 +20,7 @@ export type RealtimeState = 'disconnected' | 'connecting' | 'connected' | 'recon
 export class RealtimeService {
   private zone = inject(NgZone);
   private notifications = inject(NotificationService);
+  private auth = inject(AuthService);
 
   private connection?: HubConnection;
   private retryTimer?: ReturnType<typeof setTimeout>;
@@ -70,6 +72,10 @@ export class RealtimeService {
       this.zone.run(() => this.notifications.setUnread(count)));
     conn.on('proposalChanged', (e: ProposalChangedEvent) =>
       this.zone.run(() => this.proposalChanged$.next(e)));
+    // جلسات المستخدم أُبطلت (إيقاف الحساب، تغيير الدور أو كلمة المرور): كل تبويب يتحقق من جلسته؛
+    // المُبطَلة تتلقى 401 فيُخرجها الـ interceptor فوراً، والجلسة الباقية تواصل عملها.
+    conn.on('sessionRevoked', () =>
+      this.zone.run(() => this.auth.refreshMe().subscribe({ error: () => {} })));
 
     conn.onreconnecting(() => this.zone.run(() => this._state.set('reconnecting')));
     conn.onreconnected(() => this.zone.run(() => {

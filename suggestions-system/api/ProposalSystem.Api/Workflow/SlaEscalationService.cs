@@ -232,14 +232,22 @@ public sealed class SlaEscalationService(
 /// <summary>Runs <see cref="SlaEscalationService"/> on a fixed interval (15 minutes by default).</summary>
 public sealed class SlaMonitorService(IServiceScopeFactory scopes, IOptions<SlaOptions> options, ILogger<SlaMonitorService> logger) : BackgroundService
 {
+    public const string LeaseName = "sla-monitor";
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        using var timer = new PeriodicTimer(TimeSpan.FromMinutes(Math.Max(1, options.Value.CheckIntervalMinutes)));
+        var interval = TimeSpan.FromMinutes(Math.Max(1, options.Value.CheckIntervalMinutes));
+        using var timer = new PeriodicTimer(interval);
         do
         {
             try
             {
                 using var scope = scopes.CreateScope();
+                // With several API instances, only the lease holder runs the pass; the lease outlives
+                // one interval so the holder renews it before anyone else may take over.
+                var lease = scope.ServiceProvider.GetRequiredService<JobLeaseService>();
+                if (!await lease.TryAcquireAsync(LeaseName, interval * 2, ct: stoppingToken))
+                    continue;
                 await scope.ServiceProvider.GetRequiredService<SlaEscalationService>().RunAsync(stoppingToken);
                 await scope.ServiceProvider.GetRequiredService<Security.SessionService>().PurgeExpiredAsync(stoppingToken);
             }

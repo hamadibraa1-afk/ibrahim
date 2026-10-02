@@ -5,6 +5,8 @@ using Microsoft.Extensions.Options;
 using ProposalSystem.Api.Common;
 using ProposalSystem.Api.Data;
 using ProposalSystem.Api.Domain;
+using ProposalSystem.Api.Realtime;
+using Microsoft.AspNetCore.SignalR;
 
 namespace ProposalSystem.Api.Security;
 
@@ -14,7 +16,7 @@ public sealed record IssuedSession(string Token, string CsrfToken, DateTime Expi
 /// Opaque server-side sessions carried in an HttpOnly cookie. Revocation is immediate (logout,
 /// password change, suspension) because every request is checked against the table.
 /// </summary>
-public sealed class SessionService(AppDbContext db, IOptions<SessionCookieOptions> options, TimeProvider clock)
+public sealed class SessionService(AppDbContext db, IOptions<SessionCookieOptions> options, TimeProvider clock, IHubContext<NotificationHub> hub)
 {
     private readonly SessionCookieOptions _options = options.Value;
 
@@ -82,9 +84,26 @@ public sealed class SessionService(AppDbContext db, IOptions<SessionCookieOption
     public async Task RevokeAsync(long sessionId, CancellationToken ct) =>
         await db.Sessions.Where(s => s.Id == sessionId).ExecuteDeleteAsync(ct);
 
-    /// <summary>Signs the user out everywhere, optionally keeping the session that asked for it.</summary>
-    public async Task RevokeAllAsync(int userId, long? exceptSessionId, CancellationToken ct) =>
-        await db.Sessions.Where(s => s.UserId == userId && s.Id != (exceptSessionId ?? 0)).ExecuteDeleteAsync(ct);
+    /// <summary>
+    /// Signs the user out everywhere, optionally keeping the session that asked for it. Open tabs
+    /// are told at once over SignalR; each re-checks its own session, so the revoked ones sign
+    /// out immediately and a kept session carries on.
+    /// </summary>
+    public async Task RevokeAllAsync(int userId, long? exceptSessionId, CancellationToken ct)
+    {
+        var revoked = await db.Sessions.Where(s => s.UserId == userId && s.Id != (exceptSessionId ?? 0)).ExecuteDeleteAsync(ct);
+        if (revoked == 0)
+            return;
+        try
+        {
+            await hub.Clients.User(userId.ToString(System.Globalization.CultureInfo.InvariantCulture))
+                .SendAsync(HubEvents.SessionRevoked, ct);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // The sessions are already gone server-side; the next request from a stale tab gets 401.
+        }
+    }
 
     public async Task<int> PurgeExpiredAsync(CancellationToken ct)
     {

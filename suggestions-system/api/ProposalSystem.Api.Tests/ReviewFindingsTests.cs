@@ -117,3 +117,39 @@ public sealed class ReviewFindingsTests : IDisposable
         Assert.Contains("Level2AfterHours", ex.ToString(), StringComparison.Ordinal);
     }
 }
+
+public sealed class FollowUpTests : IDisposable
+{
+    private readonly TestHost _host = new();
+
+    public void Dispose() => _host.Dispose();
+
+    [Fact]
+    public async Task Only_one_instance_holds_the_sla_monitor_lease_until_it_expires()
+    {
+        using var scope = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.CreateScope(_host.Services);
+        var leases = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions
+            .GetRequiredService<Workflow.JobLeaseService>(scope.ServiceProvider);
+        var term = TimeSpan.FromMinutes(30);
+
+        Assert.True(await leases.TryAcquireAsync("sla-monitor", term, "server-a"));
+        Assert.False(await leases.TryAcquireAsync("sla-monitor", term, "server-b"));
+        Assert.True(await leases.TryAcquireAsync("sla-monitor", term, "server-a")); // renewal
+
+        _host.Clock.Advance(TimeSpan.FromMinutes(31)); // server-a died
+        Assert.True(await leases.TryAcquireAsync("sla-monitor", term, "server-b"));
+        Assert.False(await leases.TryAcquireAsync("sla-monitor", term, "server-a"));
+    }
+
+    [Fact]
+    public async Task Suspending_a_user_ends_their_open_sessions_immediately()
+    {
+        var employee = await _host.LoginAsync("EMP-2001");
+        var admin = await _host.LoginAsync("EMP-1001");
+        var id = (await employee.GetJsonAsync<JsonElement>("/api/auth/me")).GetProperty("id").GetInt32();
+
+        await admin.PostJsonAsync($"/api/users/{id}/suspend");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, (await employee.GetAsync("/api/auth/me")).StatusCode);
+    }
+}

@@ -14,6 +14,8 @@ public static class HubEvents
     public const string UnreadCountChanged = "unreadCountChanged";
     /// <summary>A proposal moved through the workflow; open lists and detail pages refresh themselves.</summary>
     public const string ProposalChanged = "proposalChanged";
+    /// <summary>Some of this user's sessions were revoked; each tab re-checks its own.</summary>
+    public const string SessionRevoked = "sessionRevoked";
 }
 
 /// <summary>

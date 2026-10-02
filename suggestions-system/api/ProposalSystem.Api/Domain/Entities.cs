@@ -67,6 +67,17 @@ public class User
 /// Server-side session. The browser only holds the random token in an HttpOnly cookie; the
 /// database keeps its SHA-256 hash, so a leaked database cannot be replayed as live sessions.
 /// </summary>
+/// <summary>
+/// A time-limited claim on a background job, so that with several API instances behind a load
+/// balancer only one of them runs the SLA monitor at a time.
+/// </summary>
+public class JobLease
+{
+    public string Name { get; set; } = "";
+    public string Holder { get; set; } = "";
+    public DateTime ExpiresAt { get; set; }
+}
+
 public class UserSession
 {
     public long Id { get; set; }

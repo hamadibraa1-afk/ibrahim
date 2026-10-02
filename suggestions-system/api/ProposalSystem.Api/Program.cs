@@ -61,6 +61,7 @@ builder.Services.AddScoped<AuditTrail>();
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<CustomFieldWriter>();
 builder.Services.AddScoped<CommitteeProgress>();
+builder.Services.AddScoped<JobLeaseService>();
 builder.Services.AddScoped<SlaEscalationService>();
 builder.Services.AddHostedService<SlaMonitorService>();
 
