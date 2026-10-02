@@ -1,7 +1,7 @@
 <div class="flex h-screen w-screen overflow-hidden bg-[#F6F8F7]" dir="rtl">
 
   <!-- الشريط الجانبي -->
-  <aside class="w-60 shrink-0 bg-brand-700 text-white flex flex-col">
+  <aside class="w-60 shrink-0 bg-brand-700 glass-dark text-white flex flex-col">
     <div class="flex items-center gap-2.5 px-5 py-5 border-b border-white/10">
       <svg width="36" height="36" viewBox="0 0 64 64" fill="none" class="shrink-0">
         <circle cx="32" cy="30" r="10.5" fill="none" stroke="#fff" stroke-width="2.6"/>
@@ -46,7 +46,7 @@
 
   <!-- المحتوى -->
   <div class="flex-1 flex flex-col min-w-0">
-    <header class="h-16 bg-white border-b border-[#E9EDEB] flex items-center justify-between px-7 shrink-0">
+    <header class="h-16 bg-white glass-bar border-b border-[#E9EDEB] flex items-center justify-between px-7 shrink-0">
       <div class="text-[13px] text-ink-faint">نظام الاقتراحات الرقمي — جمعية الشارقة الخيرية</div>
 
       <div class="flex items-center gap-2">
@@ -86,7 +86,7 @@
             @if (userMenuOpen()) {
               <!-- طبقة لإغلاق القائمة عند النقر خارجها -->
               <div class="fixed inset-0 z-40" (click)="userMenuOpen.set(false)"></div>
-              <div class="absolute left-0 mt-2 w-52 bg-white rounded-xl border border-[#E9EDEB] shadow-lift z-50 overflow-hidden">
+              <div class="absolute left-0 mt-2 w-52 bg-white glass-strong rounded-xl border border-[#E9EDEB] shadow-lift z-50 overflow-hidden">
                 <a routerLink="/profile" (click)="userMenuOpen.set(false)"
                    class="flex items-center gap-2.5 px-4 py-3 text-[13px] text-ink hover:bg-brand-50 transition-colors">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -116,8 +116,8 @@
 
 <!-- تحذير قرب انتهاء الجلسة -->
 @if (session.showWarning() && auth.isLoggedIn()) {
-  <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4" dir="rtl">
-    <div class="bg-white rounded-2xl w-full max-w-md p-7 text-center">
+  <div class="fixed inset-0 bg-black/50 glass-overlay flex items-center justify-center z-[100] p-4" dir="rtl">
+    <div class="bg-white glass-strong rounded-2xl w-full max-w-md p-7 text-center">
       <div class="w-14 h-14 rounded-full bg-amber-50 flex items-center justify-center mx-auto mb-4">
         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#B45309" stroke-width="2">
           <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>

@@ -92,6 +92,19 @@ export class MyProposalsComponent implements OnInit {
 
   activeImpacts(p: Proposal): string[] { return selectedImpacts(p); }
 
+  /**
+   * صنف واحد لكل حالة. كائن ngClass بمفاتيح تتشارك "text-white" كان يحذف الصنف المشترك
+   * عند معالجة المفاتيح غير المطابقة، فتظهر علامة ✓ داكنة على خلفية داكنة.
+   */
+  stepClass(p: Proposal, i: number): string {
+    switch (this.stepState(p, i)) {
+      case 'done': return 'bg-brand-600 text-white';
+      case 'now': return 'bg-sun-400 text-white';
+      case 'rejected': return 'bg-red-500 text-white';
+      default: return 'bg-[#E5E9E7] text-ink-faint';
+    }
+  }
+
   canDelete(p: Proposal): boolean { return p.status === ProposalStatus.Submitted; }
 
   deleteProposal(p: Proposal) {

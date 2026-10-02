@@ -4,10 +4,53 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;500;600;700;800&display=swap');
 
-html, body {
+/* =============================================================================
+   Glassmorphism — هوية زجاجية مستخلصة من ألوان شعار الجمعية
+   - خلفية متدرّجة حيّة (أخضر الشعار + برتقالي الشعار) تظهر عبر الألواح الزجاجية
+   - ألواح شبه شفافة مع backdrop-filter وحد أبيض رفيع وظل متوهّج ناعم
+   - التباين مضمون: الألواح فاتحة بما يكفي لنص داكن (WCAG AA)، والشريط الجانبي داكن لنص أبيض
+   - احترام prefers-reduced-transparency والمتصفحات التي لا تدعم backdrop-filter
+   ============================================================================= */
+
+:root {
+  --glass-bg: rgba(255, 255, 255, 0.62);
+  --glass-bg-strong: rgba(255, 255, 255, 0.82);
+  --glass-bg-soft: rgba(255, 255, 255, 0.45);
+  --glass-border: rgba(255, 255, 255, 0.7);
+  --glass-divider: rgba(27, 67, 50, 0.1);
+  --glass-blur: 18px;
+  --glass-shadow:
+    0 10px 36px -6px rgba(20, 64, 44, 0.18),
+    0 2px 6px rgba(20, 64, 44, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  --glass-glow:
+    0 16px 44px -10px rgba(59, 126, 73, 0.38),
+    0 0 0 1px rgba(255, 255, 255, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  --glass-dark-bg: rgba(16, 58, 41, 0.86);
+}
+
+html {
+  height: 100%;
+  /* أساس فاتح + بقع لونية حيّة من ألوان الشعار، ثابتة أثناء التمرير.
+     البقع المشبعة في الأطراف والأسفل؛ منطقة عناوين الصفحات (أعلى اليمين) تبقى فاتحة
+     لأن العناوين تجلس مباشرة على الخلفية. */
+  background-color: #e7f4ec;
+  background-image:
+    radial-gradient(40rem 34rem at 0% 0%, rgba(59, 160, 110, 0.70), transparent 62%),
+    radial-gradient(36rem 30rem at 100% 100%, rgba(27, 110, 70, 0.62), transparent 60%),
+    radial-gradient(42rem 32rem at 4% 100%, rgba(240, 150, 80, 0.62), transparent 60%),
+    radial-gradient(30rem 26rem at 58% 62%, rgba(255, 186, 120, 0.45), transparent 62%),
+    radial-gradient(28rem 22rem at 32% 30%, rgba(120, 205, 165, 0.45), transparent 65%),
+    radial-gradient(26rem 18rem at 78% 10%, rgba(255, 255, 255, 0.85), transparent 70%),
+    linear-gradient(140deg, #cdeedb 0%, #eef8f1 40%, #fde6cf 100%);
+  background-attachment: fixed;
+}
+
+body {
   height: 100%;
   margin: 0;
-  background: #F6F8F7;
+  background: transparent;
   font-family: 'Noto Sans Arabic', 'Segoe UI', Tahoma, sans-serif;
   color: #1F2937;
 }
@@ -15,8 +58,110 @@ html, body {
 * { box-sizing: border-box; }
 
 ::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-thumb { background: #C7D3CC; border-radius: 8px; }
+::-webkit-scrollbar-thumb { background: rgba(27, 67, 50, 0.25); border-radius: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
+
+/* ---------------------------------------------------------------- الألواح الزجاجية */
+
+.glass,
+.card {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(165%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(165%);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: var(--glass-shadow);
+}
+
+/* البطاقات القابلة للنقر تتوهّج عند المرور */
+a.card { transition: box-shadow 0.2s, transform 0.2s, background 0.2s; }
+a.card:hover { box-shadow: var(--glass-glow); background: rgba(255, 255, 255, 0.72); transform: translateY(-1px); }
+
+/* الحشوة للوحة الدخول */
+.glass-pad { padding: 2rem; }
+
+/* نوافذ منبثقة وقوائم: زجاج أكثف لقراءة النماذج بوضوح */
+.glass-strong {
+  background: var(--glass-bg-strong);
+  -webkit-backdrop-filter: blur(26px) saturate(170%);
+  backdrop-filter: blur(26px) saturate(170%);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 24px 64px -12px rgba(12, 38, 28, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+/* طبقة خلف النوافذ المنبثقة: تعتيم خفيف مع ضبابية للمحتوى */
+.glass-overlay {
+  background: rgba(12, 38, 28, 0.32);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+/* الشريط العلوي */
+.glass-bar {
+  background: rgba(255, 255, 255, 0.55);
+  -webkit-backdrop-filter: blur(20px) saturate(170%);
+  backdrop-filter: blur(20px) saturate(170%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 6px 24px -12px rgba(20, 64, 44, 0.25);
+}
+
+/* الشريط الجانبي: زجاج داكن يحمل نصاً أبيض بتباين عالٍ */
+.glass-dark {
+  background: var(--glass-dark-bg);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+  backdrop-filter: blur(24px) saturate(150%);
+  border-left: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: -10px 0 40px -12px rgba(12, 38, 28, 0.45), inset 1px 0 0 rgba(255, 255, 255, 0.06);
+}
+
+/* ---------------------------------------------------------------- مواءمة الألوان الثابتة في القوالب
+   القوالب تستخدم خلفيات رمادية فاتحة معتمة؛ نحوّلها لطبقات زجاجية دون تغيير أسماء الأصناف. */
+
+[class~="bg-[#F6F8F7]"] { background-color: transparent; }
+
+[class~="bg-[#F8FAF9]"],
+[class~="bg-[#FAFBFA]"],
+[class~="bg-[#F4F6F5]"],
+[class~="bg-[#F6FAF8]"],
+[class~="bg-[#F1F3F2]"],
+[class~="bg-gray-50"] {
+  background-color: var(--glass-bg-soft);
+}
+
+[class~="border-[#EEF1EF]"],
+[class~="border-[#F3F5F4]"],
+[class~="border-[#E9EDEB]"],
+[class~="border-[#F1F3F2]"],
+[class~="border-gray-100"] {
+  border-color: var(--glass-divider);
+}
+
+[class~="border-[#E3E8E5]"],
+[class~="border-[#D8E0DB]"],
+[class~="border-gray-200"] {
+  border-color: rgba(27, 67, 50, 0.16);
+}
+
+/* ---------------------------------------------------------------- تصحيحات التباين
+   ألوان كانت دون 4.5:1 (بعضها حتى قبل التصميم الزجاجي) — نفس الأصناف بدرجات أعمق. */
+[class~="bg-sun-400"] { background-color: #A65F2C; }        /* نص أبيض: 2.6 ← 4.9 */
+[class~="bg-red-500"] { background-color: #DC2626; }        /* نص أبيض: 3.8 ← 4.8 */
+[class~="text-orange-600"] { color: #B23F0A; }
+[class~="text-red-600"] { color: #B91C1C; }
+[class~="text-sun-600"] { color: #8A4B1F; }
+[class~="text-sun-500"] { color: #94511F; }
+[class~="text-sun-300"] { color: #F6D9BD; }
+/* نصوص اللوحات الداكنة (الشريط الجانبي وهوية صفحة الدخول) بشفافية كانت تضعف القراءة */
+[class~="text-brand-200/80"], [class~="text-brand-200/60"] { color: #D3EADD; }
+
+/* رمادي Tailwind الفاتح في شاشة المستخدمين: أغمق قليلاً ليبقى مقروءاً فوق الزجاج */
+[class~="text-gray-400"] { color: #5F6774; }
+[class~="text-gray-500"] { color: #4B5563; }
+
+/* صفوف الجداول */
+table tbody tr:hover { background-color: rgba(255, 255, 255, 0.4); }
+
+/* ---------------------------------------------------------------- الشارات */
 
 .badge {
   display: inline-flex;
@@ -27,36 +172,112 @@ html, body {
   font-size: 11px;
   font-weight: 700;
   white-space: nowrap;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
 }
-.badge-green  { background: #DCEDE3; color: #1B4332; }
-.badge-amber  { background: #FAE8D7; color: #A65F2C; }
-.badge-red    { background: #FEE2E2; color: #B91C1C; }
-.badge-blue   { background: #DBEAFE; color: #1D4ED8; }
-.badge-gray   { background: #F1F3F2; color: #6B7280; }
-.badge-purple { background: #EDE9FE; color: #6D28D9; }
+/* ألوان النص داكنة بما يكفي لتباين ≥ 4.5:1 على خلفياتها */
+.badge-green  { background: rgba(220, 237, 227, 0.92); color: #143329; }
+.badge-amber  { background: rgba(250, 232, 215, 0.92); color: #8A4B1F; }
+.badge-red    { background: rgba(254, 226, 226, 0.92); color: #991B1B; }
+.badge-blue   { background: rgba(219, 234, 254, 0.92); color: #1E40AF; }
+.badge-gray   { background: rgba(241, 243, 242, 0.92); color: #4B5563; }
+.badge-purple { background: rgba(237, 233, 254, 0.92); color: #5B21B6; }
+
+/* ---------------------------------------------------------------- الحقول */
 
 .field-label { display:block; font-size:12px; font-weight:700; color:#374151; margin-bottom:6px; }
 .field-input {
-  width:100%; border:1.5px solid #E3E8E5; border-radius:10px;
-  padding:10px 14px; font-size:13.5px; color:#1F2937; background:#FBFCFB;
-  font-family:inherit; transition: border-color .15s, background .15s;
+  width: 100%;
+  border: 1px solid rgba(27, 67, 50, 0.16);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 13.5px;
+  color: #1F2937;
+  background: rgba(255, 255, 255, 0.72);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  box-shadow: inset 0 1px 2px rgba(20, 64, 44, 0.05);
+  font-family: inherit;
+  transition: border-color .15s, background .15s, box-shadow .15s;
 }
-.field-input:focus { outline:none; border-color:#3B7E49; background:#fff; }
-.field-input::placeholder { color:#B6BFB9; }
+.field-input:focus {
+  outline: none;
+  border-color: #3B7E49;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 0 0 4px rgba(59, 126, 73, 0.18);
+}
+.field-input::placeholder { color: #8A938E; }
+
+/* ---------------------------------------------------------------- الأزرار */
 
 .btn {
   display:inline-flex; align-items:center; justify-content:center; gap:7px;
-  padding:10px 20px; border-radius:10px; font-size:13.5px; font-weight:700;
-  border:none; cursor:pointer; transition: background .15s, opacity .15s;
+  padding:10px 20px; border-radius:12px; font-size:13.5px; font-weight:700;
+  border:1px solid transparent; cursor:pointer;
+  transition: background .15s, opacity .15s, box-shadow .2s, transform .15s;
 }
-.btn-primary { background:#1B4332; color:#fff; }
-.btn-primary:hover:not(:disabled) { background:#2D6339; }
-.btn-accent  { background:#DB9357; color:#fff; }
-.btn-accent:hover:not(:disabled) { background:#C87A3C; }
-.btn-ghost   { background:#F1F3F2; color:#374151; }
-.btn-ghost:hover:not(:disabled) { background:#E5E9E7; }
-.btn-danger  { background:#FEE2E2; color:#B91C1C; }
-.btn-danger:hover:not(:disabled) { background:#FECACA; }
-.btn:disabled { opacity:.5; cursor:not-allowed; }
+.btn:focus-visible { outline: 3px solid rgba(59, 126, 73, 0.45); outline-offset: 2px; }
 
-.card { background:#fff; border:1px solid #EBEFED; border-radius:14px; box-shadow:0 1px 2px rgba(16,24,40,.04); }
+.btn-primary {
+  background: linear-gradient(135deg, #1B4332 0%, #2D6339 100%);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 20px -8px rgba(27, 67, 50, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+.btn-primary:hover:not(:disabled) { box-shadow: 0 12px 28px -8px rgba(27, 67, 50, 0.75), inset 0 1px 0 rgba(255,255,255,.22); transform: translateY(-1px); }
+
+/* برتقالي الشعار بدرجة أعمق ليبقى النص الأبيض مقروءاً (≥ 4.5:1) */
+.btn-accent {
+  background: linear-gradient(135deg, #A65F2C 0%, #93521F 100%);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 20px -8px rgba(166, 95, 44, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+.btn-accent:hover:not(:disabled) { box-shadow: 0 12px 28px -8px rgba(166, 95, 44, 0.75); transform: translateY(-1px); }
+
+.btn-ghost {
+  background: rgba(255, 255, 255, 0.6);
+  color: #374151;
+  border-color: rgba(255, 255, 255, 0.8);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 14px -8px rgba(20, 64, 44, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+.btn-ghost:hover:not(:disabled) { background: rgba(255, 255, 255, 0.85); }
+
+.btn-danger {
+  background: rgba(254, 226, 226, 0.85);
+  color: #991B1B;
+  border-color: rgba(255, 255, 255, 0.7);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+.btn-danger:hover:not(:disabled) { background: rgba(254, 202, 202, 0.95); }
+.btn:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+
+/* ---------------------------------------------------------------- إمكانية الوصول
+   من يطلب تقليل الشفافية، أو متصفح بلا backdrop-filter: ألواح شبه معتمة بنفس الشكل. */
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass, .card, .glass-bar, .field-input, .btn-ghost, .badge { background-color: rgba(255, 255, 255, 0.96); }
+  .glass-strong { background: #fff; }
+  .glass-dark { background: #10301F; }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass, .card, .glass-bar { background: rgba(255, 255, 255, 0.94); }
+  .glass-strong { background: #fff; }
+  .glass-dark { background: #10301F; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  a.card, .btn { transition: none; }
+  a.card:hover, .btn:hover { transform: none !important; }
+}
+
+/* الطباعة: بلا تأثيرات */
+@media print {
+  html { background: #fff; }
+  .glass, .card, .glass-bar, .glass-dark, .glass-strong { background: #fff; box-shadow: none; backdrop-filter: none; }
+}

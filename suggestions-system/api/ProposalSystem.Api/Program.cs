@@ -113,12 +113,16 @@ builder.Services.AddHsts(o =>
 });
 
 // ---------------------------------------------------------------- brute-force protection
+// Per-IP login throttle on top of the per-account lockout. Offices behind one NAT address share
+// the budget, so it is configurable (Security:LoginRateLimit).
+var loginPermits = Math.Max(1, config.GetValue("Security:LoginRateLimit:PermitLimit", 10));
+var loginWindow = TimeSpan.FromMinutes(Math.Max(1, config.GetValue("Security:LoginRateLimit:WindowMinutes", 5)));
 builder.Services.AddRateLimiter(o =>
 {
     o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
     o.AddPolicy("login", ctx => RateLimitPartition.GetFixedWindowLimiter(
         ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-        _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(5) }));
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = loginPermits, Window = loginWindow }));
 });
 
 if (config.GetValue<bool>("Security:BehindReverseProxy"))

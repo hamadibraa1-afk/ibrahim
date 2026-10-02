@@ -14,7 +14,7 @@
            class="w-80 border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-teal">
   </div>
 
-  <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
+  <div class="bg-white glass rounded-xl border border-gray-100 overflow-hidden">
     <table class="w-full text-[12.5px]">
       <thead>
         <tr class="text-[11px] text-gray-400 bg-gray-50">
@@ -78,8 +78,8 @@
 
 <!-- Add/Edit Modal -->
 @if (showModal) {
-  <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50" (click)="closeModal()">
-    <div class="bg-white rounded-2xl w-[520px] max-h-[90vh] overflow-y-auto p-7" (click)="$event.stopPropagation()">
+  <div class="fixed inset-0 bg-black/40 glass-overlay flex items-center justify-center z-50" (click)="closeModal()">
+    <div class="bg-white glass-strong rounded-2xl w-[520px] max-h-[90vh] overflow-y-auto p-7" (click)="$event.stopPropagation()">
       <h2 class="text-base font-bold text-navy mb-5">{{ editingUser ? 'تعديل بيانات مستخدم' : 'إضافة مستخدم جديد' }}</h2>
 
       <form [formGroup]="form" (ngSubmit)="save()" class="space-y-4">

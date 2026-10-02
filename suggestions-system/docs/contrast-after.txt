@@ -1,0 +1,15 @@
+anonymous /login             texts= 19  min=5.38  failures=0
+EMP-1001 /dashboard          texts= 54  min=4.89  failures=0
+EMP-1001 /impact             texts= 74  min=4.89  failures=0
+EMP-1001 /proposals/1        texts= 79  min=4.89  failures=0
+EMP-1001 /proposals/7        texts= 60  min=4.89  failures=0
+EMP-1001 /users              texts=101  min=4.84  failures=0
+EMP-1001 /form-settings      texts= 80  min=4.89  failures=0
+EMP-1001 /audit              texts= 83  min=4.84  failures=0
+EMP-1002 /screening          texts= 55  min=4.89  failures=0
+EMP-1002 /proposals/8        texts= 39  min=4.89  failures=0
+EMP-1002 /notifications      texts= 39  min=4.89  failures=0
+EMP-1004 /my-proposals       texts= 41  min=4.89  failures=0
+EMP-2001 /my-proposals       texts=149  min=4.83  failures=0
+EMP-2001 /submit             texts= 28  min=4.89  failures=0
+TOTAL failures: 0
