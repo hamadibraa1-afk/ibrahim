@@ -10,7 +10,7 @@ using ProposalSystem.Api.Realtime;
 using ProposalSystem.Api.Security;
 using ProposalSystem.Api.Workflow;
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions { Args = args, ContentRootPath = Program.ResolveContentRoot(args) });
 var config = builder.Configuration;
 
 builder.WebHost.ConfigureKestrel(o => o.AddServerHeader = false);
@@ -41,12 +41,13 @@ builder.Services.Configure<AttachmentOptions>(config.GetSection("Attachments"));
 
 // ---------------------------------------------------------------- data
 var provider = config.GetValue("DatabaseProvider", "Sqlite");
+var sqliteConnection = PrepareSqlite(config.GetConnectionString("Sqlite"), builder.Environment.ContentRootPath);
 builder.Services.AddDbContext<AppDbContext>(o =>
 {
     if (string.Equals(provider, "SqlServer", StringComparison.OrdinalIgnoreCase))
         o.UseSqlServer(config.GetConnectionString("SqlServer"), sql => sql.EnableRetryOnFailure(3));
     else
-        o.UseSqlite(config.GetConnectionString("Sqlite"));
+        o.UseSqlite(sqliteConnection);
 });
 
 // ---------------------------------------------------------------- application services
@@ -196,4 +197,39 @@ if (spaHosted)
 
 await app.RunAsync();
 
-public partial class Program;
+public partial class Program
+{
+    /// <summary>
+    /// A relative SQLite path (App_Data/proposals.db) is anchored to the application folder, not
+    /// to whatever directory the process was started from, and its folder is created: SQLite
+    /// creates the file but not the directory, so a fresh copy would otherwise fail to start.
+    /// </summary>
+    /// <summary>
+    /// ASP.NET Core uses the current directory as the content root. A published copy started from
+    /// elsewhere (a shortcut, another folder) would then miss wwwroot and put App_Data in the wrong
+    /// place, so when the current directory isn't the application's, use the executable's folder.
+    /// An explicit --contentRoot / ASPNETCORE_CONTENTROOT (as hosting tools pass) always wins.
+    /// </summary>
+    internal static string? ResolveContentRoot(string[] args)
+    {
+        if (args.Any(a => a.StartsWith("--contentRoot", StringComparison.OrdinalIgnoreCase))
+            || !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ASPNETCORE_CONTENTROOT")))
+            return null;
+        if (File.Exists(Path.Combine(Directory.GetCurrentDirectory(), "appsettings.json")))
+            return null; // dotnet run from the project folder, or started inside the published folder
+        return AppContext.BaseDirectory;
+    }
+
+    internal static string PrepareSqlite(string? connectionString, string contentRoot)
+    {
+        var csb = new Microsoft.Data.Sqlite.SqliteConnectionStringBuilder(connectionString ?? "Data Source=App_Data/proposals.db");
+        if (string.IsNullOrWhiteSpace(csb.DataSource) || csb.DataSource == ":memory:" || csb.Mode == Microsoft.Data.Sqlite.SqliteOpenMode.Memory)
+            return csb.ToString();
+        if (!Path.IsPathRooted(csb.DataSource))
+            csb.DataSource = Path.Combine(contentRoot, csb.DataSource);
+        var folder = Path.GetDirectoryName(csb.DataSource);
+        if (!string.IsNullOrEmpty(folder))
+            Directory.CreateDirectory(folder);
+        return csb.ToString();
+    }
+}
