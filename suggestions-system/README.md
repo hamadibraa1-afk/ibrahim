@@ -35,8 +35,13 @@
 
 ## التشغيل على ويندوز بضغطة مزدوجة
 
-**النسخة الجاهزة** (لا تحتاج تثبيت أي شيء): فك ضغط `SuggestionsSystem-Windows-Ready.zip` ثم اضغط مرتين على
-`Start.cmd`، ويفتح المتصفح على http://localhost:5199. التعليمات بالعربية داخل المجلد.
+**النسخة الجاهزة** `SuggestionsSystem-Windows.zip`: فك الضغط ثم اضغط مرتين على `Start.cmd`، ويفتح المتصفح على
+http://localhost:5199. تحتاج فقط «ASP.NET Core Runtime 8» من مايكروسوفت (تثبيت مجاني لمرة واحدة)؛ إن لم يكن
+مثبّتاً يفتح `Start.cmd` صفحة التنزيل. لا تحتاج Node.js ولا SQL Server. التعليمات بالعربية داخل المجلد.
+
+لبناء هذه الحزمة من الكود: `npx ng build` في `web`، ثم
+`dotnet publish -c Release -r win-x64 --self-contained false -o publish` في `api/ProposalSystem.Api`،
+وانسخ `web/dist/frontend/browser` إلى `publish/wwwroot`.
 
 **من الكود المصدري** (يحتاج .NET 8 SDK و Node.js 20 أو أحدث):
 1. اضغط مرتين على `start-api.cmd` (الخادم على 5199).
