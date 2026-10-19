@@ -383,7 +383,8 @@ public static class DevSeeder
     private static void SeedApprovalFlows(AppDbContext db)
     {
         var leaveFlow = new ApprovalFlow(RequestKind.Leave, "مسار اعتماد الإجازات", "Leave approval", 48);
-        leaveFlow.SetLevels([ApprovalStage.SectionHead, ApprovalStage.DepartmentManager, ApprovalStage.Hr]);
+        // Office leave starts with the employee's direct manager, as permissions do.
+        leaveFlow.SetLevels([ApprovalStage.LineManager, ApprovalStage.DepartmentManager, ApprovalStage.Hr]);
         var permissionFlow = new ApprovalFlow(RequestKind.Permission, "مسار اعتماد الأذونات", "Permission approval", 8);
         permissionFlow.SetLevels([ApprovalStage.LineManager]);
 

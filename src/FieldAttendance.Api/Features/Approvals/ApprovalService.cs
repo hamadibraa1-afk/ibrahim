@@ -27,12 +27,16 @@ public sealed class ApprovalService(AppDbContext db, NotificationService notific
         var approvers = await ApproversAsync(employeeId, ct);
 
         var order = 0;
+        var signing = new HashSet<Guid>();
         foreach (var stage in stages)
         {
             order++;
             var approver = approvers.GetValueOrDefault(stage);
             var step = new ApprovalStep(kind, requestId, employeeId, order, stage, approver);
             if (approver is null) step.Skip("لا يوجد شاغل لهذا المستوى");
+            // One person, one signature: a direct manager who is also the department manager signs
+            // at the first of their levels, and the later one is marked as already covered.
+            else if (!signing.Add(approver.Value)) step.Skip("اعتمده في مستوى سابق");
             db.ApprovalSteps.Add(step);
         }
 
