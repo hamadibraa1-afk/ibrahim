@@ -84,7 +84,9 @@ test('the patient’s mood note opens a crisis and the high-risk banner appears 
 });
 
 test('the crisis console lists the event with its number, source and SLA countdown', async () => {
-  await page.getByRole('link', { name: 'غرفة الطوارئ' }).click();
+  // Sara is not on call (no console in her menu); she opens it from her patient's alert.
+  await expect(page.getByRole('link', { name: 'غرفة الطوارئ', exact: true })).toHaveCount(0);
+  await page.getByTestId('crisis-alert').filter({ hasText: pseudonymId }).getByTestId('open-console').click();
   await expect(page).toHaveURL(/\/crisis/);
   const event = page.getByTestId('event').filter({ hasText: pseudonymId });
   await expect(event).toBeVisible();

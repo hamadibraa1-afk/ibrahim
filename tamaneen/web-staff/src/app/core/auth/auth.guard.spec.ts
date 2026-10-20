@@ -47,11 +47,13 @@ describe('route guards', () => {
     expect(await navigate('/crisis')).toBe('/login?returnUrl=%2Fcrisis');
   });
 
-  it('keeps the crisis console to supervisors, leads and on-call therapists', async () => {
+  it('keeps the crisis console to clinical staff: a therapist off call reaches it for her own patients', async () => {
     signedIn.set(true);
     const session = TestBed.inject(SessionService);
     session.setRoles(['therapist']);
-    expect(await navigate('/crisis')).toBe('/dashboard');
+    expect(await navigate('/crisis')).toBe('/crisis');
+    session.setRoles(['admin']);
+    expect(await navigate('/crisis')).toBe('/home');
   });
 
   it('lets an on-call therapist in, and sends non-therapists away from the dashboard', async () => {

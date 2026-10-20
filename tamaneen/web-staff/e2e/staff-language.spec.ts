@@ -1,11 +1,11 @@
 import { type APIRequestContext, expect, test } from '@playwright/test';
-import { CRISIS, API, moodCrisis, onboardAndBookWithSara, signUpPatient } from './helpers/patient-api';
+import { API, CRISIS, KHALID, moodCrisis, onboardAndBook, signUpPatient } from './helpers/patient-api';
 import { STAFF_PASSWORD, signIn, staffEmail } from './helpers/staff';
 import { freshTotp } from './helpers/totp';
 
 /**
- * Language switch on the sign-in page and the signed-in portal. Uses Khalid (therapist, on call) so the
- * dashboard and the console both show a live crisis; the event is closed by the lead through the API afterwards.
+ * Language switch on the sign-in page and the signed-in portal. The test patient books with Khalid (therapist, on
+ * call), so his dashboard and console both show the crisis; the lead closes the event through the API afterwards.
  */
 test.use({ locale: 'ar-SA', timezoneId: 'Asia/Riyadh' });
 
@@ -42,7 +42,7 @@ async function closeAsLead(request: APIRequestContext, pseudonymId: string): Pro
 test('the dashboard and the console switch to English, with server texts in English too', async ({ page, request }) => {
   test.setTimeout(120_000);
   const patient = await signUpPatient(request);
-  await onboardAndBookWithSara(request, patient);
+  await onboardAndBook(request, patient, KHALID);
   const pid = (JSON.parse(Buffer.from(patient.accessToken.split('.')[1], 'base64url').toString()) as { pid: string }).pid;
   await moodCrisis(request, patient);
 
@@ -82,7 +82,7 @@ test('the dashboard and the console switch to English, with server texts in Engl
   expect(nav.x + nav.width).toBeLessThanOrEqual(main.x + 1);
 
   // The console shows the level and source labels in English.
-  await page.getByRole('link', { name: 'Crisis console' }).click();
+  await sidenav.getByRole('link', { name: 'Crisis console' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Crisis console' })).toBeVisible();
   const event = page.getByTestId('event').filter({ hasText: pid });
   await expect(event).toContainText('Critical');

@@ -34,6 +34,7 @@
           <button mat-stroked-button type="button" (click)="refer(alert)" [disabled]="busyAlerts().has(alert.eventId)" data-testid="refer">
             {{ 'dashboard.alerts.refer' | translate }}
           </button>
+          <a mat-button routerLink="/crisis" data-testid="open-console">{{ 'dashboard.alerts.openConsole' | translate }}</a>
         </div>
       </article>
     }

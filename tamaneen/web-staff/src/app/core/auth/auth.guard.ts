@@ -20,11 +20,16 @@ export const signedOutGuard: CanActivateFn = () => {
   return inject(Router).parseUrl(inject(SessionService).home());
 };
 
-/** Crisis console: supervisors, clinical leads, and therapists on call. */
+/**
+ * Crisis console: supervisors, clinical leads and on-call therapists work it from the menu. A therapist who is
+ * not on call still reaches it from an alert on her dashboard, to work her own patient's event (the worker only
+ * lists the events she may see).
+ */
 export const crisisAccessGuard: CanMatchFn = () => {
   const session = inject(SessionService);
   // Matching runs before the shell's authGuard: leave signed-out visitors to it so the deep link is kept.
-  return !inject(AuthService).signedIn() || session.crisisAccess() ? true : inject(Router).parseUrl(session.home());
+  const allowed = session.crisisAccess() || session.role() === 'therapist';
+  return !inject(AuthService).signedIn() || allowed ? true : inject(Router).parseUrl(session.home());
 };
 
 /** Therapist dashboard. */

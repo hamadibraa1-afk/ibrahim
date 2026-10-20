@@ -51,8 +51,16 @@ function auth(patient: TestPatient) {
   return { Authorization: `Bearer ${patient.accessToken}` };
 }
 
+export const SARA = { displayName: 'أ. سارة م.', specialty: 'sleep' };
+export const KHALID = { displayName: 'أ. خالد ع.', specialty: 'anxiety' };
+
 /** Consents, safety info, direct path, a negative C-SSRS and a confirmed booking with Sara: the patient becomes hers. */
-export async function onboardAndBookWithSara(request: APIRequestContext, patient: TestPatient): Promise<{ therapistId: string }> {
+export function onboardAndBookWithSara(request: APIRequestContext, patient: TestPatient): Promise<{ therapistId: string }> {
+  return onboardAndBook(request, patient, SARA);
+}
+
+/** The same onboarding, booking the first session with the given therapist (care assignment). */
+export async function onboardAndBook(request: APIRequestContext, patient: TestPatient, therapist: { displayName: string; specialty: string }): Promise<{ therapistId: string }> {
   const headers = auth(patient);
 
   const put = async (path: string, data: unknown) => {
@@ -70,15 +78,15 @@ export async function onboardAndBookWithSara(request: APIRequestContext, patient
   await put('/v1/me/path', { path: 'direct' });
   await post('/v1/screening/cssrs', { answers: [false, false, false, false, false, false] });
 
-  const therapistsBody = await json<unknown>(await request.get(`${API}/v1/therapists`, { headers, params: { specialty: 'sleep' } }), 'therapists');
+  const therapistsBody = await json<unknown>(await request.get(`${API}/v1/therapists`, { headers, params: { specialty: therapist.specialty } }), 'therapists');
   const therapists = (Array.isArray(therapistsBody) ? therapistsBody : ((therapistsBody as { items?: unknown[] }).items ?? [])) as { id?: string; therapistId?: string; displayName: string }[];
-  const sara = therapists.find((t) => t.displayName === 'أ. سارة م.');
-  expect(sara, `Sara in ${JSON.stringify(therapists.map((t) => t.displayName))}`).toBeTruthy();
-  const therapistId = (sara!.id ?? sara!.therapistId)!;
+  const chosen = therapists.find((t) => t.displayName === therapist.displayName);
+  expect(chosen, `${therapist.displayName} in ${JSON.stringify(therapists.map((t) => t.displayName))}`).toBeTruthy();
+  const therapistId = (chosen!.id ?? chosen!.therapistId)!;
 
   const slotsBody = await json<unknown>(await request.get(`${API}/v1/therapists/${therapistId}/slots`, { headers }), 'slots');
   const slots = (Array.isArray(slotsBody) ? slotsBody : ((slotsBody as { slots?: unknown[]; items?: unknown[] }).slots ?? (slotsBody as { items?: unknown[] }).items ?? [])) as { id?: string; slotId?: string }[];
-  expect(slots.length, 'Sara has free slots').toBeGreaterThan(0);
+  expect(slots.length, `${therapist.displayName} has free slots`).toBeGreaterThan(0);
   // Spread parallel runs over different slots.
   const slot = slots[Math.floor(Math.random() * Math.min(slots.length, 20))];
   const hold = await post<{ holdId?: string; id?: string }>('/v1/bookings/holds', { slotId: slot.id ?? slot.slotId });

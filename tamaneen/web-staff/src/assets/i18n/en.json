@@ -140,7 +140,8 @@
       "refer": "Refer to on-call",
       "acknowledged": "Acknowledged",
       "acknowledgedDone": "Alert acknowledged. You are now handling this case.",
-      "referred": "Referred to the on-call team."
+      "referred": "Referred to the on-call team.",
+      "openConsole": "Open in crisis console"
     },
     "stats": {
       "region": "Today at a glance",

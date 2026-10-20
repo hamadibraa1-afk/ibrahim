@@ -101,9 +101,9 @@ test.describe('Arabic patient journey', () => {
     await ar();
     const suggestions = page.getByRole('list', { name: 'الأخصائيون المقترحون' }).locator(':scope > li');
     await expect(suggestions).toHaveCount(3);
-    await expect(suggestions.first()).toContainText(/لماذا اقترحناه?:/);
+    await expect(suggestions.first()).toContainText(/لماذا اقترحناه(ا)?:/);
     await expect(suggestions.first()).toContainText('خبرة في');
-    await expect(suggestions.nth(1)).toContainText(/لماذا اقترحناه?:/);
+    await expect(suggestions.nth(1)).toContainText(/لماذا اقترحناه(ا)?:/);
     const name = (await suggestions.first().getByRole('heading', { level: 2 }).textContent())!.trim();
 
     // P25 profile
@@ -139,7 +139,8 @@ test.describe('Arabic patient journey', () => {
     await page.getByTestId('language-toggle').click();
     await expect(page).toHaveURL(/\/en\/home\?from=e2e$/);
     await expectDirection(page, 'en');
-    await expect(page.getByRole('heading', { level: 2, name: 'Your session with' }).or(page.getByText(`Your session with`)).first()).toBeVisible();
+    await expect(page.getByRole('region', { name: /^Your session with / })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Browse specialists' })).toHaveCount(0);
     await expect(page.getByTestId('help-now')).toHaveText('Help now');
     await page.getByTestId('language-toggle').click();
     await expect(page).toHaveURL(/\/ar\/home\?from=e2e$/);
@@ -158,14 +159,14 @@ test.describe('Arabic patient journey', () => {
     await expect(emergency.first()).toBeVisible();
     await expect(emergency.first()).toContainText('911');
 
-    // While the event is open the app keeps the patient on the crisis screen.
-    await page.goto('/ar/home');
-    await expect(page).toHaveURL(/\/ar\/crisis$/);
+    // While the event is open the patient is locked out of the chat (GET /v1/me → chatLocked: true).
+    await expect.poll(async () => (await page.evaluate(async () => (await fetch('/api/v1/me')).json())).chatLocked).toBe(true);
 
     // The supervisor closes the event; home works again.
     const event = await openCrisisEvent(pseudonymId);
     await closeCrisisEvent(event.eventId, 'E2E: patient reached and safe.');
     await page.reload();
+    await expect.poll(async () => (await page.evaluate(async () => (await fetch('/api/v1/me')).json())).chatLocked).toBe(false);
     await page.goto('/ar/home');
     await expect(page).toHaveURL(/\/ar\/home$/);
     await ar();

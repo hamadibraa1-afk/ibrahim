@@ -127,7 +127,7 @@ public static class SchedulingEndpoints
         var until = now.AddDays(days);
 
         // Times at least 2 hours ahead, so the therapist can read the file first.
-        var earliest = now.AddHours(2);
+        var earliest = now + TherapistDirectory.MinimumNotice;
         var slots = await p.Db.AvailabilitySlots.AsNoTracking()
             .Where(s => s.TherapistUserId == id && s.StartsAtUtc > earliest && s.StartsAtUtc <= until
                         && (s.Status == SlotStatus.Open || (s.Status == SlotStatus.Held && (s.HeldUntilUtc <= now || s.HeldByPatientId == p.PatientId))))
@@ -148,7 +148,7 @@ public static class SchedulingEndpoints
 
         var slot = await p.Db.AvailabilitySlots.FirstOrDefaultAsync(s => s.Id == request.SlotId, ct).ConfigureAwait(false)
             ?? throw new DomainException(ErrorCodes.SlotUnavailable, "Slot not found.");
-        if (slot.StartsAtUtc <= clock.UtcNow.AddHours(2))
+        if (slot.StartsAtUtc <= clock.UtcNow + TherapistDirectory.MinimumNotice)
         {
             throw new DomainException(ErrorCodes.SlotUnavailable, "Slot too soon.");
         }

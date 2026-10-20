@@ -6,6 +6,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
+import { RouterLink } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { CrisisApiService, upsertEvent } from '../../core/api/crisis-api.service';
 import { type ShownError, shownError } from '../../core/api/problem';
@@ -29,7 +30,7 @@ export function partOfDay(date: Date): 'morning' | 'afternoon' | 'evening' {
 /** S01 therapist dashboard: live high-risk alerts, the day at a glance, files to approve and today's sessions. */
 @Component({
   selector: 'tm-dashboard',
-  imports: [MatButtonModule, MatMenuModule, MatProgressBarModule, MatTableModule, TranslateModule, LocalDatePipe, ProblemMessageComponent, RiskTagComponent],
+  imports: [MatButtonModule, MatMenuModule, RouterLink, MatProgressBarModule, MatTableModule, TranslateModule, LocalDatePipe, ProblemMessageComponent, RiskTagComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',

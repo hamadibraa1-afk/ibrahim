@@ -40,6 +40,9 @@ public sealed class TherapistDirectory(TamaneenDbContext db, IClock clock, IOpti
     /// <summary>Evening means a session starting at 17:00 or later in the pilot's time zone.</summary>
     public const int EveningHour = 17;
 
+    /// <summary>Bookable times start at least this far ahead, so the therapist can read the file first.</summary>
+    public static readonly TimeSpan MinimumNotice = TimeSpan.FromHours(2);
+
     private static readonly string[] Honorifics = ["أ.", "د.", "Dr.", "Ms.", "Mr.", "Mrs."];
 
     public async Task<List<TherapistSummaryDto>> ListAsync(string language, IEnumerable<Guid>? only, CancellationToken ct)
@@ -55,8 +58,9 @@ public sealed class TherapistDirectory(TamaneenDbContext db, IClock clock, IOpti
         var ids2 = profiles.Select(p => p.UserId).ToList();
         var names = await db.StaffProfiles.AsNoTracking().Where(s => ids2.Contains(s.UserId)).ToDictionaryAsync(s => s.UserId, ct).ConfigureAwait(false);
         var now = clock.UtcNow;
+        var earliest = now + MinimumNotice;
         var slots = await db.AvailabilitySlots.AsNoTracking()
-            .Where(s => ids2.Contains(s.TherapistUserId) && s.StartsAtUtc > now && (s.Status == SlotStatus.Open || (s.Status == SlotStatus.Held && s.HeldUntilUtc <= now)))
+            .Where(s => ids2.Contains(s.TherapistUserId) && s.StartsAtUtc > earliest && (s.Status == SlotStatus.Open || (s.Status == SlotStatus.Held && s.HeldUntilUtc <= now)))
             .Select(s => new { s.TherapistUserId, s.StartsAtUtc })
             .ToListAsync(ct).ConfigureAwait(false);
         var zone = TimeZoneInfo.FindSystemTimeZoneById(platform.Value.TimeZone);
