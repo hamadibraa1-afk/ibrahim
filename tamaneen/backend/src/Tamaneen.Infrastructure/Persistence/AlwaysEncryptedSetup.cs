@@ -7,7 +7,7 @@ namespace Tamaneen.Infrastructure.Persistence;
 /// <summary>
 /// Always Encrypted protects selected columns from anyone with database access, including DBAs.
 /// The column master key lives in Azure Key Vault; the client driver decrypts transparently.
-/// Columns are encrypted by ops/sql/always-encrypted.sql (needs the key path of the environment).
+/// Columns are encrypted by ops/always-encrypted.ps1, run once per environment with its Key Vault key.
 /// </summary>
 public static class AlwaysEncryptedSetup
 {

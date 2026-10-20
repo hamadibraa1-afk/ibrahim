@@ -11,3 +11,6 @@ coverage/
 playwright-report/
 test-results/
 *.local.json
+out-tsc/
+web-staff/.angular/
+*.tsbuildinfo

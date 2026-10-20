@@ -1,0 +1,41 @@
+<div class="shell" [dir]="language.direction()" data-testid="shell">
+  <mat-toolbar class="toolbar" role="banner">
+    <span class="brand">{{ 'app.name' | translate }}</span>
+    <span class="spacer"></span>
+    <tm-language-toggle />
+  </mat-toolbar>
+
+  <mat-sidenav-container class="body">
+    <mat-sidenav mode="side" opened position="start" class="nav" data-testid="sidenav">
+      @if (session.roles().length > 1) {
+        <mat-form-field appearance="outline" class="role">
+          <mat-label>{{ 'shell.workingAs' | translate }}</mat-label>
+          <mat-select [value]="session.role()" (valueChange)="switchRole($event)" data-testid="role-switch">
+            @for (role of session.roles(); track role) {
+              <mat-option [value]="role">{{ 'roles.' + role | translate }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      }
+
+      <nav [attr.aria-label]="'shell.menu' | translate">
+        @for (group of session.navigation(); track group.key) {
+          <h2 class="group">{{ 'navGroups.' + group.key | translate }}</h2>
+          <mat-nav-list>
+            @for (item of group.items; track item.key) {
+              <a mat-list-item [routerLink]="['/', item.key]" routerLinkActive="active" ariaCurrentWhenActive="page">
+                {{ 'nav.' + item.key | translate }}
+              </a>
+            }
+          </mat-nav-list>
+        }
+      </nav>
+    </mat-sidenav>
+
+    <mat-sidenav-content>
+      <main id="main" class="content">
+        <router-outlet />
+      </main>
+    </mat-sidenav-content>
+  </mat-sidenav-container>
+</div>

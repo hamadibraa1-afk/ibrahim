@@ -1,0 +1,92 @@
+{
+  "app": {
+    "name": "Tamaneen",
+    "portal": "Staff portal"
+  },
+  "language": {
+    "target": "العربية",
+    "switchLabel": "Switch to Arabic"
+  },
+  "shell": {
+    "workingAs": "Working as",
+    "menu": "Staff menu",
+    "signOut": "Sign out"
+  },
+  "roles": {
+    "therapist": "Therapist",
+    "supervisor": "Supervisor",
+    "lead": "Clinical lead",
+    "admin": "Administrator"
+  },
+  "navGroups": {
+    "workspace": "Workspace",
+    "oncall": "On call & triage",
+    "clinical": "Clinical oversight",
+    "settings": "Settings",
+    "content": "Content",
+    "users": "Users",
+    "operations": "Operations",
+    "monitoring": "Monitoring & quality"
+  },
+  "nav": {
+    "dashboard": "My dashboard",
+    "patients": "My patients",
+    "messages": "Messages",
+    "schedule": "Schedule",
+    "alerts": "Alerts",
+    "notifications": "Notifications",
+    "availability": "Availability",
+    "leave": "Leave mode",
+    "wellbeing": "My wellbeing",
+    "cpd": "Supervision & CPD",
+    "profile": "Professional profile",
+    "triage": "Triage queue",
+    "crisis": "Crisis console",
+    "reviews": "Incident reviews",
+    "noshow": "No-show follow-up",
+    "oncall": "On call",
+    "rota": "On-call rota",
+    "reassign": "Reassignment",
+    "qa": "Quality review",
+    "metrics": "Metrics",
+    "rules": "Crisis rules",
+    "reporting": "Safeguarding reports",
+    "settings-platform": "Platform settings",
+    "ai": "AI settings",
+    "calendar": "Calendar & holidays",
+    "integrations": "Integrations",
+    "modules": "Add-ons",
+    "flags": "Kill switches",
+    "content": "Content",
+    "templates": "Templates",
+    "tests": "Tests & scales",
+    "catalogs": "Lists & catalogs",
+    "surveys": "Surveys",
+    "announce": "Announcements & maintenance",
+    "users": "Users",
+    "import": "Import therapists",
+    "verifications": "License verification",
+    "roles": "Roles & permissions",
+    "notifrules": "Notification rules",
+    "capacity": "Capacity & waitlist",
+    "special": "Special cases",
+    "datareq": "Data requests",
+    "complaints": "Complaints",
+    "security": "Security incidents",
+    "aieval": "AI evaluation",
+    "audit": "Audit log",
+    "health": "System health",
+    "dr": "Backup & recovery",
+    "reports": "Reports"
+  },
+  "home": {
+    "title": "Welcome to the staff portal",
+    "subtitle": "You are working as: {{role}}",
+    "api": {
+      "title": "Server connection",
+      "loading": "Checking the connection…",
+      "error": "The server can’t be reached. Crisis alerts still arrive by phone and SMS until it’s back.",
+      "language": "Server replied in: {{language}} · direction: {{dir}}"
+    }
+  }
+}

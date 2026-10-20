@@ -1,0 +1,32 @@
+{
+  "meta": {
+    "title": "Tamaneen",
+    "description": "A safe, private space for mental health support, reviewed by licensed professionals."
+  },
+  "common": {
+    "appName": "Tamaneen",
+    "skipToContent": "Skip to content",
+    "helpNow": "Help now",
+    "helpNowLabel": "Help now: emergency resources are always available"
+  },
+  "languageToggle": {
+    "target": "العربية",
+    "label": "Switch to Arabic"
+  },
+  "welcome": {
+    "calm": "Take a deep breath. You're in the right place.",
+    "title": "We're here to listen, without judgment",
+    "subtitle": "Talk to us in complete privacy, and we'll connect you with a therapist who fits you within {hours} hours.",
+    "trustPrivate": "Completely private · we don't ask for your real name",
+    "trustHuman": "A person reviews your file · AI only assists",
+    "start": "Let's begin",
+    "haveAccount": "I have an account",
+    "emergencyCall": "In danger right now? Call {number}",
+    "emergencyResources": "In danger right now? Open emergency resources"
+  },
+  "notFound": {
+    "title": "We couldn't find this page",
+    "body": "The link may have changed. You can go back to the start, and Help now is always available.",
+    "home": "Back to the start"
+  }
+}

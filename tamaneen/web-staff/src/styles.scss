@@ -1,0 +1,40 @@
+@use '@angular/material' as mat;
+
+@include mat.core();
+
+// Design tokens from the handoff file (staff portal).
+$tm-primary: (
+  50: #e3efed, 100: #b9d3ce, 200: #8cc3b8, 300: #5fa69a, 400: #3d8a7f, 500: #1f5f5b,
+  600: #1b5551, 700: #163f3c, 800: #11322f, 900: #0b2422, A100: #b9f0e6, A200: #86e5d4, A400: #4fd3bd, A700: #2fc4ab,
+  contrast: (50: #1b2a2f, 100: #1b2a2f, 200: #1b2a2f, 300: #1b2a2f, 400: #ffffff, 500: #ffffff, 600: #ffffff, 700: #ffffff, 800: #ffffff, 900: #ffffff, A100: #1b2a2f, A200: #1b2a2f, A400: #1b2a2f, A700: #1b2a2f),
+);
+$tm-accent: (
+  50: #fff0dd, 100: #fdd9b5, 200: #f7bb88, 300: #ef9c5e, 400: #e78a4c, 500: #e07a3f,
+  600: #c96a33, 700: #a95629, 800: #8a4520, 900: #6b3417, A100: #ffd7a8, A200: #ffbb75, A400: #ff9d42, A700: #ff8e28,
+  contrast: (50: #1b2a2f, 100: #1b2a2f, 200: #1b2a2f, 300: #1b2a2f, 400: #1b2a2f, 500: #1b2a2f, 600: #ffffff, 700: #ffffff, 800: #ffffff, 900: #ffffff, A100: #1b2a2f, A200: #1b2a2f, A400: #1b2a2f, A700: #1b2a2f),
+);
+
+$theme: mat.define-light-theme((
+  color: (primary: mat.define-palette($tm-primary, 500), accent: mat.define-palette($tm-accent, 500), warn: mat.define-palette(mat.$red-palette, 800)),
+  typography: mat.define-typography-config($font-family: '"IBM Plex Sans Arabic", system-ui, sans-serif'),
+  density: 0,
+));
+
+@include mat.all-component-themes($theme);
+
+:root {
+  --tm-bg: #f6f7f5;
+  --tm-surface: #ffffff;
+  --tm-line: #dde3e1;
+  --tm-primary: #1f5f5b;
+  --tm-primary-strong: #163f3c;
+  --tm-tint: #e3efed;
+  --tm-muted: #4a5a5e;
+  --tm-ink: #1b2a2f;
+  --tm-danger: #9b2c22;
+}
+
+html, body { height: 100%; }
+body { margin: 0; font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif; color: var(--tm-ink); background: var(--tm-bg); }
+:focus-visible { outline: 3px solid #e07a3f; outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
