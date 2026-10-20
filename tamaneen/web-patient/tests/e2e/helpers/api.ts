@@ -130,3 +130,20 @@ export async function pseudonymOf(page: Page): Promise<string> {
   expect(me.pseudonymId).toBeTruthy();
   return me.pseudonymId as string;
 }
+
+/** A verified patient account created straight through the API (for tests that start at sign-in). */
+export async function createPatient(email: string, password: string = STRONG_PASSWORD, language: 'ar' | 'en' = 'ar'): Promise<void> {
+  const eligibility = await call<{ eligibilityToken: string }>(API_URL, 'POST', '/v1/auth/eligibility', { isAdult: true, cityCode: 'RUH' });
+  expect(eligibility.status).toBe(200);
+  const signup = await call<{ challengeId: string }>(API_URL, 'POST', '/v1/auth/signup', {
+    eligibilityToken: eligibility.data.eligibilityToken,
+    nickname: 'مسافر',
+    contactType: 'email',
+    contact: email,
+    password,
+    language,
+  });
+  expect(signup.status, JSON.stringify(signup.data)).toBe(201);
+  const verify = await call(API_URL, 'POST', '/v1/auth/signup/verify', { challengeId: signup.data.challengeId, code: await codeFromOutbox(email) });
+  expect(verify.status, JSON.stringify(verify.data)).toBe(200);
+}
