@@ -52,4 +52,33 @@
   <data name="category.abuse_disclosure" xml:space="preserve"><value>Abuse disclosed</value></data>
   <data name="category.questionnaire" xml:space="preserve"><value>Screening answer</value></data>
   <data name="category.system" xml:space="preserve"><value>System safety stop</value></data>
+  <data name="alert.handed_over.title" xml:space="preserve"><value>Case {0} was handed back to the on-call queue</value></data>
+  <data name="source.intake" xml:space="preserve"><value>Intake chat</value></data>
+  <data name="source.chat" xml:space="preserve"><value>Chat</value></data>
+  <data name="source.journal" xml:space="preserve"><value>Journal</value></data>
+  <data name="source.survey" xml:space="preserve"><value>Survey</value></data>
+  <data name="source.questionnaire" xml:space="preserve"><value>Intake questionnaire</value></data>
+  <data name="source.help_now" xml:space="preserve"><value>Help now button</value></data>
+  <data name="source.screening" xml:space="preserve"><value>Safety check</value></data>
+  <data name="source.summary" xml:space="preserve"><value>Intake summary</value></data>
+  <data name="source.triage" xml:space="preserve"><value>File addendum</value></data>
+  <data name="source.mood" xml:space="preserve"><value>Mood check-in</value></data>
+  <data name="source.homework" xml:space="preserve"><value>Homework note</value></data>
+  <data name="source.safety_plan" xml:space="preserve"><value>Safety plan</value></data>
+  <data name="source.system" xml:space="preserve"><value>System</value></data>
+  <data name="timeline.opened" xml:space="preserve"><value>Event opened automatically from {0}; the chat was paused and the patient saw the crisis screen</value></data>
+  <data name="timeline.paged" xml:space="preserve"><value>Call and message to {0}</value></data>
+  <data name="timeline.acknowledged" xml:space="preserve"><value>Acknowledged and took the case</value></data>
+  <data name="timeline.contacted" xml:space="preserve"><value>Contact with the patient made</value></data>
+  <data name="timeline.local_emergency" xml:space="preserve"><value>Local emergency procedure started</value></data>
+  <data name="timeline.note" xml:space="preserve"><value>Note</value></data>
+  <data name="timeline.handover" xml:space="preserve"><value>Handed over to another on-call clinician</value></data>
+  <data name="timeline.excerpt_viewed" xml:space="preserve"><value>Patient's words shown after extra verification</value></data>
+  <data name="timeline.contact_revealed" xml:space="preserve"><value>Contact data shown after extra verification</value></data>
+  <data name="timeline.closed" xml:space="preserve"><value>Event closed with outcome</value></data>
+  <data name="error.auth.step_up_required" xml:space="preserve"><value>This action needs a valid code from your authenticator app.</value></data>
+  <data name="error.validation" xml:space="preserve"><value>Some of the information is not valid.</value></data>
+  <data name="error.crisis.not_acknowledged" xml:space="preserve"><value>Nobody has taken this case yet.</value></data>
+  <data name="validation.required" xml:space="preserve"><value>This field is required.</value></data>
+  <data name="validation.invalid" xml:space="preserve"><value>This value is not valid.</value></data>
 </root>

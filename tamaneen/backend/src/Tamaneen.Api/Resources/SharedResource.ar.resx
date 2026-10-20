@@ -67,4 +67,14 @@
   <data name="message.language_changed" xml:space="preserve"><value>أصبحت لغتك العربية.</value></data>
   <data name="language.ar" xml:space="preserve"><value>العربية</value></data>
   <data name="language.en" xml:space="preserve"><value>English</value></data>
+  <data name="message.code.signup" xml:space="preserve"><value>رمز التحقق في طمأنينة: {0}. لا تشاركه مع أحد.</value></data>
+  <data name="message.code.recover" xml:space="preserve"><value>رمز استرجاع حسابك في طمأنينة: {0}. إن لم تطلبه فتجاهل هذه الرسالة.</value></data>
+  <data name="message.code.login" xml:space="preserve"><value>رمز الدخول إلى طمأنينة: {0}.</value></data>
+  <data name="message.already_registered" xml:space="preserve"><value>حاول أحدهم إنشاء حساب في طمأنينة بهذا الرقم أو البريد، ولديك حساب من قبل. إن كنت أنت، فسجّل الدخول أو استرجع حسابك.</value></data>
+  <data name="intake.greeting" xml:space="preserve"><value>أهلًا بك. أنا رفيق، وأنا هنا لأستمع وأساعد فريقنا على فهم ما تمر به. كيف كان شعورك خلال الأسبوعين الماضيين؟</value></data>
+  <data name="screening.note" xml:space="preserve"><value>نسأل هذه الأسئلة لكل شخص، لنتأكد أنك بأمان. لا توجد إجابة خاطئة.</value></data>
+  <data name="calendar.summary" xml:space="preserve"><value>جلسة طمأنينة مع {0}</value></data>
+  <data name="calendar.description" xml:space="preserve"><value>يظهر رابط الجلسة في صفحة الموعد قبلها بعشر دقائق.</value></data>
+  <data name="validation.required" xml:space="preserve"><value>هذا الحقل مطلوب.</value></data>
+  <data name="validation.invalid" xml:space="preserve"><value>القيمة غير صحيحة.</value></data>
 </root>

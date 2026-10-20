@@ -1,8 +1,10 @@
+using Tamaneen.Infrastructure.Auth;
 using System.Threading.RateLimiting;
 using Tamaneen.AiGateway;
 using Tamaneen.Api.Auth;
 using Tamaneen.Api.Clinical;
 using Tamaneen.Api.Gate;
+using Tamaneen.Api.Patients;
 using Tamaneen.Api.Endpoints;
 using Tamaneen.Hosting;
 using Tamaneen.Infrastructure;
@@ -67,6 +69,15 @@ public static class ApiHost
         builder.Services.AddSingleton<MessageComposer>();
         builder.Services.AddSingleton(QuestionnaireCatalog.LoadEmbedded());
         builder.Services.AddScoped<AuthService>();
+        builder.Services.AddScoped<PatientContext>();
+        builder.Services.AddScoped<TherapistDirectory>();
+        builder.Services.AddHttpClient("crisis-console");
+        builder.Services.AddScoped<StepUpVerifier>();
+        if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing"))
+        {
+            builder.Services.AddSingleton<Dev.DevSeeder>();
+            builder.Services.AddHostedService(sp => sp.GetRequiredService<Dev.DevSeeder>());
+        }
         builder.Services.AddHttpClient<CrisisGateClient>();
         AddMessageSender(builder);
         builder.Services.AddRateLimiter(o =>
@@ -106,6 +117,10 @@ public static class ApiHost
         app.MapMetaEndpoints();
         app.MapMeEndpoints();
         app.MapAuthEndpoints();
+        app.MapIntakeEndpoints();
+        app.MapSchedulingEndpoints();
+        app.MapCareEndpoints();
+        app.MapStaffEndpoints();
         if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))
         {
             // Lets a developer or the end-to-end tests read the code that would have been sent by SMS or e-mail.

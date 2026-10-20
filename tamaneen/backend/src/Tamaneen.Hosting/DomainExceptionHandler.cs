@@ -82,7 +82,10 @@ public sealed partial class DomainExceptionHandler<TResource> : IExceptionHandle
         };
         foreach (var (key, value) in domain.Extras)
         {
-            problem.Extensions[key] = value;
+            // Field errors carry codes ("required", "invalid"); the client gets them as readable text.
+            problem.Extensions[key] = value is IDictionary<string, string[]> fields
+                ? LocalizationSetup.WithLanguage(LocalizationSetup.RequestLanguage(httpContext), () => fields.ToDictionary(f => f.Key, f => f.Value.Select(c => _localizer[$"validation.{c}"].Value).ToArray()))
+                : value;
         }
 
         if (domain.Extras.TryGetValue("retryAfterSeconds", out var retry))

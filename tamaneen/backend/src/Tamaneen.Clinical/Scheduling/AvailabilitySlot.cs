@@ -94,6 +94,21 @@ public sealed class AvailabilitySlot : Entity
         HeldUntilUtc = null;
     }
 
+    /// <summary>Books the slot for a patient who is moving a session: it must be open, or held by that patient.</summary>
+    public void TakeFor(Guid patientId, IClock clock)
+    {
+        var heldByPatient = Status == SlotStatus.Held && HeldByPatientId == patientId && HeldUntilUtc > clock.UtcNow;
+        if (!heldByPatient && !IsAvailable(clock))
+        {
+            throw new DomainException(ErrorCodes.SlotUnavailable, $"Slot {Id} is not available.");
+        }
+
+        Status = SlotStatus.Booked;
+        HoldId = null;
+        HeldByPatientId = patientId;
+        HeldUntilUtc = null;
+    }
+
     /// <summary>Opens a booked slot again after a cancellation.</summary>
     public void Free()
     {

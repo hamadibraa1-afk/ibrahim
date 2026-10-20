@@ -20,7 +20,16 @@ public sealed class CrisisAlertFactory
         _sla = sla.Value;
     }
 
-    public CrisisAlertMessage Create(CrisisEvent e, CrisisUpdateKind? update, string language) =>
+    public static string Number(CrisisEvent e) => $"CE-{e.Number}";
+
+    /// <summary>Localized name of where the words came from ("intake chat", "homework note"…), in the current culture.</summary>
+    public string SourceLabel(string source)
+    {
+        var label = _text[$"source.{source}"];
+        return label.ResourceNotFound ? _text["source.system"].Value : label.Value;
+    }
+
+    public CrisisAlertMessage Create(CrisisEvent e, CrisisUpdateKind? update, string language, string? acknowledgedByName = null) =>
         LocalizationSetup.WithLanguage(language, () =>
         {
             var level = _text[$"level.{(int)e.Level}"].Value;
@@ -34,6 +43,7 @@ public sealed class CrisisAlertFactory
                 CrisisUpdateKind.Escalated => ("escalated", _text["alert.escalated.title", tier, e.PseudonymId].Value),
                 CrisisUpdateKind.Acknowledged => ("acknowledged", _text["alert.acknowledged.title", e.PseudonymId].Value),
                 CrisisUpdateKind.Closed => ("closed", _text["alert.closed.title", e.PseudonymId].Value),
+                CrisisUpdateKind.HandedOver => ("updated", _text["alert.handed_over.title", e.PseudonymId].Value),
                 _ => throw new ArgumentOutOfRangeException(nameof(update)),
             };
             var categories = _categories.CategoriesOf(e.TriggerRuleIds).Select(c => _text[$"category.{c}"].Value).ToList();
@@ -53,6 +63,10 @@ public sealed class CrisisAlertFactory
                 e.OpenedAtUtc,
                 e.AckDeadlineUtc,
                 categories,
-                SupportedLanguages.Direction(language));
+                SupportedLanguages.Direction(language),
+                Number(e),
+                e.Source,
+                SourceLabel(e.Source),
+                acknowledgedByName);
         });
 }

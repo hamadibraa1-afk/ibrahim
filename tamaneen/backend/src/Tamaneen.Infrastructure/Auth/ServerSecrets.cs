@@ -3,7 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Options;
 
-namespace Tamaneen.Api.Auth;
+namespace Tamaneen.Infrastructure.Auth;
 
 public sealed class ServerSecretsOptions
 {

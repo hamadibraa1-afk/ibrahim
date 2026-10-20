@@ -8,6 +8,7 @@ using Tamaneen.Crisis.Worker.Escalation;
 using Tamaneen.Crisis.Worker.Hubs;
 using Tamaneen.Crisis.Worker.Paging;
 using Tamaneen.Hosting;
+using Tamaneen.Infrastructure.Auth;
 using Tamaneen.Infrastructure;
 using Tamaneen.Infrastructure.Crisis;
 using Tamaneen.Infrastructure.Persistence;
@@ -62,6 +63,10 @@ public static class WorkerHost
         services.AddScoped<PageDispatcher>();
         services.AddHttpClient<IPagerChannel, WebhookPagerChannel>();
         services.AddSingleton<LoopHeartbeat>();
+        services.AddSingleton<LoopsHealthCheck>();
+        services.AddOptions<ServerSecretsOptions>().Bind(builder.Configuration.GetSection(ServerSecretsOptions.Section)).ValidateDataAnnotations().ValidateOnStart();
+        services.AddSingleton<ServerSecrets>();
+        services.AddScoped<StepUpVerifier>();
         if (builder.Configuration.GetValue("Crisis:Worker:RunBackgroundLoops", true))
         {
             services.AddHostedService<EscalationLoop>();

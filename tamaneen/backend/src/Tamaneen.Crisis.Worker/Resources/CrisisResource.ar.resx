@@ -52,4 +52,33 @@
   <data name="category.abuse_disclosure" xml:space="preserve"><value>إفصاح عن إساءة</value></data>
   <data name="category.questionnaire" xml:space="preserve"><value>إجابة اختبار</value></data>
   <data name="category.system" xml:space="preserve"><value>إيقاف احترازي من النظام</value></data>
+  <data name="alert.handed_over.title" xml:space="preserve"><value>أُعيدت حالة {0} إلى قائمة المناوبة</value></data>
+  <data name="source.intake" xml:space="preserve"><value>محادثة الاستقبال</value></data>
+  <data name="source.chat" xml:space="preserve"><value>المحادثة</value></data>
+  <data name="source.journal" xml:space="preserve"><value>اليوميات</value></data>
+  <data name="source.survey" xml:space="preserve"><value>استبيان</value></data>
+  <data name="source.questionnaire" xml:space="preserve"><value>استبيان الاستقبال</value></data>
+  <data name="source.help_now" xml:space="preserve"><value>زر المساعدة الفورية</value></data>
+  <data name="source.screening" xml:space="preserve"><value>فحص السلامة</value></data>
+  <data name="source.summary" xml:space="preserve"><value>ملخص الاستقبال</value></data>
+  <data name="source.triage" xml:space="preserve"><value>إضافة إلى الملف</value></data>
+  <data name="source.mood" xml:space="preserve"><value>تسجيل المزاج</value></data>
+  <data name="source.homework" xml:space="preserve"><value>متابعة واجب</value></data>
+  <data name="source.safety_plan" xml:space="preserve"><value>خطة الأمان</value></data>
+  <data name="source.system" xml:space="preserve"><value>النظام</value></data>
+  <data name="timeline.opened" xml:space="preserve"><value>فُتح الحدث آليًا من {0}، وأُوقفت المحادثة، وظهرت شاشة الطوارئ للمريض</value></data>
+  <data name="timeline.paged" xml:space="preserve"><value>اتصال ورسالة إلى {0}</value></data>
+  <data name="timeline.acknowledged" xml:space="preserve"><value>أُقرّ بالحدث وتولّى الحالة</value></data>
+  <data name="timeline.contacted" xml:space="preserve"><value>تم التواصل مع المريض</value></data>
+  <data name="timeline.local_emergency" xml:space="preserve"><value>بدأ إجراء الطوارئ المحلي</value></data>
+  <data name="timeline.note" xml:space="preserve"><value>ملاحظة</value></data>
+  <data name="timeline.handover" xml:space="preserve"><value>سُلّمت الحالة لمناوب آخر</value></data>
+  <data name="timeline.excerpt_viewed" xml:space="preserve"><value>عُرض ما كتبه المريض بعد تحقق إضافي</value></data>
+  <data name="timeline.contact_revealed" xml:space="preserve"><value>أُظهرت بيانات التواصل بعد تحقق إضافي</value></data>
+  <data name="timeline.closed" xml:space="preserve"><value>أُغلق الحدث مع النتيجة</value></data>
+  <data name="error.auth.step_up_required" xml:space="preserve"><value>هذا الإجراء يحتاج رمزًا صحيحًا من تطبيق المصادقة.</value></data>
+  <data name="error.validation" xml:space="preserve"><value>بعض البيانات غير صحيحة.</value></data>
+  <data name="error.crisis.not_acknowledged" xml:space="preserve"><value>لم يتولَّ أحد هذه الحالة بعد.</value></data>
+  <data name="validation.required" xml:space="preserve"><value>هذا الحقل مطلوب.</value></data>
+  <data name="validation.invalid" xml:space="preserve"><value>القيمة غير صحيحة.</value></data>
 </root>

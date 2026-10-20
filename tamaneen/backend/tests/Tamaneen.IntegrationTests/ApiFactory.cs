@@ -15,9 +15,24 @@ public sealed class ApiFactory : WebApplicationFactory<SharedResource>
     private const string Issuer = "https://tests.tamaneen.local";
     private const string Audience = "tamaneen-api";
     private readonly SqlServerFixture _sql;
-    private readonly byte[] _signingKey = RandomNumberGenerator.GetBytes(32);
+    private readonly byte[] _signingKey;
 
-    public ApiFactory(SqlServerFixture sql) => _sql = sql;
+    public ApiFactory(SqlServerFixture sql, byte[]? signingKey = null)
+    {
+        _sql = sql;
+        _signingKey = signingKey ?? RandomNumberGenerator.GetBytes(32);
+    }
+
+    /// <summary>Base64 server key (sign-up payloads, authenticator secrets); shared with the worker in journey tests.</summary>
+    public string ServerKey { get; init; } = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+
+    /// <summary>Where the crisis gate lives; journey tests point it at an in-process worker.</summary>
+    public string GateBaseUrl { get; init; } = "http://crisis-worker.test/";
+
+    public string GateServiceKey { get; init; } = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+
+    /// <summary>Tokens minted by <see cref="Token"/> have no session; real sign-ins are tested with this on.</summary>
+    public bool RequireSession { get; init; }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -29,6 +44,20 @@ public sealed class ApiFactory : WebApplicationFactory<SharedResource>
         builder.UseSetting("Auth:Issuer", Issuer);
         builder.UseSetting("Auth:Audience", Audience);
         builder.UseSetting("Auth:SigningKeyBase64", Convert.ToBase64String(_signingKey));
+        builder.UseSetting("Auth:ServerKeyBase64", ServerKey);
+        builder.UseSetting("Auth:RequireSession", RequireSession ? "true" : "false");
+        builder.UseSetting("Platform:EmergencyNumber", "911");
+        builder.UseSetting("Platform:SupportLine", "920033360");
+        builder.UseSetting("Platform:RegionNameAr", "منطقة التجربة");
+        builder.UseSetting("Platform:RegionNameEn", "Pilot region");
+        builder.UseSetting("Platform:Cities:0:Code", "RUH");
+        builder.UseSetting("Platform:Cities:0:NameAr", "الرياض");
+        builder.UseSetting("Platform:Cities:0:NameEn", "Riyadh");
+        builder.UseSetting("Platform:VideoBaseUrl", "https://meet.tamaneen.test/room");
+        builder.UseSetting("CrisisGate:BaseUrl", GateBaseUrl);
+        builder.UseSetting("CrisisGate:ServiceKeyBase64", GateServiceKey);
+        builder.UseSetting("RateLimits:AuthPerMinute", "1000");
+        builder.UseSetting("RateLimits:AiPerMinute", "1000");
     }
 
     public HttpClient ClientFor(Guid userId, string role, string pseudonym)

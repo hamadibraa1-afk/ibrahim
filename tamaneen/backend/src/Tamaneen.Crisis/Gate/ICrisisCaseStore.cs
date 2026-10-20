@@ -40,4 +40,7 @@ public enum CrisisUpdateKind
     Escalated = 1,
     Acknowledged = 2,
     Closed = 3,
+
+    /// <summary>The responder handed the case back to the on-call queue.</summary>
+    HandedOver = 4,
 }

@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Tamaneen.Api.Auth;
+namespace Tamaneen.Infrastructure.Auth;
 
 /// <summary>Six-digit codes sent by SMS or e-mail, and recovery codes in the XXXX-XXXX format.</summary>
 public static class OneTimeCodes

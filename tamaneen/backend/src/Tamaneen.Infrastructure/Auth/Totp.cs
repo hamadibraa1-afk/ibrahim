@@ -2,7 +2,7 @@ using System.Buffers.Binary;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Tamaneen.Api.Auth;
+namespace Tamaneen.Infrastructure.Auth;
 
 /// <summary>RFC 6238 TOTP (HMAC-SHA1, 6 digits, 30-second steps) as used by common authenticator apps.</summary>
 public static class Totp

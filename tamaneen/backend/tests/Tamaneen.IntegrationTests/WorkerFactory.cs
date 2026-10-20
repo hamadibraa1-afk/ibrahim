@@ -23,15 +23,23 @@ public sealed class WorkerFactory : WebApplicationFactory<CrisisResource>
     private const string Issuer = "https://tests.tamaneen.local";
     private const string Audience = "tamaneen-api";
     private readonly SqlServerFixture _sql;
-    private readonly byte[] _signingKey = RandomNumberGenerator.GetBytes(32);
+    private readonly byte[] _signingKey;
 
-    public WorkerFactory(SqlServerFixture sql) => _sql = sql;
+    public WorkerFactory(SqlServerFixture sql, byte[]? signingKey = null)
+    {
+        _sql = sql;
+        _signingKey = signingKey ?? RandomNumberGenerator.GetBytes(32);
+    }
+
+    public string ServerKey { get; init; } = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+
+    public bool RequireSession { get; init; }
 
     public MutableClock Clock { get; } = new(new DateTimeOffset(2026, 10, 20, 22, 0, 0, TimeSpan.Zero));
 
     public CapturingHandler Pager { get; } = new();
 
-    public string ServiceKey { get; } = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+    public string ServiceKey { get; init; } = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
 
     public byte[] PagingSecret { get; } = RandomNumberGenerator.GetBytes(32);
 
@@ -47,6 +55,8 @@ public sealed class WorkerFactory : WebApplicationFactory<CrisisResource>
         builder.UseSetting("Auth:Issuer", Issuer);
         builder.UseSetting("Auth:Audience", Audience);
         builder.UseSetting("Auth:SigningKeyBase64", Convert.ToBase64String(_signingKey));
+        builder.UseSetting("Auth:ServerKeyBase64", ServerKey);
+        builder.UseSetting("Auth:RequireSession", RequireSession ? "true" : "false");
         builder.UseSetting("Crisis:Contacts:EmergencyNumber", "911");
         builder.UseSetting("Crisis:Contacts:SupportLine", "920033360");
         builder.UseSetting("Crisis:Worker:ServiceUserId", ServiceUserId.ToString());
