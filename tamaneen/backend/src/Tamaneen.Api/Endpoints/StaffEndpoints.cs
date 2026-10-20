@@ -103,6 +103,12 @@ public static class StaffEndpoints
         var appointments = await db.Appointments.AsNoTracking().Where(a => a.TherapistUserId == me && a.StartsAtUtc >= clock.UtcNow.AddDays(-1)).OrderBy(a => a.StartsAtUtc).ToListAsync(ct).ConfigureAwait(false);
         var weekAgo = clock.UtcNow.AddDays(-7);
         var recentCheckins = await db.HomeworkCheckins.AsNoTracking().Where(c => assignments.Contains(c.PatientId) && c.UpdatedAtUtc >= weekAgo).Select(c => c.PatientId).ToListAsync(ct).ConfigureAwait(false);
+        // A recent crisis raises the risk shown for a patient, whatever the triage said.
+        var monthAgo = clock.UtcNow.AddDays(-30);
+        var crisisLevels = (await db.CrisisEvents.AsNoTracking().Where(e => assignments.Contains(e.PatientId) && (e.Status != Tamaneen.Crisis.CrisisEventStatus.Closed || e.OpenedAtUtc >= monthAgo))
+            .Select(e => new { e.PatientId, e.Level }).ToListAsync(ct).ConfigureAwait(false))
+            .GroupBy(e => e.PatientId).ToDictionary(g => g.Key, g => g.Max(e => e.Level));
+        RiskLevel Risk(Guid pid) => (RiskLevel)Math.Max((int)(triage.TryGetValue(pid, out var t) ? t.RiskLevel : RiskLevel.Routine), (int)crisisLevels.GetValueOrDefault(pid));
         var capacity = await db.TherapistProfiles.AsNoTracking().Where(t => t.UserId == me).Select(t => t.Capacity).FirstOrDefaultAsync(ct).ConfigureAwait(false);
 
         // Profiles waiting for this therapist's approval: submitted intake, or a direct booking with no intake.
@@ -112,12 +118,12 @@ public static class StaffEndpoints
             {
                 triage.TryGetValue(pid, out var t);
                 var first = appointments.FirstOrDefault(a => a.PatientId == pid && a.Status == AppointmentStatus.Confirmed && a.StartsAtUtc > clock.UtcNow);
-                return new PendingProfileDto(pseudonyms[pid], (int)(t?.RiskLevel ?? RiskLevel.Routine), t?.Phq9, t?.Gad7, first?.StartsAtUtc);
+                return new PendingProfileDto(pseudonyms[pid], (int)Risk(pid), t?.Phq9, t?.Gad7, first?.StartsAtUtc);
             }).ToList();
 
         var todays = appointments.Where(a => a.StartsAtUtc >= dayStart && a.StartsAtUtc < dayEnd && a.Status is AppointmentStatus.Confirmed or AppointmentStatus.Completed or AppointmentStatus.NoShow)
             .Select(a => new TodaySessionDto(a.Id, a.StartsAtUtc, pseudonyms.GetValueOrDefault(a.PatientId, string.Empty), a.SequenceNumber,
-                triage.TryGetValue(a.PatientId, out var t) ? (int)t.RiskLevel : null, a.OutcomeRecordedAtUtc is not null, recentCheckins.Contains(a.PatientId)))
+                (int)Risk(a.PatientId), a.OutcomeRecordedAtUtc is not null, recentCheckins.Contains(a.PatientId)))
             .ToList();
 
         var alerts = await OpenAlertsAsync(http, httpClients, gate.Value, ct).ConfigureAwait(false);
@@ -184,7 +190,8 @@ public static class StaffEndpoints
         var screening = await db.Screenings.AsNoTracking().Where(s => s.PatientId == patientId).OrderByDescending(s => s.CompletedAtUtc).FirstOrDefaultAsync(ct).ConfigureAwait(false);
         audit.Append("patient.file_opened", "TriageCase", triage.Id.ToString(), pseudonymId);
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
-        return TypedResults.Ok(new StaffIntakeViewDto(pseudonymId, (int)triage.RiskLevel, triage.Phq9, triage.Gad7, screening?.Positive ?? triage.CssrsPositive, sections, triage.SubmittedAtUtc,
+        var crisisLevel = await db.CrisisEvents.AsNoTracking().Where(e => e.PatientId == patientId).Select(e => (int?)e.Level).MaxAsync(ct).ConfigureAwait(false) ?? 0;
+        return TypedResults.Ok(new StaffIntakeViewDto(pseudonymId, Math.Max((int)triage.RiskLevel, crisisLevel), triage.Phq9, triage.Gad7, screening?.Positive ?? triage.CssrsPositive, sections, triage.SubmittedAtUtc,
             intake?.TherapistApprovedAtUtc is not null || (intake is null && triage.ReviewedAtUtc is not null)));
     }
 
@@ -201,11 +208,7 @@ public static class StaffEndpoints
             // Direct booking: approving the file is reviewing the triage case.
             var triage = await db.TriageCases.Where(t => t.PatientId == patientId).OrderByDescending(t => t.SubmittedAtUtc).FirstOrDefaultAsync(ct).ConfigureAwait(false)
                 ?? throw new DomainException(ErrorCodes.NotFound, "No file for this patient.");
-            if (triage.Status == TriageStatus.Pending)
-            {
-                triage.Review(user.UserId!.Value, triage.RiskLevel, clock);
-                triage.MarkMatched();
-            }
+            triage.ApproveByTherapist(user.UserId!.Value, clock);
         }
 
         audit.Append("patient.file_approved", "UserAccount", patientId.ToString(), pseudonymId);

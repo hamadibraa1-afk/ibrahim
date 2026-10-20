@@ -321,6 +321,15 @@ public sealed class PatientJourneyTests : IAsyncLifetime
         var hold = await Read(await me.PostAsJsonAsync("/v1/bookings/holds", new { slotId = slots[0].GetProperty("slotId").GetGuid() }));
         await Read(await me.PostAsync($"/v1/bookings/holds/{hold.GetProperty("holdId").GetGuid()}/confirm", null));
 
+        // Khalid sees the direct-path file waiting; approving it is the clinical review and it leaves the list.
+        var pseudonym = (await Read(await me.GetAsync("/v1/me"))).GetProperty("pseudonymId").GetString();
+        using var khalid = _hosts.ApiClient("en", await _hosts.StaffSignInAsync("khalid@staff.tamaneen.dev"));
+        (await Read(await khalid.GetAsync("/v1/staff/dashboard"))).GetProperty("pendingProfiles").EnumerateArray().Should().Contain(p => p.GetProperty("pseudonymId").GetString() == pseudonym);
+        (await Read(await khalid.GetAsync($"/v1/staff/patients/{pseudonym}/intake"))).GetProperty("cssrsPositive").GetBoolean().Should().BeFalse();
+        await Read(await khalid.PostAsync($"/v1/staff/patients/{pseudonym}/intake/approve", null));
+        (await Read(await khalid.GetAsync($"/v1/staff/patients/{pseudonym}/intake"))).GetProperty("approved").GetBoolean().Should().BeTrue();
+        (await Read(await khalid.GetAsync("/v1/staff/dashboard"))).GetProperty("pendingProfiles").EnumerateArray().Should().NotContain(p => p.GetProperty("pseudonymId").GetString() == pseudonym);
+
         // Help now: a Critical event even without words, with the English script.
         var help = await Read(await me.PostAsync("/v1/crisis/help", null));
         help.GetProperty("crisis").GetBoolean().Should().BeTrue();
@@ -329,6 +338,9 @@ public sealed class PatientJourneyTests : IAsyncLifetime
         var status = await Read(await me.GetAsync("/v1/crisis/status"));
         status.GetProperty("locked").GetBoolean().Should().BeTrue();
         status.GetProperty("script").GetString().Should().Contain("911");
+
+        // The crisis raises the risk shown on the therapist's dashboard for this patient.
+        (await Read(await khalid.GetAsync($"/v1/staff/patients/{pseudonym}/intake"))).GetProperty("riskLevel").GetInt32().Should().Be(4);
 
         // A locked chat refuses AI-assisted work with an English explanation.
         var locked = await Problem(await me.PostAsJsonAsync("/v1/bookings/holds", new { slotId = slots[1].GetProperty("slotId").GetGuid() }), 409);

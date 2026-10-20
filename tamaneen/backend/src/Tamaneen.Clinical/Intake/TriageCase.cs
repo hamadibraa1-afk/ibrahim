@@ -98,5 +98,19 @@ public sealed class TriageCase : Entity
 
     public void MarkMatched() => Status = TriageStatus.Matched;
 
+    /// <summary>
+    /// Direct-path file (no intake): the treating therapist's approval is its clinical review. It may come
+    /// after the booking has already marked the case matched.
+    /// </summary>
+    public void ApproveByTherapist(Guid therapistUserId, IClock clock)
+    {
+        ReviewedAtUtc ??= clock.UtcNow;
+        ReviewedBy ??= therapistUserId;
+        if (Status == TriageStatus.Pending)
+        {
+            Status = TriageStatus.Reviewed;
+        }
+    }
+
     public void SetAddenda(byte[] cipher) => AddendaCipher = cipher;
 }
