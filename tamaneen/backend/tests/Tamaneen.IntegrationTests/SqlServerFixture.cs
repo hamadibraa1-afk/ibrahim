@@ -38,7 +38,7 @@ public sealed class SqlServerFixture : IAsyncLifetime
         }
         else
         {
-            _container = new MsSqlBuilder().WithImage("mcr.microsoft.com/mssql/server:2022-latest").Build();
+            _container = new MsSqlBuilder("mcr.microsoft.com/mssql/server:2022-latest").Build();
             await _container.StartAsync();
             var builder = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(_container.GetConnectionString()) { InitialCatalog = "TamaneenTest" };
             ConnectionString = builder.ConnectionString;

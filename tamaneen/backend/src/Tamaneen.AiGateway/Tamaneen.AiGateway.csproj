@@ -5,4 +5,21 @@
   <ItemGroup>
     <ProjectReference Include="..\Tamaneen.SharedKernel\Tamaneen.SharedKernel.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Anthropic" />
+    <PackageReference Include="Polly.Core" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+    <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Prompts\*.json" LogicalName="prompts.%(Filename)%(Extension)" />
+    <!-- WithCulture=false: otherwise "names.ar.txt" is taken for an Arabic satellite resource. -->
+    <EmbeddedResource Include="Deidentification\names.*.txt" LogicalName="%(Filename)%(Extension)" WithCulture="false" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Tamaneen.UnitTests" />
+  </ItemGroup>
 </Project>

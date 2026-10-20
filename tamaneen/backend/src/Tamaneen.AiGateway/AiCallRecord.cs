@@ -9,6 +9,9 @@ public enum AiCallOutcome
     TimedOut = 2,
     Failed = 3,
     CircuitOpen = 4,
+    Refused = 5,
+    DeidentificationFailed = 6,
+    LanguageRepaired = 7,
 }
 
 /// <summary>

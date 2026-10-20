@@ -1,3 +1,4 @@
+using Tamaneen.AiGateway;
 using Tamaneen.Api.Endpoints;
 using Tamaneen.Hosting;
 using Tamaneen.Infrastructure;
@@ -21,6 +22,7 @@ public static class ApiHost
         builder.Services.AddScoped<RequestCurrentUser>();
         builder.Services.AddScoped<ICurrentUser>(sp => sp.GetRequiredService<RequestCurrentUser>());
         builder.Services.AddTamaneenInfrastructure(builder.Configuration, builder.Environment);
+        builder.Services.AddTamaneenAiGateway(builder.Configuration, builder.Environment);
         builder.Services.AddTamaneenLocalization();
         builder.Services.AddTamaneenProblemDetails<SharedResource>();
         builder.Services.AddTamaneenAuth(builder.Configuration);

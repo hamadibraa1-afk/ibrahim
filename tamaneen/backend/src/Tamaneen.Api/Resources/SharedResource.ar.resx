@@ -26,6 +26,7 @@
   <data name="error.crisis.close_not_allowed" xml:space="preserve"><value>لا يغلق حدث الطوارئ إلا المشرف أو المسؤول السريري.</value></data>
   <data name="error.reason.required" xml:space="preserve"><value>يرجى كتابة السبب.</value></data>
   <data name="error.not_found" xml:space="preserve"><value>لم نجد هذا العنصر.</value></data>
+  <data name="error.ai.message_invalid" xml:space="preserve"><value>الرسالة فارغة أو أطول من {0} حرفًا.</value></data>
   <data name="validation.language.required" xml:space="preserve"><value>اللغة مطلوبة.</value></data>
   <data name="validation.failed" xml:space="preserve"><value>بعض الحقول تحتاج إلى مراجعة.</value></data>
   <data name="message.welcome" xml:space="preserve"><value>مرحبًا بك في طمأنينة.</value></data>

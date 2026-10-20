@@ -30,4 +30,5 @@ public static class ErrorCodes
     public const string CrisisCloseNotAllowed = "error.crisis.close_not_allowed";
     public const string ReasonRequired = "error.reason.required";
     public const string NotFound = "error.not_found";
+    public const string AiMessageInvalid = "error.ai.message_invalid";
 }

@@ -4,7 +4,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using Tamaneen.AiGateway.Gateway;
 using Tamaneen.Identity;
+using Tamaneen.Infrastructure.Ai;
 using Tamaneen.Infrastructure.Auditing;
 using Tamaneen.Infrastructure.Persistence;
 using Tamaneen.Infrastructure.Security;
@@ -52,6 +54,7 @@ public static class DependencyInjection
         services.AddScoped<IPatientDataProtector, PatientDataProtector>();
         services.AddScoped<CryptoShredder>();
         services.AddScoped<IAuditLog, AuditLog>();
+        services.AddScoped<IAiCallLog, AiCallLog>();
         services.AddSingleton<IContactHasher>(sp =>
         {
             var pepper = DecodeKey(sp.GetRequiredService<IOptions<PseudonymizationOptions>>().Value.ContactPepperBase64, "Pseudonymization:ContactPepperBase64");

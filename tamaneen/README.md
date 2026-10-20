@@ -17,7 +17,7 @@ tamaneen/
     Tamaneen.Crisis.Rules     Versioned rule packs (ar incl. Gulf and Arabizi, en), questionnaire thresholds, scripts, evaluation set
     Tamaneen.Crisis.Worker    Separate process: gate endpoint, live console hub, escalation and paging loops
     Tamaneen.Hosting          Shared host pieces: localization, JWT, localized ProblemDetails, current user
-    Tamaneen.AiGateway        AiCallRecord (metadata only, never text)
+    Tamaneen.AiGateway        The only way to a language model: de-identification, prompts, output validator, Claude client
     Tamaneen.Infrastructure   EF Core 8, migrations, RLS session context, envelope encryption, ledger audit
     Tamaneen.Api              ASP.NET Core host, Accept-Language localization, ProblemDetails, JWT
   backend/tests/
@@ -59,6 +59,17 @@ Modules reference only `SharedKernel`. `Infrastructure` brings them together in 
 
 > The rule packs and evaluation set are a first draft. The clinical lead must review them, and an independent evaluation set written by clinicians is needed before the pilot.
 
+## AI gateway (phase 3)
+
+Every AI feature calls `IAiGateway.AskAsync`; nothing else may reference a model SDK (`AiBoundaryTests`). One call runs:
+
+1. **De-identify** the message and the last turns (Arabic and English). Phones in Latin, Arabic-Indic and +966 form, Saudi national IDs, e-mails, IBANs, Luhn-valid cards, links, IPs, dates and addresses are replaced, and so are names. A name is caught when it follows a cue ("اسمي", "أخوي", "الدكتورة", "my sister", "Dr."), when it is on the name list (with the و/ب/ل clitic), or when it is one of the patient's known identifiers. Names that are also everyday words (أمل, نور, فرح…) count only after a cue, so feelings and risk language reach the model unchanged. The same value keeps the same placeholder (`<PERSON_1>`), and placeholders typed by the user are defused. An optional Presidio sidecar (`Presidio:AnalyzerUrl`) adds recall; if it fails, the built-in recognizers still run, and if those fail nothing is sent.
+2. **Prompt** from a versioned template (`Prompts/*.json`). The language rule is bound to the patient's language (ar or en), so the model replies in that language even when the patient mixes in the other one or writes Arabizi.
+3. **Model**: Claude via the official Anthropic SDK (`Anthropic:Model`, default `claude-opus-5-5`; `Anthropic:ApiKey` from Key Vault). One call has a 20 s timeout per attempt, one jittered retry for transient errors, a circuit breaker, and a 35 s budget for the whole call. Without a key the gateway serves its fallback, and in Production the host refuses to start.
+4. **Validate**: the reply is rejected if it is in the wrong script, empty, cut off or too long; if it contains a placeholder that was never issued, a raw personal value, a phone, link or e-mail, a diagnosis, a medication or dose, or self-harm method detail. A reply in the wrong language gets one rewrite request. Anything else rejected becomes the localized fallback, which points to the care team and the urgent-help button.
+5. **Rehydrate** names, places and dates for the patient. Phone, ID, card and IBAN placeholders are never echoed back.
+6. **Record** `ai.AiCallRecords`: pseudonym, purpose, prompt version, model, language, outcome, latency and tokens. No content is stored, and the column set is asserted by test.
+
 ## Run locally
 
 Requirements: .NET 8 SDK, Node 20+, Docker.
@@ -75,7 +86,7 @@ cd web-patient && npm ci && TAMANEEN_API_URL=http://localhost:5080 TAMANEEN_EMER
 cd web-staff && npm ci && npx ng serve
 ```
 
-The development settings in `appsettings.Development.json` are non-secret local values. Production reads keys from Key Vault (`Encryption:Provider=AzureKeyVault`, `Encryption:KeyVaultKeyId`) and refuses the local key provider.
+The development settings in `appsettings.Development.json` are non-secret local values. To try the AI gateway locally, set `Anthropic__ApiKey` in your environment; without it, AI calls return the localized fallback. Production reads keys from Key Vault (`Encryption:Provider=AzureKeyVault`, `Encryption:KeyVaultKeyId`) and refuses the local key provider.
 
 ## Tests
 
