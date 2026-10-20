@@ -5,6 +5,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { AppHeader } from '@/components/AppHeader';
+import { ServiceWorkerRegister } from '@/components/pwa/ServiceWorkerRegister';
 import { directionOf, isLocale, locales } from '@/i18n/routing';
 import '../globals.css';
 
@@ -27,6 +28,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     description: t('description'),
     alternates: { languages: { ar: '/ar', en: '/en' } },
     robots: { index: false, follow: false },
+    manifest: '/manifest.webmanifest',
+    icons: { icon: '/icon.svg', apple: '/icon.svg' },
   };
 }
 
@@ -48,6 +51,7 @@ export default async function LocaleLayout({ children, params }: { children: Rea
   return (
     <html lang={locale} dir={directionOf(locale)} className={plex.variable}>
       <body className="min-h-screen font-sans">
+        <ServiceWorkerRegister />
         <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:start-4 focus:top-4 focus:rounded-full focus:bg-surface focus:px-4 focus:py-2">
           {t('skipToContent')}
         </a>

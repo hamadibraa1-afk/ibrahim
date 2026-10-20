@@ -12,6 +12,8 @@ export interface StaffLoginRequest { contact: string; password: string; client: 
 export type StaffLoginResponse = { status: 'mfa'; mfaToken: string; methods: ('totp' | 'recovery')[] };
 export interface StaffMfaRequest { mfaToken: string; method: 'totp' | 'recovery'; code: string; rememberDevice: false }
 export interface StaffSession { accessToken: string; accessExpiresAt: string }
+/** POST /v1/auth/login/mfa wraps the pair (same as the patient MfaResponse); POST /v1/auth/refresh returns it flat. */
+export interface StaffMfaResponse { tokens: StaffSession; deviceToken?: string | null }
 
 export interface StaffMe { userId: string; displayName: string; role: StaffRole; language: Lang; onCall: boolean }
 
@@ -41,6 +43,8 @@ export type SessionOutcome = 'attended' | 'no_show' | 'cancelled';
 /** Same shape as CrisisAlertMessage pushed on /hubs/crisis ("crisisAlert"). */
 export interface OpenCrisisEvent {
   eventId: string;
+  /** Human-facing number, e.g. "CE-1042". */
+  number: string;
   kind: 'opened' | 'raised' | 'escalated' | 'acknowledged' | 'closed' | 'updated';
   pseudonymId: string;
   level: RiskLevel;
@@ -56,16 +60,16 @@ export interface OpenCrisisEvent {
   ackDeadlineUtc: string;
   categories: string[];
   dir: 'rtl' | 'ltr';
+  /** Where it was raised (mood, intake_chat, ...) and its label in the request language. */
+  source: string;
+  sourceLabel: string;
+  acknowledgedBy: string | null;
 }
 export type CrisisActionKind = 'contacted' | 'local_emergency' | 'note' | 'handover';
 export interface TimelineEntry { at: string; kind: string; text: string; actor: string | null }
 export interface CrisisEventDetail extends OpenCrisisEvent {
-  number: string; // CE-1042
   ruleIds: string[];
   rulePackVersion: string;
-  source: string;
-  sourceLabel: string;
-  acknowledgedBy: string | null;
   contactDeadlineUtc: string | null;
   hasContactPhone: boolean;
   hasTrustedContact: boolean;

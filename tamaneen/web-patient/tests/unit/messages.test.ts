@@ -57,7 +57,13 @@ describe('translation files', () => {
   it('write Arabic text in Arabic', () => {
     // Allowed Latin: brand-neutral tokens such as PHQ-9, C-SSRS, CBT and the English language label.
     for (const key of keys(ar)) {
-      const text = value(ar, key).replace(/\{[^}]*\}/g, '').replace(/PHQ-9|GAD-7|C-SSRS|CBT|English|P-XXXX-XXXX|ICS|PDF/g, '');
+      // Ignore rich-text tag names (<help>…</help>) and ICU syntax ({n, plural, one {…} other {…}}), keep the words.
+      const text = value(ar, key)
+        .replace(/<\/?[a-zA-Z][\w-]*>/g, '')
+        .replace(/\{\s*\w+\s*,\s*(plural|select|selectordinal)\s*,/g, '{')
+        .replace(/(=\d+|zero|one|two|few|many|other|male|female)\s*\{/g, '{')
+        .replace(/\{\s*\w+\s*\}/g, '')
+        .replace(/PHQ-9|GAD-7|C-SSRS|CBT|English|P-XXXX-XXXX|ICS|PDF/g, '');
       const latin = (text.match(/[A-Za-z]/g) ?? []).length;
       expect(latin, key).toBeLessThanOrEqual(2);
     }

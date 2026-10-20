@@ -49,7 +49,7 @@ describe('AuthService', () => {
     const mfa = backend.expectOne(`${API}/v1/auth/login/mfa`);
     expect(mfa.request.body).toEqual({ mfaToken: 'mfa-1', method: 'totp', code: '123456', rememberDevice: false });
     expect(mfa.request.withCredentials).toBeTrue();
-    mfa.flush(tokens('access-1'));
+    mfa.flush({ tokens: tokens('access-1'), deviceToken: null });
     await settle();
 
     const me = backend.expectOne(`${API}/v1/staff/me`);
@@ -72,7 +72,7 @@ describe('AuthService', () => {
     const done = auth.completeMfa('mfa-1', 'recovery', 'ABCD-EFGH');
     const mfa = backend.expectOne(`${API}/v1/auth/login/mfa`);
     expect(mfa.request.body).toEqual({ mfaToken: 'mfa-1', method: 'recovery', code: 'ABCD-EFGH', rememberDevice: false });
-    mfa.flush(tokens('a'));
+    mfa.flush({ tokens: tokens('a'), deviceToken: null });
     await settle();
     backend.expectOne(`${API}/v1/staff/me`).flush(ME);
     expect((await done).displayName).toBe('Sara A.');
@@ -81,7 +81,7 @@ describe('AuthService', () => {
   it('refreshes from the cookie 60 s before the access token expires, with an empty body', fakeAsync(() => {
     const { auth, backend } = setup();
     void auth.completeMfa('mfa-1', 'totp', '123456');
-    backend.expectOne(`${API}/v1/auth/login/mfa`).flush(tokens('access-1', 15));
+    backend.expectOne(`${API}/v1/auth/login/mfa`).flush({ tokens: tokens('access-1', 15), deviceToken: null });
     flushMicrotasks();
     backend.expectOne(`${API}/v1/staff/me`).flush(ME);
     flushMicrotasks();

@@ -3,7 +3,7 @@ import { Injectable, NgZone, OnDestroy, computed, inject, signal } from '@angula
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { API_BASE_URL } from '../api';
-import type { StaffLoginRequest, StaffLoginResponse, StaffMe, StaffMfaRequest, StaffSession } from '../api/types';
+import type { StaffLoginRequest, StaffLoginResponse, StaffMe, StaffMfaRequest, StaffMfaResponse, StaffSession } from '../api/types';
 import { SessionService } from '../session/session.service';
 
 /** Marks requests the auth interceptor must not retry after refreshing (the auth calls themselves). */
@@ -60,7 +60,7 @@ export class AuthService implements OnDestroy {
   /** Step 2: authenticator or recovery code. On success the session is live and the profile loaded. */
   async completeMfa(mfaToken: string, method: 'totp' | 'recovery', code: string): Promise<StaffMe> {
     const body: StaffMfaRequest = { mfaToken, method, code: code.trim(), rememberDevice: false };
-    const tokens = await firstValueFrom(this.http.post<StaffSession>(`${this.apiBase}/v1/auth/login/mfa`, body, this.authOptions()));
+    const { tokens } = await firstValueFrom(this.http.post<StaffMfaResponse>(`${this.apiBase}/v1/auth/login/mfa`, body, this.authOptions()));
     this.acceptSession(tokens);
     return this.loadProfile();
   }

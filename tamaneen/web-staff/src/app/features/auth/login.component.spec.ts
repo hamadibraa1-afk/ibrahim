@@ -62,7 +62,7 @@ describe('LoginComponent', () => {
 
     ctx.type('code', '123456');
     ctx.click('verify');
-    backend.expectOne('/api/v1/auth/login/mfa').flush({ accessToken: 'a', accessExpiresAt: new Date(Date.now() + 900_000).toISOString() });
+    backend.expectOne('/api/v1/auth/login/mfa').flush({ tokens: { accessToken: 'a', accessExpiresAt: new Date(Date.now() + 900_000).toISOString() }, deviceToken: null });
     await settle();
     backend.expectOne('/api/v1/staff/me').flush({ userId: 'u', displayName: 'Huda', role: 'lead', language: 'en', onCall: false });
     await ctx.update();

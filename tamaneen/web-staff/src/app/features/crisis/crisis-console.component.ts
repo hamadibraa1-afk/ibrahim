@@ -20,13 +20,6 @@ import { CloseDialogComponent, type CloseDialogData, NoteDialogComponent, type N
 export const URGENT_MS = 60_000;
 export const HEALTH_POLL_MS = 30_000;
 
-/** What the list knows about an event beyond OpenCrisisEvent, learned from its detail. */
-interface KnownDetail {
-  number: string;
-  sourceLabel: string;
-  acknowledgedBy: string | null;
-}
-
 /** Shown sensitive data, bound to the event it belongs to. */
 interface Shown<T> {
   eventId: string;
@@ -60,7 +53,6 @@ export class CrisisConsoleComponent {
   protected readonly selectedId = signal<string | null>(null);
   protected readonly detail = signal<CrisisEventDetail | null>(null);
   protected readonly detailError = signal<ShownError | null>(null);
-  protected readonly known = signal<Record<string, KnownDetail>>({});
   protected readonly health = signal<CrisisHealth | null>(null);
   protected readonly healthError = signal(false);
   protected readonly now = signal(Date.now());
@@ -216,7 +208,6 @@ export class CrisisConsoleComponent {
     this.run(this.api.action(id, text ? { kind, text } : { kind }), (detail) => {
       if (this.selectedId() === id) {
         this.detail.set(detail);
-        this.remember(detail);
       }
       this.applyEvent(detail, false);
       this.notify(`crisis.done.${kind}`);
@@ -272,7 +263,6 @@ export class CrisisConsoleComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (detail) => {
-          this.remember(detail);
           if (this.selectedId() === id) {
             this.detail.set(detail);
             this.detailError.set(null);
@@ -336,10 +326,6 @@ export class CrisisConsoleComponent {
     }
   }
 
-  private remember(detail: CrisisEventDetail): void {
-    this.known.update((known) => ({ ...known, [detail.eventId]: { number: detail.number, sourceLabel: detail.sourceLabel, acknowledgedBy: detail.acknowledgedBy } }));
-  }
-
   private tick(): void {
     const now = Date.now();
     this.now.set(now);
@@ -347,7 +333,7 @@ export class CrisisConsoleComponent {
       const remaining = Date.parse(event.ackDeadlineUtc) - now;
       if (event.status === 'Open' && remaining > 0 && remaining <= URGENT_MS && !this.announced.has(event.eventId)) {
         this.announced.add(event.eventId);
-        const name = this.known()[event.eventId]?.number ?? event.pseudonymId;
+        const name = event.number || event.pseudonymId;
         this.announcement.set(this.translate.instant('crisis.ack.minuteLeft', { event: name }));
       }
     }

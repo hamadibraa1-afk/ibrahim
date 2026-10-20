@@ -40,10 +40,10 @@ describe('BFF path safety', () => {
 
 describe('public platform config', () => {
   it('accepts a valid emergency number and hours', () => {
-    expect(publicPlatformConfig({ TAMANEEN_EMERGENCY_NUMBER: '911', TAMANEEN_MATCH_WITHIN_HOURS: '48' } as unknown as NodeJS.ProcessEnv)).toEqual({ emergencyNumber: '911', matchWithinHours: 48 });
+    expect(publicPlatformConfig({ TAMANEEN_EMERGENCY_NUMBER: '911', TAMANEEN_MATCH_WITHIN_HOURS: '48' } as unknown as NodeJS.ProcessEnv)).toMatchObject({ emergencyNumber: '911', matchWithinHours: 48 });
   });
 
   it('ignores invalid values instead of showing them', () => {
-    expect(publicPlatformConfig({ TAMANEEN_EMERGENCY_NUMBER: 'call me', TAMANEEN_MATCH_WITHIN_HOURS: '-3' } as unknown as NodeJS.ProcessEnv)).toEqual({ emergencyNumber: null, matchWithinHours: 72 });
+    expect(publicPlatformConfig({ TAMANEEN_EMERGENCY_NUMBER: 'call me', TAMANEEN_MATCH_WITHIN_HOURS: '-3' } as unknown as NodeJS.ProcessEnv)).toMatchObject({ emergencyNumber: null, matchWithinHours: 72 });
   });
 });

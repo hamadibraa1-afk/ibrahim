@@ -6,6 +6,7 @@ export const CRISIS = 'https://crisis.tamaneen.test';
 export function openEvent(overrides: Partial<OpenCrisisEvent> = {}): OpenCrisisEvent {
   return {
     eventId: 'ev-1',
+    number: 'CE-1042',
     kind: 'opened',
     pseudonymId: 'P-3HX9-14QA',
     level: 3,
@@ -21,6 +22,9 @@ export function openEvent(overrides: Partial<OpenCrisisEvent> = {}): OpenCrisisE
     ackDeadlineUtc: new Date(Date.now() + 90_000).toISOString(),
     categories: ['self_harm'],
     dir: 'ltr',
+    source: 'intake_chat',
+    sourceLabel: 'Intake chat',
+    acknowledgedBy: null,
     ...overrides,
   };
 }
@@ -28,12 +32,8 @@ export function openEvent(overrides: Partial<OpenCrisisEvent> = {}): OpenCrisisE
 export function eventDetail(overrides: Partial<CrisisEventDetail> = {}): CrisisEventDetail {
   return {
     ...openEvent(),
-    number: 'CE-1042',
     ruleIds: ['CR-1'],
     rulePackVersion: 'en-1.4',
-    source: 'intake_chat',
-    sourceLabel: 'Intake chat',
-    acknowledgedBy: null,
     contactDeadlineUtc: null,
     hasContactPhone: true,
     hasTrustedContact: true,

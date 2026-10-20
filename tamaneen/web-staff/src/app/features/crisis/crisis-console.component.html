@@ -36,7 +36,7 @@
         <li>
           <button type="button" class="event" [class.selected]="e.eventId === selectedId()" [class.urgent]="urgent(e)" [attr.aria-current]="e.eventId === selectedId() ? 'true' : null" (click)="select(e.eventId)" data-testid="event">
             <span class="event-line">
-              <strong>{{ known()[e.eventId]?.number ?? e.title }} · {{ e.levelLabel }}</strong>
+              <strong>{{ e.number }} · {{ e.levelLabel }}</strong>
               @if (e.status === 'Open') {
                 <span class="countdown" [class.red]="urgent(e)" role="timer" [attr.aria-label]="'crisis.ack.deadline' | translate" data-testid="event-countdown">{{ countdown(e) }}</span>
               } @else {
@@ -44,11 +44,11 @@
               }
             </span>
             <span class="event-line small tm-muted">
-              <span><bdi dir="ltr">{{ e.pseudonymId }}</bdi>@if (known()[e.eventId]?.sourceLabel; as source) { · {{ source }} }</span>
+              <span><bdi dir="ltr">{{ e.pseudonymId }}</bdi>@if (e.sourceLabel) { · {{ e.sourceLabel }} }</span>
               @if (e.status === 'Open') {
                 <span>{{ 'crisis.ack.notAcknowledged' | translate }}</span>
-              } @else if (known()[e.eventId]?.acknowledgedBy; as by) {
-                <span>{{ by }}</span>
+              } @else if (e.acknowledgedBy) {
+                <span>{{ e.acknowledgedBy }}</span>
               }
             </span>
           </button>
