@@ -90,6 +90,9 @@ Login: 5 failures lock the account for 15 minutes.
 | GET/PUT | /v1/safety-plan | SafetyPlan / UpdateSafetyPlanRequest (gate) | P37 |
 
 Booking needs either a passed safety check (direct path) or a reviewed triage (intake path).
+Gated writes that return an object (`PUT /v1/intake/{id}/summary`, `POST /v1/triage/addendum`, `PUT /v1/safety-plan`,
+`POST /v1/mood`, `POST /v1/homework/{id}/checkins`, intake turns) also carry `crisis` and `script`. If the crisis worker
+cannot be reached, the API answers 503 `error.crisis.unavailable` and does not process the content.
 
 ## Staff (therapist, supervisor, clinical lead; the TOTP step is mandatory)
 
@@ -99,13 +102,21 @@ Booking needs either a passed safety check (direct path) or a reviewed triage (i
 | GET | /v1/staff/dashboard | → TherapistDashboard | S01 |
 | GET | /v1/staff/patients/{pseudonymId}/intake | → StaffIntakeView (audited) | S01 |
 | POST | /v1/staff/patients/{pseudonymId}/intake/approve | → 204 | S01 |
-| POST | /v1/staff/appointments/{id}/outcome | { outcome } → 204 | S01 |
+| POST | /v1/staff/appointments/{id}/outcome | { outcome: attended, no_show, cancelled } → 204 | S01 |
+| POST | /v1/staff/patients/{pseudonymId}/homework | { title, instructions[], minutes, frequency, startsOn, endsOn } → 201 | (S16 later) |
+| POST | /v1/staff/checkins/{id}/feedback | { text } → 204 | (S16 later) |
+| GET | /v1/staff/triage | → pending triage cases (supervisor, lead) | (S03 later) |
+| POST | /v1/staff/triage/{id}/review | { riskLevel 1–4, focus: specialty codes } → creates up to three match suggestions | (S03 later) |
 | (worker) GET | /v1/crisis/events/open | → OpenCrisisEvent[] | S01, S04 |
 | (worker) GET | /v1/crisis/events/{id} | → CrisisEventDetail | S04 |
 | (worker) POST | /v1/crisis/events/{id}/acknowledge | → OpenCrisisEvent | S01, S04 |
-| (worker) POST | /v1/crisis/events/{id}/excerpt | { totpCode } → { excerpt } (audited) | S04 |
+| (worker) POST | /v1/crisis/events/{id}/excerpt | { totpCode, reason? } → { excerpt, hideAt } (audited) | S04 |
 | (worker) POST | /v1/crisis/events/{id}/reveal-contact | { totpCode, reason } → RevealedContact (audited, shown for 10 minutes) | S04 |
 | (worker) POST | /v1/crisis/events/{id}/actions | { kind: contacted, local_emergency, note, handover; text } → CrisisEventDetail | S04 |
 | (worker) POST | /v1/crisis/events/{id}/close | { outcome, reason } → 204 | S04 |
 | (worker) GET | /v1/crisis/health | → CrisisHealth | S04 |
-| (worker) hub | /hubs/crisis?lang= | crisisAlert, crisisUpdated | S01, S04 |
+| (worker) hub | /hubs/crisis?lang= | crisisAlert (kind: opened, raised, escalated, acknowledged, updated, closed) | S01, S04 |
+
+Alerts and the open-events list carry `number` (CE-1001), `source`, `sourceLabel` and `acknowledgedBy`. Supervisors, the
+clinical lead and on-call staff receive every alert; other therapists only receive alerts for their own patients.
+Staff refresh and sign-out send `{}`; the refresh token is the HttpOnly cookie `tamaneen_staff_rt` on `/v1/auth`.

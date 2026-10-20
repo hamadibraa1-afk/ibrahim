@@ -70,6 +70,23 @@ Every AI feature calls `IAiGateway.AskAsync`; nothing else may reference a model
 5. **Rehydrate** names, places and dates for the patient. Phone, ID, card and IBAN placeholders are never echoed back.
 6. **Record** `ai.AiCallRecords`: pseudonym, purpose, prompt version, model, language, outcome, latency and tokens. No content is stored, and the column set is asserted by test.
 
+## Patient journey and staff screens (phase 4)
+
+- **Contract**: `docs/api-v1.md`, with TypeScript types for each frontend. Frontend conventions: `docs/frontend-patient.md`.
+- **Sign-in** is part of the API:
+  - Passwords are PBKDF2-SHA256 (600,000 iterations), at least 12 characters, and not on a list of leaked passwords.
+  - Codes are 6 digits, sent by SMS or e-mail through a signed webhook. They expire after 10 minutes, allow 5 attempts, and can be resent after 60 s.
+  - Five failures lock sign-in for 15 minutes. An unknown contact gets the same answers, timing and countdown as a real one.
+  - There are 10 single-use recovery codes, and an optional authenticator app (TOTP) for patients. Staff must use one.
+  - Access tokens last 15 minutes and carry the session id; every request checks that the session is still active.
+  - Refresh tokens rotate on every use. Reusing an old one ends the session.
+  - The patient BFF keeps tokens in HttpOnly cookies. The staff portal keeps the access token in memory and gets the refresh token only as an HttpOnly cookie on `/v1/auth`.
+- **Crisis gate**: every patient text and answer goes to the crisis worker before anything else. This covers intake turns, questionnaire items, the summary, mood and homework notes, the safety plan and additions to the file. If the worker cannot be reached, the content is not processed and the patient is shown how to get help. "Ask a professional to call me now" always opens a Critical event.
+- **Encryption**: free text and contact data are stored encrypted with the patient's own key, so deleting the account crypto-shreds them. Every new table with a `PatientId` is under row-level security. A therapist sees a patient only after a booking creates the care assignment. That assignment is created by a dedicated scheduling service identity.
+- **Crisis console (S04)**: the patient's words and contact data appear only after a fresh authenticator code. They are shown for 10 minutes, and each showing is recorded in the patient's access log with its reason. Supervisors, the lead and on-call staff receive every alert; other therapists only receive alerts for their own patients.
+- **Development data**: in Development and Testing, the API seeds staff accounts, the therapist directory and two weeks of slots. The staff are sara@, khalid@, noura@, mona@ (therapists), fahad@ (supervisor) and lead@, all `@staff.tamaneen.dev`. The password is `Tamaneen-Dev-2026!` and the authenticator secret is `ORQW2YLOMVSW4LLEMV3C25DPORYC2MRQ`. Codes that would be sent are readable at `GET /dev/outbox?to=<contact>`, which exists only in Development and Testing.
+- **Questionnaire texts** (`Tamaneen.Api/Clinical/questionnaires.json`): PHQ-9, GAD-7 and the C-SSRS screener in both languages. The Arabic wording is a working translation; replace it with the validated Arabic versions before launch.
+
 ## Run locally
 
 Requirements: .NET 8 SDK, Node 20+, Docker.
@@ -91,7 +108,7 @@ The development settings in `appsettings.Development.json` are non-secret local 
 ## Tests
 
 ```bash
-dotnet test                                        # unit + integration (starts SQL Server 2022 in Docker)
+dotnet test                                        # unit + integration (starts SQL Server 2022 in Docker), incl. the API+worker journey tests
 cd web-patient && npm run lint && npm run typecheck && npm test && npm run build && E2E_API_URL=http://localhost:5080 npx playwright test
 cd web-staff && CHROME_BIN=/path/to/chrome npx ng test --watch=false && npx ng build && E2E_API_URL=http://localhost:5080 npx playwright test
 ```

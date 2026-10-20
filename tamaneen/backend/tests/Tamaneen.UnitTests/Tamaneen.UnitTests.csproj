@@ -14,6 +14,7 @@
     <PackageReference Include="FluentAssertions" />
     <ProjectReference Include="..\..\src\Tamaneen.Infrastructure\Tamaneen.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Tamaneen.Crisis.Rules\Tamaneen.Crisis.Rules.csproj" />
+    <ProjectReference Include="..\..\src\Tamaneen.Api\Tamaneen.Api.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />
