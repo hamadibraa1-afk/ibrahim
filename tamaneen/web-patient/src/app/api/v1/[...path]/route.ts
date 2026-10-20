@@ -11,7 +11,8 @@ export const dynamic = 'force-dynamic';
 
 const TIMEOUT_MS = 20_000;
 
-async function proxy(request: NextRequest, { params }: { params: { path: string[] } }) {
+async function proxy(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+  const { path } = await params;
   const apiBase = process.env.TAMANEEN_API_URL;
   if (!apiBase) {
     return NextResponse.json({ title: 'API is not configured', status: 503 }, { status: 503 });
@@ -19,12 +20,12 @@ async function proxy(request: NextRequest, { params }: { params: { path: string[
 
   let url: URL;
   try {
-    url = upstreamUrl(apiBase, params.path, request.nextUrl.search);
+    url = upstreamUrl(apiBase, path, request.nextUrl.search);
   } catch {
     return NextResponse.json({ title: 'Not found', status: 404 }, { status: 404 });
   }
 
-  const jar = cookies();
+  const jar = await cookies();
   const locale = resolveLocale(jar.get(LOCALE_COOKIE)?.value, request.headers.get('accept-language'));
   const hasBody = !['GET', 'HEAD'].includes(request.method);
   let upstream: Response;

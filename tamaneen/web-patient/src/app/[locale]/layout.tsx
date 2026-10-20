@@ -19,8 +19,9 @@ export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
 }
 
-export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
-  const t = await getTranslations({ locale: params.locale, namespace: 'meta' });
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'meta' });
   return {
     title: t('title'),
     description: t('description'),
@@ -38,9 +39,9 @@ export const viewport: Viewport = {
   ],
 };
 
-export default async function LocaleLayout({ children, params }: { children: ReactNode; params: { locale: string } }) {
-  if (!isLocale(params.locale)) notFound();
-  const locale = params.locale;
+export default async function LocaleLayout({ children, params }: { children: ReactNode; params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  if (!isLocale(locale)) notFound();
   setRequestLocale(locale);
   const [messages, t] = await Promise.all([getMessages(), getTranslations('common')]);
 

@@ -50,12 +50,12 @@ test.describe('language and direction', () => {
 
   test('the layout mirrors: brand at the start edge, Help now at the end edge', async ({ page }) => {
     await page.goto('/ar');
-    const brand = await page.getByText('طمأنينة', { exact: true }).boundingBox();
+    const brand = await page.getByTestId('brand').boundingBox();
     const help = await page.getByTestId('help-now').boundingBox();
     expect(brand!.x).toBeGreaterThan(help!.x);
 
     await page.goto('/en');
-    const brandEn = await page.getByText('Tamaneen', { exact: true }).boundingBox();
+    const brandEn = await page.getByTestId('brand').boundingBox();
     const helpEn = await page.getByTestId('help-now').boundingBox();
     expect(brandEn!.x).toBeLessThan(helpEn!.x);
   });

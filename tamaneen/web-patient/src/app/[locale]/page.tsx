@@ -6,8 +6,9 @@ import { publicPlatformConfig } from '@/lib/platform-config';
 export const dynamic = 'force-dynamic';
 
 /** P01 Welcome: the first screen a visitor sees, before any account exists. */
-export default async function WelcomePage({ params }: { params: { locale: string } }) {
-  setRequestLocale(params.locale);
+export default async function WelcomePage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   const t = await getTranslations('welcome');
   const { emergencyNumber, matchWithinHours } = publicPlatformConfig();
 
