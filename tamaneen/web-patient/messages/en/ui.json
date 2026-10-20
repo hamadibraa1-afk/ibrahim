@@ -1,0 +1,23 @@
+{
+  "ui": {
+    "back": "Back",
+    "step": "Step {step} of {total}",
+    "optional": "Optional",
+    "loading": "Loading…",
+    "saving": "Saving…",
+    "saved": "Saved",
+    "save": "Save",
+    "cancel": "Cancel",
+    "continue": "Continue",
+    "retry": "Try again",
+    "close": "Close",
+    "edit": "Edit",
+    "done": "Done",
+    "yes": "Yes",
+    "no": "No",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "required": "Required",
+    "notNow": "Not now"
+  }
+}

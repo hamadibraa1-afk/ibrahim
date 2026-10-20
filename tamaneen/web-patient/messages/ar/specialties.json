@@ -1,0 +1,14 @@
+{
+  "specialties": {
+    "anxiety": "القلق",
+    "stress": "الضغط",
+    "sleep": "مشكلات النوم",
+    "depression": "الاكتئاب",
+    "cbt": "العلاج المعرفي السلوكي",
+    "mindfulness": "اليقظة الذهنية",
+    "work_stress": "الضغط المهني",
+    "adjustment": "التكيف",
+    "social_anxiety": "القلق الاجتماعي",
+    "trauma": "الصدمات"
+  }
+}

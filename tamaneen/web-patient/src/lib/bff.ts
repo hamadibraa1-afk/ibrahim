@@ -5,7 +5,7 @@ export const ACCESS_TOKEN_COOKIE = 'tamaneen_at';
 export const LOCALE_COOKIE = 'NEXT_LOCALE';
 
 const SAFE_SEGMENT = /^[A-Za-z0-9._~-]+$/;
-const FORWARDED_RESPONSE_HEADERS = ['content-type', 'content-language', 'cache-control', 'retry-after', 'etag'];
+const FORWARDED_RESPONSE_HEADERS = ['content-type', 'content-language', 'content-disposition', 'cache-control', 'retry-after', 'etag'];
 
 /** The language the API should answer in: the user's saved choice, then the browser's, then Arabic. */
 export function resolveLocale(cookieLocale: string | undefined, acceptLanguage: string | null): Locale {

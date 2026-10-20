@@ -1,0 +1,14 @@
+{
+  "specialties": {
+    "anxiety": "Anxiety",
+    "stress": "Stress",
+    "sleep": "Sleep problems",
+    "depression": "Depression",
+    "cbt": "CBT",
+    "mindfulness": "Mindfulness",
+    "work_stress": "Work stress",
+    "adjustment": "Adjustment",
+    "social_anxiety": "Social anxiety",
+    "trauma": "Trauma"
+  }
+}

@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { NextResponse, type NextRequest } from 'next/server';
+import { TOKEN_PATHS } from '@/lib/auth/session';
 import { ACCESS_TOKEN_COOKIE, LOCALE_COOKIE, downstreamHeaders, resolveLocale, upstreamHeaders, upstreamUrl } from '@/lib/bff';
 
 /**
@@ -16,6 +17,17 @@ async function proxy(request: NextRequest, { params }: { params: Promise<{ path:
   const apiBase = process.env.TAMANEEN_API_URL;
   if (!apiBase) {
     return NextResponse.json({ title: 'API is not configured', status: 503 }, { status: 503 });
+  }
+
+  // Token-bearing auth responses go through /api/auth/* only, so tokens never reach page script.
+  if (TOKEN_PATHS.has(path.join('/'))) {
+    return NextResponse.json({ title: 'Not found', status: 404 }, { status: 404 });
+  }
+
+  // Cookie-authenticated writes must come from our own pages (CSRF).
+  const origin = request.headers.get('origin');
+  if (!['GET', 'HEAD'].includes(request.method) && origin && origin !== request.nextUrl.origin) {
+    return NextResponse.json({ title: 'Forbidden', status: 403 }, { status: 403 });
   }
 
   let url: URL;

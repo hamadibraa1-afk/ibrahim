@@ -1,0 +1,10 @@
+{
+  "errors": {
+    "generic": "Something went wrong. Please try again.",
+    "network": "We couldn't connect. Check your internet and try again.",
+    "crisisHint": "If you are in danger now, use Help now or call the emergency number.",
+    "pageTitle": "We couldn't show this page",
+    "pageBody": "Nothing you did caused this. You can try again, and Help now is always available.",
+    "retry": "Try again"
+  }
+}

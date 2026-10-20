@@ -1,0 +1,9 @@
+{
+  "nav": {
+    "label": "Main navigation",
+    "home": "Home",
+    "appointments": "Appointments",
+    "homework": "Homework",
+    "settings": "Settings"
+  }
+}

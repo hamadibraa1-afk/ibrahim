@@ -1,0 +1,13 @@
+{
+  "welcome": {
+    "calm": "Take a deep breath. You're in the right place.",
+    "title": "We're here to listen, without judgment",
+    "subtitle": "Talk to us in complete privacy, and we'll connect you with a therapist who fits you within {hours} hours.",
+    "trustPrivate": "Completely private · we don't ask for your real name",
+    "trustHuman": "A person reviews your file · AI only assists",
+    "start": "Let's begin",
+    "haveAccount": "I have an account",
+    "emergencyCall": "In danger right now? Call {number}",
+    "emergencyResources": "In danger right now? Open emergency resources"
+  }
+}

@@ -1,8 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { NextIntlClientProvider } from 'next-intl';
-import ar from '../../messages/ar.json';
-import en from '../../messages/en.json';
+import { messagesFor } from './intl';
 
 const replace = vi.fn();
 vi.mock('@/i18n/navigation', () => ({
@@ -17,7 +16,7 @@ import { LanguageToggle } from '@/components/LanguageToggle';
 
 function renderIn(locale: 'ar' | 'en') {
   return render(
-    <NextIntlClientProvider locale={locale} messages={locale === 'ar' ? ar : en}>
+    <NextIntlClientProvider locale={locale} messages={messagesFor(locale)}>
       <LanguageToggle />
     </NextIntlClientProvider>,
   );
