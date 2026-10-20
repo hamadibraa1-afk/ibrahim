@@ -41,7 +41,7 @@ public sealed class LedgerAndShreddingTests
         var profile = await db.PatientProfiles.SingleAsync(p => p.PatientId == patient.Id);
         var (_, protector) = _sql.Crypto(db);
         (await protector.DecryptAsync(patient.Id, ProtectedFields.EmergencyContact, profile.EmergencyContactCipher!, default))
-            .Should().Be("أختي · 0551234567");
+            .Should().Contain("أختي").And.Contain("0551234567");
         (await protector.DecryptAsync(patient.Id, ProtectedFields.DisplayName, profile.DisplayNameCipher!, default)).Should().Be("نورة");
     }
 

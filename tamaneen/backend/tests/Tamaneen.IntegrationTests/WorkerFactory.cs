@@ -115,12 +115,26 @@ public sealed class WorkerFactory : WebApplicationFactory<CrisisResource>
 public sealed class MutableClock : IClock
 {
     private DateTimeOffset _now;
+    private TimeSpan? _realOffset;
 
     public MutableClock(DateTimeOffset start) => _now = start;
 
-    public DateTimeOffset UtcNow => _now;
+    public DateTimeOffset UtcNow => _realOffset is { } offset ? DateTimeOffset.UtcNow + offset : _now;
 
-    public void Advance(TimeSpan by) => _now += by;
+    public void Advance(TimeSpan by)
+    {
+        if (_realOffset is { } offset)
+        {
+            _realOffset = offset + by;
+        }
+        else
+        {
+            _now += by;
+        }
+    }
+
+    /// <summary>Journey tests: run on real time (authenticator codes depend on it); Advance still moves it.</summary>
+    public void FollowRealTime() => _realOffset = TimeSpan.Zero;
 }
 
 /// <summary>Stands in for the network: records each page and answers with the configured status.</summary>

@@ -55,6 +55,8 @@ public class DeidentificationTests
     [InlineData("Will this feeling ever pass? I hope so.", "en")]
     [InlineData("I slept 5 hours and walked for 30 minutes", "en")]
     [InlineData("نمت ٥ ساعات بس ومشيت نص ساعة", "ar")]
+    [InlineData("كيف يؤثر ذلك على نومك هذه الأيام؟", "ar")]
+    [InlineData("سأتصل على أخوي اليوم وأتكلم معه", "ar")]
     public async Task Feelings_risk_language_and_everyday_words_are_kept(string text, string language)
     {
         (await Clean(text, language)).Should().Be(text);
@@ -68,6 +70,22 @@ public class DeidentificationTests
         var clean = await Clean("نورة تعبانة اليوم، وأهل القحطاني في الخبر ما يدرون", "ar", known);
 
         clean.Should().NotContain("نورة").And.NotContain("القحطاني").And.NotContain("الخبر");
+    }
+
+    [Fact]
+    public async Task Kinship_words_in_a_known_contact_are_not_hidden_on_their_own()
+    {
+        var known = new KnownIdentifiers(["أختي نورة", "My sister Dana"], []);
+
+        (await Clean("أختي تساعدني كثير، ونورة تكلمني كل يوم", "ar", known)).Should().StartWith("أختي تساعدني كثير، ").And.Contain("<PERSON_1>").And.NotContain("نورة");
+        (await Clean("my sister helps, Dana calls daily", "en", known)).Should().Be("my sister helps, <PERSON_1> calls daily");
+    }
+
+    [Fact]
+    public async Task Ali_is_hidden_after_a_cue_but_the_word_ala_never_is()
+    {
+        (await Clean("صديقي علي ساعدني", "ar")).Should().Be("صديقي <PERSON_1> ساعدني");
+        (await Clean("اعتمدت على نفسي", "ar")).Should().Be("اعتمدت على نفسي");
     }
 
     [Fact]

@@ -91,7 +91,7 @@ public sealed class SqlServerFixture : IAsyncLifetime
         profile.SetEncryptedFields(
             await protector.EncryptAsync(account.Id, ProtectedFields.DisplayName, name, default),
             await protector.EncryptAsync(account.Id, ProtectedFields.DateOfBirth, "1995-04-02", default),
-            await protector.EncryptAsync(account.Id, ProtectedFields.EmergencyContact, "أختي · 0551234567", default));
+            await protector.EncryptAsync(account.Id, ProtectedFields.EmergencyContact, """{"contactPhone":null,"trustedName":"أختي","trustedPhone":"0551234567"}""", default));
         db.PatientProfiles.Add(profile);
         await db.SaveChangesAsync();
         return account;

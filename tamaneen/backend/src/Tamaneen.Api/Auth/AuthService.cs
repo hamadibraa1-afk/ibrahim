@@ -42,7 +42,7 @@ public sealed partial class AuthService(
     ILogger<AuthService> logger)
 {
     public const string ContactField = "identity.contact";
-    public const string DisplayNameField = "identity.display_name";
+    public const string DisplayNameField = ProtectedFields.DisplayName;
     private const string EligibilityPurpose = "eligibility";
     private const string ChallengeSecret = "challenge";
     private const string MfaPurpose = "mfa";

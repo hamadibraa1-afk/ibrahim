@@ -30,7 +30,7 @@ public static class ConsoleEndpoints
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
     // Same field names the API uses to encrypt these values (see Tamaneen.Api Patients/Fields).
-    private const string SafetyInfoField = "identity.safety_info";
+    private const string SafetyInfoField = ProtectedFields.EmergencyContact;
     private const string ContactField = "identity.contact";
     private const string ActionTextField = "crisis.action_text";
 

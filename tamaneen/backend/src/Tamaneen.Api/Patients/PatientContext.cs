@@ -106,7 +106,7 @@ public static class Fields
 {
     public const string DisplayName = Auth.AuthService.DisplayNameField;
     public const string Contact = Auth.AuthService.ContactField;
-    public const string SafetyInfo = "identity.safety_info";
+    public const string SafetyInfo = ProtectedFields.EmergencyContact;
     public const string IntakeMessage = "clinical.intake_message";
     public const string IntakeSummary = "clinical.intake_summary";
     public const string TriageAddenda = "clinical.triage_addenda";

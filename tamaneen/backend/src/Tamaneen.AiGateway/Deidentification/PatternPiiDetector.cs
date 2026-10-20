@@ -16,7 +16,9 @@ public sealed partial class PatternPiiDetector : IPiiDetector
     private static readonly Lazy<HashSet<string>> EnglishNames = new(() => LoadNames("names.en.txt", s => s.ToLowerInvariant()));
 
     // Common words that are also given names; they count as names only after a kinship word or title.
-    private static readonly HashSet<string> AmbiguousArabic = new(new[] { "امل", "سعيد", "كريم", "جميل", "نور", "فرح", "صالح", "سلام", "حسن", "منى", "هدى", "وفاء", "صبر", "رجاء", "ايمان", "شروق", "سماح", "ريم", "ندى", "سهل", "عادل", "امين", "حنان", "راشد", "فهد", "ماجد", "منير", "نبيل" }.Select(ArabicKey));
+    private static readonly HashSet<string> AmbiguousArabic = new(new[] { "امل", "سعيد", "كريم", "جميل", "نور", "فرح", "صالح", "سلام", "حسن", "منى", "هدى", "وفاء", "صبر", "رجاء", "ايمان", "شروق", "سماح", "ريم", "ندى", "سهل", "عادل", "امين", "حنان", "راشد", "فهد", "ماجد", "منير", "نبيل",
+        // Spelling folding makes these names identical to everyday words: علي = على (on), عيسى/موسى are fine.
+        "علي", "هاني", "وليد", "زكي", "سامي", "عالي" }.Select(ArabicKey));
 
     public Task<IReadOnlyList<PiiSpan>> DetectAsync(string text, string language, KnownIdentifiers known, CancellationToken cancellationToken)
     {
@@ -78,12 +80,23 @@ public sealed partial class PatternPiiDetector : IPiiDetector
         return builder.ToString();
     }
 
+    // Words people put in front of a contact's name ("أختي نورة", "my sister Sara"); never hidden on their own.
+    private static readonly HashSet<string> NotNameWords = new(new[]
+    {
+        "اخوي", "اختي", "اخي", "زوجي", "زوجتي", "ولدي", "بنتي", "امي", "ابوي", "ابي", "صديقي", "صديقتي", "خويي", "خويتي", "ابو", "ام", "بن", "بنت", "ال",
+        "دكتور", "دكتوره", "استاذ", "استاذه", "my", "mom", "dad", "brother", "sister", "friend", "husband", "wife", "son", "daughter", "dr", "mr", "mrs", "ms", "miss",
+    }.Select(ArabicKey), StringComparer.Ordinal);
+
     private static void AddKnown(List<PiiSpan> spans, string text, IReadOnlyList<string> values, PiiType type)
     {
         foreach (var value in values.Where(v => !string.IsNullOrWhiteSpace(v)))
         {
-            // Each word of a known name is hidden on its own too ("نورة محمد" also hides a lone "نورة").
-            foreach (var part in value.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Where(p => p.Length >= 2).Prepend(value.Trim()).Distinct())
+            // Each word of a known name is hidden on its own too ("نورة محمد" also hides a lone "نورة"),
+            // except kinship words and titles that are part of how the patient wrote it ("أختي نورة").
+            var words = value.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Where(p => p.Length >= 2 && !NotNameWords.Contains(ArabicKey(p.TrimEnd('.'))))
+                .ToList();
+            foreach (var part in words.Prepend(value.Trim()).Distinct())
             {
                 foreach (var (start, length) in FindWord(text, part))
                 {
@@ -99,6 +112,12 @@ public sealed partial class PatternPiiDetector : IPiiDetector
         foreach (Match m in ArabicNameCue().Matches(text))
         {
             var g = m.Groups["name"];
+            if (!StrictCues.Contains(ArabicKey(m.Groups["cue"].Value)) && !LooksLikeArabicName(g.Value.Split(' ')[0]))
+            {
+                // "أخوي اليوم…", "أختي تساعدني": the word after a kinship cue is not always a name.
+                continue;
+            }
+
             var length = g.Length;
             var space = g.Value.IndexOf(' ', StringComparison.Ordinal);
             if (space > 0 && !IsArabicSurname(g.Value[(space + 1)..]))
@@ -136,6 +155,37 @@ public sealed partial class PatternPiiDetector : IPiiDetector
                 spans.Add(new PiiSpan(m.Index, m.Length, PiiType.Person, 0.7));
             }
         }
+    }
+
+    // After these cues the next word is a name whatever it looks like ("اسمي فرح", "الدكتورة منى").
+    private static readonly HashSet<string> StrictCues = new(new[]
+    {
+        "اسمي", "إسمي", "يسموني", "ينادوني", "دكتور", "دكتورة", "د.", "أستاذ", "استاذ", "أستاذة", "استاذة", "الأستاذ", "الاستاذ", "الدكتور", "الدكتورة", "أبو", "ابو",
+    }.Select(ArabicKey), StringComparer.Ordinal);
+
+    // Everyday words that often follow "أخوي/أختي/صديقي…" and are not names.
+    private static readonly HashSet<string> CommonAfterKin = new(new[]
+    {
+        "اليوم", "امس", "بكره", "بكرة", "دايم", "دايما", "دائما", "كثير", "مره", "مرة", "زعلان", "زعلانه", "تعبان", "تعبانه", "مريض", "مريضه", "مسافر", "مسافره",
+        "قال", "قالت", "يقول", "تقول", "صار", "صارت", "كان", "كانت", "عنده", "عندها", "يحب", "تحب", "الكبير", "الكبيره", "الصغير", "الصغيره", "الوحيد", "الوحيده",
+        "ما", "لا", "هو", "هي", "معي", "معاي", "عندي", "بس", "حتى", "كمان", "برضو", "ايضا", "أيضا", "يعرف", "تعرف", "يساعدني", "تساعدني", "يكلمني", "تكلمني",
+    }.Select(ArabicKey), StringComparer.Ordinal);
+
+    internal static bool LooksLikeArabicName(string word)
+    {
+        var key = ArabicKey(word);
+        if (key.Length < 2 || CommonAfterKin.Contains(key))
+        {
+            return false;
+        }
+
+        // Names don't carry the article or a pronoun suffix ("اليوم", "تساعدني", "عندها").
+        if (key.StartsWith("ال", StringComparison.Ordinal) && !ArabicNames.Value.Contains(key))
+        {
+            return false;
+        }
+
+        return ArabicNames.Value.Contains(key) || !(key.EndsWith("ني", StringComparison.Ordinal) || key.EndsWith("ها", StringComparison.Ordinal) || key.EndsWith("هم", StringComparison.Ordinal) || key.EndsWith("كم", StringComparison.Ordinal));
     }
 
     /// <summary>A second name word: another given name (father's name) or a family nisba such as "القحطاني".</summary>
@@ -256,7 +306,7 @@ public sealed partial class PatternPiiDetector : IPiiDetector
     [GeneratedRegex(@"\b\d{1,5}\s+(?:[A-Z][a-z]+\s+){1,3}(?:Street|St|Road|Rd|Avenue|Ave|Lane|Ln|Boulevard|Blvd|Drive|Dr)\b\.?", RegexOptions.CultureInvariant)]
     private static partial Regex EnglishAddress();
 
-    [GeneratedRegex(@"(?<!\p{L})[وف]?(?:اسمي|إسمي|يسموني|ينادوني|أخوي|اخوي|أختي|اختي|زوجي|زوجتي|ولدي|بنتي|صديقي|صديقتي|خويي|خويتي|أبو|ابو|أم|ام|دكتور|دكتورة|د\.|أستاذ|استاذ|أستاذة|استاذة|الأستاذ|الاستاذ|الدكتور|الدكتورة)\s+(?<name>[ء-ي]{2,}(?:\s+[ء-ي]{2,}(?=\s|$|[،,.!؟?]))?)", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"(?<!\p{L})[وف]?(?<cue>اسمي|إسمي|يسموني|ينادوني|أخوي|اخوي|أختي|اختي|زوجي|زوجتي|ولدي|بنتي|صديقي|صديقتي|خويي|خويتي|أبو|ابو|أم|ام|دكتور|دكتورة|د\.|أستاذ|استاذ|أستاذة|استاذة|الأستاذ|الاستاذ|الدكتور|الدكتورة)\s+(?<name>[ء-ي]{2,}(?:\s+[ء-ي]{2,}(?=\s|$|[،,.!؟?]))?)", RegexOptions.CultureInvariant)]
     private static partial Regex ArabicNameCue();
 
     [GeneratedRegex(@"(?:\b(?:[Mm]y name is|[Cc]all me|[Mm]y (?:brother|sister|husband|wife|son|daughter|friend|boss|mother|father|mom|dad|uncle|aunt|cousin|boyfriend|girlfriend)|Dr\.?|Mr\.?|Mrs\.?|Ms\.?|Miss)\s+)(?<name>[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)", RegexOptions.CultureInvariant)]
