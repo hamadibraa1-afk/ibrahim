@@ -144,7 +144,7 @@ public sealed class PatientJourneyTests : IAsyncLifetime
         (await Read(await me.GetAsync("/v1/triage"))).GetProperty("status").GetString().Should().Be("matched");
 
         // S01: Sara sees the new file waiting for her approval, opens it (audited) and approves it.
-        var saraToken = await _hosts.StaffSignInAsync("sara@staff.tamaneen.dev", -1);
+        var saraToken = await _hosts.StaffSignInAsync("sara@staff.tamaneen.dev");
         using var sara = _hosts.ApiClient("ar", saraToken);
         var dashboard = await Read(await sara.GetAsync("/v1/staff/dashboard"));
         dashboard.GetProperty("displayName").GetString().Should().Be("أ. سارة م.");
@@ -203,10 +203,10 @@ public sealed class PatientJourneyTests : IAsyncLifetime
         detail.GetProperty("hasTrustedContact").GetBoolean().Should().BeTrue();
         detail.GetProperty("canClose").GetBoolean().Should().BeFalse();
         await Problem(await saraConsole.PostAsJsonAsync($"/v1/crisis/events/{eventId}/reveal-contact", new { totpCode = "000000", reason = "اتصال طارئ" }), 403);
-        var contact = await Read(await saraConsole.PostAsJsonAsync($"/v1/crisis/events/{eventId}/reveal-contact", new { totpCode = StaffTotp(0), reason = "اتصال طارئ" }));
+        var contact = await Read(await saraConsole.PostAsJsonAsync($"/v1/crisis/events/{eventId}/reveal-contact", new { totpCode = StaffTotp("sara@staff.tamaneen.dev"), reason = "اتصال طارئ" }));
         contact.GetProperty("contactPhone").GetString().Should().Be("0551234521");
         contact.GetProperty("trustedName").GetString().Should().Be("أختي نورة");
-        var excerpt = await Read(await saraConsole.PostAsJsonAsync($"/v1/crisis/events/{eventId}/excerpt", new { totpCode = StaffTotp(1) }));
+        var excerpt = await Read(await saraConsole.PostAsJsonAsync($"/v1/crisis/events/{eventId}/excerpt", new { totpCode = StaffTotp("sara@staff.tamaneen.dev") }));
         excerpt.GetProperty("excerpt").GetString().Should().Be("ما عاد أتحمل، أبي أموت الليلة");
         await Read(await saraConsole.PostAsync($"/v1/crisis/events/{eventId}/acknowledge", null));
         await Read(await saraConsole.PostAsJsonAsync($"/v1/crisis/events/{eventId}/actions", new { kind = "contacted" }));
@@ -218,6 +218,14 @@ public sealed class PatientJourneyTests : IAsyncLifetime
         // Noura (not assigned, not on call) does not see the event.
         using var nouraConsole = _hosts.WorkerClient("ar", nouraToken);
         (await Read(await nouraConsole.GetAsync("/v1/crisis/events/open"))).EnumerateArray().Should().NotContain(e => e.GetProperty("eventId").GetGuid() == eventId);
+        await Problem(await nouraConsole.GetAsync($"/v1/crisis/events/{eventId}"), 404);
+
+        // Khalid is on call: not her therapist, but paged, so he can open the event and reach her.
+        using var khalidConsole = _hosts.WorkerClient("ar", await _hosts.StaffSignInAsync("khalid@staff.tamaneen.dev"));
+        (await Read(await khalidConsole.GetAsync("/v1/crisis/events/open"))).EnumerateArray().Should().Contain(e => e.GetProperty("eventId").GetGuid() == eventId);
+        (await Read(await khalidConsole.GetAsync($"/v1/crisis/events/{eventId}"))).GetProperty("maskedPhone").GetString().Should().Be("••• ••• ••21");
+        (await Read(await khalidConsole.PostAsJsonAsync($"/v1/crisis/events/{eventId}/reveal-contact", new { totpCode = StaffTotp("khalid@staff.tamaneen.dev"), reason = "مناوبة" })))
+            .GetProperty("contactPhone").GetString().Should().Be("0551234521");
 
         // The supervisor closes it with an outcome; the chat opens again; the access log shows who looked.
         using var supervisorConsole = _hosts.WorkerClient("ar", supervisorToken);

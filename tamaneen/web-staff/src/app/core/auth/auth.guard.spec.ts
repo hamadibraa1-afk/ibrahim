@@ -52,6 +52,7 @@ describe('route guards', () => {
     const session = TestBed.inject(SessionService);
     session.setRoles(['therapist']);
     expect(await navigate('/crisis')).toBe('/crisis');
+    await navigate('/login');
     session.setRoles(['admin']);
     expect(await navigate('/crisis')).toBe('/home');
   });

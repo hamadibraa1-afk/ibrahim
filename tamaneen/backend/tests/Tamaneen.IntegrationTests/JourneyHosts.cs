@@ -71,16 +71,35 @@ public sealed partial class JourneyHosts : IAsyncDisposable
     public string CodeSentTo(string contact) =>
         Digits().Match(Outbox.LastTo(contact)?.Text ?? throw new InvalidOperationException($"No message to {contact}")).Value;
 
-    /// <summary>Authenticator code of the seeded staff accounts, offset in 30-second steps from now.</summary>
-    public static string StaffTotp(int stepOffset = 0) => Totp.Code(DevSeeder.StaffTotpSecret, Totp.StepAt(DateTimeOffset.UtcNow) + stepOffset);
+    /// <summary>
+    /// A fresh authenticator code for a seeded staff member. Each 30-second step is accepted once per account
+    /// (replay protection) and the database outlives a single test, so steps are handed out in order across
+    /// tests, starting one step back and waiting for the clock when the window is used up.
+    /// </summary>
+    public static string StaffTotp(string email)
+    {
+        lock (UsedSteps)
+        {
+            var step = Math.Max(Totp.StepAt(DateTimeOffset.UtcNow) - 1, UsedSteps.GetValueOrDefault(email, long.MinValue) + 1);
+            while (step > Totp.StepAt(DateTimeOffset.UtcNow) + 1)
+            {
+                Thread.Sleep(500);
+            }
+
+            UsedSteps[email] = step;
+            return Totp.Code(DevSeeder.StaffTotpSecret, step);
+        }
+    }
+
+    private static readonly Dictionary<string, long> UsedSteps = [];
 
     /// <summary>Password + authenticator sign-in for a seeded staff member; returns the access token.</summary>
-    public async Task<string> StaffSignInAsync(string email, int stepOffset = 0)
+    public async Task<string> StaffSignInAsync(string email)
     {
         using var client = ApiClient("ar");
         var login = await Read(await client.PostAsJsonAsync("/v1/auth/login", new { contact = email, password = DevSeeder.StaffPassword, client = "staff" }));
         login.GetProperty("status").GetString().Should().Be("mfa");
-        var mfa = await Read(await client.PostAsJsonAsync("/v1/auth/login/mfa", new { mfaToken = login.GetProperty("mfaToken").GetString(), method = "totp", code = StaffTotp(stepOffset), rememberDevice = false }));
+        var mfa = await Read(await client.PostAsJsonAsync("/v1/auth/login/mfa", new { mfaToken = login.GetProperty("mfaToken").GetString(), method = "totp", code = StaffTotp(email), rememberDevice = false }));
         return mfa.GetProperty("tokens").GetProperty("accessToken").GetString()!;
     }
 

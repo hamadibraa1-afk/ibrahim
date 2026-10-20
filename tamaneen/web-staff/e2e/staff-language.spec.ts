@@ -58,8 +58,8 @@ test('the dashboard and the console switch to English, with server texts in Engl
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(/^(صباح|مساء) الخير، /);
   const alert = page.getByTestId('crisis-alert').filter({ hasText: pid });
   await expect(alert.getByRole('heading')).toHaveText(`خطر حرج · ${pid}`);
-  let nav = (await sidenav.boundingBox())!;
-  let main = (await content.boundingBox())!;
+  const nav = (await sidenav.boundingBox())!;
+  const main = (await content.boundingBox())!;
   expect(nav.x).toBeGreaterThan(main.x);
 
   await page.getByTestId('language-toggle').click();
@@ -75,11 +75,14 @@ test('the dashboard and the console switch to English, with server texts in Engl
   await expect(alert.getByRole('heading')).toHaveText(`Critical risk · ${pid}`);
   await expect(alert).toHaveAttribute('dir', 'ltr');
   await expect(alert.getByTestId('acknowledge')).toHaveText('Acknowledge alert');
-  // Material sidenav moves to the left.
-  await expect.poll(async () => (await sidenav.boundingBox())!.x).toBeLessThan((await content.boundingBox())!.x);
-  nav = (await sidenav.boundingBox())!;
-  main = (await content.boundingBox())!;
-  expect(nav.x + nav.width).toBeLessThanOrEqual(main.x + 1);
+  // Material sidenav moves to the left, and the content (whose margin follows after a short transition) to its right.
+  await expect
+    .poll(async () => {
+      const n = (await sidenav.boundingBox())!;
+      const m = (await content.boundingBox())!;
+      return n.x < m.x && n.x + n.width <= m.x + 1;
+    })
+    .toBe(true);
 
   // The console shows the level and source labels in English.
   await sidenav.getByRole('link', { name: 'Crisis console' }).click();
