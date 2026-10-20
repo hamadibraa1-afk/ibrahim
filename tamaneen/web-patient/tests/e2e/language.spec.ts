@@ -69,10 +69,10 @@ test.describe('language and direction', () => {
 
   test('unknown pages show a localized not-found page with Help now still visible', async ({ page }) => {
     await page.goto('/en/no-such-page');
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText("We couldn't find this page");
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Page not found');
     await expect(page.getByTestId('help-now')).toBeVisible();
     await page.goto('/ar/no-such-page');
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('لم نجد هذه الصفحة');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('الصفحة غير موجودة');
   });
 
   test('the locale middleware never redirects to another site', async ({ request, baseURL }) => {
