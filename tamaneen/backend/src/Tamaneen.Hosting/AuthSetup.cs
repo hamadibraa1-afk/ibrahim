@@ -46,8 +46,28 @@ public static class AuthSetup
                 };
 
                 // Browsers cannot set headers on WebSocket upgrades; SignalR sends the token in the query string.
+                var requireSession = o.RequireSession;
                 jwt.Events = new JwtBearerEvents
                 {
+                    OnTokenValidated = async ctx =>
+                    {
+                        var sid = ctx.Principal?.FindFirst(TamaneenClaims.Session)?.Value;
+                        if (sid is null)
+                        {
+                            if (requireSession)
+                            {
+                                ctx.Fail("Token has no session.");
+                            }
+
+                            return;
+                        }
+
+                        var check = ctx.HttpContext.RequestServices.GetService<ISessionCheck>();
+                        if (check is null || !Guid.TryParse(sid, out var sessionId) || !await check.IsActiveAsync(sessionId, ctx.HttpContext.RequestAborted).ConfigureAwait(false))
+                        {
+                            ctx.Fail("Session is no longer active.");
+                        }
+                    },
                     OnMessageReceived = ctx =>
                     {
                         var token = ctx.Request.Query["access_token"];

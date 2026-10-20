@@ -1,4 +1,4 @@
-import type { Lang } from '@/lib/api/types';
+import type { Gender, Lang } from '@/lib/api/types';
 import type { Locale } from '@/i18n/routing';
 import { DEFAULT_TIME_ZONE } from '@/lib/format';
 
@@ -30,4 +30,21 @@ export function asLocale(value: string): Locale {
 /** The patient's zone from /v1/me, or the pilot region's when it is missing. */
 export function timeZoneOf(me: { timeZone?: string | null }): string {
   return me.timeZone || DEFAULT_TIME_ZONE;
+}
+
+/**
+ * Gendered copy lives in sibling keys ("labelFemale" / "labelMale") rather than ICU select, so Arabic
+ * agreement (اقترحناها / اقترحناه) stays plain text for translators.
+ */
+export function genderKey(base: string, gender: Gender): string {
+  return `${base}${gender === 'female' ? 'Female' : 'Male'}`;
+}
+
+/** Count copy in sibling keys: exact Zero/One/Two, then the language's plural category (Few/Many/Other). */
+export function countKey(base: string, count: number, locale: Locale): string {
+  if (count === 0) return `${base}Zero`;
+  if (count === 1) return `${base}One`;
+  if (count === 2) return `${base}Two`;
+  const category = new Intl.PluralRules(locale).select(count);
+  return `${base}${category === 'few' ? 'Few' : category === 'many' ? 'Many' : 'Other'}`;
 }

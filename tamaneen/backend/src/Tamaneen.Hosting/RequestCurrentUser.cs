@@ -38,4 +38,18 @@ public sealed class RequestCurrentUser : ICurrentUser
 
         _override = StaticCurrentUser.ForStaff(serviceId, serviceRole);
     }
+
+    /// <summary>
+    /// Switches this scope to a user whose credentials the sign-in flow has just verified (there is no token
+    /// yet). Only the auth flows call this, in a scope of their own, before the scope's first database access.
+    /// </summary>
+    public void ActAsVerifiedUser(Guid userId, string role, string language)
+    {
+        if (!AppRoles.IsKnown(role) || AppRoles.IsService(role))
+        {
+            throw new ArgumentException($"{role} is not a user role.", nameof(role));
+        }
+
+        _override = role == AppRoles.Patient ? StaticCurrentUser.ForPatient(userId, language) : StaticCurrentUser.ForStaff(userId, role, language);
+    }
 }

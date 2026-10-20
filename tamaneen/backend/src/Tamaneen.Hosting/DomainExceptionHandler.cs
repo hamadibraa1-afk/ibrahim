@@ -21,6 +21,34 @@ public sealed partial class DomainExceptionHandler<TResource> : IExceptionHandle
         [ErrorCodes.CrisisClosed] = StatusCodes.Status409Conflict,
         [ErrorCodes.CrisisCloseNotAllowed] = StatusCodes.Status403Forbidden,
         [ErrorCodes.PatientDataShredded] = StatusCodes.Status410Gone,
+        [ErrorCodes.Validation] = StatusCodes.Status400BadRequest,
+        [ErrorCodes.AiMessageInvalid] = StatusCodes.Status400BadRequest,
+        [ErrorCodes.WeakPassword] = StatusCodes.Status400BadRequest,
+        [ErrorCodes.InvalidTime] = StatusCodes.Status400BadRequest,
+        [ErrorCodes.InvalidTimeZone] = StatusCodes.Status400BadRequest,
+        [ErrorCodes.InvalidCarePath] = StatusCodes.Status400BadRequest,
+        [ErrorCodes.ConsentUnknown] = StatusCodes.Status400BadRequest,
+        [ErrorCodes.InvalidCredentials] = StatusCodes.Status401Unauthorized,
+        [ErrorCodes.SessionRevoked] = StatusCodes.Status401Unauthorized,
+        [ErrorCodes.InvalidCode] = StatusCodes.Status400BadRequest,
+        [ErrorCodes.MfaFailed] = StatusCodes.Status400BadRequest,
+        [ErrorCodes.PasswordMismatch] = StatusCodes.Status400BadRequest,
+        [ErrorCodes.ChallengeExpired] = StatusCodes.Status410Gone,
+        [ErrorCodes.AccountLocked] = StatusCodes.Status423Locked,
+        [ErrorCodes.ResendTooSoon] = StatusCodes.Status429TooManyRequests,
+        [ErrorCodes.StepUpRequired] = StatusCodes.Status403Forbidden,
+        [ErrorCodes.NotEligible] = StatusCodes.Status403Forbidden,
+        [ErrorCodes.BookingNotEligible] = StatusCodes.Status403Forbidden,
+        [ErrorCodes.AiConsentWithdrawn] = StatusCodes.Status403Forbidden,
+        [ErrorCodes.ConsentsMissing] = StatusCodes.Status403Forbidden,
+        [ErrorCodes.CrisisLocked] = StatusCodes.Status409Conflict,
+        [ErrorCodes.SlotUnavailable] = StatusCodes.Status409Conflict,
+        [ErrorCodes.HoldExpired] = StatusCodes.Status409Conflict,
+        [ErrorCodes.AppointmentNotChangeable] = StatusCodes.Status409Conflict,
+        [ErrorCodes.TriageAlreadyReviewed] = StatusCodes.Status409Conflict,
+        [ErrorCodes.TotpAlreadyEnabled] = StatusCodes.Status409Conflict,
+        [ErrorCodes.IntakeClosed] = StatusCodes.Status409Conflict,
+        [ErrorCodes.CrisisServiceUnavailable] = StatusCodes.Status503ServiceUnavailable,
     };
 
     private readonly IProblemDetailsService _problems;
@@ -46,16 +74,27 @@ public sealed partial class DomainExceptionHandler<TResource> : IExceptionHandle
         LogRejected(_log, domain.Code, domain.Message);
         httpContext.Response.StatusCode = status;
         var detail = LocalizationSetup.WithLanguage(LocalizationSetup.RequestLanguage(httpContext), () => _localizer[domain.Code, domain.Arguments.ToArray()]);
+        var problem = new ProblemDetails
+        {
+            Status = status,
+            Detail = detail.ResourceNotFound ? null : detail.Value,
+            Extensions = { ["code"] = domain.Code },
+        };
+        foreach (var (key, value) in domain.Extras)
+        {
+            problem.Extensions[key] = value;
+        }
+
+        if (domain.Extras.TryGetValue("retryAfterSeconds", out var retry))
+        {
+            httpContext.Response.Headers.RetryAfter = Convert.ToString(retry, System.Globalization.CultureInfo.InvariantCulture);
+        }
+
         return await _problems.TryWriteAsync(new ProblemDetailsContext
         {
             HttpContext = httpContext,
             Exception = exception,
-            ProblemDetails = new ProblemDetails
-            {
-                Status = status,
-                Detail = detail.ResourceNotFound ? null : detail.Value,
-                Extensions = { ["code"] = domain.Code },
-            },
+            ProblemDetails = problem,
         }).ConfigureAwait(false);
     }
 

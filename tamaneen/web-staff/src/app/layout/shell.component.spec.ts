@@ -71,7 +71,7 @@ describe('ShellComponent', () => {
 
   it('lists only screens that exist: no links to pages without a screen', async () => {
     const { el } = await render(['therapist']);
-    const links = [...el.querySelectorAll('nav a')].map((a) => a.getAttribute('href'));
+    const links = Array.from(el.querySelectorAll('nav a')).map((a) => a.getAttribute('href'));
     expect(links).toEqual(['/dashboard']);
     expect(el.textContent).not.toContain('مرضاي');
   });

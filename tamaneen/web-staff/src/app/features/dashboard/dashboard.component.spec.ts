@@ -6,7 +6,7 @@ import { API_BASE_URL, CRISIS_BASE_URL } from '../../core/api';
 import { LanguageService } from '../../core/i18n/language.service';
 import { CrisisHubService } from '../../core/realtime/crisis-hub.service';
 import { FakeCrisisHub } from '../../testing/fake-crisis-hub';
-import { API, CRISIS, dashboard, eventDetail, openEvent } from '../../testing/fixtures';
+import { API, CRISIS, dashboard, eventDetail, openEvent, settle } from '../../testing/fixtures';
 import { provideTestTranslations } from '../../testing/translate-testing';
 import { DashboardComponent, partOfDay } from './dashboard.component';
 
@@ -37,9 +37,11 @@ describe('DashboardComponent', () => {
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
     const overlay = () => document.querySelector('.cdk-overlay-container') as HTMLElement;
+    // Not whenStable(): the confirmation snack bar keeps a 4 s timer pending.
     const update = async () => {
       fixture.detectChanges();
-      await fixture.whenStable();
+      await settle();
+      await settle();
       fixture.detectChanges();
     };
     return { fixture, el, lang, overlay, update };
@@ -57,18 +59,12 @@ describe('DashboardComponent', () => {
     expect(el.querySelector('[data-testid="stat-today"]')!.textContent).toContain('4');
     expect(el.querySelector('[data-testid="stat-checkins"]')!.textContent).toContain('New check-ins this week');
     expect(el.querySelector('[data-testid="stat-capacity"] .stat-value')!.getAttribute('aria-label')).toBe('14 of 25 places used');
-    const headers = [...el.querySelectorAll('[data-testid="pending-table"] th')].map((th) => th.textContent!.trim());
+    const headers = Array.from(el.querySelectorAll('[data-testid="pending-table"] th')).map((th) => th.textContent!.trim());
     expect(headers.slice(0, 5)).toEqual(['Patient', 'Risk level', 'PHQ-9', 'GAD-7', 'First session']);
     expect(el.querySelectorAll('[data-testid="pending-table"] tr.mat-mdc-row').length).toBe(2);
     expect(el.querySelector('[data-testid="risk-tag"]')!.textContent).toContain('2 · elevated');
     expect(el.querySelectorAll('[data-testid="today-session"]').length).toBe(2);
     expect(hub.users).toBe(1);
-  });
-
-  it('greets by time of day', () => {
-    expect(partOfDay(new Date(2026, 9, 19, 8))).toBe('morning');
-    expect(partOfDay(new Date(2026, 9, 19, 13))).toBe('afternoon');
-    expect(partOfDay(new Date(2026, 9, 19, 20))).toBe('evening');
   });
 
   it('renders each high-risk alert with its server-localized title and body', async () => {
@@ -187,5 +183,13 @@ describe('DashboardComponent', () => {
     again.flush(dashboard({ alerts: [openEvent({ title: 'English title' })] }));
     fixture.detectChanges();
     expect(el.querySelector('[data-testid="crisis-alert"]')!.textContent).toContain('English title');
+  });
+});
+
+describe('partOfDay', () => {
+  it('greets by time of day', () => {
+    expect(partOfDay(new Date(2026, 9, 19, 8))).toBe('morning');
+    expect(partOfDay(new Date(2026, 9, 19, 13))).toBe('afternoon');
+    expect(partOfDay(new Date(2026, 9, 19, 20))).toBe('evening');
   });
 });

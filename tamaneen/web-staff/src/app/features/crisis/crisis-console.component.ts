@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, NgZone, computed, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, type MatDialogConfig } from '@angular/material/dialog';
@@ -91,8 +91,10 @@ export class CrisisConsoleComponent {
     this.hub.alerts.pipe(takeUntilDestroyed()).subscribe((event) => this.applyEvent(event));
     this.hub.reconnected.pipe(takeUntilDestroyed()).subscribe(() => this.loadAll());
 
-    const tick = setInterval(() => this.tick(), 1000);
-    const poll = setInterval(() => this.loadHealth(), HEALTH_POLL_MS);
+    // Clocks run outside the zone so the app can become stable; signal updates still refresh the view.
+    const zone = inject(NgZone);
+    const tick = zone.runOutsideAngular(() => setInterval(() => this.tick(), 1000));
+    const poll = zone.runOutsideAngular(() => setInterval(() => zone.run(() => this.loadHealth()), HEALTH_POLL_MS));
     this.destroyRef.onDestroy(() => {
       clearInterval(tick);
       clearInterval(poll);
@@ -135,7 +137,7 @@ export class CrisisConsoleComponent {
     const id = this.selectedId();
     if (id) {
       this.run(this.api.acknowledge(id), (event) => {
-        this.applyEvent(event);
+        this.applyEvent(event, false);
         this.loadDetail(id);
         this.notify('crisis.done.acknowledged');
       });

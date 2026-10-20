@@ -17,4 +17,10 @@ public sealed class AuthOptions
 
     /// <summary>Base64 of at least 32 bytes. HMAC-SHA256 key for tokens issued by the platform itself.</summary>
     public string? SigningKeyBase64 { get; set; }
+
+    /// <summary>
+    /// Reject tokens whose session (sid) was signed out or revoked. On everywhere except tests that mint
+    /// tokens without a session.
+    /// </summary>
+    public bool RequireSession { get; set; } = true;
 }

@@ -4,13 +4,26 @@
     "title": "My appointments",
     "upcoming": "Upcoming",
     "past": "Past",
-    "session": "{n, plural, =1 {First session} =2 {Second session} =3 {Third session} =4 {Fourth session} =5 {Fifth session} =6 {Sixth session} =7 {Seventh session} =8 {Eighth session} =9 {Ninth session} =10 {Tenth session} other {Session {num}}}",
+    "session1": "First session",
+    "session2": "Second session",
+    "session3": "Third session",
+    "session4": "Fourth session",
+    "session5": "Fifth session",
+    "session6": "Sixth session",
+    "session7": "Seventh session",
+    "session8": "Eighth session",
+    "session9": "Ninth session",
+    "session10": "Tenth session",
+    "sessionN": "Session {num}",
     "status": {
       "confirmed": "Confirmed",
       "completed": "Completed",
       "no_show": "Missed",
       "cancelled_by_patient": "You cancelled it",
-      "cancelled_by_therapist": "{gender, select, female {Cancelled by your therapist} other {Cancelled by your therapist}}"
+      "cancelled_by_therapist": {
+        "female": "Cancelled by your therapist",
+        "male": "Cancelled by your therapist"
+      }
     },
     "cancelledTitle": "Cancelled",
     "rescheduled": "Rescheduled",

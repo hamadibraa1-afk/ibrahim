@@ -160,8 +160,8 @@ export interface CloseDialogData {
         <fieldset class="outcomes" [attr.aria-invalid]="showOutcomeError()">
           <legend id="close-outcome-label">{{ 'crisis.closeDialog.outcome' | translate }}</legend>
           <mat-radio-group formControlName="outcome" aria-labelledby="close-outcome-label" class="radios" data-testid="close-outcome">
-            @for (o of outcomes; track o; let first = $first) {
-              <mat-radio-button [value]="o" [attr.data-testid]="'close-' + o" [attr.cdkFocusInitial]="first ? '' : null">{{ 'crisis.closeDialog.outcomes.' + o | translate }}</mat-radio-button>
+            @for (o of outcomes; track o) {
+              <mat-radio-button [value]="o" [attr.data-testid]="'close-' + o">{{ 'crisis.closeDialog.outcomes.' + o | translate }}</mat-radio-button>
             }
           </mat-radio-group>
           @if (showOutcomeError()) {

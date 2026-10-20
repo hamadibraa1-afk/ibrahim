@@ -1,0 +1,68 @@
+{
+  "version": "qtext-2026.10.1",
+  "note": "English items follow the public-domain PHQ-9, GAD-7 and the C-SSRS screener. The Arabic wording is a working translation for the pilot and must be replaced by the clinically validated Arabic versions before launch.",
+  "instruments": {
+    "PHQ-9": {
+      "stem": {
+        "ar": "خلال الأسبوعين الماضيين، كم مرة انزعجت من:",
+        "en": "Over the last 2 weeks, how often have you been bothered by:"
+      },
+      "options": [
+        { "value": 0, "ar": "أبدًا", "en": "Not at all" },
+        { "value": 1, "ar": "عدة أيام", "en": "Several days" },
+        { "value": 2, "ar": "أكثر من نصف الأيام", "en": "More than half the days" },
+        { "value": 3, "ar": "تقريبًا كل يوم", "en": "Nearly every day" }
+      ],
+      "items": [
+        { "ar": "قلة الاهتمام أو المتعة في القيام بالأشياء", "en": "Little interest or pleasure in doing things" },
+        { "ar": "الشعور بالحزن أو الاكتئاب أو اليأس", "en": "Feeling down, depressed, or hopeless" },
+        { "ar": "صعوبة في النوم أو الاستمرار فيه، أو النوم أكثر من اللازم", "en": "Trouble falling or staying asleep, or sleeping too much" },
+        { "ar": "الشعور بالتعب أو قلة الطاقة", "en": "Feeling tired or having little energy" },
+        { "ar": "ضعف الشهية أو الإفراط في الأكل", "en": "Poor appetite or overeating" },
+        { "ar": "الشعور بالسوء تجاه نفسك، أو أنك فاشل أو خذلت نفسك أو عائلتك", "en": "Feeling bad about yourself — or that you are a failure or have let yourself or your family down" },
+        { "ar": "صعوبة في التركيز على الأشياء، مثل القراءة أو مشاهدة التلفاز", "en": "Trouble concentrating on things, such as reading the newspaper or watching television" },
+        { "ar": "الحركة أو الكلام ببطء لاحظه الآخرون، أو العكس: التململ وعدم الاستقرار أكثر من المعتاد", "en": "Moving or speaking so slowly that other people could have noticed, or the opposite — being so fidgety or restless that you have been moving around a lot more than usual" },
+        { "ar": "أفكار بأنك ستكون أفضل حالًا لو مت، أو بإيذاء نفسك بطريقة ما", "en": "Thoughts that you would be better off dead, or of hurting yourself in some way" }
+      ]
+    },
+    "GAD-7": {
+      "stem": {
+        "ar": "خلال الأسبوعين الماضيين، كم مرة انزعجت من:",
+        "en": "Over the last 2 weeks, how often have you been bothered by:"
+      },
+      "options": [
+        { "value": 0, "ar": "أبدًا", "en": "Not at all" },
+        { "value": 1, "ar": "عدة أيام", "en": "Several days" },
+        { "value": 2, "ar": "أكثر من نصف الأيام", "en": "More than half the days" },
+        { "value": 3, "ar": "تقريبًا كل يوم", "en": "Nearly every day" }
+      ],
+      "items": [
+        { "ar": "الشعور بالتوتر أو القلق أو العصبية", "en": "Feeling nervous, anxious, or on edge" },
+        { "ar": "عدم القدرة على إيقاف القلق أو التحكم فيه", "en": "Not being able to stop or control worrying" },
+        { "ar": "القلق الزائد بشأن أمور مختلفة", "en": "Worrying too much about different things" },
+        { "ar": "صعوبة في الاسترخاء", "en": "Trouble relaxing" },
+        { "ar": "التململ لدرجة يصعب معها الجلوس بهدوء", "en": "Being so restless that it is hard to sit still" },
+        { "ar": "سرعة الانزعاج أو الاستثارة", "en": "Becoming easily annoyed or irritable" },
+        { "ar": "الشعور بالخوف كأن شيئًا سيئًا قد يحدث", "en": "Feeling afraid, as if something awful might happen" }
+      ]
+    },
+    "C-SSRS-SCREEN": {
+      "stem": {
+        "ar": "خلال الشهر الماضي:",
+        "en": "In the past month:"
+      },
+      "options": [
+        { "value": 1, "ar": "نعم", "en": "Yes" },
+        { "value": 0, "ar": "لا", "en": "No" }
+      ],
+      "items": [
+        { "ar": "هل تمنيت لو أنك ميت، أو تمنيت أن تنام ولا تستيقظ؟", "en": "Have you wished you were dead or wished you could go to sleep and not wake up?" },
+        { "ar": "هل راودتك فعلًا أفكار عن قتل نفسك؟", "en": "Have you actually had any thoughts about killing yourself?" },
+        { "ar": "هل فكرت في كيف يمكن أن تفعل ذلك؟", "en": "Have you been thinking about how you might do this?" },
+        { "ar": "هل راودتك هذه الأفكار مع شيء من النية للتصرف بناءً عليها؟", "en": "Have you had these thoughts and had some intention of acting on them?" },
+        { "ar": "هل بدأت في وضع تفاصيل كيف ستقتل نفسك أو انتهيت منها؟ وهل تنوي تنفيذ هذه الخطة؟", "en": "Have you started to work out or worked out the details of how to kill yourself? Do you intend to carry out this plan?" },
+        { "ar": "خلال الأشهر الثلاثة الماضية، هل فعلت أي شيء، أو بدأت أو استعددت لفعل أي شيء لإنهاء حياتك؟", "en": "In the past 3 months, have you done anything, started to do anything, or prepared to do anything to end your life?" }
+      ]
+    }
+  }
+}

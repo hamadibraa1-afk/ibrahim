@@ -12,7 +12,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ProblemNotice } from '@/components/booking/ProblemNotice';
 import { toShownProblem, type ShownProblem } from '@/components/booking/problem';
 import { emptyFilters, filtersToQuery, hasFilters, therapistsPath, type DirectoryFilters } from './directoryQuery';
-import { asLocale, specialtyLabels, type Translator } from './labels';
+import { asLocale, countKey, specialtyLabels, type Translator } from './labels';
 
 export const SEARCH_DEBOUNCE_MS = 350;
 
@@ -127,7 +127,7 @@ export function TherapistDirectory({ initialFilters, initialResults, timeZone }:
       </div>
 
       <p role="status" className="text-sm text-muted">
-        {loading ? t('loading') : t('count', { count: results.length, n: formatNumber(results.length, locale) })}
+        {loading ? t('loading') : t(countKey('count', results.length, locale), { n: formatNumber(results.length, locale) })}
       </p>
 
       {problem ? <ProblemNotice problem={problem} /> : null}

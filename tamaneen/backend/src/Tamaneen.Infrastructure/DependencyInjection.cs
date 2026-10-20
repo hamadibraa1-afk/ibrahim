@@ -55,6 +55,7 @@ public static class DependencyInjection
         services.AddScoped<CryptoShredder>();
         services.AddScoped<IAuditLog, AuditLog>();
         services.AddScoped<IAiCallLog, AiCallLog>();
+        services.AddScoped<ISessionCheck, SessionValidator>();
         services.AddSingleton<IContactHasher>(sp =>
         {
             var pepper = DecodeKey(sp.GetRequiredService<IOptions<PseudonymizationOptions>>().Value.ContactPepperBase64, "Pseudonymization:ContactPepperBase64");

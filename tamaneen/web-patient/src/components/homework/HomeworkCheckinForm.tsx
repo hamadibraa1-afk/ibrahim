@@ -109,8 +109,8 @@ export function HomeworkCheckinForm({ homework }: { homework: HomeworkDetail }) 
       />
 
       {feedback ? (
-        <figure className="flex items-start gap-2.5">
-          <figcaption className="sr-only">{t('feedbackLabel')}</figcaption>
+        <figure aria-labelledby={`${errorId}-feedback`} className="flex items-start gap-2.5">
+          <figcaption id={`${errorId}-feedback`} className="sr-only">{t('feedbackLabel')}</figcaption>
           <Avatar initials={feedback.initials} size={40} />
           <blockquote className="flex-1 rounded-[18px] border border-line bg-surface px-4 py-3 text-sm leading-relaxed">{feedback.text}</blockquote>
         </figure>

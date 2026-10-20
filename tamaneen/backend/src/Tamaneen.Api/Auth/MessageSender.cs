@@ -66,7 +66,8 @@ public sealed class WebhookMessageSender(HttpClient http, IOptions<MessagingOpti
         using var request = new HttpRequestMessage(HttpMethod.Post, o.WebhookUrl) { Content = new ByteArrayContent(body) };
         request.Content.Headers.ContentType = new("application/json");
         var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(System.Globalization.CultureInfo.InvariantCulture);
-        var signature = Convert.ToHexString(HMACSHA256.HashData(Convert.FromBase64String(o.SigningKeyBase64), [.. Encoding.ASCII.GetBytes(timestamp + "."), .. body])).ToLowerInvariant();
+        byte[] signed = [.. Encoding.ASCII.GetBytes(timestamp + "."), .. body];
+        var signature = Convert.ToHexString(HMACSHA256.HashData(Convert.FromBase64String(o.SigningKeyBase64), signed)).ToLowerInvariant();
         request.Headers.Add("X-Tamaneen-Timestamp", timestamp);
         request.Headers.Add("X-Tamaneen-Signature", "sha256=" + signature);
         using var response = await http.SendAsync(request, cancellationToken).ConfigureAwait(false);

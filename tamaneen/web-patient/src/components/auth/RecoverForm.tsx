@@ -132,7 +132,7 @@ export function RecoverForm() {
 
   if (method === 'code' && challenge) {
     return (
-      <form onSubmit={complete} noValidate className="flex flex-col gap-5">
+      <form key="reset" onSubmit={complete} noValidate className="flex flex-col gap-5">
         <StepHeading title={t('title')} focusOnMount />
         <Notice tone="info">{t('neutral')}</Notice>
         <TextField
@@ -170,7 +170,7 @@ export function RecoverForm() {
   }
 
   return (
-    <form onSubmit={method === 'code' ? requestCode : withRecoveryCode} noValidate className="flex flex-col gap-5">
+    <form key="start" onSubmit={method === 'code' ? requestCode : withRecoveryCode} noValidate className="flex flex-col gap-5">
       <StepHeading title={t('title')} focusOnMount={returned} />
 
       <fieldset className="overflow-hidden rounded-card border border-line bg-surface">

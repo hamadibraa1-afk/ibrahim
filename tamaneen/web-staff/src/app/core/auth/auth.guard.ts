@@ -23,11 +23,12 @@ export const signedOutGuard: CanActivateFn = () => {
 /** Crisis console: supervisors, clinical leads, and therapists on call. */
 export const crisisAccessGuard: CanMatchFn = () => {
   const session = inject(SessionService);
-  return session.crisisAccess() ? true : inject(Router).parseUrl(session.home());
+  // Matching runs before the shell's authGuard: leave signed-out visitors to it so the deep link is kept.
+  return !inject(AuthService).signedIn() || session.crisisAccess() ? true : inject(Router).parseUrl(session.home());
 };
 
 /** Therapist dashboard. */
 export const therapistGuard: CanMatchFn = () => {
   const session = inject(SessionService);
-  return session.role() === 'therapist' ? true : inject(Router).parseUrl(session.home());
+  return !inject(AuthService).signedIn() || session.role() === 'therapist' ? true : inject(Router).parseUrl(session.home());
 };

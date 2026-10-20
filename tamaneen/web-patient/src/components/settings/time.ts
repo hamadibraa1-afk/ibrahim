@@ -16,9 +16,10 @@ const steps: [Intl.RelativeTimeFormatUnit, number][] = [
 /** "3 weeks ago", "قبل 3 أسابيع", "now": the largest unit that fits, Latin digits in both languages. */
 export function formatAgo(iso: string, locale: Locale, now = new Date()): string {
   let value = (Date.parse(iso) - now.getTime()) / 1000;
-  const rtf = new Intl.RelativeTimeFormat(tag(locale), { numeric: 'auto' });
+  // "now" for the first minute; numbers after that ("2 days ago", "قبل يومين"), as in the design.
+  const rtf = new Intl.RelativeTimeFormat(tag(locale), { numeric: 'always' });
   for (const [unit, size] of steps) {
-    if (Math.abs(value) < size) return rtf.format(Math.round(value), unit);
+    if (Math.abs(value) < size) return unit === 'second' ? new Intl.RelativeTimeFormat(tag(locale), { numeric: 'auto' }).format(0, 'second') : rtf.format(Math.round(value), unit);
     value /= size;
   }
   return rtf.format(Math.round(value), 'year');

@@ -91,6 +91,17 @@ public sealed class AuthChallenge : Entity
         ContactCipher = Array.Empty<byte>();
     }
 
+    /// <summary>Sets the code hash right after creation (the hash is keyed with the challenge id).</summary>
+    public void InitializeCode(byte[] codeHash)
+    {
+        if (Sends != 1 || Attempts != 0 || ConsumedAtUtc is not null)
+        {
+            throw new InvalidOperationException("The code can only be set on a new challenge.");
+        }
+
+        CodeHash = codeHash;
+    }
+
     public TimeSpan ResendWait(IClock clock) => ResendAvailableAtUtc > clock.UtcNow ? ResendAvailableAtUtc - clock.UtcNow : TimeSpan.Zero;
 
     public void Resend(byte[] newCodeHash, IClock clock)

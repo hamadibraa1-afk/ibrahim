@@ -19,7 +19,9 @@ public static class Totp
         Span<byte> counter = stackalloc byte[8];
         BinaryPrimitives.WriteInt64BigEndian(counter, step);
         Span<byte> hash = stackalloc byte[20];
+#pragma warning disable CA5350 // RFC 6238 and every authenticator app use HMAC-SHA1; its HMAC use is not affected by SHA-1 collisions.
         HMACSHA1.HashData(secret, counter, hash);
+#pragma warning restore CA5350
         var offset = hash[^1] & 0x0F;
         var binary = ((hash[offset] & 0x7F) << 24) | (hash[offset + 1] << 16) | (hash[offset + 2] << 8) | hash[offset + 3];
         return (binary % 1_000_000).ToString("D6", System.Globalization.CultureInfo.InvariantCulture);

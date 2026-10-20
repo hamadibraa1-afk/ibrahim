@@ -15,11 +15,14 @@ import { Notice } from '@/components/ui/Notice';
 import { PageHeading } from '@/components/ui/PageHeading';
 import { ProblemNotice } from '@/components/booking/ProblemNotice';
 import { toShownProblem, type ShownProblem } from '@/components/booking/problem';
-import { asLocale, specialtyLabels, type Translator } from './labels';
+import { asLocale, genderKey, specialtyLabels, type Translator } from './labels';
 import { reasonSentence } from './reasons';
 
 /** How many suggestions get the full card; the rest are compact rows, as in the design. */
 const FULL_CARDS = 2;
+
+/** "three therapists" is written out in the design; other counts use the number. */
+const titleKey = (count: number) => (count === 1 ? 'titleOne' : count === 2 ? 'titleTwo' : count === 3 ? 'titleThree' : 'titleMany');
 
 type Feedback = { kind: 'dismissed'; text: string } | { kind: 'error'; problem: ShownProblem };
 
@@ -45,7 +48,7 @@ export function MatchSuggestions({ initial, patientLanguage, timeZone }: { initi
     const previous = items;
     setBusyId(therapist.id);
     setItems(previous.filter((s) => s.therapist.id !== therapist.id));
-    setFeedback({ kind: 'dismissed', text: t('dismissed', { gender: therapist.gender, name: therapist.displayName }) });
+    setFeedback({ kind: 'dismissed', text: t(genderKey('dismissed', therapist.gender), { name: therapist.displayName }) });
     try {
       const next = await api<MatchList>(`matches/${encodeURIComponent(therapist.id)}/dismiss`, { method: 'POST' });
       setItems([...next.items].sort((a, b) => a.rank - b.rank));
@@ -59,7 +62,7 @@ export function MatchSuggestions({ initial, patientLanguage, timeZone }: { initi
 
   return (
     <div className="flex flex-col gap-5 pt-4">
-      <PageHeading title={t('title', { count: items.length, n: formatNumber(items.length, locale) })} subtitle={t('subtitle')} />
+      <PageHeading title={t(titleKey(items.length), { n: formatNumber(items.length, locale) })} subtitle={t('subtitle')} />
 
       {feedback ? (
         <div ref={feedbackRef} tabIndex={-1} className="outline-none">
@@ -95,7 +98,7 @@ export function MatchSuggestions({ initial, patientLanguage, timeZone }: { initi
               );
             }
 
-            const subtitle = [therapist.title, therapist.licenseVerified ? t('licensed', { gender: therapist.gender }) : null].filter(Boolean).join(' · ');
+            const subtitle = [therapist.title, therapist.licenseVerified ? t(genderKey('licensed', therapist.gender)) : null].filter(Boolean).join(' · ');
             const sentence = reasonSentence({ reasons: suggestion.reasons, gender: therapist.gender, patientLanguage, locale, timeZone, now }, t, ts);
             return (
               <li key={therapist.id}>
@@ -119,7 +122,7 @@ export function MatchSuggestions({ initial, patientLanguage, timeZone }: { initi
                   ) : null}
                   {sentence ? (
                     <p className="rounded-[16px] bg-tint-sand px-4 py-3 text-sm leading-relaxed">
-                      <strong className="me-1">{t('reasons.label', { gender: therapist.gender })}</strong>
+                      <strong className="me-1">{t(genderKey('reasons.label', therapist.gender))}</strong>
                       <span>{sentence}</span>
                     </p>
                   ) : null}

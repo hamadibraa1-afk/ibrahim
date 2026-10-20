@@ -16,6 +16,15 @@ public class DomainException : Exception
     public string Code { get; }
 
     public IReadOnlyList<object> Arguments { get; }
+
+    /// <summary>Extra machine-readable fields for the client, e.g. remainingAttempts or retryAfterSeconds.</summary>
+    public IDictionary<string, object> Extras { get; } = new Dictionary<string, object>(StringComparer.Ordinal);
+
+    public DomainException With(string key, object value)
+    {
+        Extras[key] = value;
+        return this;
+    }
 }
 
 /// <summary>Stable error codes. Each one has an entry in the API resource files for ar and en.</summary>

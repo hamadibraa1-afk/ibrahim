@@ -1,5 +1,5 @@
 import { HttpClient, HttpContext, HttpContextToken } from '@angular/common/http';
-import { Injectable, OnDestroy, computed, inject, signal } from '@angular/core';
+import { Injectable, NgZone, OnDestroy, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { API_BASE_URL } from '../api';
@@ -25,6 +25,7 @@ export class AuthService implements OnDestroy {
   private readonly apiBase = inject(API_BASE_URL);
   private readonly session = inject(SessionService);
   private readonly router = inject(Router);
+  private readonly zone = inject(NgZone);
 
   private readonly token = signal<string | null>(null);
   private readonly profile = signal<StaffMe | null>(null);
@@ -139,13 +140,18 @@ export class AuthService implements OnDestroy {
   private scheduleRefresh(): void {
     clearTimeout(this.refreshTimer);
     const delay = Math.max(0, this.expiresAt - Date.now() - REFRESH_LEAD_MS);
-    this.refreshTimer = setTimeout(() => {
-      void this.refresh().then((token) => {
-        if (!token) {
-          this.expire();
-        }
-      });
-    }, delay);
+    // Outside the zone: a timer pending for minutes would keep the app from ever being "stable".
+    this.refreshTimer = this.zone.runOutsideAngular(() =>
+      setTimeout(() => {
+        this.zone.run(() => {
+          void this.refresh().then((token) => {
+            if (!token) {
+              this.expire();
+            }
+          });
+        });
+      }, delay),
+    );
   }
 
   private clearLocal(): void {

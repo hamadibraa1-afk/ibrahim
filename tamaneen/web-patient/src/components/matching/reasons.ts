@@ -1,7 +1,7 @@
 import type { Locale } from '@/i18n/routing';
 import { formatRelativeDays } from '@/lib/format';
 import type { Gender, Lang, MatchSuggestion } from '@/lib/api/types';
-import { joinList, specialtyLabels, type Translator } from './labels';
+import { genderKey, joinList, specialtyLabels, type Translator } from './labels';
 
 export interface ReasonInput {
   reasons: MatchSuggestion['reasons'];
@@ -27,7 +27,7 @@ export function reasonSentence(input: ReasonInput, t: Translator, tSpecialties: 
     locale === 'en' && /^[A-Z][a-z]/.test(label) ? label.charAt(0).toLowerCase() + label.slice(1) : label,
   );
   if (shared.length > 0) clauses.push(t('reasons.specialties', { list: joinList(shared, locale) }));
-  if (reasons.speaksYourLanguage) clauses.push(t('reasons.language', { gender, language: t(`reasons.languageName.${patientLanguage}`) }));
+  if (reasons.speaksYourLanguage) clauses.push(t(genderKey('reasons.language', gender), { language: t(`reasons.languageName.${patientLanguage}`) }));
   if (reasons.eveningSlots) clauses.push(t('reasons.evening'));
   if (reasons.nextAvailableAt) clauses.push(t('reasons.next', { when: formatRelativeDays(reasons.nextAvailableAt, locale, now, timeZone) }));
 

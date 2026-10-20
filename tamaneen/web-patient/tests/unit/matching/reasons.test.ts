@@ -1,4 +1,5 @@
 import { createTranslator } from 'next-intl';
+import type { Translator } from '@/components/matching/labels';
 import { reasonSentence } from '@/components/matching/reasons';
 import { formatRelativeDays } from '@/lib/format';
 import { messagesFor } from '../intl';
@@ -6,10 +7,9 @@ import { NOW } from './fixtures';
 
 function translators(locale: 'ar' | 'en') {
   const messages = messagesFor(locale);
-  return {
-    t: createTranslator({ locale, messages, namespace: 'matching' }),
-    ts: createTranslator({ locale, messages, namespace: 'specialties' }),
-  };
+  const t = createTranslator({ locale, messages, namespace: 'matching' }) as unknown as Translator;
+  const ts = createTranslator({ locale, messages, namespace: 'specialties' }) as unknown as Translator;
+  return { t, ts };
 }
 
 const nextAt = '2026-10-21T13:00:00Z';

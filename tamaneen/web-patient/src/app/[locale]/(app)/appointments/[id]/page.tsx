@@ -5,7 +5,7 @@ import { AppointmentActions } from '@/components/appointments/AppointmentActions
 import { DetailRows } from '@/components/appointments/DetailRows';
 import { JoinSessionCard } from '@/components/appointments/JoinSessionCard';
 import { isCancelled, sessionLabel, statusLabel } from '@/components/appointments/labels';
-import { asLocale, timeZoneOf, type Translator } from '@/components/matching/labels';
+import { asLocale, genderKey, timeZoneOf, type Translator } from '@/components/matching/labels';
 import { BackLink } from '@/components/ui/BackLink';
 import { Card } from '@/components/ui/Card';
 import { getMe, serverGetOptional } from '@/lib/api/server';
@@ -47,7 +47,7 @@ export default async function AppointmentDetailPage({ params }: { params: Params
         label={t('detailsLabel')}
         rows={[
           { label: t('date'), value: formatDateTime(appointment.startsAt, locale, timeZone) },
-          { label: t('therapist', { gender: therapist.gender }), value: therapist.displayName },
+          { label: t(genderKey('therapist', therapist.gender)), value: therapist.displayName },
           { label: t('type'), value: t('typeValue', { minutes: formatNumber(appointment.durationMinutes, locale) }) },
           { label: t('status'), value: status, valueClassName: statusTone },
         ]}

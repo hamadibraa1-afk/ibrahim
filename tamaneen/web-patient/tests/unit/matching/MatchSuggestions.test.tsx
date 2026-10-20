@@ -24,7 +24,7 @@ const items = [
 ];
 
 describe('MatchSuggestions (P07)', () => {
-  beforeEach(() => mocks.api.mockReset());
+  afterEach(() => mocks.api.mockReset());
 
   it('shows three suggestions: best fit first, reasons, and the third one compact', () => {
     renderWithIntl(<MatchSuggestions initial={items} patientLanguage="ar" timeZone="Asia/Riyadh" />);

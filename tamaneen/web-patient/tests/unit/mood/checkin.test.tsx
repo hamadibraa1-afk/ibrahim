@@ -67,9 +67,9 @@ describe('CheckInForm', () => {
     const table = screen.getByRole('table', { name: 'آخر 7 أيام' });
     const rows = within(table).getAllByRole('row');
     expect(rows).toHaveLength(8);
-    expect(within(table).getByRole('rowheader', { name: 'الثلاثاء 20 أكتوبر' }).closest('tr')).toHaveTextContent('6 من 10');
-    expect(within(table).getByRole('rowheader', { name: 'الأحد 18 أكتوبر' }).closest('tr')).toHaveTextContent('5 من 10');
-    expect(within(table).getByRole('rowheader', { name: 'الجمعة 16 أكتوبر' }).closest('tr')).toHaveTextContent('لا يوجد تسجيل');
+    expect(within(table).getByRole('rowheader', { name: 'الثلاثاء، 20 أكتوبر' }).closest('tr')).toHaveTextContent('6 من 10');
+    expect(within(table).getByRole('rowheader', { name: 'الأحد، 18 أكتوبر' }).closest('tr')).toHaveTextContent('5 من 10');
+    expect(within(table).getByRole('rowheader', { name: 'الجمعة، 16 أكتوبر' }).closest('tr')).toHaveTextContent('لا يوجد تسجيل');
     expect(screen.getByTestId('mood-bars')).toHaveAttribute('aria-hidden', 'true');
   });
 
@@ -84,7 +84,7 @@ describe('CheckInForm', () => {
     await userEvent.click(screen.getByRole('button', { name: 'حفظ' }));
     expect(mocks.api).toHaveBeenCalledWith('mood', { method: 'POST', body: { score: 3, tags: ['tired', 'work_stress'], note: 'يوم طويل' } });
     expect(await screen.findByText('حفظنا مزاجك اليوم.')).toBeInTheDocument();
-    expect(screen.getByRole('rowheader', { name: 'الثلاثاء 20 أكتوبر' }).closest('tr')).toHaveTextContent('3 من 10');
+    expect(screen.getByRole('rowheader', { name: 'الثلاثاء، 20 أكتوبر' }).closest('tr')).toHaveTextContent('3 من 10');
   });
 
   it('opens the crisis screen when the note is blocked by the gate', async () => {

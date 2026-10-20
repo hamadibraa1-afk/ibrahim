@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { asLocale, timeZoneOf } from '@/components/matching/labels';
+import { asLocale, genderKey, timeZoneOf } from '@/components/matching/labels';
 import { ButtonLink, buttonClass } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { getMe, serverGetOptional } from '@/lib/api/server';
@@ -28,7 +28,7 @@ export default async function BookConfirmedPage({ params }: { params: Params }) 
   ]);
   if (!appointment) notFound();
   const { therapist } = appointment;
-  const steps = [t('step1', { gender: therapist.gender }), t('step2'), t('step3')];
+  const steps = [t(genderKey('step1', therapist.gender)), t('step2'), t('step3')];
 
   return (
     <div className="flex flex-col gap-5 pt-6">

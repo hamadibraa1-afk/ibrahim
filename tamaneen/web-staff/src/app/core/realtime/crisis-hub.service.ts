@@ -1,4 +1,4 @@
-import { DestroyRef, Injectable, InjectionToken, OnDestroy, effect, inject, signal, untracked } from '@angular/core';
+import { DestroyRef, Injectable, InjectionToken, NgZone, OnDestroy, effect, inject, signal, untracked } from '@angular/core';
 import { HubConnectionBuilder, LogLevel } from '@microsoft/signalr';
 import { Observable, Subject } from 'rxjs';
 import { CRISIS_BASE_URL } from '../api';
@@ -41,6 +41,7 @@ export class CrisisHubService implements OnDestroy {
   private readonly baseUrl = inject(CRISIS_BASE_URL);
   private readonly auth = inject(AuthService);
   private readonly language = inject(LanguageService);
+  private readonly zone = inject(NgZone);
 
   private readonly alertSubject = new Subject<OpenCrisisEvent>();
   private readonly reconnectedSubject = new Subject<void>();
@@ -137,11 +138,15 @@ export class CrisisHubService implements OnDestroy {
     if (this.users === 0) {
       return;
     }
-    this.retryTimer = setTimeout(() => {
-      if (this.users > 0 && this.state() === 'disconnected') {
-        void this.open(this.language.language()).then(() => this.state() === 'connected' && this.reconnectedSubject.next());
-      }
-    }, HUB_RETRY_MS);
+    this.retryTimer = this.zone.runOutsideAngular(() =>
+      setTimeout(() => {
+        this.zone.run(() => {
+          if (this.users > 0 && this.state() === 'disconnected') {
+            void this.open(this.language.language()).then(() => this.state() === 'connected' && this.reconnectedSubject.next());
+          }
+        });
+      }, HUB_RETRY_MS),
+    );
   }
 
   private async close(): Promise<void> {
