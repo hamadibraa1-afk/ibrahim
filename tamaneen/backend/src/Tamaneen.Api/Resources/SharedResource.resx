@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="problem.400.title" xml:space="preserve"><value>The request is not valid.</value></data>
+  <data name="problem.401.title" xml:space="preserve"><value>You need to sign in.</value></data>
+  <data name="problem.403.title" xml:space="preserve"><value>You don't have permission for this action.</value></data>
+  <data name="problem.404.title" xml:space="preserve"><value>We couldn't find what you're looking for.</value></data>
+  <data name="problem.405.title" xml:space="preserve"><value>This method isn't allowed here.</value></data>
+  <data name="problem.409.title" xml:space="preserve"><value>This conflicts with a change that was already made.</value></data>
+  <data name="problem.415.title" xml:space="preserve"><value>This content type isn't supported.</value></data>
+  <data name="problem.422.title" xml:space="preserve"><value>This action can't be completed.</value></data>
+  <data name="problem.429.title" xml:space="preserve"><value>Too many requests. Please wait a moment.</value></data>
+  <data name="problem.500.title" xml:space="preserve"><value>Something went wrong on our side. Please try again.</value></data>
+  <data name="problem.503.title" xml:space="preserve"><value>The service is temporarily unavailable.</value></data>
+  <data name="problem.default.title" xml:space="preserve"><value>An error occurred.</value></data>
+  <data name="problem.crisis_hint" xml:space="preserve"><value>If you are in danger now, use the Help now button or call your local emergency number.</value></data>
+  <data name="error.language.unsupported" xml:space="preserve"><value>The language '{0}' is not supported. Choose Arabic (ar) or English (en).</value></data>
+  <data name="error.pseudonym.invalid" xml:space="preserve"><value>The identifier is not valid.</value></data>
+  <data name="error.patient.shredded" xml:space="preserve"><value>This patient's data was permanently deleted at their request.</value></data>
+  <data name="error.assignment.ended" xml:space="preserve"><value>This care assignment has already ended.</value></data>
+  <data name="error.crisis.already_acknowledged" xml:space="preserve"><value>Someone else has already taken this case.</value></data>
+  <data name="error.crisis.closed" xml:space="preserve"><value>This crisis event is already closed.</value></data>
+  <data name="error.crisis.close_not_allowed" xml:space="preserve"><value>Only a supervisor or the clinical lead can close a crisis event.</value></data>
+  <data name="error.reason.required" xml:space="preserve"><value>Please write a reason.</value></data>
+  <data name="error.not_found" xml:space="preserve"><value>We couldn't find this item.</value></data>
+  <data name="validation.language.required" xml:space="preserve"><value>Language is required.</value></data>
+  <data name="validation.failed" xml:space="preserve"><value>Some fields need your attention.</value></data>
+  <data name="message.welcome" xml:space="preserve"><value>Welcome to Tamaneen.</value></data>
+  <data name="message.language_changed" xml:space="preserve"><value>Your language is now English.</value></data>
+  <data name="language.ar" xml:space="preserve"><value>العربية</value></data>
+  <data name="language.en" xml:space="preserve"><value>English</value></data>
+</root>

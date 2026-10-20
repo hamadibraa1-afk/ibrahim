@@ -1,0 +1,13 @@
+bin/
+obj/
+.vs/
+*.user
+TestResults/
+node_modules/
+.next/
+dist/
+.angular/
+coverage/
+playwright-report/
+test-results/
+*.local.json

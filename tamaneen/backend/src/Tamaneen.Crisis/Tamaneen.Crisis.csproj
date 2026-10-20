@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Tamaneen.Crisis</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Tamaneen.SharedKernel\Tamaneen.SharedKernel.csproj" />
+  </ItemGroup>
+</Project>

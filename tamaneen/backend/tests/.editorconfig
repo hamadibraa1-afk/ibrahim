@@ -1,0 +1,8 @@
+# Test projects: descriptive snake_case test names and no ConfigureAwait requirement.
+[*.cs]
+dotnet_diagnostic.CA1707.severity = none
+dotnet_diagnostic.CA2007.severity = none
+dotnet_diagnostic.CA1861.severity = none
+dotnet_diagnostic.CA1515.severity = none
+# xUnit owns test-class lifetime; disposal happens in IAsyncLifetime.DisposeAsync.
+dotnet_diagnostic.CA1001.severity = none

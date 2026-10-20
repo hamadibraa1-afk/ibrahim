@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="problem.400.title" xml:space="preserve"><value>الطلب غير صالح.</value></data>
+  <data name="problem.401.title" xml:space="preserve"><value>يجب تسجيل الدخول.</value></data>
+  <data name="problem.403.title" xml:space="preserve"><value>ليست لديك صلاحية لهذا الإجراء.</value></data>
+  <data name="problem.404.title" xml:space="preserve"><value>لم نجد ما تبحث عنه.</value></data>
+  <data name="problem.405.title" xml:space="preserve"><value>هذه الطريقة غير مسموحة هنا.</value></data>
+  <data name="problem.409.title" xml:space="preserve"><value>يتعارض هذا مع تغيير تم من قبل.</value></data>
+  <data name="problem.415.title" xml:space="preserve"><value>نوع المحتوى غير مدعوم.</value></data>
+  <data name="problem.422.title" xml:space="preserve"><value>لا يمكن إكمال هذا الإجراء.</value></data>
+  <data name="problem.429.title" xml:space="preserve"><value>طلبات كثيرة. يرجى الانتظار قليلًا.</value></data>
+  <data name="problem.500.title" xml:space="preserve"><value>حدث خطأ من جهتنا. يرجى المحاولة مرة أخرى.</value></data>
+  <data name="problem.503.title" xml:space="preserve"><value>الخدمة غير متاحة مؤقتًا.</value></data>
+  <data name="problem.default.title" xml:space="preserve"><value>حدث خطأ.</value></data>
+  <data name="problem.crisis_hint" xml:space="preserve"><value>إن كنت في خطر الآن، استخدم زر «مساعدة فورية» أو اتصل برقم الطوارئ المحلي.</value></data>
+  <data name="error.language.unsupported" xml:space="preserve"><value>اللغة «{0}» غير مدعومة. اختر العربية (ar) أو الإنجليزية (en).</value></data>
+  <data name="error.pseudonym.invalid" xml:space="preserve"><value>المعرّف غير صالح.</value></data>
+  <data name="error.patient.shredded" xml:space="preserve"><value>حُذفت بيانات هذا المريض نهائيًا بناءً على طلبه.</value></data>
+  <data name="error.assignment.ended" xml:space="preserve"><value>انتهى إسناد الرعاية هذا من قبل.</value></data>
+  <data name="error.crisis.already_acknowledged" xml:space="preserve"><value>تولّى شخص آخر هذه الحالة من قبل.</value></data>
+  <data name="error.crisis.closed" xml:space="preserve"><value>حدث الطوارئ هذا مغلق من قبل.</value></data>
+  <data name="error.crisis.close_not_allowed" xml:space="preserve"><value>لا يغلق حدث الطوارئ إلا المشرف أو المسؤول السريري.</value></data>
+  <data name="error.reason.required" xml:space="preserve"><value>يرجى كتابة السبب.</value></data>
+  <data name="error.not_found" xml:space="preserve"><value>لم نجد هذا العنصر.</value></data>
+  <data name="validation.language.required" xml:space="preserve"><value>اللغة مطلوبة.</value></data>
+  <data name="validation.failed" xml:space="preserve"><value>بعض الحقول تحتاج إلى مراجعة.</value></data>
+  <data name="message.welcome" xml:space="preserve"><value>مرحبًا بك في طمأنينة.</value></data>
+  <data name="message.language_changed" xml:space="preserve"><value>أصبحت لغتك العربية.</value></data>
+  <data name="language.ar" xml:space="preserve"><value>العربية</value></data>
+  <data name="language.en" xml:space="preserve"><value>English</value></data>
+</root>

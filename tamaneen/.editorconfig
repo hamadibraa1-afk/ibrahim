@@ -1,0 +1,17 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+indent_style = space
+
+[*.cs]
+indent_size = 4
+
+[**/Migrations/*.cs]
+generated_code = true
+dotnet_analyzer_diagnostic.severity = none
+
+[*.{json,ts,html,scss,css,js,mjs,tsx}]
+indent_size = 2
