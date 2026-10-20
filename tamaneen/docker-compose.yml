@@ -1,0 +1,74 @@
+# Local trial on a laptop: database, API, crisis worker, patient app and staff portal.
+#   docker compose up --build
+# Patient app: http://localhost:3000   Staff portal: http://localhost:4200
+# Development keys and seeded test accounts only. Never use this file for real patients.
+name: tamaneen
+
+x-backend-env: &backend-env
+  ASPNETCORE_ENVIRONMENT: Development
+  Database__ConnectionString: "Server=sql,1433;Database=TamaneenDev;User Id=sa;Password=Tamaneen!Dev2026;TrustServerCertificate=True"
+  Cors__Origins__0: http://localhost:3000
+  Cors__Origins__1: http://localhost:4200
+
+services:
+  sql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Tamaneen!Dev2026"
+    ports: ["14333:1433"]
+    volumes: [sqldata:/var/opt/mssql]
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P 'Tamaneen!Dev2026' -Q 'SELECT 1' -b -o /dev/null"]
+      interval: 5s
+      timeout: 5s
+      retries: 40
+      start_period: 20s
+
+  migrate:
+    build: { context: ., dockerfile: backend/Dockerfile, target: migrate }
+    environment:
+      TAMANEEN_SQL: "Server=sql,1433;Database=TamaneenDev;User Id=sa;Password=Tamaneen!Dev2026;TrustServerCertificate=True"
+    depends_on:
+      sql: { condition: service_healthy }
+
+  worker:
+    build: { context: ., dockerfile: backend/Dockerfile, target: worker }
+    environment:
+      <<: *backend-env
+      Crisis__Worker__ConsoleBaseUrl: http://localhost:4200
+    ports: ["5090:8080"]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+
+  api:
+    build: { context: ., dockerfile: backend/Dockerfile, target: api }
+    environment:
+      <<: *backend-env
+      CrisisGate__BaseUrl: http://worker:8080
+      # Leave empty to use the built-in demo model; put a key here to talk to Claude.
+      Anthropic__ApiKey: "${ANTHROPIC_API_KEY:-}"
+      Anthropic__Demo: "true"
+    ports: ["5080:8080"]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      worker: { condition: service_started }
+
+  patient:
+    build: { context: web-patient }
+    environment:
+      TAMANEEN_API_URL: http://api:8080
+      TAMANEEN_EMERGENCY_NUMBER: "911"
+      TAMANEEN_MATCH_WITHIN_HOURS: "72"
+      TAMANEEN_SECURE_COOKIES: "false"
+    ports: ["3000:3000"]
+    depends_on: [api]
+
+  staff:
+    build: { context: web-staff }
+    ports: ["4200:80"]
+    depends_on: [api, worker]
+
+volumes:
+  sqldata:

@@ -14,6 +14,9 @@ public sealed class AnthropicOptions
     public string Model { get; set; } = "claude-opus-5-5";
 
     public string? BaseUrl { get; set; }
+
+    /// <summary>Without a key, answer with <see cref="DemoLanguageModel"/> instead of the fallback (local trials only).</summary>
+    public bool Demo { get; set; }
 }
 
 /// <summary>Claude through the official Anthropic SDK. Receives de-identified text only.</summary>

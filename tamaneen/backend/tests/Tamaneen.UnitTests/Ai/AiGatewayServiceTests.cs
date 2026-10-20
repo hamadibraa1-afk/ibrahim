@@ -239,6 +239,29 @@ public class AiGatewayServiceTests
         response.Should().BeEquivalentTo(new { IsFallback = true, Outcome = AiCallOutcome.Failed });
     }
 
+    [Theory]
+    [InlineData("companion", "ar")]
+    [InlineData("companion", "en")]
+    [InlineData("intake", "ar")]
+    [InlineData("intake", "en")]
+    [InlineData("intake-summary", "ar")]
+    [InlineData("intake-summary", "en")]
+    [InlineData("journal-reflection", "ar")]
+    [InlineData("journal-reflection", "en")]
+    public async Task The_demo_model_passes_validation_in_the_patients_language(string purpose, string language)
+    {
+        var fixture = new Fixture(model: new DemoLanguageModel());
+        var message = language == "ar" ? "أشعر بضغط كبير في العمل ولا أنام جيدًا" : "I feel a lot of pressure at work and I don't sleep well";
+
+        var response = await fixture.Gateway.AskAsync(new AiRequest(Pseudonym, purpose, language, message, [], KnownIdentifiers.None), CancellationToken.None);
+
+        response.Should().BeEquivalentTo(new { Language = language, IsFallback = false, Outcome = AiCallOutcome.Succeeded });
+        if (purpose == "intake-summary")
+        {
+            response.Text.Split("\n---\n").Should().HaveCount(4);
+        }
+    }
+
     private static AiRequest Ask(string language, string message, IReadOnlyList<ChatTurn>? history = null) =>
         new(Pseudonym, "companion", language, message, history ?? [], KnownIdentifiers.None);
 

@@ -11,7 +11,12 @@ export interface CookieOptions {
   maxAge: number;
 }
 
-const secure = () => process.env.NODE_ENV === 'production' || process.env.TAMANEEN_SECURE_COOKIES === 'true';
+/** Secure in production unless explicitly turned off for a plain-http local trial (TAMANEEN_SECURE_COOKIES=false). */
+const secure = () => {
+  const flag = process.env.TAMANEEN_SECURE_COOKIES;
+  if (flag === 'true' || flag === 'false') return flag === 'true';
+  return process.env.NODE_ENV === 'production';
+};
 
 export function secondsUntil(iso: string, now = Date.now()): number {
   return Math.max(0, Math.floor((Date.parse(iso) - now) / 1000));

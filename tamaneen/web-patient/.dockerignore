@@ -1,0 +1,11 @@
+**/bin
+**/obj
+**/node_modules
+**/.next
+**/.angular
+**/dist
+**/coverage
+**/playwright-report
+**/test-results
+**/TestResults
+.git

@@ -24,6 +24,11 @@ public static class AiGatewayServiceCollectionExtensions
             throw new InvalidOperationException("Anthropic:ApiKey must be configured in Production.");
         }
 
+        if (environment.IsProduction() && configuration.GetValue<bool>("Anthropic:Demo"))
+        {
+            throw new InvalidOperationException("Anthropic:Demo must not be enabled in Production.");
+        }
+
         services.AddOptions<AiGatewayOptions>().Bind(configuration.GetSection(AiGatewayOptions.Section)).ValidateDataAnnotations().ValidateOnStart();
         services.AddOptions<AnthropicOptions>().Bind(configuration.GetSection("Anthropic"));
         services.AddOptions<PresidioOptions>().Bind(configuration.GetSection("Presidio"));
@@ -40,9 +45,12 @@ public static class AiGatewayServiceCollectionExtensions
         services.TryAddSingleton<ILanguageModel>(sp =>
         {
             var anthropic = sp.GetRequiredService<IOptions<AnthropicOptions>>();
-            return string.IsNullOrWhiteSpace(anthropic.Value.ApiKey)
-                ? new NotConfiguredLanguageModel(anthropic.Value.Model)
-                : new AnthropicLanguageModel(anthropic);
+            if (!string.IsNullOrWhiteSpace(anthropic.Value.ApiKey))
+            {
+                return new AnthropicLanguageModel(anthropic);
+            }
+
+            return anthropic.Value.Demo ? new DemoLanguageModel() : new NotConfiguredLanguageModel(anthropic.Value.Model);
         });
         services.AddScoped<IAiGateway, AiGatewayService>();
         return services;

@@ -1,3 +1,4 @@
+using System.Net;
 using Tamaneen.Infrastructure.Auth;
 using System.Threading.RateLimiting;
 using Tamaneen.AiGateway;
@@ -127,6 +128,20 @@ public static class ApiHost
             app.MapGet("/dev/outbox", (string to, IMessageSender sender) =>
                 sender is InMemoryMessageSender memory && memory.LastTo(to) is { } m ? Results.Ok(new { m.Text, Purpose = m.Purpose.ToString(), m.Language }) : Results.NotFound())
                 .AllowAnonymous();
+
+            // A page for people trying the app locally: the latest messages that would have gone out by SMS or e-mail.
+            app.MapGet("/dev/inbox", (IMessageSender sender) =>
+            {
+                var rows = sender is InMemoryMessageSender memory
+                    ? string.Concat(memory.Messages.Reverse().Take(30).Select(m =>
+                        $"<tr><td dir=\"ltr\">{WebUtility.HtmlEncode(m.To)}</td><td>{WebUtility.HtmlEncode(m.Purpose.ToString())}</td><td>{WebUtility.HtmlEncode(m.Text)}</td></tr>"))
+                    : string.Empty;
+                var html = "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta http-equiv=\"refresh\" content=\"5\">"
+                    + "<title>Tamaneen test inbox</title><style>body{font-family:system-ui;margin:24px}td,th{border:1px solid #ccc;padding:8px;text-align:start}table{border-collapse:collapse}</style></head><body>"
+                    + "<h1>صندوق الرسائل التجريبي · Test inbox</h1><p>رموز التحقق التي كانت ستُرسل بالجوال أو البريد (تتحدث كل 5 ثوانٍ). Codes that would have been sent; refreshes every 5 s.</p>"
+                    + $"<table><tr><th>إلى · To</th><th>النوع · Purpose</th><th>الرسالة · Message</th></tr>{rows}</table></body></html>";
+                return Results.Content(html, "text/html; charset=utf-8");
+            }).AllowAnonymous();
         }
 
         return app;
