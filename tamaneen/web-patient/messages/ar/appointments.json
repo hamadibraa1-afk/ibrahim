@@ -1,0 +1,21 @@
+{
+  "appointments": {
+    "metaTitle": "مواعيدي",
+    "title": "مواعيدي",
+    "upcoming": "القادمة",
+    "past": "السابقة",
+    "session": "{n, plural, =1 {الجلسة الأولى} =2 {الجلسة الثانية} =3 {الجلسة الثالثة} =4 {الجلسة الرابعة} =5 {الجلسة الخامسة} =6 {الجلسة السادسة} =7 {الجلسة السابعة} =8 {الجلسة الثامنة} =9 {الجلسة التاسعة} =10 {الجلسة العاشرة} other {الجلسة {num}}}",
+    "status": {
+      "confirmed": "مؤكد",
+      "completed": "تمت",
+      "no_show": "لم تحضر",
+      "cancelled_by_patient": "ألغيته أنت",
+      "cancelled_by_therapist": "{gender, select, female {ألغته الأخصائية} other {ألغاه الأخصائي}}"
+    },
+    "cancelledTitle": "تم إلغاؤه",
+    "rescheduled": "أُعيدت الجدولة",
+    "bookNew": "حجز موعد جديد",
+    "emptyUpcoming": "لا مواعيد قادمة",
+    "emptyUpcomingBody": "احجز جلستك متى كنت مستعدًا."
+  }
+}

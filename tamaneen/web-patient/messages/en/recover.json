@@ -1,0 +1,24 @@
+{
+  "recover": {
+    "metaTitle": "Recover account",
+    "title": "Recover your account",
+    "methodLegend": "Recovery method",
+    "byCode": "With a code to my phone or email",
+    "byCodeHint": "We send a code to reset your password",
+    "byRecovery": "With a recovery code",
+    "byRecoveryHint": "One of the ten codes you saved when you signed up",
+    "contact": "Mobile number or email",
+    "contactInvalid": "Enter a valid mobile number or email address.",
+    "neutral": "If the account exists, you'll get a code within a minute. For your security, we show the same message either way.",
+    "lostBoth": "Lost both your phone and your recovery codes? Ask the team for help. We verify your identity, and your account is reset after 24 hours.",
+    "send": "Send code",
+    "code": "The code we sent you",
+    "codeInvalid": "Enter the 6-digit code.",
+    "recoveryCode": "Recovery code",
+    "recoveryInvalid": "Enter the recovery code exactly as you saved it.",
+    "newPassword": "New password",
+    "passwordTooShort": "Your password needs at least 12 characters.",
+    "reset": "Set new password",
+    "changeContact": "Use a different number or email"
+  }
+}

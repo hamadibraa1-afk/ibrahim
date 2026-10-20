@@ -72,6 +72,28 @@ public class CrisisGateTests
     }
 
     [Fact]
+    public async Task Help_now_without_any_text_opens_a_critical_event()
+    {
+        var result = await Gate().EvaluateAsync(new GateRequest(_patient, "en", null, null, CrisisGate.HelpNowSource), default);
+
+        result.Decision.Should().Be(GateDecision.Blocked);
+        result.Level.Should().Be(RiskLevel.Critical);
+        var evt = _store.Events.Should().ContainSingle().Subject;
+        evt.TriggerRuleIds.Should().Contain(CrisisGate.HelpNowRuleId);
+        evt.Source.Should().Be("help_now");
+        _store.Excerpts.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task The_triggering_words_are_kept_for_the_responder()
+    {
+        await Gate().EvaluateAsync(Message("سأنتحر الليلة"), default);
+
+        _store.Excerpts.Should().Equal("سأنتحر الليلة");
+        _store.Events.Single().ExcerptCipher.Should().NotBeNull();
+    }
+
+    [Fact]
     public async Task High_text_gets_the_high_script_in_english_and_a_15_minute_window()
     {
         var result = await Gate().EvaluateAsync(Message("I want to die", "en-GB"), default);
@@ -211,6 +233,15 @@ public class CrisisGateTests
         public List<string> AuditActions { get; } = new();
 
         public int Saves { get; private set; }
+
+        public List<string> Excerpts { get; } = new();
+
+        public Task AttachExcerptAsync(CrisisEvent crisisEvent, string text, CancellationToken cancellationToken)
+        {
+            Excerpts.Add(text);
+            crisisEvent.SetExcerpt(System.Text.Encoding.UTF8.GetBytes(text));
+            return Task.CompletedTask;
+        }
 
         public bool FailEverything { get; set; }
 

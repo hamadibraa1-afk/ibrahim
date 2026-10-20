@@ -1,0 +1,21 @@
+{
+  "appointments": {
+    "metaTitle": "My appointments",
+    "title": "My appointments",
+    "upcoming": "Upcoming",
+    "past": "Past",
+    "session": "{n, plural, =1 {First session} =2 {Second session} =3 {Third session} =4 {Fourth session} =5 {Fifth session} =6 {Sixth session} =7 {Seventh session} =8 {Eighth session} =9 {Ninth session} =10 {Tenth session} other {Session {num}}}",
+    "status": {
+      "confirmed": "Confirmed",
+      "completed": "Completed",
+      "no_show": "Missed",
+      "cancelled_by_patient": "You cancelled it",
+      "cancelled_by_therapist": "{gender, select, female {Cancelled by your therapist} other {Cancelled by your therapist}}"
+    },
+    "cancelledTitle": "Cancelled",
+    "rescheduled": "Rescheduled",
+    "bookNew": "Book a new appointment",
+    "emptyUpcoming": "No upcoming appointments",
+    "emptyUpcomingBody": "Book a session whenever you're ready."
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "consents": {
+    "metaTitle": "Consents",
+    "title": "Before we begin",
+    "subtitle": "Choose what you agree to. You can change any consent later in settings.",
+    "required": "Required",
+    "optional": "Optional",
+    "readFull": "Read the full text",
+    "hideFull": "Hide the text",
+    "version": "Version {version}",
+    "requiredHint": "Turn on the required consents to continue.",
+    "submit": "Agree and continue",
+    "items": {
+      "platform": {
+        "title": "Using the platform",
+        "body": "Storing your data encrypted and providing the service to you.",
+        "full": "We store your nickname, your contact details and what you share with us encrypted, and use them only to provide the service: verifying your account, arranging appointments and following up on your exercises. We never sell your data or share it for marketing."
+      },
+      "ai": {
+        "title": "AI assistance",
+        "body": "Helps gather and summarize your story after removing your name and numbers. It doesn't diagnose or prescribe.",
+        "full": "The assistant asks gentle questions and organizes your answers into a summary that you review and edit before sending. We remove your name and numbers before any text reaches the model, and your words are never used to train it. Treatment decisions are always made by a human professional."
+      },
+      "shareWithTherapist": {
+        "title": "Sharing with your therapist",
+        "body": "Only the clinical supervisor and the therapist you choose see your file.",
+        "full": "A clinical supervisor reads your summary to suggest the best-fitting therapists, and then only the therapist you choose sees it. The technical admin team can't see your clinical data. Every access to your file is logged, and you can review it on the privacy page."
+      },
+      "research": {
+        "title": "Improving the service",
+        "body": "Using anonymized data to evaluate the pilot.",
+        "full": "We use general figures that don't identify you, such as waiting times and satisfaction, to evaluate and improve the pilot. The text of your conversations is never used for this, and you can withdraw this consent at any time."
+      },
+      "emergencyLocation": {
+        "title": "My location in an emergency",
+        "body": "Lets the team know where you are only if you're in danger.",
+        "full": "If you appear to be in danger, the on-call clinician can see your approximate location to get help to you. We don't track your location at any other time, and you can withdraw this consent at any time in settings."
+      }
+    }
+  }
+}

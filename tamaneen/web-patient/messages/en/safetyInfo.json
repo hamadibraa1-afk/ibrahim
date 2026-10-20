@@ -1,0 +1,17 @@
+{
+  "safetyInfo": {
+    "metaTitle": "Safety details",
+    "title": "How can we reach you if needed?",
+    "subtitle": "We use these details only if you're in danger. No one sees them except the on-call clinician in an emergency.",
+    "contactPhone": "Your mobile number for calls",
+    "trustedName": "Name of someone you trust",
+    "trustedNamePlaceholder": "For example: my sister",
+    "trustedPhone": "Their mobile number",
+    "shareLocation": "Allow my location to be known in emergencies only",
+    "shareLocationHint": "You can turn this off at any time",
+    "save": "Save and continue",
+    "skip": "Skip for now",
+    "phoneInvalid": "Enter a valid mobile number starting with 05 or the country code.",
+    "trustedNameRequired": "Add the name of the person you trust, or remove their number."
+  }
+}

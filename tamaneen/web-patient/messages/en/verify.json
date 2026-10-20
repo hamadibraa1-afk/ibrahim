@@ -1,0 +1,17 @@
+{
+  "verify": {
+    "metaTitle": "Verification code",
+    "title": "Enter the verification code",
+    "sentPhone": "We sent a 6-digit code to the number <b>{contact}</b>.",
+    "sentEmail": "We sent a 6-digit code to <b>{contact}</b>.",
+    "codeLabel": "Verification code",
+    "codeInvalid": "Enter the 6-digit code.",
+    "wait": "Didn't get the code? You can request a new one in <b>{time}</b>",
+    "ready": "Didn't get the code? You can request a new one now.",
+    "resend": "Resend code",
+    "resent": "We sent a new code.",
+    "changePhone": "Change mobile number",
+    "changeEmail": "Change email address",
+    "submit": "Verify"
+  }
+}

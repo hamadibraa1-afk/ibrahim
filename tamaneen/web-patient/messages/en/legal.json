@@ -1,0 +1,61 @@
+{
+  "legal": {
+    "metaTitle": "Privacy and terms",
+    "tabsLabel": "Legal documents",
+    "otherLanguage": "العربية",
+    "version": "Version {version}",
+    "fullTextNote": "The full legal text will be published after legal review.",
+    "privacy": {
+      "tab": "Privacy policy",
+      "title": "Privacy policy",
+      "sections": {
+        "collect": {
+          "title": "What we collect",
+          "body": "A nickname, a mobile number or email for verification, and what you share with us in the conversation and follow-up."
+        },
+        "access": {
+          "title": "Who sees your file",
+          "body": "Only the clinical supervisor and your therapist. The technical admin team can't see your clinical data."
+        },
+        "ai": {
+          "title": "Artificial intelligence",
+          "body": "We remove your name and numbers before any text is sent to the model, and your words are never used to train it."
+        },
+        "retention": {
+          "title": "How long we keep data",
+          "body": "The original conversation is deleted 90 days after your file is approved, and the clinical record is kept according to the applicable regulations."
+        },
+        "rights": {
+          "title": "Your rights",
+          "body": "See your data, download it, ask for it to be deleted, and withdraw any consent."
+        }
+      }
+    },
+    "terms": {
+      "tab": "Terms of use",
+      "title": "Terms of use",
+      "sections": {
+        "scope": {
+          "title": "What the service covers",
+          "body": "Tamaneen connects adults in the pilot region with licensed therapists for remote sessions. The AI assistant only helps with organization; treatment decisions are made by a human professional."
+        },
+        "notEmergency": {
+          "title": "Not an emergency service",
+          "body": "Don't rely on the platform when you're in immediate danger. If you're in danger now, call the emergency number or use the Help now button."
+        },
+        "security": {
+          "title": "Keeping your account safe",
+          "body": "Keep your password and recovery codes private and don't share them with anyone. Tell us right away if you think someone else has accessed your account."
+        },
+        "use": {
+          "title": "Acceptable use",
+          "body": "Use the service for yourself and in good faith, and treat therapists and the team with respect. Don't record sessions or share their content without permission."
+        },
+        "ending": {
+          "title": "Ending the service",
+          "body": "You can stop using the service and ask for your account to be deleted at any time in settings. We may close an account that breaks these terms, and we'll point you to suitable alternatives."
+        }
+      }
+    }
+  }
+}

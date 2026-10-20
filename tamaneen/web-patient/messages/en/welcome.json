@@ -8,6 +8,7 @@
     "start": "Let's begin",
     "haveAccount": "I have an account",
     "emergencyCall": "In danger right now? Call {number}",
-    "emergencyResources": "In danger right now? Open emergency resources"
+    "emergencyResources": "In danger right now? Open emergency resources",
+    "continue": "Continue"
   }
 }

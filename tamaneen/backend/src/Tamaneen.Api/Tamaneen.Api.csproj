@@ -15,6 +15,11 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Auth\common-passwords.txt" LogicalName="common-passwords.txt" />
+    <EmbeddedResource Include="Clinical\questionnaires.json" LogicalName="questionnaires.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Tamaneen.UnitTests" />
     <InternalsVisibleTo Include="Tamaneen.IntegrationTests" />
   </ItemGroup>
 </Project>

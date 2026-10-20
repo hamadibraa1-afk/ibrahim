@@ -17,6 +17,9 @@ public interface ICrisisCaseStore
 
     void Add(PageRequest pageRequest);
 
+    /// <summary>Encrypts the triggering words (at most 2000 characters) onto the event with the patient's key.</summary>
+    Task AttachExcerptAsync(CrisisEvent crisisEvent, string text, CancellationToken cancellationToken);
+
     /// <summary>Adds a content-free audit row to the same unit of work.</summary>
     void Audit(string action, CrisisEvent crisisEvent, string? reason = null);
 

@@ -56,6 +56,9 @@ internal sealed class CrisisEventConfiguration : IEntityTypeConfiguration<Crisis
         b.Property(x => x.RowVersion).IsRowVersion();
         b.Property(x => x.TriggerRuleIds).HasMaxLength(1000).IsUnicode(false).IsRequired();
         b.Property(x => x.Source).HasMaxLength(32).IsUnicode(false).IsRequired();
+        b.Property(x => x.Number).HasDefaultValueSql("NEXT VALUE FOR [crisis].[CrisisEventNumbers]").ValueGeneratedOnAdd();
+        b.Property(x => x.ExcerptCipher).HasMaxLength(8100);
+        b.Property(x => x.CloseOutcome).HasMaxLength(32).IsUnicode(false);
         b.HasIndex(x => new { x.Status, x.AckDeadlineUtc }).HasDatabaseName("IX_CrisisEvents_OpenByDeadline");
         b.HasIndex(x => x.PatientId).IsUnique().HasFilter("[Status] <> 2").HasDatabaseName("UX_CrisisEvents_OneOpenPerPatient");
         b.HasOne<UserAccount>().WithMany().HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Restrict);

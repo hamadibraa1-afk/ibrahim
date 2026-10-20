@@ -1,0 +1,38 @@
+{
+  "howItWorks": {
+    "metaTitle": "How it works",
+    "title": "How the service works",
+    "steps": {
+      "talk": {
+        "title": "Talk with us",
+        "body": "A calm conversation with an AI assistant, 20 to 30 minutes, and you can pause whenever you like."
+      },
+      "review": {
+        "title": "Correct the summary",
+        "body": "See what we understood in plain words, and edit it before sending."
+      },
+      "specialist": {
+        "title": "A professional reviews your file",
+        "body": "A clinical supervisor reviews every case within 24 hours."
+      },
+      "choose": {
+        "title": "Choose your therapist and book",
+        "body": "We suggest three therapists and explain why. The choice is yours."
+      }
+    },
+    "aiTitle": "What the AI does and doesn't do",
+    "does": "It does",
+    "doesnt": "It doesn't",
+    "doesItems": {
+      "listens": "Listen and ask questions",
+      "organizes": "Organize your story into a summary",
+      "reminds": "Remind you of your exercises"
+    },
+    "doesntItems": {
+      "diagnose": "Diagnose",
+      "prescribe": "Prescribe medication",
+      "decide": "Make decisions about your treatment"
+    },
+    "cta": "Start now"
+  }
+}

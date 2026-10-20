@@ -1,0 +1,25 @@
+{
+  "therapists": {
+    "metaTitle": "تصفح الأخصائيين",
+    "title": "جميع الأخصائيين",
+    "searchLabel": "بحث",
+    "searchPlaceholder": "ابحث بالتخصص أو الاسم",
+    "filtersLabel": "تصفية النتائج",
+    "filters": {
+      "anxiety": "القلق",
+      "depression": "الاكتئاب",
+      "arabic": "العربية",
+      "female": "أخصائية",
+      "evening": "مسائي"
+    },
+    "clear": "مسح",
+    "clearLabel": "مسح البحث والتصفية",
+    "count": "{count, plural, =0 {لا يوجد أخصائيون} =1 {أخصائي واحد} =2 {أخصائيان} few {{n} أخصائيين} many {{n} أخصائيًا} other {{n} أخصائي}}",
+    "listLabel": "الأخصائيون",
+    "nextPrefix": "أقرب موعد:",
+    "noSlots": "لا مواعيد قريبة",
+    "loading": "جارٍ البحث…",
+    "emptyTitle": "لا يوجد أخصائيون مطابقون",
+    "emptyBody": "جرّب تخفيف التصفية أو البحث بكلمة أخرى."
+  }
+}

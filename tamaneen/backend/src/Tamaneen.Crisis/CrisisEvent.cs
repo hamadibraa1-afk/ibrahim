@@ -77,6 +77,45 @@ public sealed class CrisisEvent : Entity
 
     public byte[] RowVersion { get; private set; } = Array.Empty<byte>();
 
+    /// <summary>Human-friendly number from a database sequence, shown as "CE-1042".</summary>
+    public int Number { get; private set; }
+
+    /// <summary>The words that triggered the event, encrypted with the patient's key; shown only after step-up.</summary>
+    public byte[]? ExcerptCipher { get; private set; }
+
+    /// <summary>safe_contacted, emergency_services, unreachable_referred or false_alarm.</summary>
+    public string? CloseOutcome { get; private set; }
+
+    public static readonly IReadOnlySet<string> CloseOutcomes = new HashSet<string>(StringComparer.Ordinal) { "safe_contacted", "emergency_services", "unreachable_referred", "false_alarm" };
+
+    public void SetExcerpt(byte[] cipher) => ExcerptCipher = cipher;
+
+    /// <summary>The responder hands the case back to the on-call queue: it is open again with a fresh deadline.</summary>
+    public void HandOver(TimeSpan acknowledgeWithin, IClock clock)
+    {
+        if (Status != CrisisEventStatus.Acknowledged)
+        {
+            throw new DomainException(ErrorCodes.CrisisNotAcknowledged, $"Crisis event {Id} is not acknowledged.");
+        }
+
+        Status = CrisisEventStatus.Open;
+        AcknowledgedByUserId = null;
+        AcknowledgedAtUtc = null;
+        ContactDeadlineUtc = null;
+        AckDeadlineUtc = clock.UtcNow + acknowledgeWithin;
+    }
+
+    public void Close(Guid userId, string role, string outcome, string reason, IClock clock)
+    {
+        if (!CloseOutcomes.Contains(outcome))
+        {
+            throw new DomainException(ErrorCodes.Validation, $"Unknown close outcome '{outcome}'.");
+        }
+
+        Close(userId, role, reason, clock);
+        CloseOutcome = outcome;
+    }
+
     public static CrisisEvent Open(Guid patientId, string pseudonymId, RiskLevel level, string language, string rulePackVersion, TimeSpan acknowledgeWithin, IClock clock) =>
         Open(patientId, pseudonymId, level, language, rulePackVersion, acknowledgeWithin, Array.Empty<string>(), "system", clock);
 

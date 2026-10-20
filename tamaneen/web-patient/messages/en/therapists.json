@@ -1,0 +1,25 @@
+{
+  "therapists": {
+    "metaTitle": "Browse therapists",
+    "title": "All therapists",
+    "searchLabel": "Search",
+    "searchPlaceholder": "Search by specialty or name",
+    "filtersLabel": "Filter results",
+    "filters": {
+      "anxiety": "Anxiety",
+      "depression": "Depression",
+      "arabic": "Arabic-speaking",
+      "female": "Female therapist",
+      "evening": "Evening"
+    },
+    "clear": "Clear",
+    "clearLabel": "Clear search and filters",
+    "count": "{count, plural, =0 {No therapists} =1 {One therapist} =2 {Two therapists} few {{n} therapists} many {{n} therapists} other {{n} therapists}}",
+    "listLabel": "Therapists",
+    "nextPrefix": "Next available:",
+    "noSlots": "No times soon",
+    "loading": "Searching…",
+    "emptyTitle": "No matching therapists",
+    "emptyBody": "Try fewer filters or a different search word."
+  }
+}

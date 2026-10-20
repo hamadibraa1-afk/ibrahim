@@ -39,6 +39,10 @@ internal sealed class PatientProfileConfiguration : IEntityTypeConfiguration<Pat
         b.Property(x => x.DateOfBirthCipher).HasMaxLength(128);
         b.Property(x => x.EmergencyContactCipher).HasMaxLength(1024);
         b.Property(x => x.CityCode).HasMaxLength(16).IsUnicode(false).IsRequired();
+        b.Property(x => x.ContactCipher).HasMaxLength(512);
+        b.Property(x => x.ContactType).HasMaxLength(8).IsUnicode(false).IsRequired();
+        b.Property(x => x.CarePath).HasMaxLength(8).IsUnicode(false);
+        b.Property(x => x.TimeZone).HasMaxLength(64).IsUnicode(false).IsRequired();
         b.Ignore(x => x.IsShredded);
         b.HasOne<UserAccount>().WithOne().HasForeignKey<PatientProfile>(x => x.PatientId).OnDelete(DeleteBehavior.Restrict);
     }

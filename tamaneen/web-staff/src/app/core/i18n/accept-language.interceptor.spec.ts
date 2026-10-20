@@ -2,7 +2,7 @@ import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideTestTranslations } from '../../testing/translate-testing';
-import { API_BASE_URL } from '../api';
+import { API_BASE_URL, CRISIS_BASE_URL } from '../api';
 import { acceptLanguageInterceptor } from './accept-language.interceptor';
 import { LanguageService } from './language.service';
 
@@ -18,6 +18,7 @@ describe('acceptLanguageInterceptor', () => {
         provideHttpClient(withInterceptors([acceptLanguageInterceptor])),
         provideHttpClientTesting(),
         { provide: API_BASE_URL, useValue: 'https://api.tamaneen.test' },
+        { provide: CRISIS_BASE_URL, useValue: 'https://crisis.tamaneen.test' },
       ],
     });
     http = TestBed.inject(HttpClient);
@@ -38,6 +39,11 @@ describe('acceptLanguageInterceptor', () => {
     await language.use('en');
     http.get('https://api.tamaneen.test/v1/me').subscribe();
     expect(backend.expectOne('https://api.tamaneen.test/v1/me').request.headers.get('Accept-Language')).toBe('en');
+  });
+
+  it('sends it to the crisis worker too, so event titles and labels are localized', () => {
+    http.get('https://crisis.tamaneen.test/v1/crisis/events/open').subscribe();
+    expect(backend.expectOne('https://crisis.tamaneen.test/v1/crisis/events/open').request.headers.get('Accept-Language')).toBe('ar');
   });
 
   it('does not touch requests to other origins', () => {

@@ -25,6 +25,9 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
             modelBuilder.HasSequence("AuditEntryIds", "audit")
                 .IncrementsBy(10);
 
+            modelBuilder.HasSequence<int>("CrisisEventNumbers", "crisis")
+                .StartsAt(1001L);
+
             modelBuilder.Entity("Tamaneen.AiGateway.AiCallRecord", b =>
                 {
                     b.Property<Guid>("Id")
@@ -82,6 +85,222 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                     b.ToTable("AiCallRecords", "ai");
                 });
 
+            modelBuilder.Entity("Tamaneen.Clinical.Care.CareRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("HandledAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("HandledBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("RequestedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(32)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PatientId");
+
+                    b.HasIndex("HandledAtUtc", "RequestedAtUtc");
+
+                    b.ToTable("CareRequests", "clinical");
+                });
+
+            modelBuilder.Entity("Tamaneen.Clinical.Care.DataRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("CompletedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("DueAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<byte>("Kind")
+                        .HasColumnType("tinyint");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("RequestedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PatientId", "Kind");
+
+                    b.ToTable("DataRequests", "identity");
+                });
+
+            modelBuilder.Entity("Tamaneen.Clinical.Care.HomeworkAssignment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateOnly>("EndsOn")
+                        .HasColumnType("date");
+
+                    b.Property<byte>("Frequency")
+                        .HasColumnType("tinyint");
+
+                    b.Property<byte[]>("InstructionsCipher")
+                        .IsRequired()
+                        .HasMaxLength(8100)
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<int?>("Minutes")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly>("StartsOn")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("TherapistUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("TitleCipher")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("varbinary(1024)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PatientId", "EndsOn");
+
+                    b.ToTable("HomeworkAssignments", "clinical");
+                });
+
+            modelBuilder.Entity("Tamaneen.Clinical.Care.HomeworkCheckin", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AssignmentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateOnly>("Day")
+                        .HasColumnType("date");
+
+                    b.Property<DateTimeOffset?>("FeedbackAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<byte[]>("FeedbackCipher")
+                        .HasMaxLength(8100)
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<DateTimeOffset?>("FeedbackSeenAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int?>("Feeling")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("NoteCipher")
+                        .HasMaxLength(8100)
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte>("Status")
+                        .HasColumnType("tinyint");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PatientId");
+
+                    b.HasIndex("AssignmentId", "Day")
+                        .IsUnique();
+
+                    b.ToTable("HomeworkCheckins", "clinical");
+                });
+
+            modelBuilder.Entity("Tamaneen.Clinical.Care.MoodEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("NoteCipher")
+                        .HasMaxLength(8100)
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("RecordedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("Score")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Tags")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(128)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PatientId", "RecordedAtUtc");
+
+                    b.ToTable("MoodEntries", "clinical", t =>
+                        {
+                            t.HasCheckConstraint("CK_MoodEntries_Score", "[Score] BETWEEN 0 AND 10");
+                        });
+                });
+
+            modelBuilder.Entity("Tamaneen.Clinical.Care.SafetyPlan", b =>
+                {
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("CoAuthorTherapistId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("SectionsCipher")
+                        .IsRequired()
+                        .HasMaxLength(16000)
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("UpdatedByRole")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(32)");
+
+                    b.Property<Guid>("UpdatedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("PatientId");
+
+                    b.ToTable("SafetyPlans", "clinical");
+                });
+
             modelBuilder.Entity("Tamaneen.Clinical.CareAssignment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -117,6 +336,386 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                     b.ToTable("CareAssignments", "clinical");
                 });
 
+            modelBuilder.Entity("Tamaneen.Clinical.Intake.IntakeMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<bool>("FromPatient")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("IntakeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsFallback")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("TextCipher")
+                        .IsRequired()
+                        .HasMaxLength(20000)
+                        .HasColumnType("varbinary(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IntakeId", "CreatedAtUtc");
+
+                    b.ToTable("IntakeMessages", "clinical");
+                });
+
+            modelBuilder.Entity("Tamaneen.Clinical.Intake.IntakeSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Gad7")
+                        .IsRequired()
+                        .HasColumnType("char(7)");
+
+                    b.Property<DateTimeOffset>("LastActivityAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("PatientTurns")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Phq9")
+                        .IsRequired()
+                        .HasColumnType("char(9)");
+
+                    b.Property<DateTimeOffset>("StartedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<byte>("Status")
+                        .HasColumnType("tinyint");
+
+                    b.Property<DateTimeOffset?>("SubmittedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<bool>("SummaryByAi")
+                        .HasColumnType("bit");
+
+                    b.Property<byte[]>("SummaryCipher")
+                        .HasMaxLength(16000)
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<DateTimeOffset?>("TherapistApprovedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("TherapistApprovedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PatientId", "StartedAtUtc");
+
+                    b.ToTable("IntakeSessions", "clinical");
+                });
+
+            modelBuilder.Entity("Tamaneen.Clinical.Intake.Screening", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("AnswersCipher")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("varbinary(512)");
+
+                    b.Property<DateTimeOffset>("CompletedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Instrument")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(16)");
+
+                    b.Property<byte>("Level")
+                        .HasColumnType("tinyint");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("Positive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Version")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(32)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PatientId", "CompletedAtUtc");
+
+                    b.ToTable("Screenings", "clinical");
+                });
+
+            modelBuilder.Entity("Tamaneen.Clinical.Intake.TriageCase", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("AddendaCipher")
+                        .HasMaxLength(16000)
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<bool?>("CssrsPositive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset>("DueAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int?>("Gad7")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("IntakeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Path")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(8)");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("Phq9")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("ReviewedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("ReviewedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte>("RiskLevel")
+                        .HasColumnType("tinyint");
+
+                    b.Property<byte>("Status")
+                        .HasColumnType("tinyint");
+
+                    b.Property<DateTimeOffset>("SubmittedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IntakeId");
+
+                    b.HasIndex("PatientId");
+
+                    b.HasIndex("Status", "DueAtUtc");
+
+                    b.ToTable("TriageCases", "clinical");
+                });
+
+            modelBuilder.Entity("Tamaneen.Clinical.Scheduling.Appointment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("CancelledAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("DurationMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("OutcomeRecordedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("Rescheduled")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("RoomId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(64)");
+
+                    b.Property<int>("SequenceNumber")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("SlotId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("StartsAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<byte>("Status")
+                        .HasColumnType("tinyint");
+
+                    b.Property<Guid>("TherapistUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SlotId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_Appointments_OneConfirmedPerSlot")
+                        .HasFilter("[Status] = 0");
+
+                    b.HasIndex("PatientId", "StartsAtUtc");
+
+                    b.HasIndex("TherapistUserId", "StartsAtUtc");
+
+                    b.ToTable("Appointments", "clinical");
+                });
+
+            modelBuilder.Entity("Tamaneen.Clinical.Scheduling.AvailabilitySlot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("DurationMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("HeldByPatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("HeldUntilUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("HoldId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<DateTimeOffset>("StartsAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<byte>("Status")
+                        .HasColumnType("tinyint");
+
+                    b.Property<Guid>("TherapistUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("HoldId")
+                        .HasFilter("[HoldId] IS NOT NULL");
+
+                    b.HasIndex("TherapistUserId", "StartsAtUtc")
+                        .IsUnique();
+
+                    b.ToTable("AvailabilitySlots", "clinical");
+                });
+
+            modelBuilder.Entity("Tamaneen.Clinical.Scheduling.MatchSuggestion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<bool>("Dismissed")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Rank")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SharedSpecialties")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(256)");
+
+                    b.Property<Guid>("TherapistUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TherapistUserId");
+
+                    b.HasIndex("PatientId", "TherapistUserId")
+                        .IsUnique();
+
+                    b.ToTable("MatchSuggestions", "clinical");
+                });
+
+            modelBuilder.Entity("Tamaneen.Clinical.Scheduling.TherapistProfile", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("AcceptingNewPatients")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("BioAr")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("BioEn")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("Capacity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Gender")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(8)");
+
+                    b.Property<string>("Languages")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(16)");
+
+                    b.Property<bool>("LicenseVerified")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("SessionMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Specialties")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(256)");
+
+                    b.Property<string>("TitleAr")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<string>("TitleEn")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("TherapistProfiles", "clinical");
+                });
+
             modelBuilder.Entity("Tamaneen.Crisis.ChatLock", b =>
                 {
                     b.Property<Guid>("Id")
@@ -149,6 +748,46 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                     b.ToTable("ChatLocks", "crisis");
                 });
 
+            modelBuilder.Entity("Tamaneen.Crisis.CrisisAction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ActorRole")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(32)");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CrisisEventId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(32)");
+
+                    b.Property<DateTimeOffset>("OccurredAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("TextCipher")
+                        .HasMaxLength(8100)
+                        .HasColumnType("varbinary(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CrisisEventId", "OccurredAtUtc");
+
+                    b.ToTable("CrisisActions", "crisis");
+                });
+
             modelBuilder.Entity("Tamaneen.Crisis.CrisisEvent", b =>
                 {
                     b.Property<Guid>("Id")
@@ -162,6 +801,11 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
 
                     b.Property<Guid?>("AcknowledgedByUserId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CloseOutcome")
+                        .HasMaxLength(32)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(32)");
 
                     b.Property<string>("CloseReason")
                         .HasMaxLength(1000)
@@ -179,6 +823,10 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                     b.Property<byte>("EscalationTier")
                         .HasColumnType("tinyint");
 
+                    b.Property<byte[]>("ExcerptCipher")
+                        .HasMaxLength(8100)
+                        .HasColumnType("varbinary(max)");
+
                     b.Property<string>("Language")
                         .IsRequired()
                         .HasMaxLength(2)
@@ -187,6 +835,11 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
 
                     b.Property<byte>("Level")
                         .HasColumnType("tinyint");
+
+                    b.Property<int>("Number")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValueSql("NEXT VALUE FOR [crisis].[CrisisEventNumbers]");
 
                     b.Property<DateTimeOffset>("OpenedAtUtc")
                         .HasColumnType("datetimeoffset");
@@ -295,16 +948,286 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                     b.ToTable("PageRequests", "crisis");
                 });
 
+            modelBuilder.Entity("Tamaneen.Identity.Auth.AuthChallenge", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("CodeHash")
+                        .IsRequired()
+                        .HasColumnType("binary(32)");
+
+                    b.Property<DateTimeOffset?>("ConsumedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<byte[]>("ContactCipher")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("varbinary(512)");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("ExpiresAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<byte[]>("PayloadCipher")
+                        .HasMaxLength(2048)
+                        .HasColumnType("varbinary(2048)");
+
+                    b.Property<byte>("Purpose")
+                        .HasColumnType("tinyint");
+
+                    b.Property<DateTimeOffset>("ResendAvailableAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("Sends")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAtUtc");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AuthChallenges", "identity");
+                });
+
+            modelBuilder.Entity("Tamaneen.Identity.Auth.AuthSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Client")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(8)");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("DeviceLabel")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTimeOffset>("ExpiresAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("LastActiveAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<byte[]>("PreviousRefreshTokenHash")
+                        .HasColumnType("binary(32)");
+
+                    b.Property<byte[]>("RefreshTokenHash")
+                        .IsRequired()
+                        .HasColumnType("binary(32)");
+
+                    b.Property<DateTimeOffset?>("RevokedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PreviousRefreshTokenHash")
+                        .HasFilter("[PreviousRefreshTokenHash] IS NOT NULL");
+
+                    b.HasIndex("RefreshTokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UserId", "RevokedAtUtc");
+
+                    b.ToTable("AuthSessions", "identity");
+                });
+
+            modelBuilder.Entity("Tamaneen.Identity.Auth.Credential", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("FailedAttempts")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("LockedUntilUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("PasswordChangedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(256)");
+
+                    b.Property<bool>("TotpEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<long?>("TotpLastStep")
+                        .HasColumnType("bigint");
+
+                    b.Property<byte[]>("TotpSecretCipher")
+                        .HasMaxLength(128)
+                        .HasColumnType("varbinary(128)");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("Credentials", "identity");
+                });
+
+            modelBuilder.Entity("Tamaneen.Identity.Auth.RecoveryCode", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("CodeHash")
+                        .IsRequired()
+                        .HasColumnType("binary(32)");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset?>("UsedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "CodeHash")
+                        .IsUnique();
+
+                    b.ToTable("RecoveryCodes", "identity");
+                });
+
+            modelBuilder.Entity("Tamaneen.Identity.Auth.TrustedDevice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("ExpiresAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<byte[]>("TokenHash")
+                        .IsRequired()
+                        .HasColumnType("binary(32)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("TrustedDevices", "identity");
+                });
+
+            modelBuilder.Entity("Tamaneen.Identity.Consent", b =>
+                {
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Key")
+                        .HasMaxLength(32)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(32)");
+
+                    b.Property<bool>("Granted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Version")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(16)");
+
+                    b.HasKey("PatientId", "Key");
+
+                    b.ToTable("Consents", "identity");
+                });
+
+            modelBuilder.Entity("Tamaneen.Identity.NotificationPreferences", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("Email")
+                        .HasColumnType("bit");
+
+                    b.Property<byte>("HomeworkReminder")
+                        .HasColumnType("tinyint");
+
+                    b.Property<bool>("NeutralText")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("Push")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("QuickExit")
+                        .HasColumnType("bit");
+
+                    b.Property<TimeOnly>("QuietFrom")
+                        .HasColumnType("time");
+
+                    b.Property<TimeOnly>("QuietTo")
+                        .HasColumnType("time");
+
+                    b.Property<TimeOnly>("ReminderTime")
+                        .HasColumnType("time");
+
+                    b.Property<bool>("Sms")
+                        .HasColumnType("bit");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("NotificationPreferences", "identity");
+                });
+
             modelBuilder.Entity("Tamaneen.Identity.PatientProfile", b =>
                 {
                     b.Property<Guid>("PatientId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CarePath")
+                        .HasMaxLength(8)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(8)");
 
                     b.Property<string>("CityCode")
                         .IsRequired()
                         .HasMaxLength(16)
                         .IsUnicode(false)
                         .HasColumnType("varchar(16)");
+
+                    b.Property<DateTimeOffset?>("ConsentsCompletedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<byte[]>("ContactCipher")
+                        .HasMaxLength(512)
+                        .HasColumnType("varbinary(512)");
+
+                    b.Property<string>("ContactType")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(8)");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("datetimeoffset");
@@ -327,8 +1250,23 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                         .IsUnicode(false)
                         .HasColumnType("varchar(11)");
 
+                    b.Property<DateTimeOffset?>("SafetyInfoCompletedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<bool>("ShareLocation")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("ShareLocationSinceUtc")
+                        .HasColumnType("datetimeoffset");
+
                     b.Property<DateTimeOffset?>("ShreddedAtUtc")
                         .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("TimeZone")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(64)");
 
                     b.HasKey("PatientId");
 
@@ -336,6 +1274,29 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("PatientProfiles", "identity");
+                });
+
+            modelBuilder.Entity("Tamaneen.Identity.StaffProfile", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("DisplayNameAr")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("DisplayNameEn")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<byte?>("OnCallTier")
+                        .HasColumnType("tinyint");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("StaffProfiles", "identity");
                 });
 
             modelBuilder.Entity("Tamaneen.Identity.UserAccount", b =>
@@ -474,6 +1435,60 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Tamaneen.Clinical.Care.CareRequest", b =>
+                {
+                    b.HasOne("Tamaneen.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Tamaneen.Clinical.Care.DataRequest", b =>
+                {
+                    b.HasOne("Tamaneen.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Tamaneen.Clinical.Care.HomeworkAssignment", b =>
+                {
+                    b.HasOne("Tamaneen.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Tamaneen.Clinical.Care.HomeworkCheckin", b =>
+                {
+                    b.HasOne("Tamaneen.Clinical.Care.HomeworkAssignment", null)
+                        .WithMany()
+                        .HasForeignKey("AssignmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Tamaneen.Clinical.Care.MoodEntry", b =>
+                {
+                    b.HasOne("Tamaneen.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Tamaneen.Clinical.Care.SafetyPlan", b =>
+                {
+                    b.HasOne("Tamaneen.Identity.UserAccount", null)
+                        .WithOne()
+                        .HasForeignKey("Tamaneen.Clinical.Care.SafetyPlan", "PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Tamaneen.Clinical.CareAssignment", b =>
                 {
                     b.HasOne("Tamaneen.Identity.UserAccount", null)
@@ -489,6 +1504,101 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Tamaneen.Clinical.Intake.IntakeMessage", b =>
+                {
+                    b.HasOne("Tamaneen.Clinical.Intake.IntakeSession", null)
+                        .WithMany()
+                        .HasForeignKey("IntakeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Tamaneen.Clinical.Intake.IntakeSession", b =>
+                {
+                    b.HasOne("Tamaneen.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Tamaneen.Clinical.Intake.Screening", b =>
+                {
+                    b.HasOne("Tamaneen.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Tamaneen.Clinical.Intake.TriageCase", b =>
+                {
+                    b.HasOne("Tamaneen.Clinical.Intake.IntakeSession", null)
+                        .WithMany()
+                        .HasForeignKey("IntakeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Tamaneen.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Tamaneen.Clinical.Scheduling.Appointment", b =>
+                {
+                    b.HasOne("Tamaneen.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Tamaneen.Clinical.Scheduling.AvailabilitySlot", null)
+                        .WithMany()
+                        .HasForeignKey("SlotId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Tamaneen.Clinical.Scheduling.TherapistProfile", null)
+                        .WithMany()
+                        .HasForeignKey("TherapistUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Tamaneen.Clinical.Scheduling.AvailabilitySlot", b =>
+                {
+                    b.HasOne("Tamaneen.Clinical.Scheduling.TherapistProfile", null)
+                        .WithMany()
+                        .HasForeignKey("TherapistUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Tamaneen.Clinical.Scheduling.MatchSuggestion", b =>
+                {
+                    b.HasOne("Tamaneen.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Tamaneen.Clinical.Scheduling.TherapistProfile", null)
+                        .WithMany()
+                        .HasForeignKey("TherapistUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Tamaneen.Clinical.Scheduling.TherapistProfile", b =>
+                {
+                    b.HasOne("Tamaneen.Identity.StaffProfile", null)
+                        .WithOne()
+                        .HasForeignKey("Tamaneen.Clinical.Scheduling.TherapistProfile", "UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Tamaneen.Crisis.ChatLock", b =>
                 {
                     b.HasOne("Tamaneen.Crisis.CrisisEvent", null)
@@ -500,6 +1610,15 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                     b.HasOne("Tamaneen.Identity.UserAccount", null)
                         .WithMany()
                         .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Tamaneen.Crisis.CrisisAction", b =>
+                {
+                    b.HasOne("Tamaneen.Crisis.CrisisEvent", null)
+                        .WithMany()
+                        .HasForeignKey("CrisisEventId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
@@ -522,11 +1641,82 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Tamaneen.Identity.Auth.AuthChallenge", b =>
+                {
+                    b.HasOne("Tamaneen.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("Tamaneen.Identity.Auth.AuthSession", b =>
+                {
+                    b.HasOne("Tamaneen.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Tamaneen.Identity.Auth.Credential", b =>
+                {
+                    b.HasOne("Tamaneen.Identity.UserAccount", null)
+                        .WithOne()
+                        .HasForeignKey("Tamaneen.Identity.Auth.Credential", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Tamaneen.Identity.Auth.RecoveryCode", b =>
+                {
+                    b.HasOne("Tamaneen.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Tamaneen.Identity.Auth.TrustedDevice", b =>
+                {
+                    b.HasOne("Tamaneen.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Tamaneen.Identity.Consent", b =>
+                {
+                    b.HasOne("Tamaneen.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Tamaneen.Identity.NotificationPreferences", b =>
+                {
+                    b.HasOne("Tamaneen.Identity.UserAccount", null)
+                        .WithOne()
+                        .HasForeignKey("Tamaneen.Identity.NotificationPreferences", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Tamaneen.Identity.PatientProfile", b =>
                 {
                     b.HasOne("Tamaneen.Identity.UserAccount", null)
                         .WithOne()
                         .HasForeignKey("Tamaneen.Identity.PatientProfile", "PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Tamaneen.Identity.StaffProfile", b =>
+                {
+                    b.HasOne("Tamaneen.Identity.UserAccount", null)
+                        .WithOne()
+                        .HasForeignKey("Tamaneen.Identity.StaffProfile", "UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

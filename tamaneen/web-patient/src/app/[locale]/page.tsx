@@ -1,15 +1,16 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
+import { hasSession } from '@/lib/api/server';
 import { publicPlatformConfig } from '@/lib/platform-config';
 
 // Rendered per request: the emergency number and matching window are runtime configuration.
 export const dynamic = 'force-dynamic';
 
-/** P01 Welcome: the first screen a visitor sees, before any account exists. */
+/** P01 Welcome: the first screen a visitor sees. With a session, the main action continues to the app. */
 export default async function WelcomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = await getTranslations('welcome');
+  const [t, signedIn] = await Promise.all([getTranslations('welcome'), hasSession()]);
   const { emergencyNumber, matchWithinHours } = publicPlatformConfig();
 
   return (
@@ -43,9 +44,15 @@ export default async function WelcomePage({ params }: { params: Promise<{ locale
       </ul>
 
       <div className="flex flex-col gap-3">
-        <Link href="/start/eligibility" data-testid="cta-start" className="flex min-h-cta items-center justify-center rounded-full bg-primary px-6 text-base font-semibold text-surface">
-          {t('start')}
-        </Link>
+        {signedIn ? (
+          <Link href="/home" data-testid="cta-continue" className="flex min-h-cta items-center justify-center rounded-full bg-primary px-6 text-base font-semibold text-surface">
+            {t('continue')}
+          </Link>
+        ) : (
+          <Link href="/start/eligibility" data-testid="cta-start" className="flex min-h-cta items-center justify-center rounded-full bg-primary px-6 text-base font-semibold text-surface">
+            {t('start')}
+          </Link>
+        )}
         <Link href="/login" className="flex min-h-cta items-center justify-center rounded-full border-[1.5px] border-tint-teal bg-surface px-6 text-base font-semibold text-primary">
           {t('haveAccount')}
         </Link>

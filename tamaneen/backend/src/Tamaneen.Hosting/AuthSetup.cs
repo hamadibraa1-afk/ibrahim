@@ -86,4 +86,7 @@ public static class TamaneenClaims
     public const string Subject = "sub";
     public const string Role = "role";
     public const string Pseudonym = "pid";
+
+    /// <summary>Id of the sign-in session (identity.AuthSessions); checked on every request.</summary>
+    public const string Session = "sid";
 }

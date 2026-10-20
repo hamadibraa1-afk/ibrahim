@@ -1,0 +1,48 @@
+{
+  "home": {
+    "metaTitle": "Home",
+    "greetingMorning": "Good morning",
+    "greetingEvening": "Good evening",
+    "moodTitle": "How do you feel right now?",
+    "moodGroup": "Mood",
+    "faces": {
+      "veryBad": "Very bad",
+      "bad": "Bad",
+      "okay": "Okay",
+      "good": "Good",
+      "great": "Excellent"
+    },
+    "moodSaved": "Saved how you feel: {face}.",
+    "nextSession": "Your session with {name}",
+    "details": "Details",
+    "detailsLabel": "Details of your session with {name}",
+    "noSession": "No upcoming session",
+    "noSessionBody": "Choose a specialist and book a time that suits you.",
+    "findTherapist": "Browse specialists",
+    "feedbackFrom": "Note from {name}",
+    "newFeedback": "New note",
+    "todayHomework": "Today's homework",
+    "minutes": {
+      "one": "1 minute",
+      "two": "2 minutes",
+      "few": "{n} minutes",
+      "other": "{n} minutes"
+    },
+    "homeworkProgress": {
+      "one": "{done} of 1 day",
+      "two": "{done} of 2 days",
+      "few": "{done} of {total} days",
+      "other": "{done} of {total} days"
+    },
+    "safetyPlan": "My safety plan",
+    "safetyPlanBody": "What helps me when things get hard",
+    "safetyPlanOffline": "Works offline",
+    "triagePending": "Your request is being reviewed",
+    "triagePendingBody": "Our clinical team is reviewing your summary. We'll let you know when your suggestions are ready.",
+    "triageExpected": "Expected by {date}",
+    "matchesReady": "Your suggestions are ready",
+    "matchesReadyBody": "See the specialists suggested for you and book your session.",
+    "moodHintText": "Saved as a number from 0 to 10",
+    "moodHintLink": "add a note if you like"
+  }
+}

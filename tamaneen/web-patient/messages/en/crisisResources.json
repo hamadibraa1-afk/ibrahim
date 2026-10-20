@@ -1,0 +1,20 @@
+{
+  "crisisResources": {
+    "offlineBadge": "Works without internet",
+    "title": "If you need help right now",
+    "emergency": "Emergency:",
+    "noEmergencyNumber": "Call your local emergency number",
+    "supportLine": "Mental health support line:",
+    "hospital": "Nearest hospital emergency department:",
+    "hospitalBody": "Call emergency services and they will direct you to the nearest emergency department.",
+    "requestCall": "Ask a professional to call me now",
+    "requestCallHint": "A member of our clinical team will call you within minutes.",
+    "stepsTitle": "Small steps right now",
+    "step1": "Move away from anything you could use to hurt yourself.",
+    "step2": "Call someone you trust, or ask them to stay with you.",
+    "step3": "Breathe slowly: in for 4 seconds, out for 6 seconds.",
+    "helpingTitle": "Helping someone else?",
+    "helpingBody": "Stay with them, ask them directly whether they are thinking about hurting themselves, and call emergency services if they are in danger.",
+    "abroad": "Outside the service area? The international emergency number <call>{number}</call> works in many countries."
+  }
+}

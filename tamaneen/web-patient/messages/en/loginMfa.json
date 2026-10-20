@@ -1,0 +1,23 @@
+{
+  "loginMfa": {
+    "metaTitle": "Two-step verification",
+    "title": "Confirm it's you",
+    "totpBody": "Enter the code from the authenticator app on your phone.",
+    "smsBody": "We sent a text message with a code to <b>{phone}</b>.",
+    "smsBodyNoPhone": "We sent a text message with a code to your phone.",
+    "smsPending": "We'll send a code to your phone by text message.",
+    "sendSms": "Send the code",
+    "smsSent": "Code sent.",
+    "recoveryBody": "Enter one of the recovery codes you saved when you signed up. Each code works once.",
+    "code": "Verification code",
+    "recoveryCode": "Recovery code",
+    "codeInvalid": "Enter the 6-digit code.",
+    "recoveryInvalid": "Enter the recovery code exactly as you saved it.",
+    "remember": "Remember this device for 30 days",
+    "submit": "Confirm",
+    "other": "Other ways",
+    "useSms": "Send a code by text message",
+    "useTotp": "Use the authenticator app",
+    "useRecovery": "Use a recovery code"
+  }
+}

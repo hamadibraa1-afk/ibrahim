@@ -1,0 +1,36 @@
+{
+  "checkin": {
+    "metaTitle": "Mood check-in",
+    "title": "How are you today?",
+    "sliderLabel": "Your mood from 0 to 10",
+    "low": "Very bad",
+    "high": "Excellent",
+    "valueText": "{value} of 10, {word}",
+    "words": {
+      "veryBad": "very bad",
+      "bad": "bad",
+      "okay": "okay",
+      "good": "good",
+      "great": "excellent"
+    },
+    "tagsLabel": "What describes your day?",
+    "optional": "(optional)",
+    "tags": {
+      "tired": "Tired",
+      "anxious": "Anxious",
+      "slept_well": "Slept well",
+      "work_stress": "Work stress",
+      "calm": "Calm"
+    },
+    "note": "Note",
+    "last7": "Last 7 days",
+    "chartDay": "Day",
+    "chartScore": "Mood",
+    "chartScoreValue": "{score} of 10",
+    "chartNoEntry": "No check-in",
+    "chartEmpty": "You haven't logged your mood this week yet.",
+    "save": "Save",
+    "saved": "Your mood for today is saved.",
+    "backHome": "Back to home"
+  }
+}

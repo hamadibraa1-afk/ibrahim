@@ -1,0 +1,27 @@
+{
+  "signup": {
+    "metaTitle": "Create account",
+    "title": "Create a private account",
+    "subtitle": "Your nickname is what the team will see. We don't ask for your real name.",
+    "nickname": "Nickname",
+    "newName": "New name",
+    "nicknameError": "We couldn't suggest a name right now. You can type one yourself.",
+    "contactMethod": "Contact for verification and account recovery",
+    "phone": "Mobile number",
+    "email": "Email",
+    "contactHint": "We'll send a 6-digit verification code. We won't share it with anyone.",
+    "password": "Password",
+    "passwordHint": "At least 12 characters, and not a leaked password",
+    "passwordShort": "Too short: at least 12 characters, and not a leaked password",
+    "passwordStrong": "Strong: at least 12 characters, and not a leaked password",
+    "submit": "Create account",
+    "haveAccount": "Have an account?",
+    "signIn": "Sign in",
+    "nicknameRequired": "Type a nickname or pick a new one.",
+    "phoneInvalid": "Enter a valid mobile number starting with 05 or your country code.",
+    "emailInvalid": "Enter a valid email address.",
+    "passwordTooShort": "Your password needs at least 12 characters.",
+    "restartNotice": "We couldn't find your verification details on this device. Enter your details again and we'll send a new code.",
+    "storageBlocked": "Sign-up needs your browser to allow session storage. Turn it on, then try again."
+  }
+}

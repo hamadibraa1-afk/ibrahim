@@ -1,8 +1,12 @@
 <div class="shell" [dir]="language.direction()" data-testid="shell">
   <mat-toolbar class="toolbar" role="banner">
-    <span class="brand">{{ 'app.name' | translate }}</span>
+    <span class="brand">{{ 'app.name' | translate }} <small>{{ 'app.portalShort' | translate }}</small></span>
     <span class="spacer"></span>
+    @if (session.displayName(); as name) {
+      <span class="who" data-testid="display-name">{{ name }}</span>
+    }
     <tm-language-toggle />
+    <button mat-stroked-button type="button" class="sign-out" (click)="signOut()" [disabled]="signingOut()" data-testid="sign-out">{{ 'shell.signOut' | translate }}</button>
   </mat-toolbar>
 
   <mat-sidenav-container class="body">
@@ -16,6 +20,8 @@
             }
           </mat-select>
         </mat-form-field>
+      } @else if (session.role(); as role) {
+        <p class="role-name">{{ 'roles.' + role | translate }}</p>
       }
 
       <nav [attr.aria-label]="'shell.menu' | translate">

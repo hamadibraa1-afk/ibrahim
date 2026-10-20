@@ -1,0 +1,19 @@
+{
+  "choosePath": {
+    "metaTitle": "Choose a path",
+    "title": "How would you like to start?",
+    "recommended": "Recommended",
+    "intake": {
+      "title": "An introductory chat",
+      "body": "20 to 30 minutes. It helps us suggest the best-fitting therapist, and you won't have to tell your story again from the start.",
+      "note": "You can pause and come back within 14 days"
+    },
+    "direct": {
+      "title": "I know what I want, I'll book directly",
+      "body": "You only answer the short safety questions (two minutes), then choose a therapist from the list."
+    },
+    "talkPrompt": "Would you rather talk to a person from the start?",
+    "talkLink": "Ask the team to contact you",
+    "contactSent": "We've received your request. Someone from the team will contact you soon using the contact details you registered."
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "home": {
+    "metaTitle": "الرئيسية",
+    "greetingMorning": "صباح الخير",
+    "greetingEvening": "مساء الخير",
+    "moodTitle": "كيف تشعر الآن؟",
+    "moodGroup": "المزاج",
+    "faces": {
+      "veryBad": "سيئ جدًا",
+      "bad": "سيئ",
+      "okay": "عادي",
+      "good": "جيد",
+      "great": "ممتاز"
+    },
+    "moodSaved": "حفظنا شعورك: {face}.",
+    "nextSession": "جلستك مع {name}",
+    "details": "التفاصيل",
+    "detailsLabel": "تفاصيل جلستك مع {name}",
+    "noSession": "لا توجد جلسة قادمة",
+    "noSessionBody": "اختر أخصائيًا واحجز موعدًا يناسبك.",
+    "findTherapist": "تصفح الأخصائيين",
+    "feedbackFrom": "رسالة من {name}",
+    "newFeedback": "رسالة جديدة",
+    "todayHomework": "واجب اليوم",
+    "minutes": {
+      "one": "دقيقة واحدة",
+      "two": "دقيقتان",
+      "few": "{n} دقائق",
+      "other": "{n} دقيقة"
+    },
+    "homeworkProgress": {
+      "one": "{done} من يوم واحد",
+      "two": "{done} من يومين",
+      "few": "{done} من {total} أيام",
+      "other": "{done} من {total} يومًا"
+    },
+    "safetyPlan": "خطة أماني",
+    "safetyPlanBody": "ما يساعدني حين يصعب الأمر",
+    "safetyPlanOffline": "تعمل بلا إنترنت",
+    "triagePending": "طلبك قيد المراجعة",
+    "triagePendingBody": "يراجع فريقنا السريري ملخصك، وسنخبرك حين تجهز اقتراحاتك.",
+    "triageExpected": "متوقع قبل {date}",
+    "matchesReady": "اقتراحاتك جاهزة",
+    "matchesReadyBody": "اطّلع على الأخصائيين المقترحين لك واحجز موعدك.",
+    "moodHintText": "يُحفظ كرقم من 0 إلى 10",
+    "moodHintLink": "أضف ملاحظة إن أحببت"
+  }
+}

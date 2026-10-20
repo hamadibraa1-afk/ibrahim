@@ -1,0 +1,20 @@
+{
+  "therapistProfile": {
+    "metaTitle": "Therapist profile",
+    "licenseVerified": "License verified by the platform",
+    "specialtiesLabel": "Specialties",
+    "about": "About my approach",
+    "detailsLabel": "Session details",
+    "languages": "Languages",
+    "languageName": {
+      "ar": "Arabic",
+      "en": "English"
+    },
+    "listSeparator": ", ",
+    "sessionType": "Session type",
+    "sessionValue": "Remote · {minutes} minutes",
+    "nextAvailable": "Next available",
+    "noSlots": "No times available right now",
+    "choose": "Choose a time"
+  }
+}

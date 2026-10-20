@@ -1,7 +1,8 @@
 {
   "app": {
     "name": "Tamaneen",
-    "portal": "Staff portal"
+    "portal": "Staff portal",
+    "portalShort": "for staff"
   },
   "language": {
     "target": "العربية",
@@ -87,6 +88,248 @@
       "loading": "Checking the connection…",
       "error": "The server can’t be reached. Crisis alerts still arrive by phone and SMS until it’s back.",
       "language": "Server replied in: {{language}} · direction: {{dir}}"
+    }
+  },
+  "common": {
+    "cancel": "Cancel",
+    "close": "Close",
+    "required": "Required",
+    "loading": "Loading…",
+    "none": "—",
+    "error": "Something went wrong. Please try again.",
+    "offline": "The server can’t be reached. Crisis alerts still arrive by phone and SMS until it’s back."
+  },
+  "risk": {
+    "1": "routine",
+    "2": "elevated",
+    "3": "high",
+    "4": "critical"
+  },
+  "auth": {
+    "title": "Staff sign-in",
+    "contact": "Work email",
+    "contactInvalid": "Enter a valid email address",
+    "password": "Password",
+    "continue": "Continue",
+    "signingIn": "Signing in…",
+    "mfaTitle": "Two-step verification",
+    "mfaHint": "Required for every staff account. Enter the code from your authenticator app.",
+    "recoveryHint": "Enter one of the recovery codes you saved when you set up your authenticator. Each code works once.",
+    "code": "Authenticator code",
+    "codeHint": "6 digits",
+    "codeInvalid": "Enter the 6 digits from your authenticator app",
+    "recoveryCode": "Recovery code",
+    "recoveryInvalid": "Check the recovery code and try again",
+    "useRecovery": "Use a recovery code instead",
+    "useTotp": "Use the authenticator code",
+    "verify": "Confirm",
+    "startOver": "Sign in with a different account",
+    "remainingAttempts": "Attempts left before the account is locked: {{count}}.",
+    "locked": "The account is locked for safety. Try again in {{minutes}} minutes."
+  },
+  "dashboard": {
+    "greeting": {
+      "morning": "Good morning, {{name}}",
+      "afternoon": "Good afternoon, {{name}}",
+      "evening": "Good evening, {{name}}"
+    },
+    "loadError": "Your dashboard can’t be loaded right now. Crisis alerts still arrive by phone and SMS.",
+    "alerts": {
+      "region": "High-risk alerts",
+      "acknowledge": "Acknowledge alert",
+      "refer": "Refer to on-call",
+      "acknowledged": "Acknowledged",
+      "acknowledgedDone": "Alert acknowledged. You are now handling this case.",
+      "referred": "Referred to the on-call team."
+    },
+    "stats": {
+      "region": "Today at a glance",
+      "todaySessions": "Today’s sessions",
+      "pendingProfiles": "Files awaiting your approval",
+      "newCheckins": "New check-ins this week",
+      "capacity": "Capacity",
+      "capacityValue": "{{used}} of {{max}} places used"
+    },
+    "pending": {
+      "title": "New patients awaiting file approval",
+      "empty": "No files are waiting for your approval.",
+      "patient": "Patient",
+      "risk": "Risk level",
+      "firstSession": "First session",
+      "notBooked": "Not booked yet",
+      "action": "Action",
+      "review": "Review file"
+    },
+    "today": {
+      "title": "Today’s sessions",
+      "empty": "No sessions today.",
+      "session": "Session {{n}}",
+      "newCheckins": "new check-in",
+      "recordOutcome": "Record outcome",
+      "recorded": "Outcome recorded",
+      "outcomeSaved": "Outcome saved: {{outcome}}",
+      "file": "File",
+      "fileFor": "Open the file of {{id}}"
+    },
+    "outcome": {
+      "attended": "Attended",
+      "no_show": "No-show",
+      "cancelled": "Cancelled"
+    }
+  },
+  "intake": {
+    "title": "File {{id}}",
+    "audited": "Opening this file is recorded in the audit log.",
+    "loadError": "The file can’t be loaded right now.",
+    "risk": "Risk level",
+    "cssrs": "C-SSRS screen",
+    "cssrsPositive": "Positive: follow the safety protocol",
+    "cssrsNegative": "Negative",
+    "cssrsMissing": "Not completed",
+    "submittedAt": "Intake submitted on {{date}}",
+    "notSubmitted": "The intake has not been submitted yet.",
+    "sections": {
+      "concern": "Main concern",
+      "goals": "Goals",
+      "supports": "Support around them",
+      "priorCare": "Previous care",
+      "extra": "Anything else"
+    },
+    "empty": "Not answered",
+    "approve": "Approve file",
+    "approved": "File approved",
+    "approvedDone": "File approved."
+  },
+  "crisis": {
+    "title": "Crisis console",
+    "openEvents": "Open events · {{count}}",
+    "noEvents": "No open events. New alerts appear here at once.",
+    "loadError": "The crisis service can’t be reached. Alerts still arrive by phone and SMS.",
+    "detailError": "This event can’t be loaded right now.",
+    "level": "Level {{level}}",
+    "health": {
+      "region": "System health",
+      "gate": {
+        "ok": "Safety gate running",
+        "degraded": "Safety gate degraded",
+        "down": "Safety gate down"
+      },
+      "classifier": {
+        "ok": "Classifier running",
+        "degraded": "Classifier degraded",
+        "down": "Classifier down"
+      },
+      "comms": {
+        "ok": "Calls and messages running",
+        "degraded": "Calls and messages degraded",
+        "down": "Calls and messages down"
+      },
+      "onCall": "On call: {{onCall}} · backup: {{backup}}",
+      "nobody": "not assigned",
+      "unavailable": "System health unavailable"
+    },
+    "live": {
+      "disconnected": "Live updates paused, reconnecting",
+      "connecting": "Connecting to live updates…",
+      "reconnecting": "Reconnecting to live updates…",
+      "connected": "Live"
+    },
+    "ack": {
+      "deadline": "Time left to acknowledge",
+      "notAcknowledged": "Not acknowledged",
+      "acknowledged": "Acknowledged",
+      "acknowledgedBy": "Acknowledged by {{name}}",
+      "minuteLeft": "{{event}}: one minute left to acknowledge."
+    },
+    "meta": {
+      "rules": "Rules {{rules}}",
+      "rulePack": "Rule pack {{version}}",
+      "started": "Started {{time}}"
+    },
+    "acknowledgeTake": "Acknowledge and take the case",
+    "excerpt": {
+      "title": "What the patient wrote",
+      "hidden": "Hidden. Showing it needs your authenticator code.",
+      "show": "Show what the patient wrote",
+      "hidesIn": "Hidden again in {{time}}",
+      "audit": "Viewing is recorded in the audit log."
+    },
+    "contact": {
+      "title": "Contact and location",
+      "phone": "Phone: {{phone}}",
+      "noPhone": "Phone: not provided",
+      "trusted": "Emergency contact: {{state}}",
+      "registered": "registered",
+      "notRegistered": "not registered",
+      "location": "Location: {{state}}",
+      "consented": "consented",
+      "notConsented": "not consented",
+      "reveal": "Show data (extra verification)",
+      "note": "Revealing is recorded in the audit log and hidden automatically after 10 minutes.",
+      "hidesIn": "Hidden again in {{time}}",
+      "patientPhone": "Patient phone",
+      "trustedContact": "Emergency contact"
+    },
+    "actions": {
+      "call": "Call patient",
+      "callHint": "Show the contact data first to call.",
+      "contacted": "Mark contacted",
+      "localEmergency": "Local emergency procedure",
+      "note": "Add note",
+      "handover": "Hand over to another on-call",
+      "close": "Close with outcome"
+    },
+    "done": {
+      "acknowledged": "You took the case.",
+      "contacted": "Marked as contacted.",
+      "local_emergency": "Local emergency procedure recorded.",
+      "note": "Note added.",
+      "handover": "Handed over to the on-call team."
+    },
+    "timeline": {
+      "title": "Timeline",
+      "empty": "Nothing recorded yet."
+    },
+    "stepUp": {
+      "excerptTitle": "Show what the patient wrote",
+      "excerptBody": "Enter the code from your authenticator app. Viewing is recorded in the audit log and the text hides again automatically.",
+      "contactTitle": "Show contact data",
+      "contactBody": "Enter the code from your authenticator app and say why you need the data. This is recorded in the audit log and hidden after 10 minutes.",
+      "code": "Authenticator code",
+      "reason": "Reason",
+      "reasonHint": "Recorded in the audit log.",
+      "confirm": "Verify and show"
+    },
+    "emergencyDialog": {
+      "title": "Start the local emergency procedure?",
+      "body": "This records that you started the local emergency procedure for this patient.",
+      "label": "What did you do?",
+      "confirm": "Record procedure"
+    },
+    "noteDialog": {
+      "title": "Add a note",
+      "label": "Note",
+      "confirm": "Add note"
+    },
+    "handoverDialog": {
+      "title": "Hand over to another on-call?",
+      "body": "The case goes back to the on-call queue and the next person on the rota is called.",
+      "label": "Handover note (optional)",
+      "confirm": "Hand over"
+    },
+    "closeDialog": {
+      "title": "Close the event",
+      "outcome": "Outcome",
+      "outcomes": {
+        "safe_contacted": "Patient contacted and safe",
+        "emergency_services": "Emergency services involved",
+        "unreachable_referred": "Unreachable, referred on",
+        "false_alarm": "False alarm"
+      },
+      "outcomeRequired": "Choose an outcome",
+      "reason": "Reason",
+      "confirm": "Close event",
+      "closed": "Event closed."
     }
   }
 }

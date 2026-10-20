@@ -1,0 +1,42 @@
+{
+  "waitingTriage": {
+    "title": "Thank you for trusting us",
+    "subtitle": "Your file has arrived, and a professional is reading it carefully now.",
+    "timelineLabel": "Review stages for your file",
+    "stepDone": "Done:",
+    "stepCurrent": "In progress:",
+    "stepPending": "Next:",
+    "sent": "You sent your summary",
+    "sentAt": "{day} {time}",
+    "reviewing": "A professional is reviewing your file",
+    "expected": "Expected within about {hours, plural, one {# hour} other {# hours}}",
+    "expectedSoon": "We expect the review to finish very soon",
+    "reviewed": "A professional has reviewed your file",
+    "suggestions": "We'll suggest three therapists",
+    "notify": "We'll send you a notification",
+    "viewMatches": "See your suggested therapists",
+    "whileWaiting": "While you wait",
+    "breathingTitle": "Breathing exercise",
+    "breathingSub": "3 calming minutes",
+    "addTitle": "Add something",
+    "addSub": "Forgot to mention something in the summary?",
+    "addendumLabel": "What would you like to add?",
+    "addendumHint": "It will reach the professional together with your summary.",
+    "addendumSend": "Add to the summary",
+    "addendumSent": "We added it to your summary. Thank you.",
+    "helpHint": "If you feel worse before the review, press <help>Help now</help> and our team will contact you directly.",
+    "breathing": {
+      "label": "Three-minute breathing exercise",
+      "intro": "Breathe in for 4 seconds, hold for 4 seconds, then breathe out for 6 seconds.",
+      "ready": "Sit comfortably, then press Start.",
+      "inhale": "Breathe in…",
+      "hold": "Hold…",
+      "exhale": "Breathe out…",
+      "done": "Well done. Take a moment to notice how you feel now.",
+      "start": "Start",
+      "stop": "Stop",
+      "again": "Start again",
+      "remaining": "{time} left"
+    }
+  }
+}

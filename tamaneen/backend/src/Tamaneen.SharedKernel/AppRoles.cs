@@ -15,9 +15,12 @@ public static class AppRoles
     /// <summary>Service identity of the data-request job that executes approved deletions (crypto-shredding).</summary>
     public const string DataProtectionService = "DataProtectionService";
 
+    /// <summary>Service identity of the booking flow: it may only create the care assignment for a booked session.</summary>
+    public const string SchedulingService = "SchedulingService";
+
     public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal)
     {
-        Patient, Therapist, Supervisor, ClinicalLead, Admin, CrisisService, DataProtectionService,
+        Patient, Therapist, Supervisor, ClinicalLead, Admin, CrisisService, DataProtectionService, SchedulingService,
     };
 
     /// <summary>Roles that may read clinical content. Admin is deliberately absent.</summary>
@@ -29,5 +32,5 @@ public static class AppRoles
     public static bool IsKnown(string? role) => role is not null && All.Contains(role);
 
     /// <summary>Service identities never belong to a person and cannot be given to a user account.</summary>
-    public static bool IsService(string? role) => role is CrisisService or DataProtectionService;
+    public static bool IsService(string? role) => role is CrisisService or DataProtectionService or SchedulingService;
 }

@@ -1,0 +1,30 @@
+{
+  "safetyPlan": {
+    "badge": "Saved on your device · works offline",
+    "title": "My safety plan",
+    "byline": "Written together by me and {coAuthor} · last updated {date}",
+    "updated": "Last updated {date}",
+    "sections": {
+      "warningSigns": "Warning signs I watch for",
+      "copingAlone": "What calms me on my own",
+      "distractions": "Places and people that take my mind off things",
+      "peopleToAsk": "Who I can ask for help",
+      "professionals": "Professionals and emergency services",
+      "safeEnvironment": "How I make my space safe",
+      "reasonToLive": "My reason to keep going"
+    },
+    "emergency": "Emergency",
+    "supportLine": "Support line",
+    "resourcesLink": "Emergency resources",
+    "empty": "Nothing written yet.",
+    "emptyPlan": "You haven't written your plan yet. You can write it with your therapist in a session, or start it now.",
+    "edit": "Edit plan",
+    "save": "Save plan",
+    "cancel": "Cancel",
+    "saved": "Your plan is saved.",
+    "loading": "Loading your plan…",
+    "offlineNotice": "You're offline. This is the last copy saved on your device, from {date}.",
+    "editOffline": "You can edit the plan when you're back online.",
+    "unavailable": "We couldn't load your plan, and there's no copy saved on this device yet. Emergency numbers are always available below."
+  }
+}

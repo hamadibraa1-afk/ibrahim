@@ -3,6 +3,7 @@ using Tamaneen.Crisis;
 using Tamaneen.Crisis.Gate;
 using Tamaneen.Infrastructure.Auditing;
 using Tamaneen.Infrastructure.Persistence;
+using Tamaneen.Infrastructure.Security;
 
 namespace Tamaneen.Infrastructure.Crisis;
 
@@ -11,11 +12,22 @@ public sealed class CrisisCaseStore : ICrisisCaseStore
 {
     private readonly TamaneenDbContext _db;
     private readonly IAuditLog _audit;
+    private readonly IPatientDataProtector _protector;
 
-    public CrisisCaseStore(TamaneenDbContext db, IAuditLog audit)
+    public CrisisCaseStore(TamaneenDbContext db, IAuditLog audit, IPatientDataProtector protector)
     {
         _db = db;
         _audit = audit;
+        _protector = protector;
+    }
+
+    public const string ExcerptField = "crisis.excerpt";
+
+    public async Task AttachExcerptAsync(CrisisEvent crisisEvent, string text, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(crisisEvent);
+        var excerpt = text.Length <= 2000 ? text : text[..2000];
+        crisisEvent.SetExcerpt(await _protector.EncryptAsync(crisisEvent.PatientId, ExcerptField, excerpt, cancellationToken).ConfigureAwait(false));
     }
 
     public async Task<string?> FindPseudonymAsync(Guid patientId, CancellationToken cancellationToken) =>

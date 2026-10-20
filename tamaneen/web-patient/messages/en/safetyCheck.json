@@ -1,0 +1,16 @@
+{
+  "safetyCheck": {
+    "metaTitle": "Safety check",
+    "label": "Safety questions",
+    "progress": "{current} of {total}",
+    "progressLabel": "Progress through the safety questions",
+    "intro": "We ask everyone these questions to make sure you're safe. There are no wrong answers.",
+    "eyebrow": "C-SSRS · Quick check",
+    "previous": "Previous question",
+    "submitting": "Sending your answers…",
+    "retry": "Send again",
+    "helpCall": "If you're in danger right now, tap “Help now” or call <b>{number}</b>",
+    "helpPrefix": "If you're in danger right now, tap “Help now” or",
+    "helpResources": "open emergency resources"
+  }
+}

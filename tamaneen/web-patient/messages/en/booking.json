@@ -1,0 +1,27 @@
+{
+  "booking": {
+    "metaTitle": "Book a session",
+    "sessionLine": "Remote session · {minutes} minutes · free during the pilot",
+    "rescheduleEyebrow": "Change appointment",
+    "rescheduleCurrent": "Your current appointment: {date}. Choose a new time and we'll replace the old one when you confirm.",
+    "chooseDay": "Choose a day",
+    "daysLabel": "Available days",
+    "times": "Available times · {month}",
+    "timesLabel": "Available times",
+    "pickHint": "Choose a time and we'll hold it for you until you confirm.",
+    "holding": "Reserving this time…",
+    "held": "We've reserved {date}, {time} for you for <b>{remaining}</b> minutes. Confirm before the time runs out.",
+    "heldPlain": "We've reserved {date}, {time} for you for {remaining} minutes. Confirm before the time runs out.",
+    "oneMinute": "One minute left to confirm your booking.",
+    "expired": "Your reservation ran out and the time was released. Please choose a time again.",
+    "reminders": "You'll get reminders a day and an hour before. The session link appears ten minutes before.",
+    "confirm": "Confirm booking",
+    "confirmReschedule": "Confirm the new time",
+    "slotsUpdated": "We've updated the available times. Please choose another one.",
+    "noSlotsTitle": "No times available in the next two weeks",
+    "noSlotsBody": "Try another therapist or check back later.",
+    "browse": "Browse therapists",
+    "notEligibleFallback": "You can't book a session yet",
+    "notEligibleAction": "Finish the steps before booking"
+  }
+}

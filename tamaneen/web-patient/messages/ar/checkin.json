@@ -1,0 +1,36 @@
+{
+  "checkin": {
+    "metaTitle": "تسجيل المزاج",
+    "title": "كيف حالك اليوم؟",
+    "sliderLabel": "مزاجك من 0 إلى 10",
+    "low": "سيئ جدًا",
+    "high": "ممتاز",
+    "valueText": "{value} من 10، {word}",
+    "words": {
+      "veryBad": "سيئ جدًا",
+      "bad": "سيئ",
+      "okay": "عادي",
+      "good": "جيد",
+      "great": "ممتاز"
+    },
+    "tagsLabel": "ما الذي يصف يومك؟",
+    "optional": "(اختياري)",
+    "tags": {
+      "tired": "متعب",
+      "anxious": "قلق",
+      "slept_well": "نمت جيدًا",
+      "work_stress": "ضغط عمل",
+      "calm": "هادئ"
+    },
+    "note": "ملاحظة",
+    "last7": "آخر 7 أيام",
+    "chartDay": "اليوم",
+    "chartScore": "المزاج",
+    "chartScoreValue": "{score} من 10",
+    "chartNoEntry": "لا يوجد تسجيل",
+    "chartEmpty": "لم تسجّل مزاجك هذا الأسبوع بعد.",
+    "save": "حفظ",
+    "saved": "حفظنا مزاجك اليوم.",
+    "backHome": "العودة إلى الرئيسية"
+  }
+}

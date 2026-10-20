@@ -1,0 +1,31 @@
+{
+  "recoveryCodes": {
+    "metaTitle": "Recovery codes",
+    "title": "Save your recovery codes",
+    "subtitle": "If you lose your phone, you can sign in with one of these codes. Each code works once, and we won't show them again.",
+    "listLabel": "Your ten recovery codes",
+    "download": "Download as a file",
+    "copy": "Copy",
+    "copied": "Codes copied.",
+    "downloaded": "File downloaded.",
+    "copyFailed": "We couldn't copy them. Select the codes and copy them yourself.",
+    "fileTitle": "Tamaneen · Recovery codes",
+    "fileBody": "Each code works once. Keep this file somewhere safe and don't share it with anyone.",
+    "fileDate": "Created: {date}",
+    "extraTitle": "Extra protection (optional)",
+    "extraBody": "An authenticator app on your phone",
+    "setup": "Set up",
+    "totpIntro": "Add this key to your authenticator app, then type the 6-digit code it shows.",
+    "secretLabel": "Secret key",
+    "openApp": "Open in authenticator app",
+    "totpCode": "Code from the app",
+    "totpCodeInvalid": "Enter the 6-digit code.",
+    "confirm": "Confirm",
+    "totpEnabled": "Authenticator app turned on. We'll ask for its code when you sign in.",
+    "savedCheck": "I've saved the codes somewhere safe",
+    "mustConfirm": "Confirm you've saved the codes to continue.",
+    "missingTitle": "The codes are no longer shown here",
+    "missingBody": "For your safety, recovery codes are shown only once. If you didn't save them, create new ones now; the old codes will stop working.",
+    "regenerate": "Create new codes"
+  }
+}

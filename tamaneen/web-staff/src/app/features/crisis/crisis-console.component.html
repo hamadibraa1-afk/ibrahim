@@ -1,0 +1,166 @@
+<div class="tm-visually-hidden" aria-live="polite" aria-atomic="true" data-testid="announcer">{{ announcement() }}</div>
+
+<header class="bar">
+  <h1 class="title">{{ 'crisis.title' | translate }}</h1>
+  <ul class="chips" [attr.aria-label]="'crisis.health.region' | translate" data-testid="health">
+    @if (health(); as h) {
+      @for (part of healthParts; track part) {
+        <li class="chip" [class]="'chip ' + h[part]" [attr.data-testid]="'health-' + part" [attr.data-state]="h[part]">
+          <span class="dot" aria-hidden="true"></span>{{ 'crisis.health.' + part + '.' + h[part] | translate }}
+        </li>
+      }
+      <li class="chip oncall" data-testid="oncall">
+        {{ 'crisis.health.onCall' | translate: { onCall: h.onCall ?? ('crisis.health.nobody' | translate), backup: h.backup ?? ('crisis.health.nobody' | translate) } }}
+      </li>
+    } @else if (healthError()) {
+      <li class="chip down" data-testid="health-error"><span class="dot" aria-hidden="true"></span>{{ 'crisis.health.unavailable' | translate }}</li>
+    }
+    @if (hub.status() !== 'connected') {
+      <li class="chip degraded" data-testid="hub-status"><span class="dot" aria-hidden="true"></span>{{ 'crisis.live.' + hub.status() | translate }}</li>
+    }
+  </ul>
+</header>
+
+<div class="layout">
+  <aside class="list" [attr.aria-labelledby]="'open-events-title'">
+    <h2 class="list-title" id="open-events-title">{{ 'crisis.openEvents' | translate: { count: events().length } }}</h2>
+    @if (loading() && !events().length) {
+      <mat-progress-bar mode="indeterminate" [attr.aria-label]="'common.loading' | translate" />
+    }
+    <tm-problem-message [error]="listError()" />
+    @if (!loading() && !events().length && !listError()) {
+      <p class="tm-muted empty" data-testid="no-events">{{ 'crisis.noEvents' | translate }}</p>
+    }
+    <ul class="events">
+      @for (e of sortedEvents(); track e.eventId) {
+        <li>
+          <button type="button" class="event" [class.selected]="e.eventId === selectedId()" [class.urgent]="urgent(e)" [attr.aria-current]="e.eventId === selectedId() ? 'true' : null" (click)="select(e.eventId)" data-testid="event">
+            <span class="event-line">
+              <strong>{{ known()[e.eventId]?.number ?? e.title }} · {{ e.levelLabel }}</strong>
+              @if (e.status === 'Open') {
+                <span class="countdown" [class.red]="urgent(e)" role="timer" [attr.aria-label]="'crisis.ack.deadline' | translate" data-testid="event-countdown">{{ countdown(e) }}</span>
+              } @else {
+                <span class="state">{{ 'crisis.ack.acknowledged' | translate }}</span>
+              }
+            </span>
+            <span class="event-line small tm-muted">
+              <span><bdi dir="ltr">{{ e.pseudonymId }}</bdi>@if (known()[e.eventId]?.sourceLabel; as source) { · {{ source }} }</span>
+              @if (e.status === 'Open') {
+                <span>{{ 'crisis.ack.notAcknowledged' | translate }}</span>
+              } @else if (known()[e.eventId]?.acknowledgedBy; as by) {
+                <span>{{ by }}</span>
+              }
+            </span>
+          </button>
+        </li>
+      }
+    </ul>
+  </aside>
+
+  <section class="detail" aria-live="off">
+    <tm-problem-message [error]="detailError()" />
+    @if (detail(); as d) {
+      <div class="detail-head">
+        <div>
+          <h2 class="number">
+            <span dir="ltr">{{ d.number }}</span>
+            <span class="tm-tag" [class]="'tm-tag tm-risk-' + d.level">{{ 'crisis.level' | translate: { level: d.level } }} · {{ d.levelLabel }}</span>
+          </h2>
+          <p class="tm-muted meta" data-testid="detail-meta">
+            {{ 'crisis.meta.rules' | translate: { rules: d.ruleIds.join(', ') } }} ·
+            {{ 'crisis.meta.rulePack' | translate: { version: d.rulePackVersion } }} ·
+            {{ 'crisis.meta.started' | translate: { time: (d.openedAtUtc | tmDate: 'timeSeconds' : language.language()) } }}
+          </p>
+        </div>
+        @if (d.status === 'Open') {
+          <div class="sla">
+            <span class="tm-muted small" id="sla-label">{{ 'crisis.ack.deadline' | translate }}</span>
+            <span class="sla-value countdown" [class.red]="urgent(d)" role="timer" aria-labelledby="sla-label" data-testid="sla">{{ countdown(d) }}</span>
+          </div>
+        } @else if (d.acknowledgedBy) {
+          <span class="tm-tag tm-risk-1">{{ 'crisis.ack.acknowledgedBy' | translate: { name: d.acknowledgedBy } }}</span>
+        }
+      </div>
+
+      <tm-problem-message [error]="actionError()" />
+
+      @if (d.status === 'Open') {
+        <button mat-flat-button type="button" class="tm-danger-button take" (click)="acknowledge()" [disabled]="busy()" data-testid="take">{{ 'crisis.acknowledgeTake' | translate }}</button>
+      }
+
+      <div class="cols">
+        <div class="tm-card">
+          <h3 class="tm-card-title">{{ 'crisis.excerpt.title' | translate }}</h3>
+          @if (visibleExcerpt(); as ex) {
+            <blockquote class="box excerpt" [attr.dir]="d.dir" [attr.lang]="d.patientLanguage" data-testid="excerpt">{{ ex.excerpt }}</blockquote>
+            <p class="tm-muted small">{{ 'crisis.excerpt.hidesIn' | translate: { time: hidesIn(ex.hideAt) } }}</p>
+          } @else {
+            <p class="box tm-muted">{{ 'crisis.excerpt.hidden' | translate }}</p>
+            <button mat-stroked-button type="button" (click)="revealExcerpt()" data-testid="reveal-excerpt">{{ 'crisis.excerpt.show' | translate }}</button>
+          }
+          <p class="tm-muted small">{{ 'crisis.excerpt.audit' | translate }}</p>
+
+          <h3 class="tm-card-title section">{{ 'crisis.contact.title' | translate }}</h3>
+          <div class="box">
+            @if (visibleContact(); as c) {
+              <ul class="revealed" data-testid="revealed-contact">
+                <li>
+                  {{ 'crisis.contact.patientPhone' | translate }}:
+                  @if (c.contactPhone) { <a [attr.href]="telHref(c.contactPhone)" dir="ltr">{{ c.contactPhone }}</a> } @else { {{ 'common.none' | translate }} }
+                </li>
+                <li>
+                  {{ 'crisis.contact.trustedContact' | translate }}:
+                  @if (c.trustedPhone) { {{ c.trustedName ?? '' }} <a [attr.href]="telHref(c.trustedPhone)" dir="ltr">{{ c.trustedPhone }}</a> } @else { {{ 'common.none' | translate }} }
+                </li>
+                <li>{{ 'crisis.contact.location' | translate: { state: ((c.locationConsent ? 'crisis.contact.consented' : 'crisis.contact.notConsented') | translate) } }}</li>
+              </ul>
+              <p class="small countdown-text" data-testid="contact-hides">{{ 'crisis.contact.hidesIn' | translate: { time: hidesIn(c.hideAt) } }}</p>
+            } @else {
+              <p data-testid="masked-contact">
+                {{ d.maskedPhone ? ('crisis.contact.phone' | translate: { phone: d.maskedPhone }) : ('crisis.contact.noPhone' | translate) }} ·
+                {{ 'crisis.contact.trusted' | translate: { state: ((d.hasTrustedContact ? 'crisis.contact.registered' : 'crisis.contact.notRegistered') | translate) } }} ·
+                {{ 'crisis.contact.location' | translate: { state: ((d.locationConsent ? 'crisis.contact.consented' : 'crisis.contact.notConsented') | translate) } }}
+              </p>
+              <button mat-stroked-button type="button" (click)="revealContact()" data-testid="reveal-contact">{{ 'crisis.contact.reveal' | translate }}</button>
+            }
+            <p class="tm-muted small">{{ 'crisis.contact.note' | translate }}</p>
+          </div>
+
+          <div class="actions">
+            @if (visibleContact()?.contactPhone; as phone) {
+              <a mat-stroked-button [attr.href]="telHref(phone)" data-testid="call">{{ 'crisis.actions.call' | translate }}</a>
+            } @else {
+              <button mat-stroked-button type="button" disabled [attr.aria-describedby]="'call-hint'" data-testid="call">{{ 'crisis.actions.call' | translate }}</button>
+              <span id="call-hint" class="tm-visually-hidden">{{ 'crisis.actions.callHint' | translate }}</span>
+            }
+            <button mat-stroked-button type="button" (click)="markContacted()" [disabled]="busy()" data-testid="contacted">{{ 'crisis.actions.contacted' | translate }}</button>
+            <button mat-stroked-button type="button" class="tm-danger-outline" (click)="localEmergency()" [disabled]="busy()" data-testid="local-emergency">{{ 'crisis.actions.localEmergency' | translate }}</button>
+            <button mat-stroked-button type="button" (click)="addNote()" [disabled]="busy()" data-testid="add-note">{{ 'crisis.actions.note' | translate }}</button>
+            <button mat-stroked-button type="button" (click)="handover()" [disabled]="busy()" data-testid="handover">{{ 'crisis.actions.handover' | translate }}</button>
+            @if (d.canClose) {
+              <button mat-stroked-button type="button" (click)="closeCase()" [disabled]="busy()" data-testid="close-case">{{ 'crisis.actions.close' | translate }}</button>
+            }
+          </div>
+        </div>
+
+        <div class="tm-card">
+          <h3 class="tm-card-title">{{ 'crisis.timeline.title' | translate }}</h3>
+          @if (d.timeline.length) {
+            <ol class="timeline" data-testid="timeline">
+              @for (t of d.timeline; track $index) {
+                <li>
+                  <time class="at" [attr.datetime]="t.at">{{ t.at | tmDate: 'timeSeconds' : language.language() }}</time>
+                  <span>{{ t.text }}@if (t.actor) { <span class="tm-muted"> · {{ t.actor }}</span> }</span>
+                </li>
+              }
+            </ol>
+          } @else {
+            <p class="tm-muted">{{ 'crisis.timeline.empty' | translate }}</p>
+          }
+        </div>
+      </div>
+    } @else if (events().length && !detailError()) {
+      <mat-progress-bar mode="indeterminate" [attr.aria-label]="'common.loading' | translate" />
+    }
+  </section>
+</div>

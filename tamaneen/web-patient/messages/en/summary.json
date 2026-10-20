@@ -1,0 +1,28 @@
+{
+  "summary": {
+    "title": "Did we understand you correctly?",
+    "subtitle": "Here's a summary of what you shared with us. Correct anything that isn't accurate before it goes to the care team.",
+    "sections": {
+      "concern": "What's bothering you",
+      "goals": "What you hope for",
+      "supports": "What helps you now",
+      "priorCare": "Previous care",
+      "extra": "Things you added"
+    },
+    "edit": "Edit",
+    "editLabel": "Edit: {section}",
+    "write": "Write",
+    "writeLabel": "Write: {section}",
+    "save": "Save",
+    "cancel": "Cancel",
+    "editedTag": "You corrected this",
+    "empty": "Nothing here yet.",
+    "addExtra": "Add something we didn't mention",
+    "noAiTitle": "Write your summary yourself",
+    "noAiBody": "The assistant couldn't write the summary this time. Use your own words in the sections below, and the professional will read them as they are.",
+    "reviewNote": "A professional will review your file within {hours, plural, one {# hour} other {# hours}}, then we'll suggest therapists who suit you.",
+    "submit": "Send to the care team",
+    "saveFirst": "Save or cancel your changes before sending.",
+    "saved": "Your change is saved."
+  }
+}

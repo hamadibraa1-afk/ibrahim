@@ -1,0 +1,20 @@
+{
+  "therapistProfile": {
+    "metaTitle": "ملف الأخصائي",
+    "licenseVerified": "ترخيص موثّق من المنصة",
+    "specialtiesLabel": "التخصصات",
+    "about": "عن أسلوبي",
+    "detailsLabel": "تفاصيل الجلسات",
+    "languages": "اللغات",
+    "languageName": {
+      "ar": "العربية",
+      "en": "الإنجليزية"
+    },
+    "listSeparator": "، ",
+    "sessionType": "نوع الجلسة",
+    "sessionValue": "عن بُعد · {minutes} دقيقة",
+    "nextAvailable": "أقرب موعد",
+    "noSlots": "لا مواعيد متاحة حاليًا",
+    "choose": "اختيار موعد"
+  }
+}

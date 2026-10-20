@@ -1,0 +1,51 @@
+{
+  "name": "طمأنينة · Tamaneen",
+  "short_name": "طمأنينة",
+  "description": "مساحة آمنة وسرية للدعم النفسي، يراجعها أخصائيون مرخّصون.",
+  "lang": "ar",
+  "dir": "rtl",
+  "id": "/",
+  "start_url": "/ar",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FFF8F1",
+  "theme_color": "#1F5F5B",
+  "categories": [
+    "health",
+    "medical"
+  ],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "مساعدة فورية",
+      "short_name": "مساعدة",
+      "url": "/ar/crisis-resources"
+    },
+    {
+      "name": "Help now",
+      "short_name": "Help",
+      "url": "/en/crisis-resources"
+    }
+  ],
+  "translations": {
+    "en": {
+      "name": "Tamaneen",
+      "short_name": "Tamaneen",
+      "description": "A safe, private space for mental health support, reviewed by licensed professionals."
+    }
+  }
+}

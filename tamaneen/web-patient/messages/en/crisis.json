@@ -1,0 +1,26 @@
+{
+  "crisis": {
+    "title": "You are not alone",
+    "subtitle": "A member of our clinical team is being contacted now and will call you within minutes.",
+    "stepsLabel": "What's happening now",
+    "notified": "The team has been notified",
+    "calling": "A professional is calling you",
+    "lastDigits": "On the number ending in <num>{last4}</num>",
+    "acknowledged": "A professional has your request and will call you now.",
+    "stepDone": "Done",
+    "stepPending": "Waiting",
+    "dangerTitle": "If you are in danger now, don't wait:",
+    "callEmergency": "Call emergency services",
+    "supportLine": "Mental health support line",
+    "noNumber": "Call your local emergency number now.",
+    "resourcesLink": "Emergency resources",
+    "untilTitle": "Until someone calls you",
+    "untilBody": "If you can, stay somewhere safe, move away from anything that could hurt you, and stay close to someone you trust.",
+    "scriptTitle": "A message from our team",
+    "chatPaused": "The chat is paused for now, and the professional will reopen it after talking with you.",
+    "updateNumber": "Has my number changed? Update the contact number",
+    "noEventTitle": "Would you like a professional to call you?",
+    "noEventBody": "Press the button and a member of our clinical team will call you within minutes.",
+    "requestCall": "Ask a professional to call me now"
+  }
+}

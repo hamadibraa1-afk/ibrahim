@@ -1,0 +1,23 @@
+{
+  "systemStates": {
+    "offline": {
+      "title": "No internet connection",
+      "body": "Your message is saved and we'll send it automatically when the connection returns.",
+      "numbers": "Emergency numbers always work:",
+      "noNumbers": "Call your local emergency number.",
+      "retry": "Try again"
+    },
+    "sessionExpired": {
+      "title": "Your session ended to protect you",
+      "body": "Please sign in again. What you typed is saved on this device for 10 minutes.",
+      "login": "Sign in"
+    },
+    "maintenance": {
+      "title": "Scheduled maintenance",
+      "body": "We'll be back at {time}. The emergency team keeps working during maintenance.",
+      "bodySoon": "We'll be back soon. The emergency team keeps working during maintenance.",
+      "danger": "If you are in danger now:",
+      "resources": "Emergency resources"
+    }
+  }
+}

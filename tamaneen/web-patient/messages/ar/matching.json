@@ -1,0 +1,37 @@
+{
+  "matching": {
+    "metaTitle": "الأخصائيون المقترحون",
+    "title": "{count, plural, =1 {اخترنا لك أخصائيًا واحدًا} =2 {اخترنا لك أخصائيَّين} =3 {اخترنا لك ثلاثة أخصائيين} other {اخترنا لك {n} من الأخصائيين}}",
+    "subtitle": "راجع مختصٌّ ملفك واعتمد هذه الاقتراحات. الاختيار لك.",
+    "listLabel": "الأخصائيون المقترحون",
+    "best": "الأنسب",
+    "licensed": "{gender, select, female {مرخصة} other {مرخص}}",
+    "viewProfile": "عرض الملف والمواعيد",
+    "view": "عرض",
+    "viewLabel": "عرض ملف {name}",
+    "dismiss": "غير مناسب",
+    "dismissLabel": "غير مناسب: {name}",
+    "dismissed": "{gender, select, female {أزلنا {name} من اقتراحاتك، ولن نقترحها عليك مرة أخرى.} other {أزلنا {name} من اقتراحاتك، ولن نقترحه عليك مرة أخرى.}}",
+    "browseAll": "تصفح جميع الأخصائيين",
+    "emptyTitle": "لا توجد اقتراحات حاليًا",
+    "emptyBody": "يمكنك تصفح جميع الأخصائيين واختيار من يناسبك.",
+    "pendingTitle": "نجهّز اقتراحاتك",
+    "pendingBody": "يراجع مختصٌّ ملفك الآن، ثم نقترح عليك أخصائيين مناسبين.",
+    "pendingAction": "متابعة حالة المراجعة",
+    "reasons": {
+      "label": "{gender, select, female {لماذا اقترحناها:} other {لماذا اقترحناه:}}",
+      "specialties": "خبرة في {list}",
+      "language": "{gender, select, female {تتحدث} other {يتحدث}} {language}",
+      "evening": "مواعيد مسائية متاحة",
+      "next": "أقرب موعد {when}",
+      "languageName": {
+        "ar": "العربية",
+        "en": "الإنجليزية"
+      },
+      "join": "، و",
+      "joinPair": "، و",
+      "joinLast": "، و",
+      "sentence": "{reasons}."
+    }
+  }
+}

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="طمأنينة">
+  <rect width="512" height="512" fill="#E4F1EE"/>
+  <circle cx="256" cy="256" r="168" fill="#1F5F5B"/>
+  <path d="M164 290c30-26 62-26 92 0s62 26 92 0" fill="none" stroke="#FFF8F1" stroke-width="22" stroke-linecap="round"/>
+  <path d="M190 228c22-18 44-18 66 0s44 18 66 0" fill="none" stroke="#FFF8F1" stroke-opacity="0.55" stroke-width="16" stroke-linecap="round"/>
+  <circle cx="318" cy="168" r="18" fill="#E07A3F"/>
+</svg>

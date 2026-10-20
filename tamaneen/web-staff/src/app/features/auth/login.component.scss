@@ -1,0 +1,12 @@
+:host { display: block; min-height: 100vh; background: var(--tm-bg); }
+.page { max-width: 480px; margin-inline: auto; padding: 32px 16px; }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-block-end: 24px; }
+.brand { font-size: 26px; font-weight: 700; color: var(--tm-primary); }
+.brand small { font-size: 14px; font-weight: 500; color: var(--tm-muted); }
+.card { position: relative; padding: 32px; }
+.progress { position: absolute; inset-inline: 0; inset-block-start: 0; border-start-start-radius: 14px; border-start-end-radius: 14px; overflow: hidden; }
+h1 { margin: 0 0 20px; font-size: 26px; font-weight: 700; outline: none; }
+.submit { min-height: 48px; margin-block-start: 8px; border-radius: 10px; }
+.code { letter-spacing: 0.5em; font-size: 22px; text-align: center; }
+.links { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin-block-start: 12px; }
+.hint { margin: 6px 0 0; }

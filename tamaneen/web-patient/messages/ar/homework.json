@@ -1,0 +1,44 @@
+{
+  "homework": {
+    "listTitle": "واجباتي",
+    "intro": "تمارين اختارتها لك أخصائيتك. الأيام التي تفوتك لا بأس بها.",
+    "dueToday": "اليوم",
+    "newReply": "رد جديد",
+    "frequency": {
+      "daily": "يوميًا",
+      "twice_weekly": "مرتين أسبوعيًا",
+      "weekly": "مرة أسبوعيًا",
+      "once": "مرة واحدة"
+    },
+    "until": "{frequency} حتى {date}",
+    "doneThisWeek": {
+      "one": "أنجزت مرة هذا الأسبوع",
+      "two": "أنجزت مرتين هذا الأسبوع",
+      "few": "أنجزت {count} مرات هذا الأسبوع",
+      "other": "أنجزت {count} مرة هذا الأسبوع"
+    },
+    "weekProgress": "أنجزت {done} من 7 أيام هذا الأسبوع",
+    "completed": "مكتملة",
+    "ended": "انتهت {date}",
+    "empty": "لا توجد واجبات بعد",
+    "emptyBody": "حين تضيف أخصائيتك تمرينًا ستجده هنا.",
+    "detailTitle": "الواجب المنزلي",
+    "from": "من {therapist} · {schedule}",
+    "instructions": "التعليمات",
+    "todayQuestion": "كيف كان اليوم؟",
+    "status": {
+      "done": "أنجزته",
+      "partial": "جزئيًا",
+      "skipped": "ليس اليوم"
+    },
+    "statusRequired": "اختر كيف كان اليوم.",
+    "feelingLabel": "شعورك بعد التمرين",
+    "feelingValue": "{value} من 10",
+    "noteLabel": "ملاحظة لأخصائيتك",
+    "optional": "(اختياري)",
+    "feedbackLabel": "رد أخصائيتك",
+    "save": "حفظ المتابعة",
+    "saved": "حفظنا متابعة اليوم. ستراها أخصائيتك.",
+    "back": "واجباتي"
+  }
+}

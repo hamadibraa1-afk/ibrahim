@@ -1,0 +1,13 @@
+{
+  "bookConfirmed": {
+    "metaTitle": "Booking confirmed",
+    "title": "Booked",
+    "with": "With {name} · remote · {minutes} minutes",
+    "nextTitle": "What happens next",
+    "step1": "{gender, select, female {Your therapist reads your file before the session, so you won't need to tell your story again.} other {Your therapist reads your file before the session, so you won't need to tell your story again.}}",
+    "step2": "We'll remind you a day and an hour before.",
+    "step3": "The session link appears on the appointment page ten minutes before.",
+    "addToCalendar": "Add to calendar",
+    "goHome": "Go home"
+  }
+}

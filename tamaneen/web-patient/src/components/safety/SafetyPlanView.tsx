@@ -1,0 +1,278 @@
+'use client';
+
+import { useLocale, useTranslations } from 'next-intl';
+import { useEffect, useState, type ReactNode } from 'react';
+import { useRouter } from '@/i18n/navigation';
+import { isLocale, routing } from '@/i18n/routing';
+import { api } from '@/lib/api/client';
+import type { SafetyPlan, SafetyPlanSection } from '@/lib/api/types';
+import { formatDate } from '@/lib/format';
+import { apiMessage, isCrisis, isNetworkError } from '@/components/pwa/errors';
+import { useOnline } from '@/components/pwa/hooks';
+import { Button } from '@/components/ui/Button';
+import { Notice } from '@/components/ui/Notice';
+import { Spinner } from '@/components/ui/Spinner';
+import { TextArea } from '@/components/ui/TextField';
+import { readCachedPlan, writeCachedPlan } from './planCache';
+
+const NUMBERED: SafetyPlanSection[] = ['warningSigns', 'copingAlone', 'distractions', 'peopleToAsk', 'professionals', 'safeEnvironment'];
+const ALL: SafetyPlanSection[] = [...NUMBERED, 'reasonToLive'];
+const BADGE: Record<SafetyPlanSection, string> = {
+  warningSigns: 'bg-tint-sand text-accent',
+  copingAlone: 'bg-tint-sand text-accent',
+  distractions: 'bg-tint-teal text-primary-strong',
+  peopleToAsk: 'bg-tint-teal text-primary-strong',
+  professionals: 'bg-help/10 text-help',
+  safeEnvironment: 'bg-tint-teal text-primary-strong',
+  reasonToLive: '',
+};
+const MAX_SECTION = 2000;
+
+type Source = 'network' | 'cache' | 'offline-cache';
+
+function people(text: string): string[] {
+  return text
+    .split(/[\n،,؛;]+/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+}
+
+function emptyPlan(plan: SafetyPlan): boolean {
+  return ALL.every((s) => !(plan.sections[s] ?? '').trim());
+}
+
+/**
+ * P37 Safety plan. Shows the last copy saved on this device at once, refreshes it from the API, and keeps
+ * working from the saved copy when offline or when the API fails. `numbers` are the server-rendered
+ * emergency tel: links, so they show even before (or without) JavaScript.
+ */
+export function SafetyPlanView({ numbers }: { numbers: ReactNode }) {
+  const t = useTranslations('safetyPlan');
+  const tErrors = useTranslations('errors');
+  const current = useLocale();
+  const locale = isLocale(current) ? current : routing.defaultLocale;
+  const router = useRouter();
+  const online = useOnline();
+
+  const [plan, setPlan] = useState<SafetyPlan | null>(null);
+  const [source, setSource] = useState<Source | null>(null);
+  const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [state, setState] = useState<'loading' | 'ready' | 'unavailable'>('loading');
+  const [editing, setEditing] = useState(false);
+  const [drafts, setDrafts] = useState<Record<SafetyPlanSection, string> | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const cached = readCachedPlan();
+    if (cached) {
+      setPlan(cached.plan);
+      setSavedAt(cached.savedAt);
+      setSource('cache');
+      setState('ready');
+    }
+    api<SafetyPlan>('safety-plan')
+      .then((fresh) => {
+        if (cancelled) return;
+        writeCachedPlan(fresh, locale);
+        setPlan(fresh);
+        setSource('network');
+        setState('ready');
+      })
+      .catch(() => {
+        if (cancelled) return;
+        if (cached) setSource('offline-cache');
+        else setState('unavailable');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [locale]);
+
+  const canEdit = online && source === 'network';
+
+  function startEdit() {
+    if (!plan) return;
+    setDrafts(Object.fromEntries(ALL.map((s) => [s, plan.sections[s] ?? ''])) as Record<SafetyPlanSection, string>);
+    setEditing(true);
+    setSaved(false);
+    setError(null);
+  }
+
+  async function save() {
+    if (!drafts) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const sections = Object.fromEntries(ALL.map((s) => [s, drafts[s].trim()])) as Record<SafetyPlanSection, string>;
+      const response = await api<SafetyPlan>('safety-plan', { method: 'PUT', body: { sections } });
+      if (isCrisis(response)) {
+        router.replace('/crisis');
+        return;
+      }
+      writeCachedPlan(response, locale);
+      setPlan(response);
+      setEditing(false);
+      setSaved(true);
+    } catch (e) {
+      setError(apiMessage(e) ?? (isNetworkError(e) ? tErrors('network') : tErrors('generic')));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const header = (
+    <div className="flex flex-col gap-2">
+      <span className="inline-flex items-center gap-2 self-start rounded-full bg-tint-teal px-4 py-1.5 text-sm font-semibold text-primary-strong">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M5 12l4 4 10-10" />
+        </svg>
+        {t('badge')}
+      </span>
+      <h1 className="text-3xl font-bold">{t('title')}</h1>
+      {plan?.updatedAt ? (
+        <p className="text-sm text-muted" data-testid="plan-byline">
+          {plan.coAuthor ? t('byline', { coAuthor: plan.coAuthor, date: formatDate(plan.updatedAt, locale, undefined, { day: 'numeric', month: 'long' }) }) : t('updated', { date: formatDate(plan.updatedAt, locale, undefined, { day: 'numeric', month: 'long' }) })}
+        </p>
+      ) : null}
+    </div>
+  );
+
+  if (state !== 'ready' || !plan) {
+    return (
+      <div className="flex flex-col gap-4 pt-2">
+        {header}
+        {state === 'loading' ? <Spinner label={t('loading')} /> : <Notice tone="warning">{t('unavailable')}</Notice>}
+        <section aria-labelledby="plan-numbers" className="flex flex-col gap-3 rounded-card bg-surface p-4">
+          <h2 id="plan-numbers" className="font-bold">
+            {t('sections.professionals')}
+          </h2>
+          {numbers}
+        </section>
+      </div>
+    );
+  }
+
+  if (editing && drafts) {
+    return (
+      <div className="flex flex-col gap-4 pt-2">
+        {header}
+        <form
+          className="flex flex-col gap-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void save();
+          }}
+        >
+          {ALL.map((section) => (
+            <TextArea
+              key={section}
+              label={t(`sections.${section}`)}
+              value={drafts[section]}
+              rows={3}
+              maxLength={MAX_SECTION}
+              dir="auto"
+              onChange={(e) => setDrafts({ ...drafts, [section]: e.target.value })}
+            />
+          ))}
+          {error ? (
+            <p role="alert" className="text-sm font-semibold text-help">
+              {error}
+            </p>
+          ) : null}
+          <div className="flex gap-3">
+            <Button type="submit" busy={busy}>
+              {t('save')}
+            </Button>
+            <Button variant="secondary" disabled={busy} onClick={() => setEditing(false)}>
+              {t('cancel')}
+            </Button>
+          </div>
+        </form>
+      </div>
+    );
+  }
+
+  const reason = (plan.sections.reasonToLive ?? '').trim();
+
+  return (
+    <div className="flex flex-col gap-3 pt-2">
+      {header}
+
+      {source === 'offline-cache' && savedAt ? (
+        <Notice tone="warning">
+          <span data-testid="plan-offline">{t('offlineNotice', { date: formatDate(savedAt, locale) })}</span>
+        </Notice>
+      ) : null}
+      <div aria-live="polite" className="empty:hidden">
+        {saved ? <Notice tone="success">{t('saved')}</Notice> : null}
+      </div>
+      {emptyPlan(plan) ? <p className="leading-relaxed text-muted">{t('emptyPlan')}</p> : null}
+
+      <ol className="flex flex-col gap-3">
+        {NUMBERED.map((section, i) => {
+          const text = (plan.sections[section] ?? '').trim();
+          return (
+            <li key={section} className="flex items-start gap-3 rounded-card bg-surface p-4 shadow-[0_1px_0_rgb(var(--line))]" data-testid={`plan-${section}`}>
+              <span aria-hidden="true" className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-bold ${BADGE[section]}`}>
+                {i + 1}
+              </span>
+              <div className="flex min-w-0 flex-1 flex-col gap-2">
+                <h2 className="text-base font-bold">{t(`sections.${section}`)}</h2>
+                {section === 'peopleToAsk' && text ? (
+                  <ul className="flex flex-wrap gap-2">
+                    {people(text).map((person) => (
+                      <li key={person} dir="auto" className="rounded-full bg-tint-teal px-4 py-2 text-sm font-semibold text-primary-strong">
+                        {person}
+                      </li>
+                    ))}
+                  </ul>
+                ) : section === 'professionals' ? (
+                  <>
+                    {text ? (
+                      <p dir="auto" className="whitespace-pre-line leading-relaxed">
+                        {text}
+                      </p>
+                    ) : null}
+                    {numbers}
+                  </>
+                ) : (
+                  <p dir="auto" className={`whitespace-pre-line leading-relaxed ${text ? '' : 'text-muted'}`}>
+                    {text || t('empty')}
+                  </p>
+                )}
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+
+      <section aria-labelledby="plan-reason" className="flex items-start gap-3 rounded-card bg-primary p-5 text-surface" data-testid="plan-reasonToLive">
+        <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" className="mt-0.5 shrink-0">
+          <path d="M12 20s-7-4.4-7-10a4 4 0 017-2.6A4 4 0 0119 10c0 5.6-7 10-7 10z" />
+        </svg>
+        <div className="flex flex-col gap-1">
+          <h2 id="plan-reason" className="text-lg font-bold">
+            {t('sections.reasonToLive')}
+          </h2>
+          <p dir="auto" className="whitespace-pre-line leading-relaxed">
+            {reason || t('empty')}
+          </p>
+        </div>
+      </section>
+
+      <div className="flex flex-col gap-2 pt-2">
+        <Button variant="secondary" full disabled={!canEdit} aria-describedby={canEdit ? undefined : 'plan-edit-offline'} onClick={startEdit}>
+          {t('edit')}
+        </Button>
+        {!canEdit && source !== 'cache' ? (
+          <p id="plan-edit-offline" className="text-center text-sm text-muted">
+            {t('editOffline')}
+          </p>
+        ) : null}
+      </div>
+    </div>
+  );
+}

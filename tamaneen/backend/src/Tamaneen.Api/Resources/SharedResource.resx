@@ -27,6 +27,40 @@
   <data name="error.reason.required" xml:space="preserve"><value>Please write a reason.</value></data>
   <data name="error.not_found" xml:space="preserve"><value>We couldn't find this item.</value></data>
   <data name="error.ai.message_invalid" xml:space="preserve"><value>The message is empty or longer than {0} characters.</value></data>
+  <data name="error.validation" xml:space="preserve"><value>Some of the information is not valid.</value></data>
+  <data name="error.auth.invalid_credentials" xml:space="preserve"><value>The details are not correct.</value></data>
+  <data name="error.auth.locked" xml:space="preserve"><value>We paused sign-in to protect you. Try again in {0} minutes.</value></data>
+  <data name="error.auth.invalid_code" xml:space="preserve"><value>The code is wrong or has expired.</value></data>
+  <data name="error.auth.challenge_expired" xml:space="preserve"><value>This code has expired. Ask for a new one.</value></data>
+  <data name="error.auth.resend_too_soon" xml:space="preserve"><value>You can ask for a new code in {0} seconds.</value></data>
+  <data name="error.auth.weak_password" xml:space="preserve"><value>This password is too weak: use at least 12 characters and avoid common or leaked passwords.</value></data>
+  <data name="error.auth.not_eligible" xml:space="preserve"><value>The eligibility check has expired. Please answer the two starting questions again.</value></data>
+  <data name="error.auth.session_revoked" xml:space="preserve"><value>Your session ended to protect you. Please sign in again.</value></data>
+  <data name="error.auth.mfa_failed" xml:space="preserve"><value>The verification code is not correct.</value></data>
+  <data name="error.auth.step_up_required" xml:space="preserve"><value>This action needs a valid code from your authenticator app.</value></data>
+  <data name="error.totp.already_enabled" xml:space="preserve"><value>The authenticator app is already turned on.</value></data>
+  <data name="error.totp.not_set_up" xml:space="preserve"><value>Start the authenticator setup first.</value></data>
+  <data name="error.consent.unknown" xml:space="preserve"><value>This consent is not known.</value></data>
+  <data name="error.consent.required" xml:space="preserve"><value>This consent is needed to provide the service. You can delete your account instead of withdrawing it.</value></data>
+  <data name="error.consent.missing" xml:space="preserve"><value>Please accept the required consents to continue.</value></data>
+  <data name="error.consent.ai_withdrawn" xml:space="preserve"><value>You withdrew consent for AI assistance, so this feature is off.</value></data>
+  <data name="error.time.invalid" xml:space="preserve"><value>The time is not valid.</value></data>
+  <data name="error.timezone.invalid" xml:space="preserve"><value>The time zone is not known.</value></data>
+  <data name="error.path.invalid" xml:space="preserve"><value>Choose how you would like to start.</value></data>
+  <data name="error.crisis.locked" xml:space="preserve"><value>The chat is paused now. The professional will reopen it after speaking with you.</value></data>
+  <data name="error.crisis.not_acknowledged" xml:space="preserve"><value>Nobody has taken this case yet.</value></data>
+  <data name="error.crisis.unavailable" xml:space="preserve"><value>We couldn't run the safety check on your message right now, so it was not sent. If you are in danger, call emergency services.</value></data>
+  <data name="error.slot.unavailable" xml:space="preserve"><value>This time is no longer available. Please choose another.</value></data>
+  <data name="error.slot.hold_expired" xml:space="preserve"><value>The temporary hold has ended. Please choose the time again.</value></data>
+  <data name="error.appointment.not_changeable" xml:space="preserve"><value>Appointments can't be changed or cancelled less than 24 hours before.</value></data>
+  <data name="error.appointment.not_started" xml:space="preserve"><value>This appointment hasn't started yet.</value></data>
+  <data name="error.booking.not_eligible" xml:space="preserve"><value>You can book after completing the safety questions or after your file is reviewed.</value></data>
+  <data name="error.intake.question_not_pending" xml:space="preserve"><value>This is not the current question.</value></data>
+  <data name="error.intake.not_finished" xml:space="preserve"><value>We need a few more answers before finishing the conversation.</value></data>
+  <data name="error.intake.not_in_review" xml:space="preserve"><value>The summary can't be changed now.</value></data>
+  <data name="error.intake.closed" xml:space="preserve"><value>This conversation has ended. You can start a new one.</value></data>
+  <data name="error.triage.already_reviewed" xml:space="preserve"><value>This file has already been reviewed.</value></data>
+  <data name="error.auth.password_mismatch" xml:space="preserve"><value>The current password is not correct.</value></data>
   <data name="validation.language.required" xml:space="preserve"><value>Language is required.</value></data>
   <data name="validation.failed" xml:space="preserve"><value>Some fields need your attention.</value></data>
   <data name="message.welcome" xml:space="preserve"><value>Welcome to Tamaneen.</value></data>

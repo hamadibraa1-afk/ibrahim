@@ -1,0 +1,73 @@
+{
+  "privacy": {
+    "metaTitle": "Privacy and my data",
+    "title": "Privacy and my data",
+    "consentsTitle": "My consents",
+    "consents": {
+      "platform": "Terms of service and privacy policy",
+      "ai": "AI assistance",
+      "share_with_therapist": "Share my summary with my specialist",
+      "research": "Improving the service (anonymous data)",
+      "emergency_location": "My location in an emergency"
+    },
+    "required": "Required",
+    "requiredHint": "We can't provide the service without it.",
+    "consentSaved": "Your consents are updated.",
+    "aiDialogTitle": "Turn off AI assistance?",
+    "aiDialogBody": "If you withdraw your consent, AI-assisted features will stop, such as the intake chat and the summary it prepares for your specialist. Our human team and the emergency team stay available as usual, and you can turn it back on at any time.",
+    "aiDialogConfirm": "Turn off AI assistance",
+    "aiDialogKeep": "Keep it on",
+    "accessTitle": "Who opened my file",
+    "fullLog": "Full log",
+    "showLess": "Show less",
+    "accessEmpty": "No one has opened your file yet.",
+    "actors": {
+      "therapist": "Your specialist",
+      "supervisor": "Clinical supervisor",
+      "clinical_lead": "Clinical lead",
+      "system": "The system",
+      "crisis_service": "Emergency team",
+      "patient": "You"
+    },
+    "actions": {
+      "fileOpened": {
+        "feminine": "Opened your clinical file",
+        "masculine": "Opened your clinical file"
+      },
+      "triageReviewed": {
+        "feminine": "Reviewed your triage file",
+        "masculine": "Reviewed your triage file"
+      },
+      "summaryGenerated": {
+        "feminine": "Prepared the chat summary",
+        "masculine": "Prepared the chat summary"
+      },
+      "contactRevealed": {
+        "feminine": "Viewed your emergency contact",
+        "masculine": "Viewed your emergency contact"
+      },
+      "crisisAcknowledged": {
+        "feminine": "Picked up an emergency alert",
+        "masculine": "Picked up an emergency alert"
+      },
+      "unknown": {
+        "feminine": "Viewed your file",
+        "masculine": "Viewed your file"
+      }
+    },
+    "dataTitle": "My data",
+    "export": "Download a copy of my data",
+    "exportHint": "Ready within 7 days",
+    "exportRequested": "Requested on {requested} · ready by {ready}",
+    "exportReady": "Your copy is ready",
+    "exportStarted": "We've received your request. Your copy will be ready within 7 days.",
+    "delete": "Delete my account",
+    "deleteHint": "We keep only what the law requires",
+    "deleteDialogTitle": "Delete your account?",
+    "deleteDialogBody": "We'll delete your account, chats, homework and upcoming appointments. We keep only the health records the law requires. This can't be undone.",
+    "deletePassword": "Password to confirm",
+    "deletePasswordRequired": "Enter your password.",
+    "deleteConfirm": "Delete my account for good",
+    "back": "Settings"
+  }
+}

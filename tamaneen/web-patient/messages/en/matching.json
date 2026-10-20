@@ -1,0 +1,37 @@
+{
+  "matching": {
+    "metaTitle": "Suggested therapists",
+    "title": "{count, plural, =1 {We picked one therapist for you} =2 {We picked two therapists for you} =3 {We picked three therapists for you} other {We picked {n} therapists for you}}",
+    "subtitle": "A professional reviewed your file and approved these suggestions. The choice is yours.",
+    "listLabel": "Suggested therapists",
+    "best": "Best fit",
+    "licensed": "{gender, select, female {Licensed} other {Licensed}}",
+    "viewProfile": "View profile and times",
+    "view": "View",
+    "viewLabel": "View {name}'s profile",
+    "dismiss": "Not a good fit",
+    "dismissLabel": "Not a good fit: {name}",
+    "dismissed": "{gender, select, female {We removed {name} from your suggestions and won't suggest her again.} other {We removed {name} from your suggestions and won't suggest him again.}}",
+    "browseAll": "Browse all therapists",
+    "emptyTitle": "No suggestions right now",
+    "emptyBody": "You can browse all therapists and choose who suits you.",
+    "pendingTitle": "We're preparing your suggestions",
+    "pendingBody": "A professional is reviewing your file. Then we'll suggest therapists who fit you.",
+    "pendingAction": "Check the review status",
+    "reasons": {
+      "label": "{gender, select, female {Why we suggested her:} other {Why we suggested him:}}",
+      "specialties": "experienced in {list}",
+      "language": "{gender, select, female {speaks} other {speaks}} {language}",
+      "evening": "has evening slots",
+      "next": "the earliest slot is {when}",
+      "languageName": {
+        "ar": "Arabic",
+        "en": "English"
+      },
+      "join": ", ",
+      "joinPair": " and ",
+      "joinLast": ", and ",
+      "sentence": "{reasons}."
+    }
+  }
+}

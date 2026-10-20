@@ -8,6 +8,7 @@
     "start": "لنبدأ معًا",
     "haveAccount": "لدي حساب",
     "emergencyCall": "في خطر الآن؟ اتصل بـ {number}",
-    "emergencyResources": "في خطر الآن؟ افتح موارد الطوارئ"
+    "emergencyResources": "في خطر الآن؟ افتح موارد الطوارئ",
+    "continue": "متابعة"
   }
 }

@@ -1,0 +1,31 @@
+{
+  "eligibility": {
+    "metaTitle": "Eligibility",
+    "title": "Two questions before we start",
+    "subtitle": "The current pilot is only for adults living in {region}.",
+    "ageQuestion": "Are you {age} or older?",
+    "cityLabel": "Where do you live right now?",
+    "cityPlaceholder": "Choose your city",
+    "ifNotTitle": "If these don't apply to you",
+    "ifNotBody": "We'll show you other mental-health support services you can use, and we won't create an account.",
+    "ageRequired": "Please answer the age question.",
+    "cityRequired": "Please choose the city you live in.",
+    "configError": "We couldn't load the list of cities right now. Please try again shortly. Help now is always available.",
+    "retry": "Try again",
+    "restartNotice": "Your sign-up session on this device has ended. Answer the two questions again to continue.",
+    "storageBlocked": "Sign-up needs your browser to allow session storage. Turn it on or leave private browsing, then try again.",
+    "notEligible": {
+      "title": "Other support services for you",
+      "age": "The current pilot is for people aged {age} or older, so we won't create an account. These services can help you now.",
+      "region": "The current pilot is only available in {region}, so we won't create an account. These services can help you now.",
+      "generic": "The current pilot's conditions don't apply to you, so we won't create an account. These services can help you now.",
+      "resourcesTitle": "If you need help right now",
+      "emergency": "Emergency: <b>{number}</b>",
+      "supportLine": "Mental-health support line: <b>{number}</b>",
+      "international": "Outside the service area? The international emergency number 112 works in many countries.",
+      "allResources": "All emergency resources",
+      "backHome": "Back to the welcome page",
+      "changeAnswers": "Change my answers"
+    }
+  }
+}

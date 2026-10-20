@@ -1,0 +1,73 @@
+{
+  "privacy": {
+    "metaTitle": "الخصوصية وبياناتي",
+    "title": "الخصوصية وبياناتي",
+    "consentsTitle": "موافقاتي",
+    "consents": {
+      "platform": "شروط الخدمة وسياسة الخصوصية",
+      "ai": "المساعدة بالذكاء الاصطناعي",
+      "share_with_therapist": "مشاركة ملخصي مع أخصائيتي",
+      "research": "تحسين الخدمة (بيانات مجهولة)",
+      "emergency_location": "موقعي عند الطوارئ"
+    },
+    "required": "مطلوبة",
+    "requiredHint": "لا يمكن تقديم الخدمة بدونها.",
+    "consentSaved": "حدّثنا موافقاتك.",
+    "aiDialogTitle": "إيقاف المساعدة بالذكاء الاصطناعي؟",
+    "aiDialogBody": "إذا سحبت موافقتك ستتوقف الميزات المدعومة بالذكاء الاصطناعي، مثل محادثة الاستقبال وإعداد ملخصها لأخصائيتك. يبقى فريقنا البشري وفريق الطوارئ متاحين كالمعتاد، ويمكنك إعادة التفعيل في أي وقت.",
+    "aiDialogConfirm": "إيقاف المساعدة",
+    "aiDialogKeep": "إبقاؤها مفعّلة",
+    "accessTitle": "من اطّلع على ملفي",
+    "fullLog": "السجل كاملًا",
+    "showLess": "عرض أقل",
+    "accessEmpty": "لم يطّلع أحد على ملفك بعد.",
+    "actors": {
+      "therapist": "أخصائيتك",
+      "supervisor": "مشرف سريري",
+      "clinical_lead": "المسؤول السريري",
+      "system": "النظام",
+      "crisis_service": "فريق الطوارئ",
+      "patient": "أنت"
+    },
+    "actions": {
+      "fileOpened": {
+        "feminine": "فتحت الملف السريري",
+        "masculine": "فتح الملف السريري"
+      },
+      "triageReviewed": {
+        "feminine": "راجعت ملف الفرز",
+        "masculine": "راجع ملف الفرز"
+      },
+      "summaryGenerated": {
+        "feminine": "أعدّت ملخص المحادثة",
+        "masculine": "أعدّ ملخص المحادثة"
+      },
+      "contactRevealed": {
+        "feminine": "اطّلعت على بيانات جهة الطوارئ",
+        "masculine": "اطّلع على بيانات جهة الطوارئ"
+      },
+      "crisisAcknowledged": {
+        "feminine": "استلمت تنبيه الطوارئ",
+        "masculine": "استلم تنبيه الطوارئ"
+      },
+      "unknown": {
+        "feminine": "اطّلعت على ملفك",
+        "masculine": "اطّلع على ملفك"
+      }
+    },
+    "dataTitle": "بياناتي",
+    "export": "تنزيل نسخة من بياناتي",
+    "exportHint": "جاهزة خلال 7 أيام",
+    "exportRequested": "طلبتها في {requested} · جاهزة بحلول {ready}",
+    "exportReady": "نسختك جاهزة",
+    "exportStarted": "استلمنا طلبك. ستكون نسختك جاهزة خلال 7 أيام.",
+    "delete": "حذف حسابي",
+    "deleteHint": "نحتفظ فقط بما يلزمه القانون",
+    "deleteDialogTitle": "حذف حسابك؟",
+    "deleteDialogBody": "سنحذف حسابك ومحادثاتك وواجباتك ومواعيدك القادمة. نحتفظ فقط بما يلزمه القانون من السجلات الصحية. لا يمكن التراجع عن الحذف.",
+    "deletePassword": "كلمة المرور للتأكيد",
+    "deletePasswordRequired": "أدخل كلمة المرور.",
+    "deleteConfirm": "حذف حسابي نهائيًا",
+    "back": "الإعدادات"
+  }
+}

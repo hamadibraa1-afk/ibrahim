@@ -1,0 +1,85 @@
+<div class="page" [dir]="language.direction()" data-testid="login">
+  <header class="top">
+    <span class="brand">{{ 'app.name' | translate }} <small>{{ 'app.portalShort' | translate }}</small></span>
+    <tm-language-toggle />
+  </header>
+
+  <main class="tm-card card">
+    @if (busy()) {
+      <mat-progress-bar mode="indeterminate" class="progress" [attr.aria-label]="'auth.signingIn' | translate" />
+    }
+
+    @if (step() === 'credentials') {
+      <h1 #heading tabindex="-1">{{ 'auth.title' | translate }}</h1>
+      <form [formGroup]="credentials" (ngSubmit)="submitCredentials()" novalidate>
+        <mat-form-field appearance="outline" class="tm-full">
+          <mat-label>{{ 'auth.contact' | translate }}</mat-label>
+          <input #contactInput matInput type="email" formControlName="contact" autocomplete="username" dir="ltr" data-testid="contact" />
+          @if (credentials.controls.contact.hasError('required')) {
+            <mat-error>{{ 'common.required' | translate }}</mat-error>
+          } @else if (credentials.controls.contact.hasError('email')) {
+            <mat-error>{{ 'auth.contactInvalid' | translate }}</mat-error>
+          }
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="tm-full">
+          <mat-label>{{ 'auth.password' | translate }}</mat-label>
+          <input matInput type="password" formControlName="password" autocomplete="current-password" data-testid="password" />
+          @if (credentials.controls.password.hasError('required')) {
+            <mat-error>{{ 'common.required' | translate }}</mat-error>
+          }
+        </mat-form-field>
+        <ng-container [ngTemplateOutlet]="errorBlock" />
+        <button mat-flat-button type="submit" class="tm-full submit" [disabled]="busy()" data-testid="continue">{{ 'auth.continue' | translate }}</button>
+      </form>
+    } @else {
+      <h1 #heading tabindex="-1">{{ 'auth.mfaTitle' | translate }}</h1>
+      <p class="tm-muted">{{ (method() === 'totp' ? 'auth.mfaHint' : 'auth.recoveryHint') | translate }}</p>
+      <form [formGroup]="mfa" (ngSubmit)="submitCode()" novalidate>
+        <mat-form-field appearance="outline" class="tm-full">
+          <mat-label>{{ (method() === 'totp' ? 'auth.code' : 'auth.recoveryCode') | translate }}</mat-label>
+          @if (method() === 'totp') {
+            <input #codeInput matInput class="code" formControlName="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" dir="ltr" placeholder="000000" data-testid="code" />
+          } @else {
+            <input #codeInput matInput formControlName="code" autocomplete="off" autocapitalize="characters" spellcheck="false" dir="ltr" data-testid="code" />
+          }
+          @if (method() === 'totp') {
+            <mat-hint>{{ 'auth.codeHint' | translate }}</mat-hint>
+          }
+          @if (mfa.controls.code.hasError('required')) {
+            <mat-error>{{ 'common.required' | translate }}</mat-error>
+          } @else if (mfa.controls.code.invalid) {
+            <mat-error>{{ (method() === 'totp' ? 'auth.codeInvalid' : 'auth.recoveryInvalid') | translate }}</mat-error>
+          }
+        </mat-form-field>
+        <ng-container [ngTemplateOutlet]="errorBlock" />
+        <button mat-flat-button type="submit" class="tm-full submit" [disabled]="busy()" data-testid="verify">{{ 'auth.verify' | translate }}</button>
+      </form>
+      <div class="links">
+        @if (methods().length > 1) {
+          <button mat-button type="button" (click)="switchMethod()" data-testid="switch-method">
+            {{ (method() === 'totp' ? 'auth.useRecovery' : 'auth.useTotp') | translate }}
+          </button>
+        }
+        <button mat-button type="button" (click)="startOver()">{{ 'auth.startOver' | translate }}</button>
+      </div>
+    }
+  </main>
+</div>
+
+<ng-template #errorBlock>
+  @if (error(); as e) {
+    <div class="tm-problem" role="alert" data-testid="login-error">
+      @if (e.title) {
+        <strong>{{ e.title }}</strong>
+        @if (e.detail) { <span> {{ e.detail }}</span> }
+      } @else if (e.fallbackKey) {
+        <span>{{ e.fallbackKey | translate }}</span>
+      }
+      @if (e.lockedMinutes !== null) {
+        <p class="hint">{{ 'auth.locked' | translate: { minutes: e.lockedMinutes } }}</p>
+      } @else if (e.remainingAttempts !== null) {
+        <p class="hint">{{ 'auth.remainingAttempts' | translate: { count: e.remainingAttempts } }}</p>
+      }
+    </div>
+  }
+</ng-template>

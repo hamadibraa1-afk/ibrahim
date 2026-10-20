@@ -20,6 +20,11 @@ public sealed partial class CrisisGate
 {
     public const string SystemFailureRuleId = "SYS-GATE-FAILURE";
 
+    /// <summary>The patient pressed "ask a professional to call me now": always a Critical event.</summary>
+    public const string HelpNowRuleId = "PATIENT-HELP-NOW";
+
+    public const string HelpNowSource = "help_now";
+
     private readonly IRiskEvaluator _evaluator;
     private readonly ICrisisCaseStore _store;
     private readonly ICrisisAlertPublisher _alerts;
@@ -56,6 +61,11 @@ public sealed partial class CrisisGate
         try
         {
             var assessment = _evaluator.Assess(request.Text, request.Answers);
+            if (request.Source == HelpNowSource)
+            {
+                assessment = new RiskAssessment(RiskLevel.Critical, [.. assessment.Hits, new RuleHit(HelpNowRuleId, RiskLevel.Critical, "patient_request", RuleSource.System)], assessment.RulesVersion);
+            }
+
             var activeLock = await _store.FindActiveLockAsync(request.PatientId, cancellationToken).ConfigureAwait(false);
             if (!assessment.IsCrisis && activeLock is null)
             {
@@ -103,6 +113,12 @@ public sealed partial class CrisisGate
             if (activeLock is null)
             {
                 _store.Add(ChatLock.For(crisisEvent, _clock));
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Text))
+            {
+                // Kept encrypted for the responder, who sees it only after a second verification.
+                await _store.AttachExcerptAsync(crisisEvent, request.Text, cancellationToken).ConfigureAwait(false);
             }
 
             await _store.SaveChangesAsync(cancellationToken).ConfigureAwait(false);

@@ -1,0 +1,44 @@
+{
+  "homework": {
+    "listTitle": "My homework",
+    "intro": "Exercises your specialist chose for you. It's fine to miss a day.",
+    "dueToday": "Today",
+    "newReply": "New reply",
+    "frequency": {
+      "daily": "Daily",
+      "twice_weekly": "Twice a week",
+      "weekly": "Once a week",
+      "once": "Once"
+    },
+    "until": "{frequency} until {date}",
+    "doneThisWeek": {
+      "one": "Done once this week",
+      "two": "Done twice this week",
+      "few": "Done {count} times this week",
+      "other": "Done {count} times this week"
+    },
+    "weekProgress": "Done on {done} of 7 days this week",
+    "completed": "Completed",
+    "ended": "Ended {date}",
+    "empty": "No homework yet",
+    "emptyBody": "When your specialist adds an exercise, you'll find it here.",
+    "detailTitle": "Homework",
+    "from": "From {therapist} · {schedule}",
+    "instructions": "Instructions",
+    "todayQuestion": "How was today?",
+    "status": {
+      "done": "Done it",
+      "partial": "Partly",
+      "skipped": "Not today"
+    },
+    "statusRequired": "Choose how today went.",
+    "feelingLabel": "How you felt after the exercise",
+    "feelingValue": "{value} of 10",
+    "noteLabel": "Note for your specialist",
+    "optional": "(optional)",
+    "feedbackLabel": "Your specialist's reply",
+    "save": "Save check-in",
+    "saved": "Today's check-in is saved. Your specialist will see it.",
+    "back": "My homework"
+  }
+}

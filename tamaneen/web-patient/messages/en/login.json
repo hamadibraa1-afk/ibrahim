@@ -1,0 +1,33 @@
+{
+  "login": {
+    "metaTitle": "Sign in",
+    "title": "Welcome back",
+    "contact": "Mobile number or email",
+    "password": "Password",
+    "forgot": "Forgot your password?",
+    "submit": "Sign in",
+    "noAccount": "Don't have an account?",
+    "start": "Start now",
+    "contactRequired": "Enter your mobile number or email.",
+    "passwordRequired": "Enter your password.",
+    "resetDone": "Your password was changed. Sign in with your new password.",
+    "mfaRestart": "The sign-in confirmation step has ended. Please sign in again.",
+    "storageBlocked": "Confirming sign-in needs your browser to allow session storage. Turn it on, then try again.",
+    "attempts": {
+      "zero": "No attempts left before a {minutes}-minute pause.",
+      "one": "One attempt left before a {minutes}-minute pause.",
+      "two": "Two attempts left before a {minutes}-minute pause.",
+      "few": "{count} attempts left before a {minutes}-minute pause.",
+      "many": "{count} attempts left before a {minutes}-minute pause.",
+      "other": "{count} attempts left before a {minutes}-minute pause."
+    },
+    "locked": {
+      "zero": "We've paused sign-in to protect your account. Try again in a minute.",
+      "one": "We've paused sign-in to protect your account. Try again in one minute.",
+      "two": "We've paused sign-in to protect your account. Try again in two minutes.",
+      "few": "We've paused sign-in to protect your account. Try again in {minutes} minutes.",
+      "many": "We've paused sign-in to protect your account. Try again in {minutes} minutes.",
+      "other": "We've paused sign-in to protect your account. Try again in {minutes} minutes."
+    }
+  }
+}

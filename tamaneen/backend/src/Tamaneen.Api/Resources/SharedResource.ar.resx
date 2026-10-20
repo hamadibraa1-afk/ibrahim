@@ -27,6 +27,40 @@
   <data name="error.reason.required" xml:space="preserve"><value>يرجى كتابة السبب.</value></data>
   <data name="error.not_found" xml:space="preserve"><value>لم نجد هذا العنصر.</value></data>
   <data name="error.ai.message_invalid" xml:space="preserve"><value>الرسالة فارغة أو أطول من {0} حرفًا.</value></data>
+  <data name="error.validation" xml:space="preserve"><value>بعض البيانات غير صحيحة.</value></data>
+  <data name="error.auth.invalid_credentials" xml:space="preserve"><value>البيانات غير صحيحة.</value></data>
+  <data name="error.auth.locked" xml:space="preserve"><value>أوقفنا تسجيل الدخول مؤقتًا لحمايتك. حاول بعد {0} دقيقة.</value></data>
+  <data name="error.auth.invalid_code" xml:space="preserve"><value>الرمز غير صحيح أو انتهت صلاحيته.</value></data>
+  <data name="error.auth.challenge_expired" xml:space="preserve"><value>انتهت صلاحية الرمز. اطلب رمزًا جديدًا.</value></data>
+  <data name="error.auth.resend_too_soon" xml:space="preserve"><value>يمكنك طلب رمز جديد بعد {0} ثانية.</value></data>
+  <data name="error.auth.weak_password" xml:space="preserve"><value>كلمة المرور ضعيفة: استخدم 12 حرفًا على الأقل، وتجنّب كلمات المرور الشائعة أو المسرّبة.</value></data>
+  <data name="error.auth.not_eligible" xml:space="preserve"><value>انتهت صلاحية التحقق من الأهلية. أجب عن سؤالي البدء مرة أخرى.</value></data>
+  <data name="error.auth.session_revoked" xml:space="preserve"><value>انتهت جلستك لحمايتك. سجّل الدخول مرة أخرى.</value></data>
+  <data name="error.auth.mfa_failed" xml:space="preserve"><value>رمز التحقق غير صحيح.</value></data>
+  <data name="error.auth.step_up_required" xml:space="preserve"><value>هذا الإجراء يحتاج رمزًا صحيحًا من تطبيق المصادقة.</value></data>
+  <data name="error.totp.already_enabled" xml:space="preserve"><value>تطبيق المصادقة مفعّل من قبل.</value></data>
+  <data name="error.totp.not_set_up" xml:space="preserve"><value>ابدأ إعداد تطبيق المصادقة أولًا.</value></data>
+  <data name="error.consent.unknown" xml:space="preserve"><value>هذه الموافقة غير معروفة.</value></data>
+  <data name="error.consent.required" xml:space="preserve"><value>هذه الموافقة مطلوبة لتقديم الخدمة. يمكنك حذف حسابك بدلًا من سحبها.</value></data>
+  <data name="error.consent.missing" xml:space="preserve"><value>يلزم قبول الموافقات المطلوبة للمتابعة.</value></data>
+  <data name="error.consent.ai_withdrawn" xml:space="preserve"><value>سحبت موافقتك على المساعدة بالذكاء الاصطناعي، لذلك هذه الميزة متوقفة.</value></data>
+  <data name="error.time.invalid" xml:space="preserve"><value>الوقت غير صحيح.</value></data>
+  <data name="error.timezone.invalid" xml:space="preserve"><value>المنطقة الزمنية غير معروفة.</value></data>
+  <data name="error.path.invalid" xml:space="preserve"><value>اختر طريقة البدء.</value></data>
+  <data name="error.crisis.locked" xml:space="preserve"><value>المحادثة متوقفة الآن، وسيعيد المختص فتحها بعد التواصل معك.</value></data>
+  <data name="error.crisis.not_acknowledged" xml:space="preserve"><value>لم يتولَّ أحد هذه الحالة بعد.</value></data>
+  <data name="error.crisis.unavailable" xml:space="preserve"><value>تعذّر التحقق من سلامة رسالتك الآن، لذلك لم نرسلها. إن كنت في خطر فاتصل بالطوارئ.</value></data>
+  <data name="error.slot.unavailable" xml:space="preserve"><value>هذا الموعد لم يعد متاحًا. اختر وقتًا آخر.</value></data>
+  <data name="error.slot.hold_expired" xml:space="preserve"><value>انتهت مدة حجز الموعد المؤقت. اختر الوقت مرة أخرى.</value></data>
+  <data name="error.appointment.not_changeable" xml:space="preserve"><value>لا يمكن تغيير الموعد أو إلغاؤه قبل أقل من 24 ساعة.</value></data>
+  <data name="error.appointment.not_started" xml:space="preserve"><value>لم يبدأ هذا الموعد بعد.</value></data>
+  <data name="error.booking.not_eligible" xml:space="preserve"><value>يمكنك الحجز بعد إكمال أسئلة السلامة أو بعد مراجعة ملفك.</value></data>
+  <data name="error.intake.question_not_pending" xml:space="preserve"><value>هذا السؤال ليس السؤال الحالي.</value></data>
+  <data name="error.intake.not_finished" xml:space="preserve"><value>نحتاج بضع إجابات أخرى قبل إنهاء المحادثة.</value></data>
+  <data name="error.intake.not_in_review" xml:space="preserve"><value>لا يمكن تعديل الملخص الآن.</value></data>
+  <data name="error.intake.closed" xml:space="preserve"><value>انتهت هذه المحادثة. يمكنك بدء محادثة جديدة.</value></data>
+  <data name="error.triage.already_reviewed" xml:space="preserve"><value>روجع هذا الملف من قبل.</value></data>
+  <data name="error.auth.password_mismatch" xml:space="preserve"><value>كلمة المرور الحالية غير صحيحة.</value></data>
   <data name="validation.language.required" xml:space="preserve"><value>اللغة مطلوبة.</value></data>
   <data name="validation.failed" xml:space="preserve"><value>بعض الحقول تحتاج إلى مراجعة.</value></data>
   <data name="message.welcome" xml:space="preserve"><value>مرحبًا بك في طمأنينة.</value></data>

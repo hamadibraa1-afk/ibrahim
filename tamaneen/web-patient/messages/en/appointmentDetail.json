@@ -1,0 +1,27 @@
+{
+  "appointmentDetail": {
+    "metaTitle": "Appointment details",
+    "detailsLabel": "Appointment details",
+    "date": "Time",
+    "therapist": "{gender, select, female {Therapist} other {Therapist}}",
+    "type": "Type",
+    "typeValue": "Remote · {minutes} minutes",
+    "status": "Status",
+    "linkTitle": "Session link",
+    "linkBody": "The link appears ten minutes before. Find a quiet place and use headphones if you can.",
+    "join": "Open the session link",
+    "joinWhen": "Open the session link · {when}",
+    "newTab": "(opens in a new tab)",
+    "prep": "<b>Before the session:</b> think about what you'd like to start with. You don't need to repeat what you shared in the intake chat.",
+    "change": "Change appointment",
+    "cancel": "Cancel appointment",
+    "changeUntil": "Changes allowed until 24 hours before · until {deadline}",
+    "changeClosed": "The change deadline has passed ({deadline}). Changes are allowed until 24 hours before.",
+    "cancelTitle": "Cancel this appointment?",
+    "cancelBody": "We'll cancel your appointment on {date} with {name}. You can book a new one whenever you like.",
+    "cancelConfirm": "Yes, cancel it",
+    "cancelKeep": "Keep it",
+    "cancelled": "Your appointment is cancelled. You can book a new one whenever you like.",
+    "bookNew": "Book a new appointment"
+  }
+}
