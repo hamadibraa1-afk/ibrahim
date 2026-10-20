@@ -1,4 +1,5 @@
-import { DOCUMENT } from '@angular/common';
+import { DOCUMENT } from '@angular/core';
+
 import { TestBed } from '@angular/core/testing';
 import { TranslateService } from '@ngx-translate/core';
 import { provideTestTranslations } from '../../testing/translate-testing';
@@ -9,7 +10,7 @@ describe('LanguageService', () => {
   let doc: Document;
 
   function setup(): LanguageService {
-    TestBed.configureTestingModule({ imports: [provideTestTranslations()] });
+    TestBed.configureTestingModule({ providers: [provideTestTranslations()] });
     doc = TestBed.inject(DOCUMENT);
     return TestBed.inject(LanguageService);
   }

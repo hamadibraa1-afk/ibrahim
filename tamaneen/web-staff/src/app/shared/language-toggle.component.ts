@@ -6,11 +6,10 @@ import { LanguageService } from '../core/i18n/language.service';
 
 /** The Arabic/English switch at the top of every portal screen. Its label is written in the target language. */
 @Component({
-  selector: 'tm-language-toggle',
-  standalone: true,
-  imports: [MatButtonModule, MatIconModule, TranslateModule],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
+    selector: 'tm-language-toggle',
+    imports: [MatButtonModule, MatIconModule, TranslateModule],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    template: `
     <button
       mat-stroked-button
       type="button"
@@ -26,10 +25,10 @@ import { LanguageService } from '../core/i18n/language.service';
       <span [attr.lang]="language.other()">{{ 'language.target' | translate }}</span>
     </button>
   `,
-  styles: `
+    styles: `
     .toggle { min-height: 44px; border-radius: 999px; gap: 8px; }
     .toggle svg { margin-inline-end: 6px; vertical-align: middle; }
-  `,
+  `
 })
 export class LanguageToggleComponent {
   protected readonly language = inject(LanguageService);

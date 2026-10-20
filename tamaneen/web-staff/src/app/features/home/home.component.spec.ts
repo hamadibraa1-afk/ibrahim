@@ -11,8 +11,8 @@ import { HomeComponent } from './home.component';
 describe('HomeComponent', () => {
   it('asks the API again in the new language when the language changes', async () => {
     TestBed.configureTestingModule({
-      imports: [HomeComponent, provideTestTranslations()],
-      providers: [provideHttpClient(withInterceptors([acceptLanguageInterceptor])), provideHttpClientTesting(), { provide: API_BASE_URL, useValue: '/api' }],
+      imports: [HomeComponent],
+      providers: [provideTestTranslations(), provideHttpClient(withInterceptors([acceptLanguageInterceptor])), provideHttpClientTesting(), { provide: API_BASE_URL, useValue: '/api' }],
     });
     TestBed.inject(SessionService).setRoles(['therapist']);
     const language = TestBed.inject(LanguageService);
@@ -40,8 +40,8 @@ describe('HomeComponent', () => {
 
   it('shows a calm error with the crisis fallback when the API is down', async () => {
     TestBed.configureTestingModule({
-      imports: [HomeComponent, provideTestTranslations()],
-      providers: [provideHttpClient(), provideHttpClientTesting(), { provide: API_BASE_URL, useValue: '/api' }],
+      imports: [HomeComponent],
+      providers: [provideTestTranslations(), provideHttpClient(), provideHttpClientTesting(), { provide: API_BASE_URL, useValue: '/api' }],
     });
     await TestBed.inject(LanguageService).use('en');
     const fixture = TestBed.createComponent(HomeComponent);

@@ -18,12 +18,11 @@ import { LanguageToggleComponent } from '../shared/language-toggle.component';
  * opens from the right in Arabic and from the left in English without extra code.
  */
 @Component({
-  selector: 'tm-shell',
-  standalone: true,
-  imports: [BidiModule, MatSidenavModule, MatToolbarModule, MatListModule, MatFormFieldModule, MatSelectModule, RouterOutlet, RouterLink, RouterLinkActive, TranslateModule, LanguageToggleComponent],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  templateUrl: './shell.component.html',
-  styleUrl: './shell.component.scss',
+    selector: 'tm-shell',
+    imports: [BidiModule, MatSidenavModule, MatToolbarModule, MatListModule, MatFormFieldModule, MatSelectModule, RouterOutlet, RouterLink, RouterLinkActive, TranslateModule, LanguageToggleComponent],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    templateUrl: './shell.component.html',
+    styleUrl: './shell.component.scss'
 })
 export class ShellComponent {
   protected readonly language = inject(LanguageService);

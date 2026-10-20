@@ -20,8 +20,8 @@ tamaneen/
   backend/tests/
     Tamaneen.UnitTests
     Tamaneen.IntegrationTests  Real SQL Server 2022 via Testcontainers
-  web-patient/   Next.js 14 App Router + next-intl, BFF route handlers
-  web-staff/     Angular 17 + @ngx-translate/core + Angular Material
+  web-patient/   Next.js 15.5 App Router + React 19 + next-intl 4, BFF route handlers
+  web-staff/     Angular 20 + @ngx-translate/core 17 + Angular Material 20
   ops/           Always Encrypted setup script
 ```
 

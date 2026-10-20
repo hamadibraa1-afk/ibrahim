@@ -13,11 +13,10 @@ type ApiState = { kind: 'loading' } | { kind: 'ok'; data: LocaleResponse } | { k
  * answering in the language selected here (the API reply is localized from Accept-Language).
  */
 @Component({
-  selector: 'tm-home',
-  standalone: true,
-  imports: [MatCardModule, TranslateModule],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
+    selector: 'tm-home',
+    imports: [MatCardModule, TranslateModule],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    template: `
     <h1 class="title">{{ 'home.title' | translate }}</h1>
     @if (session.role(); as role) {
       <p class="muted">{{ 'home.subtitle' | translate: { role: ('roles.' + role | translate) } }}</p>
@@ -42,12 +41,12 @@ type ApiState = { kind: 'loading' } | { kind: 'ok'; data: LocaleResponse } | { k
       </mat-card-content>
     </mat-card>
   `,
-  styles: `
+    styles: `
     .title { margin: 0 0 4px; font-size: 24px; font-weight: 700; }
     .muted { color: var(--tm-muted); }
     .card { margin-top: 16px; max-width: 560px; border-radius: 14px; }
     .error { color: var(--tm-danger); }
-  `,
+  `
 })
 export class HomeComponent {
   private readonly http = inject(HttpClient);
@@ -58,13 +57,10 @@ export class HomeComponent {
   constructor() {
     const language = inject(LanguageService);
     // Re-ask the API whenever the language changes, to show its reply in the new language.
-    effect(
-      () => {
-        language.language();
-        this.load();
-      },
-      { allowSignalWrites: true },
-    );
+    effect(() => {
+      language.language();
+      this.load();
+    });
   }
 
   private load(): void {

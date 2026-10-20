@@ -1,5 +1,4 @@
-import { DOCUMENT } from '@angular/common';
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { DOCUMENT, Injectable, computed, inject, signal } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 import { DEFAULT_LANGUAGE, LANGUAGE_STORAGE_KEY, LANGUAGES, type Language, directionOf, otherLanguage, toLanguage } from './language';
@@ -22,7 +21,7 @@ export class LanguageService {
   /** Called once at startup, before the first render, so the page never flashes in the wrong direction. */
   async init(): Promise<void> {
     this.translate.addLangs([...LANGUAGES]);
-    this.translate.setDefaultLang(DEFAULT_LANGUAGE);
+    this.translate.setFallbackLang(DEFAULT_LANGUAGE);
     await this.use(this.initialLanguage());
   }
 

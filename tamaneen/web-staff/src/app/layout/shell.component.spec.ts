@@ -11,8 +11,8 @@ import { ShellComponent } from './shell.component';
 describe('ShellComponent', () => {
   async function render(roles: ('therapist' | 'supervisor' | 'lead' | 'admin')[]) {
     TestBed.configureTestingModule({
-      imports: [ShellComponent, provideTestTranslations()],
-      providers: [provideRouter([]), provideNoopAnimations(), provideHttpClient(), provideHttpClientTesting()],
+      imports: [ShellComponent],
+      providers: [provideTestTranslations(), provideRouter([]), provideNoopAnimations(), provideHttpClient(), provideHttpClientTesting()],
     });
     TestBed.inject(SessionService).setRoles(roles);
     const language = TestBed.inject(LanguageService);

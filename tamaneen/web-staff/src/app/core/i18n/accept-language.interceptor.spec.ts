@@ -13,8 +13,8 @@ describe('acceptLanguageInterceptor', () => {
 
   beforeEach(async () => {
     TestBed.configureTestingModule({
-      imports: [provideTestTranslations()],
       providers: [
+        provideTestTranslations(),
         provideHttpClient(withInterceptors([acceptLanguageInterceptor])),
         provideHttpClientTesting(),
         { provide: API_BASE_URL, useValue: 'https://api.tamaneen.test' },
