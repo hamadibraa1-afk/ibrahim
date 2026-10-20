@@ -31,7 +31,7 @@ public sealed class WorkerFactory : WebApplicationFactory<CrisisResource>
         _signingKey = signingKey ?? RandomNumberGenerator.GetBytes(32);
     }
 
-    public string ServerKey { get; init; } = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+    public string? ServerKey { get; init; }
 
     public bool RequireSession { get; init; }
 
@@ -55,7 +55,7 @@ public sealed class WorkerFactory : WebApplicationFactory<CrisisResource>
         builder.UseSetting("Auth:Issuer", Issuer);
         builder.UseSetting("Auth:Audience", Audience);
         builder.UseSetting("Auth:SigningKeyBase64", Convert.ToBase64String(_signingKey));
-        builder.UseSetting("Auth:ServerKeyBase64", ServerKey);
+        builder.UseSetting("Auth:ServerKeyBase64", ServerKey ?? _sql.ServerKey);
         builder.UseSetting("Auth:RequireSession", RequireSession ? "true" : "false");
         builder.UseSetting("Crisis:Contacts:EmergencyNumber", "911");
         builder.UseSetting("Crisis:Contacts:SupportLine", "920033360");

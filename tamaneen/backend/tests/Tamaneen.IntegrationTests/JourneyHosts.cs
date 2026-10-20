@@ -26,7 +26,7 @@ public sealed partial class JourneyHosts : IAsyncDisposable
     public JourneyHosts(SqlServerFixture sql)
     {
         var signing = RandomNumberGenerator.GetBytes(32);
-        var serverKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+        var serverKey = sql.ServerKey;
         var serviceKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
         Worker = new WorkerFactory(sql, signing) { ServerKey = serverKey, ServiceKey = serviceKey, RequireSession = true };
         Worker.Clock.FollowRealTime();

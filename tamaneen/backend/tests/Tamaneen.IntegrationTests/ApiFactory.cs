@@ -24,7 +24,7 @@ public sealed class ApiFactory : WebApplicationFactory<SharedResource>
     }
 
     /// <summary>Base64 server key (sign-up payloads, authenticator secrets); shared with the worker in journey tests.</summary>
-    public string ServerKey { get; init; } = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+    public string? ServerKey { get; init; }
 
     /// <summary>Where the crisis gate lives; journey tests point it at an in-process worker.</summary>
     public string GateBaseUrl { get; init; } = "http://crisis-worker.test/";
@@ -44,7 +44,7 @@ public sealed class ApiFactory : WebApplicationFactory<SharedResource>
         builder.UseSetting("Auth:Issuer", Issuer);
         builder.UseSetting("Auth:Audience", Audience);
         builder.UseSetting("Auth:SigningKeyBase64", Convert.ToBase64String(_signingKey));
-        builder.UseSetting("Auth:ServerKeyBase64", ServerKey);
+        builder.UseSetting("Auth:ServerKeyBase64", ServerKey ?? _sql.ServerKey);
         builder.UseSetting("Auth:RequireSession", RequireSession ? "true" : "false");
         builder.UseSetting("Platform:EmergencyNumber", "911");
         builder.UseSetting("Platform:SupportLine", "920033360");

@@ -24,6 +24,9 @@ public sealed class SqlServerFixture : IAsyncLifetime
 
     public byte[] LocalKek { get; } = RandomNumberGenerator.GetBytes(32);
 
+    /// <summary>Server key (Auth:ServerKeyBase64) for every host on this database: seeded staff secrets are encrypted with it.</summary>
+    public string ServerKey { get; } = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+
     public byte[] Pepper { get; } = RandomNumberGenerator.GetBytes(32);
 
     public SystemClock Clock { get; } = new();
