@@ -54,9 +54,42 @@ internal sealed class CrisisEventConfiguration : IEntityTypeConfiguration<Crisis
         b.Property(x => x.RulePackVersion).HasMaxLength(64).IsUnicode(false).IsRequired();
         b.Property(x => x.CloseReason).HasMaxLength(1000);
         b.Property(x => x.RowVersion).IsRowVersion();
+        b.Property(x => x.TriggerRuleIds).HasMaxLength(1000).IsUnicode(false).IsRequired();
+        b.Property(x => x.Source).HasMaxLength(32).IsUnicode(false).IsRequired();
         b.HasIndex(x => new { x.Status, x.AckDeadlineUtc }).HasDatabaseName("IX_CrisisEvents_OpenByDeadline");
+        b.HasIndex(x => x.PatientId).IsUnique().HasFilter("[Status] <> 2").HasDatabaseName("UX_CrisisEvents_OneOpenPerPatient");
         b.HasOne<UserAccount>().WithMany().HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Restrict);
         b.ToTable(t => t.HasCheckConstraint("CK_CrisisEvents_Level", "[Level] IN (3,4)"));
+    }
+}
+
+internal sealed class ChatLockConfiguration : IEntityTypeConfiguration<ChatLock>
+{
+    public void Configure(EntityTypeBuilder<ChatLock> b)
+    {
+        b.ToTable("ChatLocks", Schemas.Crisis);
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).ValueGeneratedNever();
+        b.Ignore(x => x.IsActive);
+        b.HasIndex(x => x.PatientId).IsUnique().HasFilter("[ReleasedAtUtc] IS NULL").HasDatabaseName("UX_ChatLocks_OneActivePerPatient");
+        b.HasOne<CrisisEvent>().WithMany().HasForeignKey(x => x.CrisisEventId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<UserAccount>().WithMany().HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+internal sealed class PageRequestConfiguration : IEntityTypeConfiguration<PageRequest>
+{
+    public void Configure(EntityTypeBuilder<PageRequest> b)
+    {
+        b.ToTable("PageRequests", Schemas.Crisis);
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).ValueGeneratedNever();
+        b.Property(x => x.PseudonymId).HasMaxLength(11).IsUnicode(false).IsRequired();
+        b.Property(x => x.Level).HasConversion<byte>();
+        b.Property(x => x.PatientLanguage).HasMaxLength(2).IsUnicode(false).IsRequired();
+        b.Property(x => x.LastError).HasMaxLength(500);
+        b.HasIndex(x => new { x.SentAtUtc, x.NextAttemptAtUtc }).HasDatabaseName("IX_PageRequests_Due");
+        b.HasOne<CrisisEvent>().WithMany().HasForeignKey(x => x.CrisisEventId).OnDelete(DeleteBehavior.Restrict);
     }
 }
 
@@ -82,9 +115,11 @@ internal sealed class AuditEntryConfiguration : IEntityTypeConfiguration<AuditEn
     public void Configure(EntityTypeBuilder<AuditEntry> b)
     {
         // Created by the SecurityAndLedger migration as an append-only ledger table, which EF cannot express.
+        // Ids come from a sequence (HiLo) rather than IDENTITY: with store-generated keys EF batches several
+        // inserts into one MERGE, which ledger tables reject (found when two crisis events escalated together).
         b.ToTable("AuditEntries", Schemas.Audit, t => t.ExcludeFromMigrations());
         b.HasKey(x => x.Id);
-        b.Property(x => x.Id).UseIdentityColumn();
+        b.Property(x => x.Id).UseHiLo("AuditEntryIds", Schemas.Audit);
         b.Property(x => x.ActorRole).HasMaxLength(32).IsUnicode(false);
         b.Property(x => x.Action).HasMaxLength(64).IsUnicode(false).IsRequired();
         b.Property(x => x.EntityType).HasMaxLength(64).IsUnicode(false).IsRequired();

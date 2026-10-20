@@ -1,11 +1,15 @@
 using System.Globalization;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.Extensions.DependencyInjection;
 using Tamaneen.SharedKernel;
 
-namespace Tamaneen.Api.Localization;
+namespace Tamaneen.Hosting;
 
 public static class LocalizationSetup
 {
+    /// <summary>Arabic (default) and English, negotiated from Accept-Language only. Resources live under Resources/.</summary>
     public static IServiceCollection AddTamaneenLocalization(this IServiceCollection services)
     {
         services.AddLocalization(o => o.ResourcesPath = "Resources");
@@ -20,7 +24,7 @@ public static class LocalizationSetup
             o.FallBackToParentCultures = true;
             o.FallBackToParentUICultures = true;
 
-            // The API is driven by the Accept-Language header only; clients own the user's choice.
+            // Clients own the user's choice and send it on every request.
             o.RequestCultureProviders = new List<IRequestCultureProvider> { new AcceptLanguageHeaderRequestCultureProvider() };
             o.ApplyCurrentCultureToResponseHeaders = true;
         });
@@ -39,6 +43,7 @@ public static class LocalizationSetup
     /// <summary>Runs <paramref name="action"/> with the UI culture of <paramref name="language"/>, then restores it.</summary>
     public static T WithLanguage<T>(string language, Func<T> action)
     {
+        ArgumentNullException.ThrowIfNull(action);
         var previous = CultureInfo.CurrentUICulture;
         CultureInfo.CurrentUICulture = SupportedLanguages.Culture(language);
         try

@@ -1,0 +1,871 @@
+{
+ "version": "eval-2026.10.1",
+ "notes": "Release gate for the crisis rule packs. A mention of suicide (even in passing) is High by design: a clinician reviews it.",
+ "cases": [
+  {
+   "text": "سوف أنتحر الليلة",
+   "variety": "ar",
+   "expected": "Critical"
+  },
+  {
+   "text": "قررت أن أنهي حياتي",
+   "variety": "ar",
+   "expected": "Critical"
+  },
+  {
+   "text": "أبغى أقتل نفسي وأرتاح",
+   "variety": "gulf",
+   "expected": "Critical"
+  },
+  {
+   "text": "خلاص بنتحر",
+   "variety": "gulf",
+   "expected": "Critical"
+  },
+  {
+   "text": "راح انتحر بكرا",
+   "variety": "gulf",
+   "expected": "Critical"
+  },
+  {
+   "text": "جمعت حبوب أمي وبشربها كلها",
+   "variety": "gulf",
+   "expected": "Critical"
+  },
+  {
+   "text": "بلعت شريط كامل من الحبوب",
+   "variety": "gulf",
+   "expected": "Critical"
+  },
+  {
+   "text": "عندي سكين وبموت الليلة",
+   "variety": "gulf",
+   "expected": "Critical"
+  },
+  {
+   "text": "بنط من فوق الجسر",
+   "variety": "gulf",
+   "expected": "Critical"
+  },
+  {
+   "text": "هذه آخر رسالة أكتبها",
+   "variety": "ar",
+   "expected": "Critical"
+  },
+  {
+   "text": "ودعت الدنيا",
+   "variety": "ar",
+   "expected": "Critical"
+  },
+  {
+   "text": "قطعت معصمي",
+   "variety": "ar",
+   "expected": "Critical"
+  },
+  {
+   "text": "أنزف وما يوقف",
+   "variety": "gulf",
+   "expected": "Critical"
+  },
+  {
+   "text": "ناوي أذبح نفسي",
+   "variety": "gulf",
+   "expected": "Critical"
+  },
+  {
+   "text": "والله لأقتله",
+   "variety": "gulf",
+   "expected": "Critical"
+  },
+  {
+   "text": "قررت أقتل زوجي",
+   "variety": "gulf",
+   "expected": "Critical"
+  },
+  {
+   "text": "بطعن أخوي",
+   "variety": "gulf",
+   "expected": "Critical"
+  },
+  {
+   "text": "سأقتل نفسي",
+   "variety": "ar",
+   "expected": "Critical"
+  },
+  {
+   "text": "ابي انهي عمري",
+   "variety": "gulf",
+   "expected": "Critical"
+  },
+  {
+   "text": "ناويه انتحر",
+   "variety": "gulf",
+   "expected": "Critical"
+  },
+  {
+   "text": "اشتريت حبل عشان اموت",
+   "variety": "gulf",
+   "expected": "Critical"
+  },
+  {
+   "text": "شربت سم",
+   "variety": "ar",
+   "expected": "Critical"
+  },
+  {
+   "text": "اليوم انهي حياتي",
+   "variety": "ar",
+   "expected": "Critical"
+  },
+  {
+   "text": "أبي أرمي نفسي من الشباك",
+   "variety": "gulf",
+   "expected": "Critical"
+  },
+  {
+   "text": "مقرر أموت",
+   "variety": "gulf",
+   "expected": "Critical"
+  },
+  {
+   "text": "أبي أموت",
+   "variety": "gulf",
+   "expected": "High"
+  },
+  {
+   "text": "ودي أموت",
+   "variety": "gulf",
+   "expected": "High"
+  },
+  {
+   "text": "نفسي أموت وأرتاح",
+   "variety": "gulf",
+   "expected": "High"
+  },
+  {
+   "text": "ليتني ما انولدت",
+   "variety": "gulf",
+   "expected": "High"
+  },
+  {
+   "text": "ما ابغى اعيش",
+   "variety": "gulf",
+   "expected": "High"
+  },
+  {
+   "text": "ماعاد ابي اعيش",
+   "variety": "gulf",
+   "expected": "High"
+  },
+  {
+   "text": "أفكر بالانتحار كل يوم",
+   "variety": "ar",
+   "expected": "High"
+  },
+  {
+   "text": "تجيني أفكار عن الموت",
+   "variety": "gulf",
+   "expected": "High"
+  },
+  {
+   "text": "الموت أحسن لي",
+   "variety": "ar",
+   "expected": "High"
+  },
+  {
+   "text": "تعبت من حياتي",
+   "variety": "gulf",
+   "expected": "High"
+  },
+  {
+   "text": "زهقت من الدنيا",
+   "variety": "gulf",
+   "expected": "High"
+  },
+  {
+   "text": "أحس إني عبء على الكل",
+   "variety": "gulf",
+   "expected": "High"
+  },
+  {
+   "text": "أهلي أحسن بدوني",
+   "variety": "gulf",
+   "expected": "High"
+  },
+  {
+   "text": "ما أحد بيفقدني",
+   "variety": "gulf",
+   "expected": "High"
+  },
+  {
+   "text": "مالي أمل",
+   "variety": "gulf",
+   "expected": "High"
+  },
+  {
+   "text": "حياتي بلا معنى",
+   "variety": "ar",
+   "expected": "High"
+  },
+  {
+   "text": "أجرح نفسي",
+   "variety": "ar",
+   "expected": "High"
+  },
+  {
+   "text": "رجعت أجرح يدي",
+   "variety": "gulf",
+   "expected": "High"
+  },
+  {
+   "text": "أبوي يضربني",
+   "variety": "gulf",
+   "expected": "High"
+  },
+  {
+   "text": "أخوي يتحرش فيني",
+   "variety": "gulf",
+   "expected": "High"
+  },
+  {
+   "text": "زوجي يهددني",
+   "variety": "gulf",
+   "expected": "High"
+  },
+  {
+   "text": "ودي أنام ولا أقوم",
+   "variety": "gulf",
+   "expected": "High"
+  },
+  {
+   "text": "أتمنى أختفي",
+   "variety": "ar",
+   "expected": "High"
+  },
+  {
+   "text": "فقدت الأمل في كل شي",
+   "variety": "ar",
+   "expected": "High"
+  },
+  {
+   "text": "يا ليتني ميتة",
+   "variety": "gulf",
+   "expected": "High"
+  },
+  {
+   "text": "ما في سبب أعيش عشانه",
+   "variety": "gulf",
+   "expected": "High"
+  },
+  {
+   "text": "أبي أرتاح من الحياة",
+   "variety": "gulf",
+   "expected": "High"
+  },
+  {
+   "text": "مليت من حياتي",
+   "variety": "gulf",
+   "expected": "High"
+  },
+  {
+   "text": "أبي أموت من التعب والضيقة",
+   "variety": "gulf",
+   "expected": "High"
+  },
+  {
+   "text": "الانتحار يجيني في بالي",
+   "variety": "gulf",
+   "expected": "High"
+  },
+  {
+   "text": "bante7er el lela",
+   "variety": "arabizi",
+   "expected": "Critical"
+  },
+  {
+   "text": "ra7 ante7er",
+   "variety": "arabizi",
+   "expected": "Critical"
+  },
+  {
+   "text": "abi a8tel nafsi",
+   "variety": "arabizi",
+   "expected": "Critical"
+  },
+  {
+   "text": "abgha a5les min 7ayati",
+   "variety": "arabizi",
+   "expected": "Critical"
+  },
+  {
+   "text": "bokra ante7er",
+   "variety": "arabizi",
+   "expected": "Critical"
+  },
+  {
+   "text": "ba8tl nafsi",
+   "variety": "arabizi",
+   "expected": "Critical"
+  },
+  {
+   "text": "abi amoot",
+   "variety": "arabizi",
+   "expected": "High"
+  },
+  {
+   "text": "wdi amot",
+   "variety": "arabizi",
+   "expected": "High"
+  },
+  {
+   "text": "mabi a3eesh",
+   "variety": "arabizi",
+   "expected": "High"
+  },
+  {
+   "text": "ma abgha a3ish",
+   "variety": "arabizi",
+   "expected": "High"
+  },
+  {
+   "text": "wallah ta3abt abi a5les",
+   "variety": "arabizi",
+   "expected": "High"
+  },
+  {
+   "text": "ta3abt mn 7ayati",
+   "variety": "arabizi",
+   "expected": "High"
+  },
+  {
+   "text": "afkr bil inte7ar",
+   "variety": "arabizi",
+   "expected": "High"
+  },
+  {
+   "text": "a7s ini 3eb2 3la ahli",
+   "variety": "arabizi",
+   "expected": "High"
+  },
+  {
+   "text": "abiii amooot",
+   "variety": "arabizi",
+   "expected": "High"
+  },
+  {
+   "text": "abghi amout",
+   "variety": "arabizi",
+   "expected": "High"
+  },
+  {
+   "text": "I'm going to kill myself",
+   "variety": "en",
+   "expected": "Critical"
+  },
+  {
+   "text": "I want to end my life tonight",
+   "variety": "en",
+   "expected": "Critical"
+  },
+  {
+   "text": "I've decided to commit suicide",
+   "variety": "en",
+   "expected": "Critical"
+  },
+  {
+   "text": "I took a whole bottle of pills",
+   "variety": "en",
+   "expected": "Critical"
+  },
+  {
+   "text": "I overdosed on my meds",
+   "variety": "en",
+   "expected": "Critical"
+  },
+  {
+   "text": "I've been saving up pills",
+   "variety": "en",
+   "expected": "Critical"
+  },
+  {
+   "text": "going to jump off the roof",
+   "variety": "en",
+   "expected": "Critical"
+  },
+  {
+   "text": "this is my last message to you",
+   "variety": "en",
+   "expected": "Critical"
+  },
+  {
+   "text": "I slit my wrists",
+   "variety": "en",
+   "expected": "Critical"
+  },
+  {
+   "text": "I'm planning to die this weekend",
+   "variety": "en",
+   "expected": "Critical"
+  },
+  {
+   "text": "I will kill him tonight",
+   "variety": "en",
+   "expected": "Critical"
+  },
+  {
+   "text": "I'm gonna stab my dad",
+   "variety": "en",
+   "expected": "Critical"
+  },
+  {
+   "text": "tonight I kill myself",
+   "variety": "en",
+   "expected": "Critical"
+  },
+  {
+   "text": "im gonna end it all",
+   "variety": "en",
+   "expected": "Critical"
+  },
+  {
+   "text": "I'll hang myself",
+   "variety": "en",
+   "expected": "Critical"
+  },
+  {
+   "text": "I want to die",
+   "variety": "en",
+   "expected": "High"
+  },
+  {
+   "text": "I wish I were dead",
+   "variety": "en",
+   "expected": "High"
+  },
+  {
+   "text": "I don't want to be alive",
+   "variety": "en",
+   "expected": "High"
+  },
+  {
+   "text": "I can't take it anymore",
+   "variety": "en",
+   "expected": "High"
+  },
+  {
+   "text": "I'm suicidal",
+   "variety": "en",
+   "expected": "High"
+  },
+  {
+   "text": "thoughts of suicide keep coming",
+   "variety": "en",
+   "expected": "High"
+  },
+  {
+   "text": "there is no point in living",
+   "variety": "en",
+   "expected": "High"
+  },
+  {
+   "text": "I'm a burden on everyone",
+   "variety": "en",
+   "expected": "High"
+  },
+  {
+   "text": "my family would be better off without me",
+   "variety": "en",
+   "expected": "High"
+  },
+  {
+   "text": "no one would care if I was gone",
+   "variety": "en",
+   "expected": "High"
+  },
+  {
+   "text": "I feel hopeless",
+   "variety": "en",
+   "expected": "High"
+  },
+  {
+   "text": "I cut myself again",
+   "variety": "en",
+   "expected": "High"
+  },
+  {
+   "text": "my boyfriend beats me",
+   "variety": "en",
+   "expected": "High"
+  },
+  {
+   "text": "I was sexually assaulted",
+   "variety": "en",
+   "expected": "High"
+  },
+  {
+   "text": "I'm sick of being alive",
+   "variety": "en",
+   "expected": "High"
+  },
+  {
+   "text": "I just want to sleep and never wake up",
+   "variety": "en",
+   "expected": "High"
+  },
+  {
+   "text": "I want to disappear forever",
+   "variety": "en",
+   "expected": "High"
+  },
+  {
+   "text": "i cant go on",
+   "variety": "en",
+   "expected": "High"
+  },
+  {
+   "text": "I want to die والله",
+   "variety": "mixed",
+   "expected": "High"
+  },
+  {
+   "text": "تعبت I can't go on",
+   "variety": "mixed",
+   "expected": "High"
+  },
+  {
+   "text": "abi amoot honestly",
+   "variety": "mixed",
+   "expected": "High"
+  },
+  {
+   "text": "ودي I kill myself",
+   "variety": "mixed",
+   "expected": "Critical"
+  },
+  {
+   "text": "أموت فيك يا قلبي",
+   "variety": "gulf",
+   "expected": "None"
+  },
+  {
+   "text": "بموت من الضحك على هالمقطع",
+   "variety": "gulf",
+   "expected": "None"
+  },
+  {
+   "text": "أموت من الجوع متى الغدا",
+   "variety": "gulf",
+   "expected": "None"
+  },
+  {
+   "text": "بموت من الحر",
+   "variety": "gulf",
+   "expected": "None"
+  },
+  {
+   "text": "تعبت من الدوام اليوم",
+   "variety": "gulf",
+   "expected": "None"
+  },
+  {
+   "text": "مليت من المذاكرة",
+   "variety": "gulf",
+   "expected": "None"
+  },
+  {
+   "text": "قررت أنهي الواجب بدري",
+   "variety": "gulf",
+   "expected": "None"
+  },
+  {
+   "text": "ابي اخلص الشغل وارتاح",
+   "variety": "gulf",
+   "expected": "None"
+  },
+  {
+   "text": "اليوم ذاكرت وارتحت",
+   "variety": "gulf",
+   "expected": "None"
+  },
+  {
+   "text": "عندي حبوب الضغط بالدرج",
+   "variety": "gulf",
+   "expected": "None"
+  },
+  {
+   "text": "أخذت دوائي بموعده",
+   "variety": "ar",
+   "expected": "None"
+  },
+  {
+   "text": "جرحت يدي وأنا أطبخ",
+   "variety": "gulf",
+   "expected": "None"
+  },
+  {
+   "text": "أبي أقتل الوقت بالقراءة",
+   "variety": "gulf",
+   "expected": "None"
+  },
+  {
+   "text": "بقتله من الضحك",
+   "variety": "gulf",
+   "expected": "None"
+  },
+  {
+   "text": "الحمدلله أحس أحسن",
+   "variety": "ar",
+   "expected": "None"
+  },
+  {
+   "text": "نمت زين البارحة",
+   "variety": "gulf",
+   "expected": "None"
+  },
+  {
+   "text": "الجلسة ساعدتني كثير",
+   "variety": "gulf",
+   "expected": "None"
+  },
+  {
+   "text": "متى موعدي الجاي",
+   "variety": "gulf",
+   "expected": "None"
+  },
+  {
+   "text": "أبي أغير الأخصائي",
+   "variety": "gulf",
+   "expected": "None"
+  },
+  {
+   "text": "كيف أسوي تمرين التنفس",
+   "variety": "gulf",
+   "expected": "None"
+  },
+  {
+   "text": "قلقانة من المقابلة",
+   "variety": "gulf",
+   "expected": "None"
+  },
+  {
+   "text": "أحس بضيقة شوي اليوم",
+   "variety": "gulf",
+   "expected": "None"
+  },
+  {
+   "text": "شفت فيلم عن الحرب وزعلت",
+   "variety": "gulf",
+   "expected": "None"
+  },
+  {
+   "text": "الحين بأنام",
+   "variety": "gulf",
+   "expected": "None"
+  },
+  {
+   "text": "ودي أسافر",
+   "variety": "gulf",
+   "expected": "None"
+  },
+  {
+   "text": "أبي أرتاح شوي من الشغل",
+   "variety": "gulf",
+   "expected": "None"
+  },
+  {
+   "text": "زوجي يساعدني بالبيت",
+   "variety": "gulf",
+   "expected": "None"
+  },
+  {
+   "text": "أختي تضحكني",
+   "variety": "gulf",
+   "expected": "None"
+  },
+  {
+   "text": "ما أبي أكمل الواجب الحين",
+   "variety": "gulf",
+   "expected": "None"
+  },
+  {
+   "text": "ابي اموت من الضحك",
+   "variety": "gulf",
+   "expected": "None"
+  },
+  {
+   "text": "خلصت الواجب",
+   "variety": "gulf",
+   "expected": "None"
+  },
+  {
+   "text": "أشتريت حبل للخيمة",
+   "variety": "gulf",
+   "expected": "None"
+  },
+  {
+   "text": "amoot fik",
+   "variety": "arabizi",
+   "expected": "None"
+  },
+  {
+   "text": "amoot mn el da7k",
+   "variety": "arabizi",
+   "expected": "None"
+  },
+  {
+   "text": "ta3abt mn el dawam",
+   "variety": "arabizi",
+   "expected": "None"
+  },
+  {
+   "text": "abi a5les el wajeb",
+   "variety": "arabizi",
+   "expected": "None"
+  },
+  {
+   "text": "ra7 anam",
+   "variety": "arabizi",
+   "expected": "None"
+  },
+  {
+   "text": "abi aroo7 el ba7r",
+   "variety": "arabizi",
+   "expected": "None"
+  },
+  {
+   "text": "7abeebi wallah",
+   "variety": "arabizi",
+   "expected": "None"
+  },
+  {
+   "text": "shlonk el yom",
+   "variety": "arabizi",
+   "expected": "None"
+  },
+  {
+   "text": "I'm dying to see you",
+   "variety": "en",
+   "expected": "None"
+  },
+  {
+   "text": "this movie is killing me lol",
+   "variety": "en",
+   "expected": "None"
+  },
+  {
+   "text": "I could die of embarrassment",
+   "variety": "en",
+   "expected": "None"
+  },
+  {
+   "text": "dead tired after work",
+   "variety": "en",
+   "expected": "None"
+  },
+  {
+   "text": "tired of this traffic",
+   "variety": "en",
+   "expected": "None"
+  },
+  {
+   "text": "I took my pills this morning",
+   "variety": "en",
+   "expected": "None"
+  },
+  {
+   "text": "I bought a rope for camping",
+   "variety": "en",
+   "expected": "None"
+  },
+  {
+   "text": "goodbye see you Thursday",
+   "variety": "en",
+   "expected": "None"
+  },
+  {
+   "text": "my mom is going to kill me for being late lol",
+   "variety": "en",
+   "expected": "None"
+  },
+  {
+   "text": "I'm going to end the call",
+   "variety": "en",
+   "expected": "None"
+  },
+  {
+   "text": "today I finished my homework",
+   "variety": "en",
+   "expected": "None"
+  },
+  {
+   "text": "I cut my hand while cooking",
+   "variety": "en",
+   "expected": "None"
+  },
+  {
+   "text": "I feel a bit better today",
+   "variety": "en",
+   "expected": "None"
+  },
+  {
+   "text": "can we reschedule my session",
+   "variety": "en",
+   "expected": "None"
+  },
+  {
+   "text": "the breathing exercise helped",
+   "variety": "en",
+   "expected": "None"
+  },
+  {
+   "text": "I'm nervous about my exam",
+   "variety": "en",
+   "expected": "None"
+  },
+  {
+   "text": "my husband helps me a lot",
+   "variety": "en",
+   "expected": "None"
+  },
+  {
+   "text": "I slept well",
+   "variety": "en",
+   "expected": "None"
+  },
+  {
+   "text": "this game is killing it",
+   "variety": "en",
+   "expected": "None"
+  },
+  {
+   "text": "I want to change my therapist",
+   "variety": "en",
+   "expected": "None"
+  },
+  {
+   "text": "we watched a documentary about suicide prevention week at school",
+   "variety": "en",
+   "expected": "High"
+  },
+  {
+   "text": "I'm so tired",
+   "variety": "en",
+   "expected": "None"
+  },
+  {
+   "text": "life is hard sometimes but I'm ok",
+   "variety": "en",
+   "expected": "None"
+  },
+  {
+   "text": "kill the lights please",
+   "variety": "en",
+   "expected": "None"
+  },
+  {
+   "text": "I'll be there tomorrow",
+   "variety": "en",
+   "expected": "None"
+  }
+ ]
+}

@@ -22,6 +22,9 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.HasSequence("AuditEntryIds", "audit")
+                .IncrementsBy(10);
+
             modelBuilder.Entity("Tamaneen.AiGateway.AiCallRecord", b =>
                 {
                     b.Property<Guid>("Id")
@@ -114,6 +117,38 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                     b.ToTable("CareAssignments", "clinical");
                 });
 
+            modelBuilder.Entity("Tamaneen.Crisis.ChatLock", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CrisisEventId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("LockedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("ReleasedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("ReleasedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CrisisEventId");
+
+                    b.HasIndex("PatientId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_ChatLocks_OneActivePerPatient")
+                        .HasFilter("[ReleasedAtUtc] IS NULL");
+
+                    b.ToTable("ChatLocks", "crisis");
+                });
+
             modelBuilder.Entity("Tamaneen.Crisis.CrisisEvent", b =>
                 {
                     b.Property<Guid>("Id")
@@ -137,6 +172,12 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
 
                     b.Property<Guid?>("ClosedByUserId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("ContactDeadlineUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<byte>("EscalationTier")
+                        .HasColumnType("tinyint");
 
                     b.Property<string>("Language")
                         .IsRequired()
@@ -171,12 +212,27 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                         .IsUnicode(false)
                         .HasColumnType("varchar(64)");
 
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(32)");
+
                     b.Property<byte>("Status")
                         .HasColumnType("tinyint");
 
+                    b.Property<string>("TriggerRuleIds")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(1000)");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("PatientId");
+                    b.HasIndex("PatientId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_CrisisEvents_OneOpenPerPatient")
+                        .HasFilter("[Status] <> 2");
 
                     b.HasIndex("Status", "AckDeadlineUtc")
                         .HasDatabaseName("IX_CrisisEvents_OpenByDeadline");
@@ -185,6 +241,58 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                         {
                             t.HasCheckConstraint("CK_CrisisEvents_Level", "[Level] IN (3,4)");
                         });
+                });
+
+            modelBuilder.Entity("Tamaneen.Crisis.PageRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("CrisisEventId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<byte>("Level")
+                        .HasColumnType("tinyint");
+
+                    b.Property<DateTimeOffset>("NextAttemptAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("PatientLanguage")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(2)");
+
+                    b.Property<string>("PseudonymId")
+                        .IsRequired()
+                        .HasMaxLength(11)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(11)");
+
+                    b.Property<DateTimeOffset?>("SentAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<byte>("Tier")
+                        .HasColumnType("tinyint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CrisisEventId");
+
+                    b.HasIndex("SentAtUtc", "NextAttemptAtUtc")
+                        .HasDatabaseName("IX_PageRequests_Due");
+
+                    b.ToTable("PageRequests", "crisis");
                 });
 
             modelBuilder.Entity("Tamaneen.Identity.PatientProfile", b =>
@@ -285,7 +393,7 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseHiLo(b.Property<long>("Id"), "AuditEntryIds", "audit");
 
                     b.Property<string>("Action")
                         .IsRequired()
@@ -381,11 +489,35 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Tamaneen.Crisis.ChatLock", b =>
+                {
+                    b.HasOne("Tamaneen.Crisis.CrisisEvent", null)
+                        .WithMany()
+                        .HasForeignKey("CrisisEventId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Tamaneen.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Tamaneen.Crisis.CrisisEvent", b =>
                 {
                     b.HasOne("Tamaneen.Identity.UserAccount", null)
                         .WithMany()
                         .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Tamaneen.Crisis.PageRequest", b =>
+                {
+                    b.HasOne("Tamaneen.Crisis.CrisisEvent", null)
+                        .WithMany()
+                        .HasForeignKey("CrisisEventId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

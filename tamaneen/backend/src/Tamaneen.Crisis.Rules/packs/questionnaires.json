@@ -1,0 +1,38 @@
+{
+  // Screening thresholds scored by code. PHQ-9 item 9 and C-SSRS items are safety-linked.
+  "version": "q-2026.10.1",
+  "instruments": {
+    "PHQ-9": {
+      "itemCount": 9,
+      "maxItemScore": 3,
+      "itemRules": [
+        { "id": "Q-PHQ9-I9", "item": 9, "minScore": 1, "level": "High", "category": "self_harm_thoughts" }
+      ],
+      "totalRules": [
+        { "id": "Q-PHQ9-T15", "minTotal": 15, "level": "Elevated", "category": "depression_moderately_severe" }
+      ],
+      "completeWithoutRisk": "Q-PHQ9-ROUTINE"
+    },
+    "GAD-7": {
+      "itemCount": 7,
+      "maxItemScore": 3,
+      "totalRules": [
+        { "id": "Q-GAD7-T15", "minTotal": 15, "level": "Elevated", "category": "anxiety_severe" }
+      ],
+      "completeWithoutRisk": "Q-GAD7-ROUTINE"
+    },
+    "C-SSRS-SCREEN": {
+      "itemCount": 6,
+      "maxItemScore": 1,
+      "itemRules": [
+        { "id": "Q-CSSRS-1", "item": 1, "minScore": 1, "level": "High", "category": "wish_to_be_dead" },
+        { "id": "Q-CSSRS-2", "item": 2, "minScore": 1, "level": "High", "category": "suicidal_thoughts" },
+        { "id": "Q-CSSRS-3", "item": 3, "minScore": 1, "level": "High", "category": "thoughts_with_method" },
+        { "id": "Q-CSSRS-4", "item": 4, "minScore": 1, "level": "Critical", "category": "intent" },
+        { "id": "Q-CSSRS-5", "item": 5, "minScore": 1, "level": "Critical", "category": "intent_with_plan" },
+        { "id": "Q-CSSRS-6", "item": 6, "minScore": 1, "level": "Critical", "category": "behavior_past_3_months" }
+      ],
+      "completeWithoutRisk": "Q-CSSRS-ROUTINE"
+    }
+  }
+}

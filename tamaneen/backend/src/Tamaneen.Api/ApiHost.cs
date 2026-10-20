@@ -1,7 +1,5 @@
 using Tamaneen.Api.Endpoints;
-using Tamaneen.Api.Errors;
-using Tamaneen.Api.Localization;
-using Tamaneen.Api.Security;
+using Tamaneen.Hosting;
 using Tamaneen.Infrastructure;
 using Tamaneen.Infrastructure.Persistence;
 using Tamaneen.SharedKernel;
@@ -20,10 +18,11 @@ public static class ApiHost
         configure?.Invoke(builder);
 
         builder.Services.AddHttpContextAccessor();
-        builder.Services.AddScoped<ICurrentUser, HttpCurrentUser>();
+        builder.Services.AddScoped<RequestCurrentUser>();
+        builder.Services.AddScoped<ICurrentUser>(sp => sp.GetRequiredService<RequestCurrentUser>());
         builder.Services.AddTamaneenInfrastructure(builder.Configuration, builder.Environment);
         builder.Services.AddTamaneenLocalization();
-        builder.Services.AddTamaneenProblemDetails();
+        builder.Services.AddTamaneenProblemDetails<SharedResource>();
         builder.Services.AddTamaneenAuth(builder.Configuration);
         builder.Services.AddHealthChecks().AddDbContextCheck<TamaneenDbContext>("database", tags: ReadyTags);
 

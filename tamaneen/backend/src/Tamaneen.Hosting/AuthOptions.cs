@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Tamaneen.Api.Security;
+namespace Tamaneen.Hosting;
 
 public sealed class AuthOptions
 {

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Versioned, clinician-owned rule packs. A change needs a pull request approved by the clinical lead and
+    a green crisis evaluation run (tests in Tamaneen.UnitTests/CrisisEvaluationSetTests).
+  -->
+  <PropertyGroup>
+    <RootNamespace>Tamaneen.Crisis.Rules</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Tamaneen.Crisis\Tamaneen.Crisis.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="packs\*.json" LogicalName="packs.%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

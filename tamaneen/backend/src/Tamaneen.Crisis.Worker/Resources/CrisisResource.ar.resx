@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="problem.400.title" xml:space="preserve"><value>الطلب غير صالح.</value></data>
+  <data name="problem.401.title" xml:space="preserve"><value>يجب تسجيل الدخول.</value></data>
+  <data name="problem.403.title" xml:space="preserve"><value>ليست لديك صلاحية لهذا الإجراء.</value></data>
+  <data name="problem.404.title" xml:space="preserve"><value>لم نجد ما تبحث عنه.</value></data>
+  <data name="problem.405.title" xml:space="preserve"><value>هذه الطريقة غير مسموحة هنا.</value></data>
+  <data name="problem.409.title" xml:space="preserve"><value>يتعارض هذا مع تغيير تم من قبل.</value></data>
+  <data name="problem.410.title" xml:space="preserve"><value>هذه البيانات لم تعد موجودة.</value></data>
+  <data name="problem.415.title" xml:space="preserve"><value>نوع المحتوى غير مدعوم.</value></data>
+  <data name="problem.422.title" xml:space="preserve"><value>لا يمكن إكمال هذا الإجراء.</value></data>
+  <data name="problem.500.title" xml:space="preserve"><value>حدث خطأ من جهتنا. يرجى المحاولة مرة أخرى.</value></data>
+  <data name="problem.503.title" xml:space="preserve"><value>الخدمة غير متاحة مؤقتًا.</value></data>
+  <data name="problem.default.title" xml:space="preserve"><value>حدث خطأ.</value></data>
+  <data name="problem.crisis_hint" xml:space="preserve"><value>تنبيهات الطوارئ تصل عبر الهاتف والرسائل حتى يُصلح هذا.</value></data>
+  <data name="error.language.unsupported" xml:space="preserve"><value>اللغة «{0}» غير مدعومة. اختر العربية (ar) أو الإنجليزية (en).</value></data>
+  <data name="error.pseudonym.invalid" xml:space="preserve"><value>المعرّف غير صالح.</value></data>
+  <data name="error.patient.shredded" xml:space="preserve"><value>حُذفت بيانات هذا المريض نهائيًا بناءً على طلبه.</value></data>
+  <data name="error.assignment.ended" xml:space="preserve"><value>انتهى إسناد الرعاية هذا من قبل.</value></data>
+  <data name="error.crisis.already_acknowledged" xml:space="preserve"><value>تولّى شخص آخر هذه الحالة من قبل.</value></data>
+  <data name="error.crisis.closed" xml:space="preserve"><value>حدث الطوارئ هذا مغلق من قبل.</value></data>
+  <data name="error.crisis.close_not_allowed" xml:space="preserve"><value>لا يغلق حدث الطوارئ إلا المشرف أو المسؤول السريري.</value></data>
+  <data name="error.reason.required" xml:space="preserve"><value>يرجى كتابة السبب.</value></data>
+  <data name="error.not_found" xml:space="preserve"><value>لم نجد هذا العنصر.</value></data>
+  <data name="level.3" xml:space="preserve"><value>عالٍ</value></data>
+  <data name="level.4" xml:space="preserve"><value>حرج</value></data>
+  <data name="language.ar" xml:space="preserve"><value>العربية</value></data>
+  <data name="language.en" xml:space="preserve"><value>الإنجليزية</value></data>
+  <data name="tier.0" xml:space="preserve"><value>المناوب</value></data>
+  <data name="tier.1" xml:space="preserve"><value>المناوب الاحتياطي</value></data>
+  <data name="tier.2" xml:space="preserve"><value>المسؤول السريري</value></data>
+  <data name="alert.opened.title" xml:space="preserve"><value>خطر {0} · {1}</value></data>
+  <data name="alert.opened.body" xml:space="preserve"><value>أقرّ خلال {0} دقيقة. المريض يكتب بـ{1}. المحادثة مقفلة.</value></data>
+  <data name="alert.raised.title" xml:space="preserve"><value>ارتفع الخطر إلى {0} · {1}</value></data>
+  <data name="alert.escalated.title" xml:space="preserve"><value>لم يُقرّ · صُعّد إلى {0} · {1}</value></data>
+  <data name="alert.acknowledged.title" xml:space="preserve"><value>تم الإقرار · {0}</value></data>
+  <data name="alert.closed.title" xml:space="preserve"><value>أُغلق · {0}</value></data>
+  <data name="category.suicidal_intent" xml:space="preserve"><value>نية انتحار</value></data>
+  <data name="category.timeline" xml:space="preserve"><value>توقيت محدد</value></data>
+  <data name="category.means_access" xml:space="preserve"><value>توفر وسيلة</value></data>
+  <data name="category.overdose_acute" xml:space="preserve"><value>جرعة زائدة محتملة</value></data>
+  <data name="category.self_harm_acute" xml:space="preserve"><value>إيذاء نفس حالي</value></data>
+  <data name="category.farewell" xml:space="preserve"><value>رسالة وداع</value></data>
+  <data name="category.harm_to_others" xml:space="preserve"><value>خطر على الآخرين</value></data>
+  <data name="category.suicidal_ideation" xml:space="preserve"><value>أفكار انتحارية</value></data>
+  <data name="category.hopelessness_burden" xml:space="preserve"><value>يأس أو شعور بالعبء</value></data>
+  <data name="category.self_harm" xml:space="preserve"><value>إيذاء النفس</value></data>
+  <data name="category.abuse_disclosure" xml:space="preserve"><value>إفصاح عن إساءة</value></data>
+  <data name="category.questionnaire" xml:space="preserve"><value>إجابة اختبار</value></data>
+  <data name="category.system" xml:space="preserve"><value>إيقاف احترازي من النظام</value></data>
+</root>

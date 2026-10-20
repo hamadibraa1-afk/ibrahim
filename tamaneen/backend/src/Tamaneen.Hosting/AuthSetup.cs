@@ -1,14 +1,22 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Tamaneen.SharedKernel;
 
-namespace Tamaneen.Api.Security;
+namespace Tamaneen.Hosting;
 
 public static class AuthSetup
 {
     public const string ClinicalPolicy = "clinical";
     public const string PatientPolicy = "patient";
+
+    /// <summary>On-call clinicians who may acknowledge and handle crisis events.</summary>
+    public const string CrisisResponderPolicy = "crisis-responder";
+
+    /// <summary>Only supervisors and the clinical lead close crisis events.</summary>
+    public const string CrisisCloserPolicy = "crisis-closer";
 
     public static IServiceCollection AddTamaneenAuth(this IServiceCollection services, IConfiguration configuration)
     {
@@ -36,11 +44,28 @@ public static class AuthSetup
                     RoleClaimType = TamaneenClaims.Role,
                     IssuerSigningKey = HasKey(o.SigningKeyBase64) ? new SymmetricSecurityKey(Convert.FromBase64String(o.SigningKeyBase64!)) : null,
                 };
+
+                // Browsers cannot set headers on WebSocket upgrades; SignalR sends the token in the query string.
+                jwt.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = ctx =>
+                    {
+                        var token = ctx.Request.Query["access_token"];
+                        if (!string.IsNullOrEmpty(token) && ctx.HttpContext.Request.Path.StartsWithSegments("/hubs", StringComparison.Ordinal))
+                        {
+                            ctx.Token = token;
+                        }
+
+                        return Task.CompletedTask;
+                    },
+                };
             });
 
         services.AddAuthorizationBuilder()
             .AddPolicy(PatientPolicy, p => p.RequireAuthenticatedUser().RequireRole(AppRoles.Patient))
-            .AddPolicy(ClinicalPolicy, p => p.RequireAuthenticatedUser().RequireRole(AppRoles.Therapist, AppRoles.Supervisor, AppRoles.ClinicalLead));
+            .AddPolicy(ClinicalPolicy, p => p.RequireAuthenticatedUser().RequireRole(AppRoles.Therapist, AppRoles.Supervisor, AppRoles.ClinicalLead))
+            .AddPolicy(CrisisResponderPolicy, p => p.RequireAuthenticatedUser().RequireRole(AppRoles.Therapist, AppRoles.Supervisor, AppRoles.ClinicalLead))
+            .AddPolicy(CrisisCloserPolicy, p => p.RequireAuthenticatedUser().RequireRole(AppRoles.Supervisor, AppRoles.ClinicalLead));
         return services;
     }
 
@@ -54,4 +79,11 @@ public static class AuthSetup
         Span<byte> buffer = stackalloc byte[512];
         return Convert.TryFromBase64String(base64, buffer, out var written) && written >= 32;
     }
+}
+
+public static class TamaneenClaims
+{
+    public const string Subject = "sub";
+    public const string Role = "role";
+    public const string Pseudonym = "pid";
 }

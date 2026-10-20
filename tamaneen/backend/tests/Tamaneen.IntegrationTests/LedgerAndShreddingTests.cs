@@ -90,3 +90,26 @@ public sealed class LedgerAndShreddingTests
         (await act.Should().ThrowAsync<DomainException>()).Which.Code.Should().Be(ErrorCodes.ReasonRequired);
     }
 }
+
+[Collection(SqlServerGroup.Name)]
+public sealed class LedgerBatchTests
+{
+    private readonly SqlServerFixture _sql;
+
+    public LedgerBatchTests(SqlServerFixture sql) => _sql = sql;
+
+    [Fact]
+    public async Task Many_audit_rows_in_one_save_are_accepted_by_the_ledger()
+    {
+        var user = StaticCurrentUser.ForStaff(Guid.NewGuid(), AppRoles.Supervisor);
+        await using var db = _sql.Context(user);
+        var audit = new AuditLog(db, user, _sql.Clock);
+        for (var i = 0; i < 25; i++)
+        {
+            audit.Append("batch.test", "Test", i.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        }
+
+        await db.SaveChangesAsync();
+        (await db.AuditEntries.CountAsync(a => a.Action == "batch.test")).Should().Be(25);
+    }
+}

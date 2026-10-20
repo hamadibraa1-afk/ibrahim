@@ -1,0 +1,316 @@
+{
+  // Arabic: Modern Standard, Gulf dialect, and Arabizi (Arabic in Latin letters and digits).
+  // Patterns are normalized exactly like patient text (CrisisTextNormalizer): أ/إ/آ → ا, ة → ه, ى → ي,
+  // diacritics and hamza dropped, repeated letters collapsed, Arabizi digits mapped (3→a, 7→h, 5→kh, 8→gh, 9→q, 2→∅).
+  // Grammar: "a|b" alternatives, "a_b" consecutive words, "x*" prefix, "x?" optional, "..." up to 3 words.
+  // Clinical owner: the clinical lead. Changes need their approval and a green evaluation run.
+  "language": "ar",
+  "version": "ar-2026.10.1",
+  "rules": [
+    {
+      "id": "AR-C-INTENT",
+      "level": "Critical",
+      "category": "suicidal_intent",
+      "patterns": [
+        "سانتحر|بنتحر|راح_انتحر|رح_انتحر|ح_انتحر",
+        "ناوي|ناويه|قررت|مقرر|مقرره|عازم|عازمه ... انتحر*|انتحار|اموت|بموت|اقتل_نفسي|انهي_حياتي",
+        "ابي|ابغى|ابغي|اريد|ودي|بدي|ناوي|ناويه|قررت اقتل|اذبح|انهي|اخلص|احرق|اشنق نفسي|حياتي|عمري",
+        "بقتل|ساقتل|راح_اقتل|رح_اقتل نفسي",
+        "بنهي|سانهي|راح_انهي|انهي حياتي|عمري"
+      ],
+      "examples": [
+        "سأنتحر",
+        "والله بنتحر",
+        "قررت أنتحر خلاص",
+        "أبي أقتل نفسي",
+        "بقتل نفسي الليلة",
+        "ناوية أموت",
+        "رح أنهي حياتي",
+        "ابغى انهي حياتي"
+      ],
+      "counterExamples": [
+        "قررت أنهي الواجب اليوم",
+        "ابي اخلص الشغل"
+      ]
+    },
+    {
+      "id": "AR-C-TIMELINE",
+      "level": "Critical",
+      "category": "timeline",
+      "patterns": [
+        "الليله|اليوم|بكره|بكرا|الحين|هالليله ... اموت|بموت|انتحر*|بنتحر|اقتل_نفسي|بقتل_نفسي|انهي_حياتي",
+        "اموت|بموت|انتحر*|بنتحر|انهي_حياتي ... الليله|اليوم|بكره|بكرا|الحين|هالليله"
+      ],
+      "examples": [
+        "الليلة أنتحر",
+        "اليوم بموت ما عاد أتحمل",
+        "بكرا بنتحر",
+        "أموت الليلة"
+      ],
+      "counterExamples": [
+        "اليوم ذاكرت كثير",
+        "الحين أنهي الواجب بعدين أنام",
+        "اليوم شفت فيلم عن الحرب"
+      ]
+    },
+    {
+      "id": "AR-C-MEANS",
+      "level": "Critical",
+      "category": "means_access",
+      "patterns": [
+        "جمعت|خبيت|شريت|اشتريت|حضرت|جهزت|عندي ... حبوب|ادويه|حبل|سكين|موس|شفره|مسدس|سلاح ... اموت|بموت|انتحر*|بنتحر|انهي_حياتي",
+        "جمعت|خبيت|حضرت|جهزت حبوب|ادويه|حبل|السم|سم",
+        "باخذ|بشرب|ساخذ|ساشرب|راح_اخذ|راح_اشرب ... حبوب|الحبوب|العلبه|الدواء|الادويه ... كل*|كامل*",
+        "حبل ... رقبتي",
+        "انط|بنط|اطيح|بطيح من|م فوق? السطح|الدور|الجسر|الشباك|البلكونه|العماره|الكبري",
+        "ارمي|برمي|سارمي نفسي"
+      ],
+      "examples": [
+        "جمعت حبوب كثير",
+        "عندي حبل وبنتحر",
+        "بشرب الحبوب كلها",
+        "بنط من السطح",
+        "ارمي نفسي من الدور"
+      ],
+      "counterExamples": [
+        "عندي حبوب الضغط",
+        "أخذت حبة بنادول"
+      ]
+    },
+    {
+      "id": "AR-C-OVERDOSE",
+      "level": "Critical",
+      "category": "overdose_acute",
+      "patterns": [
+        "بلعت|شربت|اخذت|خذيت ... حبوب|العلبه|علبه|شريط|الدواء ... كل*|كامل*|كثير|كثيره|كلهم",
+        "بلعت|شربت سم|كلور|فلاش"
+      ],
+      "examples": [
+        "بلعت العلبة كلها",
+        "أخذت حبوب كثيرة قبل شوي",
+        "شربت كلور"
+      ],
+      "counterExamples": [
+        "أخذت الدواء بموعده"
+      ]
+    },
+    {
+      "id": "AR-C-SELFHARM-ACUTE",
+      "level": "Critical",
+      "category": "self_harm_acute",
+      "patterns": [
+        "جرحت|قطعت|شرحت يدي|ايدي|معصمي|عروقي|نفسي",
+        "انزف|ينزف|نزيف ... يدي|ايدي|كثير|ما_يوقف"
+      ],
+      "exceptions": [
+        "جرحت|قطعت يدي|ايدي ... اطبخ|بالغلط|المطبخ|بالسكين_وانا"
+      ],
+      "examples": [
+        "جرحت يدي الحين",
+        "قطعت عروقي",
+        "أنزف كثير"
+      ],
+      "counterExamples": [
+        "جرحت يدي وأنا أطبخ"
+      ]
+    },
+    {
+      "id": "AR-C-GOODBYE",
+      "level": "Critical",
+      "category": "farewell",
+      "patterns": [
+        "هذي|هذه اخر رساله",
+        "وداعا|مع_السلامه للابد|الى_الابد",
+        "ودعت|بودع|اودع ... الكل|اهلي|الدنيا"
+      ],
+      "examples": [
+        "هذي آخر رسالة مني",
+        "وداعًا للأبد",
+        "ودعت أهلي"
+      ]
+    },
+    {
+      "id": "AR-C-HARM-OTHERS",
+      "level": "Critical",
+      "category": "harm_to_others",
+      "patterns": [
+        "بقتله|بقتلها|بقتلهم|ساقتله|ساقتلها|اقتله|اقتلها|اقتلهم|بذبحه|بذبحها|بذبحهم",
+        "راح|ابي|ابغى|ناوي|قررت اقتل|اذبح|اطعن|اذي ... ابوي|امي|زوجي|زوجتي|اخوي|اختي|ولدي|بنتي|مديري|اطفالي|عيالي|الكل|احد",
+        "باذي|بطعن|راح_اذي ... احد|ابوي|امي|زوجي|زوجتي|اخوي|اختي|عيالي|اطفالي"
+      ],
+      "exceptions": [
+        "بقتله|بقتلها|بذبحه|بذبحها ... ضحك|الضحك|امزح|مزح",
+        "اقتل|بقتل الوقت|الملل|الفراغ"
+      ],
+      "examples": [
+        "والله بقتله",
+        "ناوي أقتل أبوي",
+        "راح أأذي عيالي",
+        "بطعن زوجي"
+      ],
+      "counterExamples": [
+        "بقتله من الضحك هالولد",
+        "أبي أقتل الوقت"
+      ]
+    },
+    {
+      "id": "AR-H-IDEATION",
+      "level": "High",
+      "category": "suicidal_ideation",
+      "patterns": [
+        "ابي|ابغى|ابغي|اريد|ودي|بدي|اتمنى|تمنيت|نفسي|امنيتي اموت|الموت|اختفي",
+        "ابي|ابغى|ودي|اريد انام ... ما|ولا اصحى|اقوم|اصحي",
+        "ما|مو|ماعاد ابي|ابغى|اريد|ودي|قادر|قادره اعيش|اكمل|استمر",
+        "مابي|مابغى|ماعاد_ابي اعيش|اكمل",
+        "انتحار|انتحر|الانتحار",
+        "افكر|افكر_في|افكر_ب|يجيني|تجيني ... الموت|اموت|اذي_نفسي",
+        "الموت|موتي ارحم|احسن|افضل",
+        "ليتني|ياليتني|يا_ليتني|ليت ميت|ميته|ما_انولدت|اموت",
+        "تعبت|طفشت|زهقت|مليت من|م الحياه|حياتي|العيش|الدنيا|نفسي",
+        "ابي|ابغى|ودي ارتاح من|م الدنيا|الحياه"
+      ],
+      "exceptions": [
+        "اموت فيك|عليك|فيه|عليه|فيها|عليها|فيهم|فيكم",
+        "اموت|بموت من|م ضحك|الضحك|الجوع|الحر|البرد|الملل|الشوق|الفرح|الحب",
+        "اموت ضحك|جوع|برد|حر|ملل|شوق",
+        "تعبت|طفشت|زهقت|مليت من|م الشغل|الدراسه|المذاكره|الدوام|الزحمه",
+        "اكمل الواجب|الدراسه|الشغل|الجلسه|المحادثه|الاكل|الفيلم"
+      ],
+      "examples": [
+        "ابي اموت",
+        "أتمنى الموت",
+        "ودي أنام وما أصحى",
+        "ما أبي أعيش",
+        "مابي اكمل",
+        "أفكر في الانتحار",
+        "الموت أرحم",
+        "ليتني ميت",
+        "تعبت من الحياة",
+        "ابي ارتاح من الدنيا",
+        "وأبي أموت",
+        "أبي أموت من التعب"
+      ],
+      "counterExamples": [
+        "أموت فيك",
+        "بموت من الضحك",
+        "أموت من الجوع",
+        "تعبت من الدوام",
+        "مليت من المذاكرة",
+        "ما أبي أكمل الواجب"
+      ]
+    },
+    {
+      "id": "AR-H-BURDEN",
+      "level": "High",
+      "category": "hopelessness_burden",
+      "patterns": [
+        "عبء|عبئ|حمل|ثقل على|علي اهلي|الكل|الناس|عيلتي|عايلتي|اسرتي|الجميع",
+        "احسن|افضل لهم|للكل|لاهلي بدوني|من_غيري",
+        "اهلي|الكل|عيلتي|عايلتي|اسرتي|الناس ... احسن|افضل|بيرتاحون|يرتاحون|برتاحون بدوني|من_غيري",
+        "ماحد|محد|ما_احد بيفقدني|راح_يفقدني|بيفقدني",
+        "مافي|ما_في|ماعاد_في|مالي امل|فايده|سبب ... اعيش|للحياه|في_الحياه",
+        "مالي|ما_عندي|فاقد|فاقده|فقدت امل|الامل",
+        "حياتي|الحياه مالها|ما_لها|بلا معنى|قيمه|طعم"
+      ],
+      "examples": [
+        "أحس إني عبء على أهلي",
+        "أحسن لهم بدوني",
+        "محد بيفقدني",
+        "ما في سبب أعيش",
+        "حياتي ما لها معنى",
+        "فقدت الأمل"
+      ]
+    },
+    {
+      "id": "AR-H-SELFHARM",
+      "level": "High",
+      "category": "self_harm",
+      "patterns": [
+        "اجرح|اقطع|اضرب|احرق|اعور نفسي|جسمي",
+        "ايذاء|اذيه|اذي نفسي|النفس",
+        "ارجع|رجعت ... اجرح|للجرح|اذي_نفسي"
+      ],
+      "examples": [
+        "أجرح نفسي لما أضيق",
+        "أفكر أأذي نفسي",
+        "رجعت أجرح"
+      ]
+    },
+    {
+      "id": "AR-H-ABUSE",
+      "level": "High",
+      "category": "abuse_disclosure",
+      "patterns": [
+        "يضربني|يضربوني|تضربني|يعنفني|يعذبني|يهددني|يحبسني",
+        "تحرش|يتحرش|تحرشوا|اغتصب*|انغصبت|اعتدى|اعتداء|ينتهك",
+        "يلمسني|يلمسوني ... غصب|بالغصب|غصبا"
+      ],
+      "examples": [
+        "أبوي يضربني كل يوم",
+        "زوجي يعنفني",
+        "تحرش فيني قريبي",
+        "انغصبت واعتدى علي"
+      ]
+    },
+    {
+      "id": "AR-C-ARABIZI-INTENT",
+      "level": "Critical",
+      "category": "suicidal_intent",
+      "patterns": [
+        "bantehr|banteher|bante7er|bantaher|banta7er|bantahar|santaher|bnt7r",
+        "rah|ra7|bro7|bruh antehr|anteher|ante7er|antaher|anta7er|antahar",
+        "abi|abgha|abga|ab9a|abghi|abgi|widi|wdi|bdi|ariid|arid aqtl|a8tl|agtl|aktl|aktel|agtel|a8tel nafsi|nafsy|nfsi",
+        "baqtl|bagtl|ba8tl|baktl|bagtel|baqtel|ba8tel nafsi|nafsy|nfsi",
+        "abi|abgha|widi akhles|a5les|akhalis|anhi|anhy min|mn hayati|7ayati|hyati|omri|3omri",
+        "allela|alleila|elyom|alyom|bukra|bokra|al7in|alhin ... antehr|anteher|ante7er|antaher|anta7er|amot|amoot|amout"
+      ],
+      "examples": [
+        "bante7er",
+        "ra7 ante7er",
+        "abi a8tl nafsi",
+        "ba8tl nafsi",
+        "abi a5les min 7ayati",
+        "allela ante7er"
+      ],
+      "counterExamples": [
+        "abi a5les el wajeb",
+        "ra7 anam"
+      ]
+    },
+    {
+      "id": "AR-H-ARABIZI-IDEATION",
+      "level": "High",
+      "category": "suicidal_ideation",
+      "patterns": [
+        "abi|abgha|abga|ab9a|abghi|abgi|widi|wdi|bdi|ariid|arid|atmana|atmna amot|amoot|amout|amut|amwt|elmot|almot|almoot",
+        "ma|mo|mob abi|abgha|ariid a3ish|a3eesh|aish|aeesh|akml|akamel|akamil",
+        "mabi|mabgha|mabga|ma3ad_abi a3ish|a3eesh|aish|aeesh|akml|akamel",
+        "intihar|inte7ar|entehar|ente7ar|elintihar|alintihar|antehar",
+        "ta3abt|ta3bt|tabt|ti3bt|zh2t|zahgt|tfasht|malait min|mn|men alhaya|el7aya|al7aya|el7ayah|hayati|7ayati|eldunya|aldenya|aldnya",
+        "wallah|walah ta3abt ... akhles|a5les|amot|amoot",
+        "a7s|ahs|ahis ini|inni|eni|ani 3ib2|3eb2|7iml|7mel ala|3ala|3la ahli|ahly|alkil|elkel|el_kil"
+      ],
+      "exceptions": [
+        "amot|amoot|amout fik|feek|3alaik|alek|3alek",
+        "amot|amoot|amout min|mn|men al|el? da7k|dahk|ji3|jo3|7ar|bard|malal",
+        "amot|amoot|amout min|mn|men elda7k|alda7k|eldahk|aldahk",
+        "ta3abt|ta3bt|tabt|malait min|mn|men aldawam|eldawam|aldirasa|alshoghl|elshoghl"
+      ],
+      "examples": [
+        "abi amoot",
+        "abghi amot",
+        "ma abi a3ish",
+        "mabi a3eesh",
+        "afkr bel inte7ar",
+        "wallah ta3abt abi a5les",
+        "ta3abt mn el7aya",
+        "a7s ini 3ib2 3ala ahli"
+      ],
+      "counterExamples": [
+        "amoot fik",
+        "amoot min el da7k",
+        "ta3abt mn aldawam"
+      ]
+    }
+  ]
+}

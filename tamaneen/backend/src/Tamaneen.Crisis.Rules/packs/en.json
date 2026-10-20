@@ -1,0 +1,241 @@
+{
+  // English. Patterns are normalized like patient text: lower-case, apostrophes split words ("don't" → "don t"),
+  // repeated letters collapsed ("kill" and "kiill" both become "kil"). Write patterns in plain spelling.
+  "language": "en",
+  "version": "en-2026.10.1",
+  "rules": [
+    {
+      "id": "EN-C-INTENT",
+      "level": "Critical",
+      "category": "suicidal_intent",
+      "patterns": [
+        "kill|killing|end|ending|hang|hanging|shoot|shooting myself|my_life",
+        "going_to|gonna|will|ll|plan|planning|planned|decided|intend|intending to? commit? suicide",
+        "going_to|gonna|plan|planning|planned|decided|intend|intending|try|trying to? die|end_it_all|end_it|take_my_own_life|take_my_life",
+        "take|taking my own? life"
+      ],
+      "exceptions": [
+        "kill|killing myself ... laughing|laughter|joke|jk|lol",
+        "end|ending my_life_story|my_life_as"
+      ],
+      "examples": [
+        "I want to kill myself",
+        "im going to end my life",
+        "I'm gonna kill myself tonight",
+        "I've decided to die",
+        "planning to commit suicide",
+        "I will take my own life"
+      ],
+      "counterExamples": [
+        "I'm going to end the meeting",
+        "this joke is killing me"
+      ]
+    },
+    {
+      "id": "EN-C-TIMELINE",
+      "level": "Critical",
+      "category": "timeline",
+      "patterns": [
+        "tonight|today|tomorrow|this_weekend|right_now ... die|kill_myself|end_it|end_my_life|suicide",
+        "die|kill_myself|end_it|end_my_life ... tonight|today|tomorrow|right_now"
+      ],
+      "examples": [
+        "tonight I end it",
+        "I'll die tomorrow",
+        "going to kill myself tonight"
+      ],
+      "counterExamples": [
+        "tonight I end the call early",
+        "today I finished my homework"
+      ]
+    },
+    {
+      "id": "EN-C-MEANS",
+      "level": "Critical",
+      "category": "means_access",
+      "patterns": [
+        "stockpiled|stockpiling|saving|saved|collected|collecting|hoarding|hoarded up? my? pills|tablets|meds|medication",
+        "bought|got|found a? rope|gun|noose ... to|for|so",
+        "tied|tying|made a? noose|rope",
+        "jump|jumping off|from the? bridge|roof|building|balcony"
+      ],
+      "examples": [
+        "I've been stockpiling pills",
+        "I bought a rope for this",
+        "made a noose",
+        "thinking of jumping off the bridge"
+      ],
+      "counterExamples": [
+        "I bought a rope for camping",
+        "I take my meds every morning"
+      ],
+      "exceptions": [
+        "rope for|to camping|climbing|the_boat|the_tent|moving"
+      ]
+    },
+    {
+      "id": "EN-C-OVERDOSE",
+      "level": "Critical",
+      "category": "overdose_acute",
+      "patterns": [
+        "took|taken|swallowed|swallow|ate all|the_whole|a_whole|a_lot_of|a_bunch_of|too_many|bottle_of|packet_of ... pills|tablets|meds|paracetamol|tylenol|sleeping_pills",
+        "overdose|overdosed|overdosing"
+      ],
+      "examples": [
+        "I took all my pills",
+        "swallowed a whole bottle of pills",
+        "I overdosed"
+      ],
+      "counterExamples": [
+        "I took my pills this morning"
+      ]
+    },
+    {
+      "id": "EN-C-SELFHARM-ACUTE",
+      "level": "Critical",
+      "category": "self_harm_acute",
+      "patterns": [
+        "just|i ... cut|slit|slashed my wrist|wrists|arm|arms|veins",
+        "bleeding|bleed ... a_lot|wont_stop|won_t_stop|can_t_stop|everywhere"
+      ],
+      "examples": [
+        "I just cut my wrists",
+        "I slit my wrist",
+        "I'm bleeding a lot and it won't stop"
+      ],
+      "counterExamples": [
+        "I cut my arm on a fence last year"
+      ],
+      "exceptions": [
+        "cut my arm|arms|hand on|while|cooking|fence|accident"
+      ]
+    },
+    {
+      "id": "EN-C-GOODBYE",
+      "level": "Critical",
+      "category": "farewell",
+      "patterns": [
+        "this_is|this_will_be my last message|goodbye|post",
+        "goodbye|bye forever|for_good",
+        "won_t|wont|will_not be here|around|alive much_longer|anymore"
+      ],
+      "examples": [
+        "this is my last message",
+        "goodbye forever",
+        "I won't be here much longer"
+      ],
+      "counterExamples": [
+        "goodbye see you next week"
+      ]
+    },
+    {
+      "id": "EN-C-HARM-OTHERS",
+      "level": "Critical",
+      "category": "harm_to_others",
+      "patterns": [
+        "going_to|gonna|will|ll|want_to|wanna|plan_to|planning_to kill|stab|shoot|hurt|strangle|poison him|her|them|my_dad|my_mom|my_father|my_mother|my_husband|my_wife|my_boss|my_kids|my_children|someone|everyone",
+        "kill|stab|shoot him|her|them ... tonight|today|tomorrow|soon"
+      ],
+      "exceptions": [
+        "kill|killing him|her|them ... lol|haha|joking|jk|kidding|if_he|if_she"
+      ],
+      "examples": [
+        "I'm going to kill him",
+        "I want to hurt my kids",
+        "I'll stab her tonight"
+      ],
+      "counterExamples": [
+        "my mom is going to kill me lol",
+        "I'm gonna kill him if he eats my fries again lol"
+      ]
+    },
+    {
+      "id": "EN-H-IDEATION",
+      "level": "High",
+      "category": "suicidal_ideation",
+      "patterns": [
+        "want|wanna|wish|wishing|would_rather|i_d_rather to? die|be_dead|were_dead|was_dead|i_was_dead|i_were_dead|disappear|not_exist|not_be_here",
+        "don_t|dont|do_not|no_longer want to live|be_alive|exist|wake_up|go_on",
+        "can_t|cant|cannot go_on|keep_going|do_this_anymore|take_it_anymore",
+        "suicide|suicidal|kill_myself|end_my_life",
+        "thinking|thought|thoughts about|of ... dying|death|suicide|killing_myself|ending_it",
+        "no reason|point to|in? live|living|going_on",
+        "sleep and never|not wake_up",
+        "tired|sick of living|life|being_alive|existing"
+      ],
+      "exceptions": [
+        "dying|die to see|to_know|to_try|to_meet|to_go|laughing|of_laughter|of_embarrassment|of_boredom",
+        "die of embarrassment|laughter|boredom|cringe",
+        "dead tired|serious|wrong|on",
+        "tired of|with ... work|school|homework|traffic|this_weather|the_noise"
+      ],
+      "examples": [
+        "I want to die",
+        "I wish I was dead",
+        "I don't want to live anymore",
+        "I can't go on",
+        "I've been thinking about suicide",
+        "there's no reason to live",
+        "I want to sleep and never wake up",
+        "I'm tired of living",
+        "I just want to disappear"
+      ],
+      "counterExamples": [
+        "I'm dying to see the new movie",
+        "I could die of embarrassment",
+        "I'm dead tired",
+        "tired of work"
+      ]
+    },
+    {
+      "id": "EN-H-BURDEN",
+      "level": "High",
+      "category": "hopelessness_burden",
+      "patterns": [
+        "burden to|on|for my? everyone|family|parents|people|them",
+        "better off without me|dead",
+        "nobody|no_one|noone would|will miss|care|notice ... me|if",
+        "hopeless|no_hope|lost_all_hope|nothing_to_live_for"
+      ],
+      "examples": [
+        "I'm a burden to my family",
+        "everyone would be better off without me",
+        "nobody would miss me",
+        "I feel hopeless"
+      ]
+    },
+    {
+      "id": "EN-H-SELFHARM",
+      "level": "High",
+      "category": "self_harm",
+      "patterns": [
+        "cut|cutting|burn|burning|hurt|hurting|harm|harming myself",
+        "self harm|harm|harming|injury",
+        "urge|urges to cut|hurt|harm"
+      ],
+      "examples": [
+        "I've been cutting myself",
+        "I keep hurting myself",
+        "self harm again",
+        "urges to cut"
+      ]
+    },
+    {
+      "id": "EN-H-ABUSE",
+      "level": "High",
+      "category": "abuse_disclosure",
+      "patterns": [
+        "he|she|they|dad|mom|husband|wife|boyfriend|girlfriend|uncle|stepdad|partner hits|beats|chokes|abuses|rapes|touches|threatens me",
+        "being|been|was|got sexually|physically? abused|raped|assaulted|molested|beaten",
+        "sexual assault|abuse",
+        "domestic violence|abuse"
+      ],
+      "examples": [
+        "my husband hits me",
+        "I was raped",
+        "I'm being abused at home",
+        "he touches me and I don't want it"
+      ]
+    }
+  ]
+}

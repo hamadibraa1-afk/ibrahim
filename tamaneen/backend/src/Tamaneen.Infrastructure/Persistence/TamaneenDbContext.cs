@@ -30,6 +30,10 @@ public sealed class TamaneenDbContext : DbContext
 
     public DbSet<CrisisEvent> CrisisEvents => Set<CrisisEvent>();
 
+    public DbSet<ChatLock> ChatLocks => Set<ChatLock>();
+
+    public DbSet<PageRequest> PageRequests => Set<PageRequest>();
+
     public DbSet<AiCallRecord> AiCallRecords => Set<AiCallRecord>();
 
     public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();

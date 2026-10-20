@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
-using Tamaneen.Api.Localization;
+using Tamaneen.Hosting;
 using Tamaneen.Infrastructure.Auditing;
 using Tamaneen.Infrastructure.Persistence;
 using Tamaneen.SharedKernel;

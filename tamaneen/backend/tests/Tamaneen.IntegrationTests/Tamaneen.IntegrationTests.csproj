@@ -16,6 +16,8 @@
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
     <ProjectReference Include="..\..\src\Tamaneen.Api\Tamaneen.Api.csproj" />
+    <ProjectReference Include="..\..\src\Tamaneen.Crisis.Worker\Tamaneen.Crisis.Worker.csproj" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />

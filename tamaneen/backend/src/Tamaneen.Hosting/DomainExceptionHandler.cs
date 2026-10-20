@@ -1,13 +1,14 @@
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
-using Tamaneen.Api.Localization;
+using Microsoft.Extensions.Logging;
 using Tamaneen.SharedKernel;
 
-namespace Tamaneen.Api.Errors;
+namespace Tamaneen.Hosting;
 
 /// <summary>Turns <see cref="DomainException"/> into a localized ProblemDetails with the right status code.</summary>
-public sealed partial class DomainExceptionHandler : IExceptionHandler
+public sealed partial class DomainExceptionHandler<TResource> : IExceptionHandler
 {
     private static readonly Dictionary<string, int> StatusByCode = new(StringComparer.Ordinal)
     {
@@ -23,10 +24,10 @@ public sealed partial class DomainExceptionHandler : IExceptionHandler
     };
 
     private readonly IProblemDetailsService _problems;
-    private readonly IStringLocalizer<SharedResource> _localizer;
-    private readonly ILogger<DomainExceptionHandler> _log;
+    private readonly IStringLocalizer<TResource> _localizer;
+    private readonly ILogger<DomainExceptionHandler<TResource>> _log;
 
-    public DomainExceptionHandler(IProblemDetailsService problems, IStringLocalizer<SharedResource> localizer, ILogger<DomainExceptionHandler> log)
+    public DomainExceptionHandler(IProblemDetailsService problems, IStringLocalizer<TResource> localizer, ILogger<DomainExceptionHandler<TResource>> log)
     {
         _problems = problems;
         _localizer = localizer;
@@ -35,6 +36,7 @@ public sealed partial class DomainExceptionHandler : IExceptionHandler
 
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(httpContext);
         if (exception is not DomainException domain)
         {
             return false;

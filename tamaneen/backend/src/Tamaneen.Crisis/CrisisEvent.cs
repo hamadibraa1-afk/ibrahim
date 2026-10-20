@@ -63,10 +63,27 @@ public sealed class CrisisEvent : Entity
 
     public string? CloseReason { get; private set; }
 
+    /// <summary>0 = on-call clinician, 1 = backup, 2 = clinical lead. Rises each time an acknowledgement deadline passes.</summary>
+    public byte EscalationTier { get; private set; }
+
+    /// <summary>Deadline to reach the patient once someone has acknowledged (5 min for Critical, 60 for High).</summary>
+    public DateTimeOffset? ContactDeadlineUtc { get; private set; }
+
+    /// <summary>Comma-separated rule ids that triggered or raised the event. Never patient text.</summary>
+    public string TriggerRuleIds { get; private set; } = string.Empty;
+
+    /// <summary>Where the words came from: intake, chat, journal, survey, questionnaire, system.</summary>
+    public string Source { get; private set; } = "system";
+
     public byte[] RowVersion { get; private set; } = Array.Empty<byte>();
 
-    public static CrisisEvent Open(Guid patientId, string pseudonymId, RiskLevel level, string language, string rulePackVersion, TimeSpan acknowledgeWithin, IClock clock)
+    public static CrisisEvent Open(Guid patientId, string pseudonymId, RiskLevel level, string language, string rulePackVersion, TimeSpan acknowledgeWithin, IClock clock) =>
+        Open(patientId, pseudonymId, level, language, rulePackVersion, acknowledgeWithin, Array.Empty<string>(), "system", clock);
+
+    public static CrisisEvent Open(Guid patientId, string pseudonymId, RiskLevel level, string language, string rulePackVersion, TimeSpan acknowledgeWithin, IEnumerable<string> ruleIds, string source, IClock clock)
     {
+        ArgumentNullException.ThrowIfNull(ruleIds);
+        ArgumentException.ThrowIfNullOrWhiteSpace(source);
         if (level < RiskLevel.High)
         {
             throw new ArgumentOutOfRangeException(nameof(level), level, "Crisis events are opened for High or Critical risk only.");
@@ -78,7 +95,41 @@ public sealed class CrisisEvent : Entity
         }
 
         var now = clock.UtcNow;
-        return new CrisisEvent(Guid.NewGuid(), patientId, SharedKernel.PseudonymId.Parse(pseudonymId).Value, level, SupportedLanguages.Normalize(language), rulePackVersion, now, now + acknowledgeWithin);
+        var evt = new CrisisEvent(Guid.NewGuid(), patientId, SharedKernel.PseudonymId.Parse(pseudonymId).Value, level, SupportedLanguages.Normalize(language), rulePackVersion, now, now + acknowledgeWithin)
+        {
+            Source = source.Trim().ToLowerInvariant(),
+        };
+        evt.AddTriggers(ruleIds);
+        return evt;
+    }
+
+    public void AddTriggers(IEnumerable<string> ruleIds)
+    {
+        ArgumentNullException.ThrowIfNull(ruleIds);
+        var all = TriggerRuleIds.Split(',', StringSplitOptions.RemoveEmptyEntries).Concat(ruleIds)
+            .Select(r => r.Trim()).Where(r => r.Length > 0).Distinct(StringComparer.Ordinal);
+        var joined = string.Join(',', all);
+        TriggerRuleIds = joined.Length <= 1000 ? joined : joined[..1000];
+    }
+
+    /// <summary>
+    /// Called when the acknowledgement deadline has passed: pages the next tier and gives it a fresh window.
+    /// After the clinical lead (tier 2) the lead keeps being paged on every window until someone acknowledges.
+    /// </summary>
+    public byte EscalateToNextTier(TimeSpan acknowledgeWithin, byte maxTier, IClock clock)
+    {
+        if (Status != CrisisEventStatus.Open)
+        {
+            throw new InvalidOperationException($"Only open events escalate; {Id} is {Status}.");
+        }
+
+        if (EscalationTier < maxTier)
+        {
+            EscalationTier++;
+        }
+
+        AckDeadlineUtc = clock.UtcNow + acknowledgeWithin;
+        return EscalationTier;
     }
 
     public bool IsAcknowledgementOverdue(IClock clock) =>
@@ -93,7 +144,9 @@ public sealed class CrisisEvent : Entity
         }
     }
 
-    public void Acknowledge(Guid clinicianUserId, IClock clock)
+    public void Acknowledge(Guid clinicianUserId, IClock clock) => Acknowledge(clinicianUserId, null, clock);
+
+    public void Acknowledge(Guid clinicianUserId, TimeSpan? contactWithin, IClock clock)
     {
         switch (Status)
         {
@@ -105,6 +158,7 @@ public sealed class CrisisEvent : Entity
 
         AcknowledgedByUserId = clinicianUserId;
         AcknowledgedAtUtc = clock.UtcNow;
+        ContactDeadlineUtc = contactWithin is { } within ? clock.UtcNow + within : null;
         Status = CrisisEventStatus.Acknowledged;
     }
 

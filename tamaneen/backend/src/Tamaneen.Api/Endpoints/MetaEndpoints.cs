@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Localization;
-using Tamaneen.Api.Localization;
+using Tamaneen.Hosting;
 using Tamaneen.SharedKernel;
 
 namespace Tamaneen.Api.Endpoints;
