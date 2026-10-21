@@ -60,6 +60,9 @@ public sealed class Appointment : Entity
 
     public DateTimeOffset? CancelledAtUtc { get; private set; }
 
+    /// <summary>Code from <see cref="CancelReasons"/> chosen by the patient when they cancelled (PB-45); null otherwise.</summary>
+    public string? CancelReason { get; private set; }
+
     public DateTimeOffset? OutcomeRecordedAtUtc { get; private set; }
 
     public static Appointment Book(Guid patientId, AvailabilitySlot slot, int sequenceNumber, string roomId, IClock clock) =>
@@ -72,11 +75,17 @@ public sealed class Appointment : Entity
     public bool JoinOpen(IClock clock) =>
         Status == AppointmentStatus.Confirmed && clock.UtcNow >= StartsAtUtc - JoinOpensBefore && clock.UtcNow <= StartsAtUtc.AddMinutes(DurationMinutes);
 
-    public void CancelByPatient(IClock clock)
+    public void CancelByPatient(string reasonCode, IClock clock)
     {
+        if (!CancelReasons.Patient.Contains(reasonCode))
+        {
+            throw new ArgumentOutOfRangeException(nameof(reasonCode));
+        }
+
         EnsureChangeable(clock);
         Status = AppointmentStatus.CancelledByPatient;
         CancelledAtUtc = clock.UtcNow;
+        CancelReason = reasonCode;
     }
 
     public void CancelByTherapist(IClock clock)

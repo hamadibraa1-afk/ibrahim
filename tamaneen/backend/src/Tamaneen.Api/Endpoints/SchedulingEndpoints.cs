@@ -44,6 +44,8 @@ public static class SchedulingEndpoints
 
     public sealed record RescheduleRequest(Guid SlotId);
 
+    public sealed record CancelRequest(string? ReasonCode);
+
     public static IEndpointRouteBuilder MapSchedulingEndpoints(this IEndpointRouteBuilder app)
     {
         var g = app.MapGroup("/v1").RequireAuthorization(AuthSetup.PatientPolicy);
@@ -233,18 +235,21 @@ public static class SchedulingEndpoints
         return TypedResults.Ok(await DetailDtoAsync(p, directory, appointment, platform, clock, ct).ConfigureAwait(false));
     }
 
-    internal static async Task<IResult> CalendarAsync(Guid id, PatientContext p, TherapistDirectory directory, IStringLocalizer<SharedResource> text, CancellationToken ct)
+    /// <summary>
+    /// A neutral calendar entry (PB-42): the title is just «موعد» / "Appointment", and neither the title, the file name,
+    /// the UID nor PRODID names the platform, the therapist or the patient, so a shared calendar reveals nothing.
+    /// </summary>
+    internal static async Task<IResult> CalendarAsync(Guid id, PatientContext p, IStringLocalizer<SharedResource> text, CancellationToken ct)
     {
         var a = await FindAsync(p, id, ct).ConfigureAwait(false);
-        var therapist = (await directory.ListAsync(p.Language, [a.TherapistUserId], ct).ConfigureAwait(false)).Single();
-        var summary = LocalizationSetup.WithLanguage(p.Language, () => text["calendar.summary", therapist.DisplayName].Value);
+        var summary = LocalizationSetup.WithLanguage(p.Language, () => text["calendar.summary"].Value);
         var description = LocalizationSetup.WithLanguage(p.Language, () => text["calendar.description"].Value);
         static string Stamp(DateTimeOffset t) => t.UtcDateTime.ToString("yyyyMMdd'T'HHmmss'Z'", CultureInfo.InvariantCulture);
         static string Escape(string s) => s.Replace("\\", "\\\\", StringComparison.Ordinal).Replace(";", "\\;", StringComparison.Ordinal).Replace(",", "\\,", StringComparison.Ordinal).Replace("\n", "\\n", StringComparison.Ordinal);
         var ics = new StringBuilder()
-            .Append("BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Tamaneen//Appointments//EN\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\n")
+            .Append("BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Calendar//Appointment//EN\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\n")
             .Append("BEGIN:VEVENT\r\n")
-            .Append(CultureInfo.InvariantCulture, $"UID:{a.Id:N}@tamaneen.app\r\n")
+            .Append(CultureInfo.InvariantCulture, $"UID:{a.Id:N}\r\n")
             .Append(CultureInfo.InvariantCulture, $"DTSTAMP:{Stamp(a.CreatedAtUtc)}\r\n")
             .Append(CultureInfo.InvariantCulture, $"DTSTART:{Stamp(a.StartsAtUtc)}\r\n")
             .Append(CultureInfo.InvariantCulture, $"DTEND:{Stamp(a.StartsAtUtc.AddMinutes(a.DurationMinutes))}\r\n")
@@ -254,16 +259,24 @@ public static class SchedulingEndpoints
             .Append(CultureInfo.InvariantCulture, $"DESCRIPTION:{Escape(summary)}\r\n")
             .Append("END:VALARM\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n")
             .ToString();
-        return Results.File(Encoding.UTF8.GetBytes(ics), "text/calendar; charset=utf-8", "tamaneen-session.ics");
+        return Results.File(Encoding.UTF8.GetBytes(ics), "text/calendar; charset=utf-8", "appointment.ics");
     }
 
-    internal static async Task<Ok<AppointmentDetailDto>> CancelAsync(Guid id, PatientContext p, TherapistDirectory directory, IAuditLog audit, IOptions<PlatformOptions> platform, IClock clock, CancellationToken ct)
+    /// <summary>P28 cancel (PB-45): the patient picks a reason code from <see cref="CancelReasons.Patient"/>.</summary>
+    internal static async Task<Ok<AppointmentDetailDto>> CancelAsync(Guid id, CancelRequest? request, PatientContext p, TherapistDirectory directory, IAuditLog audit, IOptions<PlatformOptions> platform, IClock clock, CancellationToken ct)
     {
+        var reason = request?.ReasonCode?.Trim();
+        if (string.IsNullOrEmpty(reason) || !CancelReasons.Patient.Contains(reason))
+        {
+            throw new DomainException(ErrorCodes.Validation, "Cancel reason missing or unknown.")
+                .With("errors", new Dictionary<string, string[]> { ["reasonCode"] = [string.IsNullOrEmpty(reason) ? "required" : "invalid"] });
+        }
+
         var appointment = await FindAsync(p, id, ct).ConfigureAwait(false);
-        appointment.CancelByPatient(clock);
+        appointment.CancelByPatient(reason, clock);
         var slot = await p.Db.AvailabilitySlots.FirstAsync(s => s.Id == appointment.SlotId, ct).ConfigureAwait(false);
         slot.Free();
-        audit.Append("appointment.cancelled", "Appointment", appointment.Id.ToString(), (await p.AccountAsync(ct).ConfigureAwait(false)).PseudonymId, "patient");
+        audit.Append("appointment.cancelled", "Appointment", appointment.Id.ToString(), (await p.AccountAsync(ct).ConfigureAwait(false)).PseudonymId, $"patient:{reason}");
         await SaveOrConflictAsync(p.Db, ct).ConfigureAwait(false);
         return TypedResults.Ok(await DetailDtoAsync(p, directory, appointment, platform, clock, ct).ConfigureAwait(false));
     }

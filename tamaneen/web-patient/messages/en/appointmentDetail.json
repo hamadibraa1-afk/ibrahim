@@ -22,6 +22,15 @@
     "cancelBody": "We'll cancel your appointment on {date} with {name}. You can book a new one whenever you like.",
     "cancelConfirm": "Yes, cancel it",
     "cancelKeep": "Keep it",
+    "reasonLabel": "Reason for cancelling",
+    "reasonRequired": "Choose a reason for cancelling.",
+    "reasons": {
+      "schedule_conflict": "It clashes with something else",
+      "feeling_better": "I'm feeling better",
+      "unwell": "I'm unwell",
+      "therapist_fit": "I'd like a different therapist",
+      "other": "Another reason"
+    },
     "cancelled": "Your appointment is cancelled. You can book a new one whenever you like.",
     "bookNew": "Book a new appointment"
   }

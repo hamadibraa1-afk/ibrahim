@@ -73,7 +73,7 @@
   <data name="message.already_registered" xml:space="preserve"><value>Someone tried to create a Tamaneen account with this number or e-mail, and you already have one. If it was you, sign in or recover your account.</value></data>
   <data name="intake.greeting" xml:space="preserve"><value>Welcome. I'm Rafiq, and I'm here to listen and help our team understand what you're going through. How have you been feeling over the past two weeks?</value></data>
   <data name="screening.note" xml:space="preserve"><value>We ask everyone these questions to make sure you are safe. There are no wrong answers.</value></data>
-  <data name="calendar.summary" xml:space="preserve"><value>Tamaneen session with {0}</value></data>
+  <data name="calendar.summary" xml:space="preserve"><value>Appointment</value></data>
   <data name="calendar.description" xml:space="preserve"><value>The session link appears on the appointment page ten minutes before.</value></data>
   <data name="validation.required" xml:space="preserve"><value>This field is required.</value></data>
   <data name="validation.invalid" xml:space="preserve"><value>This value is not valid.</value></data>

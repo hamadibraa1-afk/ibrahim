@@ -117,10 +117,10 @@ describe('AppointmentActions (P28)', () => {
     expect(dialog).toHaveAttribute('aria-modal', 'true');
     expect(dialog).toHaveAccessibleDescription(/سنلغي موعدك الأربعاء، 21 أكتوبر · .* مع أ. سارة م./);
     expect(within(dialog).getByRole('button', { name: 'تراجع' })).toHaveFocus();
+    expect(within(dialog).getByRole('radiogroup', { name: 'سبب الإلغاء' })).toBeInTheDocument();
+    expect(within(dialog).getAllByRole('radio')).toHaveLength(5);
     await user.tab();
-    expect(within(dialog).getByRole('button', { name: 'نعم، ألغِ الموعد' })).toHaveFocus();
-    await user.tab();
-    expect(within(dialog).getByRole('button', { name: 'تراجع' })).toHaveFocus();
+    expect(within(dialog).getByRole('radio', { name: 'تعارض مع موعد آخر' })).toHaveFocus();
 
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
@@ -134,8 +134,16 @@ describe('AppointmentActions (P28)', () => {
     renderWithIntl(<AppointmentActions appointment={appointmentDetail()} timeZone="Asia/Riyadh" />, 'en');
     await user.click(screen.getByRole('button', { name: 'Cancel appointment' }));
     await user.click(screen.getByRole('button', { name: 'Yes, cancel it' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('Choose a reason for cancelling.');
+    expect(mocks.api).not.toHaveBeenCalled();
 
-    expect(mocks.api).toHaveBeenCalledWith('appointments/a1/cancel', { method: 'POST' });
+    const feelingBetter = screen.getByRole('radio', { name: "I'm feeling better" });
+    await user.click(feelingBetter);
+    expect(feelingBetter).toHaveAttribute('aria-checked', 'true');
+    expect(screen.queryByRole('alert')).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Yes, cancel it' }));
+
+    expect(mocks.api).toHaveBeenCalledWith('appointments/a1/cancel', { method: 'POST', body: { reasonCode: 'feeling_better' } });
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     expect(screen.getByRole('status')).toHaveTextContent('Your appointment is cancelled.');
     expect(mocks.refresh).toHaveBeenCalled();
@@ -148,6 +156,7 @@ describe('AppointmentActions (P28)', () => {
     const user = userEvent.setup();
     renderWithIntl(<AppointmentActions appointment={appointmentDetail()} timeZone="Asia/Riyadh" />);
     await user.click(screen.getByRole('button', { name: 'إلغاء الموعد' }));
+    await user.click(screen.getByRole('radio', { name: 'تعارض مع موعد آخر' }));
     await user.click(screen.getByRole('button', { name: 'نعم، ألغِ الموعد' }));
     expect(await within(screen.getByRole('dialog')).findByRole('alert')).toHaveTextContent('لا يمكن الإلغاء قبل أقل من 24 ساعة');
   });

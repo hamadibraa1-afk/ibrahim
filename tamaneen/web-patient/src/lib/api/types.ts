@@ -178,6 +178,9 @@ export interface Appointment {
 export interface AppointmentDetail extends Appointment { canChange: boolean; changeDeadline: string; joinUrl: string | null; joinAvailableAt: string }
 export interface AppointmentList { upcoming: Appointment[]; past: Appointment[] }
 export interface RescheduleRequest { slotId: string }
+/** P28 cancel reasons (PB-45). Codes only; the labels are in messages `appointmentDetail.reasons`. */
+export type CancelReasonCode = 'schedule_conflict' | 'feeling_better' | 'unwell' | 'therapist_fit' | 'other';
+export interface CancelRequest { reasonCode: CancelReasonCode }
 
 // ---------- Home, mood, homework, safety plan ----------
 export interface HomeSummary {

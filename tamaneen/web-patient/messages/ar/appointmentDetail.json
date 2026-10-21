@@ -22,6 +22,15 @@
     "cancelBody": "سنلغي موعدك {date} مع {name}. يمكنك حجز موعد جديد متى شئت.",
     "cancelConfirm": "نعم، ألغِ الموعد",
     "cancelKeep": "تراجع",
+    "reasonLabel": "سبب الإلغاء",
+    "reasonRequired": "اختر سبب الإلغاء.",
+    "reasons": {
+      "schedule_conflict": "تعارض مع موعد آخر",
+      "feeling_better": "أشعر بتحسّن",
+      "unwell": "لست بخير صحيًا",
+      "therapist_fit": "أريد أخصائيًا آخر",
+      "other": "سبب آخر"
+    },
     "cancelled": "ألغينا موعدك. يمكنك حجز موعد جديد متى شئت.",
     "bookNew": "حجز موعد جديد"
   }

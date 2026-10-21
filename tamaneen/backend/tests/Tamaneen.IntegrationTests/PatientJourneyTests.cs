@@ -139,7 +139,10 @@ public sealed class PatientJourneyTests : IAsyncLifetime
         var appointmentId = appointment.GetProperty("id").GetGuid();
         var ics = await me.GetAsync($"/v1/appointments/{appointmentId}/calendar");
         ics.Content.Headers.ContentType!.MediaType.Should().Be("text/calendar");
-        (await ics.Content.ReadAsStringAsync()).Should().Contain("BEGIN:VEVENT").And.Contain("جلسة طمأنينة مع أ. سارة م.");
+        ics.Content.Headers.ContentDisposition!.FileName.Should().Be("appointment.ics");
+        var icsText = await ics.Content.ReadAsStringAsync();
+        icsText.Should().Contain("BEGIN:VEVENT").And.Contain("SUMMARY:موعد\r\n").And.Contain($"UID:{appointmentId:N}\r\n");
+        icsText.Should().NotContainAny(["طمأنينة", "Tamaneen", "tamaneen", "سارة"], "the calendar entry is neutral (PB-42)");
         (await Read(await me.GetAsync("/v1/appointments"))).GetProperty("upcoming").GetArrayLength().Should().Be(1);
         (await Read(await me.GetAsync("/v1/triage"))).GetProperty("status").GetString().Should().Be("matched");
 
@@ -353,6 +356,38 @@ public sealed class PatientJourneyTests : IAsyncLifetime
         // A locked chat refuses AI-assisted work with an English explanation.
         var locked = await Problem(await me.PostAsJsonAsync("/v1/bookings/holds", new { slotId = slots[1].GetProperty("slotId").GetGuid() }), 409);
         locked.GetProperty("detail").GetString().Should().StartWith("The chat is paused now.");
+    }
+
+    [Fact]
+    public async Task A_patient_cancels_with_a_reason_and_the_calendar_entry_is_neutral()
+    {
+        var (access, _) = await SignUpAsync("en", $"cancel-{Guid.NewGuid():N}@example.com");
+        using var me = _hosts.ApiClient("en", access);
+        await Read(await me.PutAsJsonAsync("/v1/me/consents", new { items = new[] { "platform", "ai", "share_with_therapist" }.Select(k => new { key = k, granted = true }) }));
+        await Read(await me.PutAsJsonAsync("/v1/me/safety-info", new { shareLocation = false }));
+        await Read(await me.PutAsJsonAsync("/v1/me/path", new { path = "direct" }));
+        await Read(await me.PostAsJsonAsync("/v1/screening/cssrs", new { answers = new bool[6] }));
+
+        // A time well past the 24-hour change deadline, from the end of the list so other tests keep the early ones.
+        var therapistId = (await Read(await me.GetAsync("/v1/therapists")))[0].GetProperty("id").GetGuid();
+        var slots = await Read(await me.GetAsync($"/v1/therapists/{therapistId}/slots?days=14"));
+        var slot = slots.EnumerateArray().Last(s => DateTimeOffset.Parse(s.GetProperty("startsAt").GetString()!, System.Globalization.CultureInfo.InvariantCulture) > DateTimeOffset.UtcNow.AddDays(2));
+        var hold = await Read(await me.PostAsJsonAsync("/v1/bookings/holds", new { slotId = slot.GetProperty("slotId").GetGuid() }));
+        var id = (await Read(await me.PostAsync($"/v1/bookings/holds/{hold.GetProperty("holdId").GetGuid()}/confirm", null))).GetProperty("id").GetGuid();
+
+        // PB-42: the English calendar entry is just "Appointment".
+        var ics = await (await me.GetAsync($"/v1/appointments/{id}/calendar")).Content.ReadAsStringAsync();
+        ics.Should().Contain("SUMMARY:Appointment\r\n").And.NotContain("Tamaneen").And.NotContain("tamaneen");
+
+        // PB-45: a reason is required and must come from the list; the error is a localized field error.
+        var missing = await Problem(await me.PostAsync($"/v1/appointments/{id}/cancel", null), 400);
+        missing.GetProperty("errors").GetProperty("reasonCode")[0].GetString().Should().Be("This field is required.");
+        var unknown = await Problem(await me.PostAsJsonAsync($"/v1/appointments/{id}/cancel", new { reasonCode = "bored" }), 400);
+        unknown.GetProperty("errors").GetProperty("reasonCode")[0].GetString().Should().Be("This value is not valid.");
+        (await Read(await me.GetAsync($"/v1/appointments/{id}"))).GetProperty("status").GetString().Should().Be("confirmed");
+
+        var cancelled = await Read(await me.PostAsJsonAsync($"/v1/appointments/{id}/cancel", new { reasonCode = "schedule_conflict" }));
+        cancelled.GetProperty("status").GetString().Should().Be("cancelled_by_patient");
     }
 
     private async Task<(string Access, string Refresh)> SignUpAsync(string language, string email)

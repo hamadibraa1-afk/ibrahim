@@ -78,8 +78,8 @@ Login: 5 failures lock the account for 15 minutes.
 | DELETE | /v1/bookings/holds/{holdId} | → 204 | P08 |
 | GET | /v1/appointments | → AppointmentList | P27 |
 | GET | /v1/appointments/{id} | → AppointmentDetail | P26, P28 |
-| GET | /v1/appointments/{id}/calendar | → text/calendar | P26 |
-| POST | /v1/appointments/{id}/cancel | → AppointmentDetail (409 within 24 h) | P28 |
+| GET | /v1/appointments/{id}/calendar | → text/calendar `appointment.ics`, neutral title «موعد» / "Appointment" with no platform, therapist or patient name (PB-42) | P26 |
+| POST | /v1/appointments/{id}/cancel | CancelRequest { reasonCode: schedule_conflict, feeling_better, unwell, therapist_fit, other } → AppointmentDetail (400 field error without a known reason; 409 within 24 h) | P28 |
 | POST | /v1/appointments/{id}/reschedule | RescheduleRequest → AppointmentDetail | P28 |
 | GET | /v1/home | → HomeSummary | P09 |
 | POST | /v1/mood | MoodEntryRequest → MoodSaveResponse (note gated) | P09, P30 |
