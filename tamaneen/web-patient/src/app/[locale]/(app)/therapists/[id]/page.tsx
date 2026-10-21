@@ -5,11 +5,14 @@ import { DetailRows } from '@/components/appointments/DetailRows';
 import { asLocale, specialtyLabels, timeZoneOf } from '@/components/matching/labels';
 import { Avatar } from '@/components/ui/Avatar';
 import { BackLink } from '@/components/ui/BackLink';
-import { ButtonLink } from '@/components/ui/Button';
+import { Button, ButtonLink } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Tag } from '@/components/ui/Chip';
+import { Notice } from '@/components/ui/Notice';
+import { Link } from '@/i18n/navigation';
 import { getMe, serverGetOptional } from '@/lib/api/server';
 import type { TherapistProfile } from '@/lib/api/types';
+import { canBook } from '@/lib/booking';
 import { formatDate, formatNumber } from '@/lib/format';
 
 type Params = Promise<{ locale: string; id: string }>;
@@ -34,6 +37,7 @@ export default async function TherapistProfilePage({ params }: { params: Params 
   if (!therapist) notFound();
 
   const timeZone = timeZoneOf(me);
+  const eligible = canBook(me);
   const labels = specialtyLabels(tSpecialties, therapist.specialties);
   const languages = therapist.languages.map((lang) => t(`languageName.${lang}`)).join(t('listSeparator'));
 
@@ -81,11 +85,29 @@ export default async function TherapistProfilePage({ params }: { params: Params 
         ]}
       />
 
-      <div className="sticky bottom-0 -mx-4 mt-4 bg-bg/95 px-4 pb-4 pt-2">
-        <ButtonLink href={`/therapists/${encodeURIComponent(therapist.id)}/book`} full>
-          {t('choose')}
-        </ButtonLink>
-      </div>
+      {!therapist.nextAvailableAt ? (
+        <Notice tone="warning">
+          {t('noSlotsNote')}{' '}
+          <Link href="/therapists" className="font-semibold underline underline-offset-4">
+            {t('otherTherapists')}
+          </Link>
+        </Notice>
+      ) : null}
+
+      {/* PB-39: the booking button is not rendered at all for a patient who may not book yet. */}
+      {eligible ? (
+        <div className="sticky bottom-0 -mx-4 mt-4 bg-bg/95 px-4 pb-4 pt-2">
+          {therapist.nextAvailableAt ? (
+            <ButtonLink href={`/therapists/${encodeURIComponent(therapist.id)}/book`} full>
+              {t('choose')}
+            </ButtonLink>
+          ) : (
+            <Button full disabled>
+              {t('choose')}
+            </Button>
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }
