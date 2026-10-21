@@ -28,12 +28,26 @@ describe('P03 Consents', () => {
     expect(submit).toBeDisabled();
     expect(screen.getByText('فعّل الموافقات المطلوبة لتتمكن من المتابعة.')).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole('checkbox', { name: /استخدام المنصة/ }));
+    // PB-15: a required item cannot be ticked before its full text was opened.
+    const platform = screen.getByRole('checkbox', { name: /استخدام المنصة/ });
+    expect(platform).toBeDisabled();
+    expect(screen.getAllByText('افتح النص كاملًا أولًا لتتمكن من الموافقة.')).toHaveLength(3);
+    expect(screen.getByRole('checkbox', { name: /تحسين الخدمة/ })).toBeEnabled();
+    for (const toggle of screen.getAllByRole('button', { name: 'اقرأ النص كاملًا' })) await userEvent.click(toggle);
+    expect(platform).toBeEnabled();
+
+    await userEvent.click(platform);
     await userEvent.click(screen.getByRole('checkbox', { name: /المساعدة بالذكاء الاصطناعي/ }));
     expect(submit).toBeDisabled();
     await userEvent.click(screen.getByRole('checkbox', { name: /المشاركة مع أخصائيك/ }));
     expect(submit).toBeEnabled();
     expect(apiMock).not.toHaveBeenCalled();
+  });
+
+  it('links to the privacy policy and the terms (P13)', () => {
+    renderWithIntl(<ConsentsForm consents={consents} />, 'ar');
+    expect(screen.getByRole('link', { name: 'سياسة الخصوصية' })).toHaveAttribute('href', '/legal?doc=privacy');
+    expect(screen.getByRole('link', { name: 'شروط الاستخدام' })).toHaveAttribute('href', '/legal?doc=terms');
   });
 
   it('expands the full text inline and saves the choices (English)', async () => {

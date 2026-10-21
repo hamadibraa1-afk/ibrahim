@@ -36,6 +36,8 @@
         "body": "Lets the team know where you are only if you're in danger.",
         "full": "If you appear to be in danger, the on-call clinician can see your approximate location to get help to you. We don't track your location at any other time, and you can withdraw this consent at any time in settings."
       }
-    }
+    },
+    "readFirst": "Open the full text first to be able to agree.",
+    "legal": "For the details, read the <privacy>privacy policy</privacy> and the <terms>terms of use</terms>."
   }
 }

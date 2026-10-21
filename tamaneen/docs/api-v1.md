@@ -9,7 +9,7 @@ Every response is localized by `Accept-Language` (`ar` default, `en`). Errors ar
 
 | Method | Path | Body → Response | Screen |
 |---|---|---|---|
-| GET | /v1/meta/config | → PublicConfig | P01, P14, P15, P35 |
+| GET | /v1/meta/config | → PublicConfig (includes `signupsOpen`) | P01, P02, P12, P14, P15, P35 |
 | GET | /v1/meta/locale | → LocaleResponse | all |
 
 ## Auth (anonymous; the patient BFF stores tokens in HttpOnly cookies)
@@ -32,6 +32,8 @@ Every response is localized by `Accept-Language` (`ar` default, `en`). Errors ar
 
 Passwords: at least 12 characters and not on the breached-password list. Codes: 6 digits, 10 minutes, 5 attempts, resend after 60 s.
 Login: 5 failures lock the account for 15 minutes.
+Sign-up pause (EC-26): while `PublicConfig.signupsOpen` is false, eligibility and sign-up answer 503 `error.auth.signups_paused`
+and P01, P02, P12 and P15 show the emergency numbers instead of the start button. Sign-in is not affected.
 
 ## Patient (role patient)
 

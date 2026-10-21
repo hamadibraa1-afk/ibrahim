@@ -6,6 +6,8 @@ import { ButtonLink } from '@/components/ui/Button';
 import { Notice } from '@/components/ui/Notice';
 import { publicGet } from '@/lib/api/server';
 import type { PublicConfig } from '@/lib/api/types';
+import { SignupsPaused } from '@/components/public/SignupsPaused';
+import { safetyNumbers } from '@/lib/platform-config';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +26,12 @@ export default async function EligibilityPage({ params, searchParams }: { params
   return (
     <div className="flex flex-col gap-4 pt-2">
       <BackLink href="/" />
-      {config && config.pilotCities.length > 0 ? (
+      {config?.signupsOpen === false ? (
+        <div className="flex flex-col gap-4">
+          <h1 className="text-2xl font-bold leading-snug">{t('title')}</h1>
+          <SignupsPaused {...safetyNumbers(config)} />
+        </div>
+      ) : config && config.pilotCities.length > 0 ? (
         <EligibilityForm
           cities={config.pilotCities}
           region={config.pilotRegion}

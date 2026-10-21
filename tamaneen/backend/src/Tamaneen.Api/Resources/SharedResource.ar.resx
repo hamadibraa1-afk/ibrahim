@@ -27,6 +27,7 @@
   <data name="error.reason.required" xml:space="preserve"><value>يرجى كتابة السبب.</value></data>
   <data name="error.not_found" xml:space="preserve"><value>لم نجد هذا العنصر.</value></data>
   <data name="error.ai.message_invalid" xml:space="preserve"><value>الرسالة فارغة أو أطول من {0} حرفًا.</value></data>
+  <data name="error.auth.signups_paused" xml:space="preserve"><value>التسجيل الجديد متوقف الآن. إن كنت في خطر فاتصل برقم الطوارئ.</value></data>
   <data name="error.validation" xml:space="preserve"><value>بعض البيانات غير صحيحة.</value></data>
   <data name="error.auth.invalid_credentials" xml:space="preserve"><value>البيانات غير صحيحة.</value></data>
   <data name="error.auth.locked" xml:space="preserve"><value>أوقفنا تسجيل الدخول مؤقتًا لحمايتك. حاول بعد {0} دقيقة.</value></data>

@@ -35,6 +35,8 @@ export interface PublicConfig {
   pilotRegion: string;
   pilotCities: PilotCity[];
   timeZone: string;
+  /** False while new sign-ups are paused (EC-26): P01, P02, P12 and P15 show the emergency numbers instead. */
+  signupsOpen: boolean;
 }
 
 // ---------- Auth ----------

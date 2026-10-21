@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { isLocale, otherLocale } from '@/i18n/routing';
-import { BackLink } from '@/components/ui/BackLink';
+import { HistoryBackLink } from '@/components/public/HistoryBackLink';
 import { Card } from '@/components/ui/Card';
 
 type Doc = 'privacy' | 'terms';
@@ -31,7 +31,7 @@ export default async function LegalPage({ params, searchParams }: { params: Prom
 
   return (
     <div className="flex flex-col gap-5 pt-2">
-      <BackLink href="/" />
+      <HistoryBackLink fallback="/" />
 
       <nav aria-label={t('tabsLabel')} className="flex overflow-hidden rounded-[14px] border-[1.5px] border-line bg-surface">
         {(['privacy', 'terms'] as const).map((d) => (

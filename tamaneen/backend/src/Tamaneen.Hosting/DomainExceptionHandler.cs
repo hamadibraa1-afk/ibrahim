@@ -38,6 +38,7 @@ public sealed partial class DomainExceptionHandler<TResource> : IExceptionHandle
         [ErrorCodes.ResendTooSoon] = StatusCodes.Status429TooManyRequests,
         [ErrorCodes.StepUpRequired] = StatusCodes.Status403Forbidden,
         [ErrorCodes.NotEligible] = StatusCodes.Status403Forbidden,
+        [ErrorCodes.SignupsPaused] = StatusCodes.Status503ServiceUnavailable,
         [ErrorCodes.BookingNotEligible] = StatusCodes.Status403Forbidden,
         [ErrorCodes.AiConsentWithdrawn] = StatusCodes.Status403Forbidden,
         [ErrorCodes.ConsentsMissing] = StatusCodes.Status403Forbidden,

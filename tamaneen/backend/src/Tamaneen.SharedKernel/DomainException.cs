@@ -48,6 +48,7 @@ public static class ErrorCodes
     public const string ResendTooSoon = "error.auth.resend_too_soon";
     public const string WeakPassword = "error.auth.weak_password";
     public const string NotEligible = "error.auth.not_eligible";
+    public const string SignupsPaused = "error.auth.signups_paused";
     public const string SessionRevoked = "error.auth.session_revoked";
     public const string MfaFailed = "error.auth.mfa_failed";
     public const string StepUpRequired = "error.auth.step_up_required";
