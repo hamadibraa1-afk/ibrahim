@@ -51,6 +51,9 @@ public sealed partial class AuthService(
     private static readonly TimeSpan MfaLifetime = TimeSpan.FromMinutes(5);
     private const int MaxMfaFailures = 5;
 
+    /// <summary>People who can reset a forgotten password by a code sent to their contact. Service identities cannot.</summary>
+    private static readonly string[] RecoverableRoles = [AppRoles.Patient, AppRoles.Therapist, AppRoles.Supervisor, AppRoles.ClinicalLead, AppRoles.Admin];
+
     // ---------------- Eligibility (P15) ----------------
 
     public string? IssueEligibility(bool isAdult, string cityCode, out string? reason)
@@ -360,7 +363,9 @@ public sealed partial class AuthService(
         var type = normalized.StartsWith("e:", StringComparison.Ordinal) ? "email" : "phone";
         var plain = normalized[2..];
         var lookup = contactHasher.Hash(contact);
-        var account = await db.UserAccounts.FirstOrDefaultAsync(a => a.ContactLookupHash == lookup && a.Status == AccountStatus.Active && a.Role == AppRoles.Patient, ct).ConfigureAwait(false);
+        // Patients and staff (S06 /recover) reset their password the same way; staff keep their authenticator,
+        // which only two admins can reset.
+        var account = await db.UserAccounts.FirstOrDefaultAsync(a => a.ContactLookupHash == lookup && a.Status == AccountStatus.Active && RecoverableRoles.Contains(a.Role), ct).ConfigureAwait(false);
         AuthChallenge challenge;
         if (account is null)
         {
@@ -512,8 +517,8 @@ public sealed partial class AuthService(
     {
         var credential = await db.Credentials.FirstAsync(c => c.UserId == userId, ct).ConfigureAwait(false);
         credential.ChangePassword(passwords.Hash(newPassword), clock);
-        var pseudonym = await db.UserAccounts.Where(a => a.Id == userId).Select(a => a.PseudonymId).FirstAsync(ct).ConfigureAwait(false);
-        db.AuditEntries.Add(new AuditEntry(clock.UtcNow, userId, AppRoles.Patient, auditAction, "UserAccount", userId.ToString(), pseudonym, null, System.Diagnostics.Activity.Current?.TraceId.ToString()));
+        var account = await db.UserAccounts.Where(a => a.Id == userId).Select(a => new { a.PseudonymId, a.Role }).FirstAsync(ct).ConfigureAwait(false);
+        db.AuditEntries.Add(new AuditEntry(clock.UtcNow, userId, account.Role, auditAction, "UserAccount", userId.ToString(), account.PseudonymId, null, System.Diagnostics.Activity.Current?.TraceId.ToString()));
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
         await RevokeAllAsync(userId, null, ct).ConfigureAwait(false);
     }

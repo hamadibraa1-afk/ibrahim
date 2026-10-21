@@ -1,5 +1,5 @@
 import { inject } from '@angular/core';
-import { CanActivateFn, CanMatchFn, Router } from '@angular/router';
+import { CanActivateFn, CanMatchFn, Router, type UrlSegment, type UrlTree } from '@angular/router';
 import { SessionService } from '../session/session.service';
 import { AuthService } from './auth.service';
 
@@ -25,15 +25,21 @@ export const signedOutGuard: CanActivateFn = () => {
  * not on call still reaches it from an alert on her dashboard, to work her own patient's event (the worker only
  * lists the events she may see).
  */
-export const crisisAccessGuard: CanMatchFn = () => {
+export const crisisAccessGuard: CanMatchFn = (_route, segments) => {
   const session = inject(SessionService);
   // Matching runs before the shell's authGuard: leave signed-out visitors to it so the deep link is kept.
   const allowed = session.crisisAccess() || session.role() === 'therapist';
-  return !inject(AuthService).signedIn() || allowed ? true : inject(Router).parseUrl(session.home());
+  return !inject(AuthService).signedIn() || allowed ? true : forbidden(segments);
 };
 
 /** Therapist dashboard. */
-export const therapistGuard: CanMatchFn = () => {
+export const therapistGuard: CanMatchFn = (_route, segments) => {
   const session = inject(SessionService);
-  return !inject(AuthService).signedIn() || session.role() === 'therapist' ? true : inject(Router).parseUrl(session.home());
+  return !inject(AuthService).signedIn() || session.role() === 'therapist' ? true : forbidden(segments);
 };
+
+/** A refused page goes to /forbidden, which tells the person and records the attempt (S06). */
+function forbidden(segments: readonly UrlSegment[]): UrlTree {
+  const from = `/${segments.map((s) => s.path).join('/')}`;
+  return inject(Router).createUrlTree(['/forbidden'], { queryParams: { from } });
+}

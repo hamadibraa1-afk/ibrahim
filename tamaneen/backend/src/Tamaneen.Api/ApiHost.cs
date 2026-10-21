@@ -122,6 +122,7 @@ public static class ApiHost
         app.MapSchedulingEndpoints();
         app.MapCareEndpoints();
         app.MapStaffEndpoints();
+        app.MapStaffAccessEndpoints();
         if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))
         {
             // Lets a developer or the end-to-end tests read the code that would have been sent by SMS or e-mail.

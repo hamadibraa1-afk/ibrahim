@@ -15,6 +15,11 @@ export interface StaffSession { accessToken: string; accessExpiresAt: string }
 /** POST /v1/auth/login/mfa wraps the pair (same as the patient MfaResponse); POST /v1/auth/refresh returns it flat. */
 export interface StaffMfaResponse { tokens: StaffSession; deviceToken?: string | null }
 
+/** S06 /recover: the same answer whether or not the account exists; the code goes to the work email. */
+export interface RecoverStartRequest { contact: string }
+export interface ChallengeResponse { challengeId: string; maskedContact: string; resendAfterSeconds: number; expiresInSeconds: number }
+export interface RecoverCompleteRequest { challengeId: string; code: string; newPassword: string }
+
 export interface StaffMe { userId: string; displayName: string; role: StaffRole; language: Lang; onCall: boolean }
 
 export type RiskLevel = 1 | 2 | 3 | 4;

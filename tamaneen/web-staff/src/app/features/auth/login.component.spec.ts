@@ -118,4 +118,20 @@ describe('LoginComponent', () => {
     await ctx.update();
     expect(ctx.el.querySelector('[data-testid="login-error"]')!.textContent).toContain('Crisis alerts still arrive');
   });
+
+  it('caps the work email at 254 characters and links to account recovery', async () => {
+    const ctx = await render();
+    const contact = ctx.el.querySelector('[data-testid="contact"]') as HTMLInputElement;
+    expect(contact.getAttribute('maxlength')).toBe('254');
+    ctx.type('contact', `${'a'.repeat(250)}@x.io`);
+    ctx.type('password', 'x');
+    ctx.click('continue');
+    await ctx.update();
+    backend.expectNone('/api/v1/auth/login');
+    expect(ctx.el.textContent).toContain('longer than 254 characters');
+
+    const forgot = ctx.el.querySelector('[data-testid="forgot-password"]') as HTMLAnchorElement;
+    expect(forgot.textContent).toContain('Forgot your password?');
+    expect(forgot.getAttribute('href')).toBe('/recover');
+  });
 });

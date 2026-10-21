@@ -125,7 +125,9 @@
     "verify": "Confirm",
     "startOver": "Sign in with a different account",
     "remainingAttempts": "Attempts left before the account is locked: {{count}}.",
-    "locked": "The account is locked for safety. Try again in {{minutes}} minutes."
+    "locked": "The account is locked for safety. Try again in {{minutes}} minutes.",
+    "contactTooLong": "The email is longer than 254 characters",
+    "forgot": "Forgot your password?"
   },
   "dashboard": {
     "greeting": {
@@ -332,5 +334,30 @@
       "confirm": "Close event",
       "closed": "Event closed."
     }
+  },
+  "recover": {
+    "title": "Recover your account",
+    "intro": "Enter your work email and we will send it a code to reset your password.",
+    "send": "Send reset code",
+    "codeTitle": "Enter the code and a new password",
+    "sent": "If an account uses this email, we sent a code to {{contact}}. It works for 10 minutes.",
+    "code": "Code sent to your email",
+    "codeInvalid": "Enter the 6 digits from the message",
+    "newPassword": "New password",
+    "passwordHint": "At least {{min}} characters",
+    "reset": "Save new password",
+    "otherEmail": "Use a different email",
+    "doneTitle": "Password changed",
+    "done": "You are signed out on every device. Sign in with the new password, then your authenticator code as usual.",
+    "toLogin": "Back to sign-in",
+    "mfaNote": "Recovery does not change two-step verification. If you lost your authenticator, resetting it needs the approval of two admins; contact the platform admin.",
+    "remainingAttempts": "Attempts left for this code: {{count}}."
+  },
+  "forbidden": {
+    "title": "You don't have access to this page",
+    "body": "This page is not part of what your current role can open.",
+    "logged": "This attempt was recorded in the audit log.",
+    "logFailed": "The attempt could not be recorded right now; the page stays blocked.",
+    "back": "Back to my dashboard"
   }
 }

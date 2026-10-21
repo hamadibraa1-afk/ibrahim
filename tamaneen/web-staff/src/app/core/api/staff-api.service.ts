@@ -23,6 +23,11 @@ export class StaffApiService {
     return this.http.post<void>(`${this.base}/v1/staff/patients/${encodeURIComponent(pseudonymId)}/intake/approve`, {});
   }
 
+  /** S06 /forbidden: records a page the route guards refused, in the audit ledger. */
+  reportAccessDenied(path: string): Observable<void> {
+    return this.http.post<void>(`${this.base}/v1/staff/access-denied`, { path });
+  }
+
   recordOutcome(appointmentId: string, outcome: SessionOutcome): Observable<void> {
     return this.http.post<void>(`${this.base}/v1/staff/appointments/${encodeURIComponent(appointmentId)}/outcome`, { outcome });
   }

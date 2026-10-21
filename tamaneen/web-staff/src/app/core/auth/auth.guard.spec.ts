@@ -27,6 +27,8 @@ describe('route guards', () => {
             children: [
               { path: 'dashboard', canMatch: [therapistGuard], component: BlankComponent },
               { path: 'crisis', canMatch: [crisisAccessGuard], component: BlankComponent },
+              { path: 'crisis/:eventId', canMatch: [crisisAccessGuard], component: BlankComponent },
+              { path: 'forbidden', component: BlankComponent },
               { path: 'home', component: BlankComponent },
             ],
           },
@@ -54,7 +56,7 @@ describe('route guards', () => {
     expect(await navigate('/crisis')).toBe('/crisis');
     await navigate('/login');
     session.setRoles(['admin']);
-    expect(await navigate('/crisis')).toBe('/home');
+    expect(await navigate('/crisis')).toBe('/forbidden?from=%2Fcrisis');
   });
 
   it('lets an on-call therapist in, and sends non-therapists away from the dashboard', async () => {
@@ -64,6 +66,12 @@ describe('route guards', () => {
     session.setProfile({ displayName: 'Sara', onCall: true });
     expect(await navigate('/crisis')).toBe('/crisis');
     session.setRoles(['admin']);
-    expect(await navigate('/dashboard')).toBe('/home');
+    expect(await navigate('/dashboard')).toBe('/forbidden?from=%2Fdashboard');
+  });
+
+  it('sends a refused deep link to the forbidden page with the path that was refused', async () => {
+    signedIn.set(true);
+    TestBed.inject(SessionService).setRoles(['admin']);
+    expect(await navigate('/crisis/ev-7')).toBe('/forbidden?from=%2Fcrisis%2Fev-7');
   });
 });

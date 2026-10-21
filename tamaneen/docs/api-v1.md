@@ -24,8 +24,8 @@ Every response is localized by `Accept-Language` (`ar` default, `en`). Errors ar
 | POST | /v1/auth/login | LoginRequest → LoginResponse (401 + remainingAttempts, 423 + retryAfterSeconds) | P18 |
 | POST | /v1/auth/login/mfa | MfaRequest → MfaResponse | P19 |
 | POST | /v1/auth/login/mfa/sms | { mfaToken } → 204 | P19 |
-| POST | /v1/auth/recover | RecoverStartRequest → 202 ChallengeResponse (the same response whether or not the account exists) | P20 |
-| POST | /v1/auth/recover/complete | RecoverCompleteRequest → 204 | P20 |
+| POST | /v1/auth/recover | RecoverStartRequest → 202 ChallengeResponse (the same response whether or not the account exists; patients and staff, a staff code goes to the work email and two-step verification is not reset) | P20, S06 |
+| POST | /v1/auth/recover/complete | RecoverCompleteRequest → 204 | P20, S06 |
 | POST | /v1/auth/recover/code | RecoverWithCodeRequest → 204 | P20 |
 | POST | /v1/auth/refresh | { refreshToken } → TokenPair | BFF |
 | POST | /v1/auth/logout | { refreshToken } → 204 | P31 |
@@ -99,6 +99,7 @@ cannot be reached, the API answers 503 `error.crisis.unavailable` and does not p
 | Method | Path | Body → Response | Screen |
 |---|---|---|---|
 | GET | /v1/staff/me | → StaffMe | shell |
+| POST | /v1/staff/access-denied | { path } → 204 (audit `staff.access_denied`, the refused portal path as the reason) | S06 /forbidden |
 | GET | /v1/staff/dashboard | → TherapistDashboard | S01 |
 | GET | /v1/staff/patients/{pseudonymId}/intake | → StaffIntakeView (audited) | S01 |
 | POST | /v1/staff/patients/{pseudonymId}/intake/approve | → 204 | S01 |
