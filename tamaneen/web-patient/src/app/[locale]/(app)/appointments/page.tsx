@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { AppointmentListView } from '@/components/appointments/AppointmentListView';
+import { newBookingHref } from '@/components/appointments/labels';
 import { timeZoneOf } from '@/components/matching/labels';
 import { BottomNav, BottomNavSpacer } from '@/components/ui/BottomNav';
 import { PageHeading } from '@/components/ui/PageHeading';
@@ -25,7 +26,7 @@ export default async function AppointmentsPage({ params }: { params: Promise<{ l
       <div className="flex flex-col gap-5 pt-4">
         <PageHeading title={t('title')} />
         <AppointmentListView list={list} timeZone={timeZoneOf(me)} />
-        <Link href="/therapists" className="mt-6 self-center py-3 text-base font-semibold text-primary underline underline-offset-4">
+        <Link href={newBookingHref(list)} className="mt-6 self-center py-3 text-base font-semibold text-primary underline underline-offset-4">
           {t('bookNew')}
         </Link>
       </div>

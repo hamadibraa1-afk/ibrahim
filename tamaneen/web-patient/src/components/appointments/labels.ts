@@ -1,5 +1,5 @@
 import type { Locale } from '@/i18n/routing';
-import type { Appointment } from '@/lib/api/types';
+import type { Appointment, AppointmentList } from '@/lib/api/types';
 import { formatNumber } from '@/lib/format';
 import type { Translator } from '@/components/matching/labels';
 
@@ -7,6 +7,16 @@ import type { Translator } from '@/components/matching/labels';
 export function sessionLabel(t: Translator, sequenceNumber: number, locale: Locale): string {
   const n = Math.max(1, Math.floor(sequenceNumber));
   return n <= 10 ? t(`session${n}`) : t('sessionN', { num: formatNumber(n, locale) });
+}
+
+/**
+ * P27 «حجز موعد جديد»: booking with the current therapist (P08), or the matches (P07) when there is none yet.
+ * The contract has no assigned-therapist field, so the current therapist is the one of the next appointment,
+ * else of the most recent one (`past` is newest first).
+ */
+export function newBookingHref(list: AppointmentList): string {
+  const therapist = (list.upcoming[0] ?? list.past[0])?.therapist;
+  return therapist ? `/therapists/${encodeURIComponent(therapist.id)}/book` : '/matches';
 }
 
 export function isCancelled(status: Appointment['status']): boolean {
