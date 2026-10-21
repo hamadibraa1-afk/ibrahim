@@ -12,15 +12,22 @@ import { Notice } from '@/components/ui/Notice';
 import { TextArea } from '@/components/ui/TextField';
 import { problemMessage } from '@/components/settings/problem';
 import { dayKey } from '@/components/settings/time';
+import { isNetworkError } from '@/components/pwa/errors';
+import { useOnline } from '@/components/pwa/hooks';
 import { MoodChart } from './MoodChart';
 import { MOOD_TAGS, moodWord } from './scale';
 import { ScoreSlider } from './ScoreSlider';
 
-/** P30: mood 0–10, optional tags and note, and the last seven days. The note goes through the crisis gate. */
+/**
+ * P30: mood 0–10, optional tags and note, and the last seven days. The note goes through the crisis gate.
+ * There is no offline queue (the pilot has no outbox): when offline, the form says plainly that nothing was
+ * sent and keeps the answers on screen so «حفظ» can be pressed again once the connection is back.
+ */
 export function CheckInForm({ initialEntries, nowIso, timeZone }: { initialEntries: MoodEntry[]; nowIso: string; timeZone: string }) {
   const t = useTranslations('checkin');
   const te = useTranslations('errors');
   const router = useRouter();
+  const online = useOnline();
   const tagsId = useId();
   const now = new Date(nowIso);
 
@@ -42,9 +49,13 @@ export function CheckInForm({ initialEntries, nowIso, timeZone }: { initialEntri
 
   async function submit(event: FormEvent) {
     event.preventDefault();
-    setBusy(true);
     setError(null);
     setSaved(false);
+    if (!navigator.onLine) {
+      setError(t('offlineNotSent'));
+      return;
+    }
+    setBusy(true);
     const body: MoodEntryRequest = { score, tags };
     if (note.trim()) body.note = note.trim();
     try {
@@ -57,7 +68,7 @@ export function CheckInForm({ initialEntries, nowIso, timeZone }: { initialEntri
       setNote('');
       setSaved(true);
     } catch (e) {
-      setError(problemMessage(e, te('network')));
+      setError(isNetworkError(e) ? t('offlineNotSent') : problemMessage(e, te('network')));
     } finally {
       setBusy(false);
     }
@@ -97,6 +108,7 @@ export function CheckInForm({ initialEntries, nowIso, timeZone }: { initialEntri
 
       <MoodChart entries={entries} now={now} timeZone={timeZone} />
 
+      {!online && !error ? <Notice tone="warning">{t('offline')}</Notice> : null}
       {error ? <Notice tone="danger">{error}</Notice> : null}
       {saved ? (
         <Notice tone="success">
