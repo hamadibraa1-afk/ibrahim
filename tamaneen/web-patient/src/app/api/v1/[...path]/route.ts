@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { NextResponse, type NextRequest } from 'next/server';
 import { TOKEN_PATHS } from '@/lib/auth/session';
-import { ACCESS_TOKEN_COOKIE, LOCALE_COOKIE, downstreamHeaders, resolveLocale, upstreamHeaders, upstreamUrl } from '@/lib/bff';
+import { ACCESS_TOKEN_COOKIE, LOCALE_COOKIE, downstreamHeaders, isSameOrigin, resolveLocale, upstreamHeaders, upstreamUrl } from '@/lib/bff';
 
 /**
  * Backend-for-frontend proxy. The browser never sees the access token: it stays in an HttpOnly cookie
@@ -25,8 +25,7 @@ async function proxy(request: NextRequest, { params }: { params: Promise<{ path:
   }
 
   // Cookie-authenticated writes must come from our own pages (CSRF).
-  const origin = request.headers.get('origin');
-  if (!['GET', 'HEAD'].includes(request.method) && origin && origin !== request.nextUrl.origin) {
+  if (!['GET', 'HEAD'].includes(request.method) && !isSameOrigin(request.headers.get('origin'), request.headers.get('host'))) {
     return NextResponse.json({ title: 'Forbidden', status: 403 }, { status: 403 });
   }
 

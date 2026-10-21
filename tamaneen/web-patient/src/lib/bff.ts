@@ -44,3 +44,21 @@ export function downstreamHeaders(upstream: Headers): Headers {
   }
   return headers;
 }
+
+/**
+ * CSRF check for cookie-authenticated writes: a browser's Origin must name this site. The site is the
+ * configured public origin (TAMANEEN_PUBLIC_ORIGIN) or, failing that, the Host the browser addressed.
+ * request.nextUrl is not used because behind a container or proxy it carries the bind address (0.0.0.0).
+ * Requests without an Origin (same-origin GET, server-side callers) pass.
+ */
+export function isSameOrigin(origin: string | null, host: string | null, publicOrigin = process.env.TAMANEEN_PUBLIC_ORIGIN): boolean {
+  if (!origin) return true;
+  let parsed: URL;
+  try {
+    parsed = new URL(origin);
+  } catch {
+    return false;
+  }
+  if (publicOrigin) return parsed.origin === new URL(publicOrigin).origin;
+  return host !== null && parsed.host === host;
+}

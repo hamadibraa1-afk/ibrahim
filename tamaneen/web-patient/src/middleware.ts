@@ -35,8 +35,9 @@ async function refreshed(request: NextRequest): Promise<TokenPair | null> {
 export default async function middleware(request: NextRequest) {
   const tokens = await refreshed(request);
   if (tokens) {
-    // Reload the same URL with the rotated cookies, so the page renders with a valid session.
-    const response = NextResponse.redirect(request.nextUrl, 307);
+    // Reload the same URL with the rotated cookies, so the page renders with a valid session. The Location is
+    // relative: behind a container or proxy, nextUrl carries the bind address rather than the browser's host.
+    const response = new NextResponse(null, { status: 307, headers: { Location: request.nextUrl.pathname + request.nextUrl.search } });
     response.cookies.set(ACCESS_COOKIE, tokens.accessToken, accessCookie(tokens.accessExpiresAt));
     response.cookies.set(REFRESH_COOKIE, tokens.refreshToken, refreshCookie(tokens.refreshExpiresAt));
     return response;

@@ -1,4 +1,4 @@
-import { downstreamHeaders, resolveLocale, upstreamHeaders, upstreamUrl } from '@/lib/bff';
+import { downstreamHeaders, isSameOrigin, resolveLocale, upstreamHeaders, upstreamUrl } from '@/lib/bff';
 import { publicPlatformConfig } from '@/lib/platform-config';
 
 describe('BFF language negotiation', () => {
@@ -45,5 +45,24 @@ describe('public platform config', () => {
 
   it('ignores invalid values instead of showing them', () => {
     expect(publicPlatformConfig({ TAMANEEN_EMERGENCY_NUMBER: 'call me', TAMANEEN_MATCH_WITHIN_HOURS: '-3' } as unknown as NodeJS.ProcessEnv)).toMatchObject({ emergencyNumber: null, matchWithinHours: 72 });
+  });
+});
+
+describe('BFF same-origin check', () => {
+  it('accepts the host the browser addressed, even when the server binds 0.0.0.0', () => {
+    expect(isSameOrigin('http://localhost:3000', 'localhost:3000', '')).toBe(true);
+    expect(isSameOrigin(null, 'localhost:3000', '')).toBe(true);
+  });
+
+  it('refuses other sites and malformed origins', () => {
+    expect(isSameOrigin('https://evil.example', 'localhost:3000', '')).toBe(false);
+    expect(isSameOrigin('http://localhost:3001', 'localhost:3000', '')).toBe(false);
+    expect(isSameOrigin('null', 'localhost:3000', '')).toBe(false);
+    expect(isSameOrigin('http://localhost:3000', null, '')).toBe(false);
+  });
+
+  it('uses the configured public origin when set', () => {
+    expect(isSameOrigin('https://app.tamaneen.sa', 'internal:3000', 'https://app.tamaneen.sa')).toBe(true);
+    expect(isSameOrigin('https://internal:3000', 'internal:3000', 'https://app.tamaneen.sa')).toBe(false);
   });
 });

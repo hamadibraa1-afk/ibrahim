@@ -4,7 +4,7 @@ import type { LoginResponse, MfaResponse, SignupVerifiedResponse, TokenPair } fr
 import { callApi, resolveLocale } from '@/lib/api/upstream';
 import { DEVICE_COOKIE, REFRESH_COOKIE, deviceCookie } from '@/lib/auth/cookies';
 import { clearSessionCookies, setSessionCookies } from '@/lib/auth/session';
-import { LOCALE_COOKIE } from '@/lib/bff';
+import { LOCALE_COOKIE, isSameOrigin } from '@/lib/bff';
 
 /**
  * Sign-in steps that return tokens. The tokens go into HttpOnly cookies here and the browser only gets
@@ -24,8 +24,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!process.env.TAMANEEN_API_URL) return NextResponse.json({ title: 'API is not configured', status: 503 }, { status: 503 });
 
   // Same-origin only: these routes set the session, so a cross-site form must not reach them.
-  const origin = request.headers.get('origin');
-  if (origin && origin !== request.nextUrl.origin) return NextResponse.json({ title: 'Forbidden', status: 403 }, { status: 403 });
+  if (!isSameOrigin(request.headers.get('origin'), request.headers.get('host'))) return NextResponse.json({ title: 'Forbidden', status: 403 }, { status: 403 });
 
   const jar = await cookies();
   const locale = resolveLocale(jar.get(LOCALE_COOKIE)?.value, request.headers.get('accept-language'));
