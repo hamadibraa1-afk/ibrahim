@@ -6,3 +6,4 @@ TestResults/
 node_modules/
 dist/
 .angular/
+.claude/worktrees/
