@@ -130,4 +130,34 @@ describe('HomeView', () => {
     expect(screen.getByText('لا توجد جلسة قادمة')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'تصفح الأخصائيين' })).toHaveAttribute('href', '/therapists');
   });
+
+  it('shows "Continue intake" in place of the session card while an intake is open (PB-46)', () => {
+    renderWithIntl(<HomeView home={{ ...home, nextAppointment: null }} locale="ar" timeZone="Asia/Riyadh" now={evening} intakeStatus="paused" />, 'ar');
+    expect(screen.getByRole('link', { name: /متابعة الاستقبال/ })).toHaveAttribute('href', '/intake');
+    expect(screen.queryByText('لا توجد جلسة قادمة')).not.toBeInTheDocument();
+  });
+
+  it('has no intake card once the intake was submitted (English)', () => {
+    renderWithIntl(<HomeView home={home} locale="en" timeZone="Asia/Riyadh" now={evening} intakeStatus="submitted" />, 'en');
+    expect(screen.queryByTestId('continue-intake')).not.toBeInTheDocument();
+  });
+
+  describe('join button (PB-43)', () => {
+    afterEach(() => vi.useRealTimers());
+
+    it('stays hidden until ten minutes before, then opens the meeting link in a new tab', () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date('2026-10-21T12:45:00Z'));
+      const join = { joinUrl: 'https://meet.tamaneen.test/room/a1', joinAvailableAt: '2026-10-21T12:50:00Z' };
+      const { unmount } = renderWithIntl(<HomeView home={home} locale="ar" timeZone="Asia/Riyadh" now={new Date()} join={{ ...join, joinUrl: null }} />, 'ar');
+      expect(screen.queryByTestId('home-join')).not.toBeInTheDocument();
+      unmount();
+
+      vi.setSystemTime(new Date('2026-10-21T12:51:00Z'));
+      renderWithIntl(<HomeView home={home} locale="en" timeZone="Asia/Riyadh" now={new Date()} join={join} />, 'en');
+      const link = screen.getByRole('link', { name: 'Join the session with أ. سارة (opens in a new tab)' });
+      expect(link).toHaveAttribute('href', join.joinUrl);
+      expect(link).toHaveAttribute('target', '_blank');
+    });
+  });
 });
