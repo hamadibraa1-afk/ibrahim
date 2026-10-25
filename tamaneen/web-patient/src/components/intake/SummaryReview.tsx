@@ -10,13 +10,15 @@ import { Button } from '@/components/ui/Button';
 import { Tag } from '@/components/ui/Chip';
 import { Notice } from '@/components/ui/Notice';
 import { TextArea } from '@/components/ui/TextField';
+import { Dialog } from '@/components/booking/Dialog';
 
 const MAIN_SECTIONS: SummarySection[] = ['concern', 'goals', 'supports', 'priorCare'];
-const MAX_SECTION_LENGTH = 4000;
+/** Same limit as PUT /v1/intake/{id}/summary. */
+export const MAX_SECTION_LENGTH = 2000;
 
 /**
  * P05 Summary review: the patient checks and corrects what the assistant understood, section by
- * section, then sends it to the care team. Edits go through the crisis gate.
+ * section, then sends it to the care team after confirming (PB-33). Edits go through the crisis gate.
  */
 export function SummaryReview({ initial, reviewHours }: { initial: IntakeSummary; reviewHours: number }) {
   const t = useTranslations('summary');
@@ -28,6 +30,7 @@ export function SummaryReview({ initial, reviewHours }: { initial: IntakeSummary
   const [busy, setBusy] = useState<'save' | 'submit' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const openers = useRef<Partial<Record<SummarySection, HTMLButtonElement | null>>>({});
   const returnFocus = useRef<SummarySection | null>(null);
 
@@ -84,6 +87,7 @@ export function SummaryReview({ initial, reviewHours }: { initial: IntakeSummary
       router.push('/waiting');
     } catch (e) {
       setError(failure(e));
+      setConfirming(false);
       setBusy(null);
     }
   }
@@ -124,6 +128,7 @@ export function SummaryReview({ initial, reviewHours }: { initial: IntakeSummary
               value={draft}
               rows={4}
               maxLength={MAX_SECTION_LENGTH}
+              hint={t('counter', { count: draft.length, max: MAX_SECTION_LENGTH })}
               onChange={(e) => setDraft(e.target.value)}
               dir="auto"
               data-testid={`edit-${section}`}
@@ -200,7 +205,7 @@ export function SummaryReview({ initial, reviewHours }: { initial: IntakeSummary
       ) : null}
 
       <div className="flex flex-col gap-2">
-        <Button full busy={busy === 'submit'} disabled={editing !== null || busy === 'save'} aria-describedby={editing ? 'summary-save-first' : undefined} onClick={() => void submit()}>
+        <Button full busy={busy === 'submit'} disabled={editing !== null || busy === 'save'} aria-describedby={editing ? 'summary-save-first' : undefined} onClick={() => setConfirming(true)}>
           {t('submit')}
         </Button>
         {editing ? (
@@ -209,6 +214,17 @@ export function SummaryReview({ initial, reviewHours }: { initial: IntakeSummary
           </p>
         ) : null}
       </div>
+
+      <Dialog open={confirming} onClose={() => setConfirming(false)} locked={busy === 'submit'} title={t('confirmTitle')} description={t('confirmBody', { hours: reviewHours })}>
+        <div className="flex flex-col gap-2">
+          <Button full busy={busy === 'submit'} onClick={() => void submit()}>
+            {t('confirmSend')}
+          </Button>
+          <Button full variant="secondary" disabled={busy === 'submit'} onClick={() => setConfirming(false)}>
+            {t('confirmBack')}
+          </Button>
+        </div>
+      </Dialog>
     </div>
   );
 }

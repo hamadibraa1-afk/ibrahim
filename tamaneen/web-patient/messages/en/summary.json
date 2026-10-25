@@ -23,6 +23,11 @@
     "reviewNote": "A professional will review your file within {hours, plural, one {# hour} other {# hours}}, then we'll suggest therapists who suit you.",
     "submit": "Send to the care team",
     "saveFirst": "Save or cancel your changes before sending.",
-    "saved": "Your change is saved."
+    "saved": "Your change is saved.",
+    "counter": "{count} of {max} characters",
+    "confirmTitle": "Send the summary to the care team?",
+    "confirmBody": "A professional will review your file within {hours, plural, one {one hour} other {# hours}}. After sending you can no longer edit the summary, but you can add a note while you wait.",
+    "confirmSend": "Yes, send it",
+    "confirmBack": "Review it again"
   }
 }
