@@ -62,7 +62,8 @@ export interface RecoverWithCodeRequest { contact: string; recoveryCode: string;
 // ---------- Me / onboarding ----------
 export type CarePath = 'intake' | 'direct';
 export type IntakeStatus = 'none' | 'active' | 'paused' | 'summarizing' | 'review' | 'submitted' | 'expired';
-export type TriageStatus = 'none' | 'pending' | 'reviewed' | 'matched';
+/** escalated: a supervisor opened a crisis event instead; closed: no match, see `referrals` (S03). */
+export type TriageStatus = 'none' | 'pending' | 'reviewed' | 'matched' | 'escalated' | 'closed';
 export interface Me {
   pseudonymId: string;
   nickname: string;
@@ -137,7 +138,8 @@ export interface IntakeSummary {
   generatedByAi: boolean;
 }
 export interface UpdateSummaryRequest { sections: Partial<Record<SummarySection, string>> }
-export interface TriageState { status: TriageStatus; submittedAt: string | null; expectedBy: string | null; suggestionsReady: boolean }
+export type ReferralCode = 'crisis_line' | 'primary_care' | 'psychiatry' | 'community_support' | 'emergency_services';
+export interface TriageState { status: TriageStatus; submittedAt: string | null; expectedBy: string | null; suggestionsReady: boolean; referrals?: ReferralCode[] | null }
 export interface AddToSummaryRequest { text: string }
 
 // ---------- Crisis (P06, P14) ----------
