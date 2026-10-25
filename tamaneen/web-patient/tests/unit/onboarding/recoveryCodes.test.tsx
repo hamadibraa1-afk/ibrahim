@@ -8,7 +8,7 @@ vi.mock('@/lib/api/client', async () => (await import('./helpers')).clientMock()
 
 import { api } from '@/lib/api/client';
 import { FLOW_KEYS } from '@/components/onboarding/flowStorage';
-import { RECOVERY_FILE_NAME, RecoveryCodesPanel } from '@/components/onboarding/RecoveryCodesPanel';
+import { RECOVERY_FILE_NAME, RecoveryCodesPanel, recoveryFileText } from '@/components/onboarding/RecoveryCodesPanel';
 import { groupSecret } from '@/components/onboarding/TotpSetup';
 
 const apiMock = vi.mocked(api);
@@ -21,23 +21,47 @@ describe('P17 Recovery codes', () => {
     window.sessionStorage.setItem(FLOW_KEYS.recoveryCodes, JSON.stringify(codes));
   });
 
-  it('shows the ten codes left-to-right and gates continue on the checkbox (Arabic)', async () => {
+  it('shows the ten codes left-to-right; continue needs a copy and the checkbox (PB-09, Arabic)', async () => {
     renderWithIntl(<RecoveryCodesPanel />, 'ar');
     const list = await screen.findByRole('list', { name: 'رموز الاسترجاع العشرة' });
     expect(list).toHaveAttribute('dir', 'ltr');
     expect(list.querySelectorAll('li')).toHaveLength(10);
     expect(screen.getByRole('heading', { level: 1, name: 'احفظ رموز الاسترجاع' })).toBeInTheDocument();
+    // Read into memory and removed from storage at once: a reload will not show them again.
+    expect(window.sessionStorage.getItem(FLOW_KEYS.recoveryCodes)).toBeNull();
 
     const next = screen.getByRole('button', { name: 'متابعة' });
     expect(next).toBeDisabled();
     await userEvent.click(screen.getByLabelText('حفظت الرموز في مكان آمن'));
-    expect(next).toBeEnabled();
+    expect(next).toBeDisabled();
+    expect(screen.getByText('نزّل الرموز أو انسخها أولًا، ثم أكّد أنك حفظتها لتتمكن من المتابعة.')).toBeInTheDocument();
+
+    const user = userEvent.setup();
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText: vi.fn().mockResolvedValue(undefined) }, configurable: true });
+    await user.click(screen.getByRole('button', { name: 'نسخ' }));
+    await waitFor(() => expect(next).toBeEnabled());
     await userEvent.click(next);
     expect(router.replace).toHaveBeenCalledWith('/start/consents');
-    expect(window.sessionStorage.getItem(FLOW_KEYS.recoveryCodes)).toBeNull();
   });
 
-  it('downloads a localized .txt file (English)', async () => {
+  it('warns before leaving while the codes are not confirmed', async () => {
+    renderWithIntl(<RecoveryCodesPanel />, 'en');
+    await screen.findByTestId('recovery-codes');
+    const event = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(true);
+  });
+
+  it('shows the regenerate screen, not the codes, after a reload', async () => {
+    const first = renderWithIntl(<RecoveryCodesPanel />, 'en');
+    await screen.findByTestId('recovery-codes');
+    first.unmount();
+    renderWithIntl(<RecoveryCodesPanel />, 'en');
+    expect(await screen.findByRole('button', { name: 'Create new codes' })).toBeInTheDocument();
+    expect(screen.queryByTestId('recovery-codes')).not.toBeInTheDocument();
+  });
+
+  it('downloads a .txt file with the codes only, and counts as saving them (English)', async () => {
     const blobs: Blob[] = [];
     Object.assign(URL, {
       createObjectURL: vi.fn((b: Blob) => {
@@ -59,10 +83,11 @@ describe('P17 Recovery codes', () => {
       reader.onload = () => resolve(String(reader.result));
       reader.readAsText(blobs[0]!);
     });
-    expect(text).toContain('Tamaneen · Recovery codes');
-    expect(text).toContain('Each code works once.');
-    for (const c of codes) expect(text).toContain(c);
+    expect(text).toBe(recoveryFileText(codes));
+    expect(text.trim().split('\r\n')).toEqual(codes);
     expect(screen.getByText('File downloaded.')).toBeInTheDocument();
+    await userEvent.click(screen.getByLabelText("I've saved the codes somewhere safe"));
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeEnabled();
     click.mockRestore();
   });
 
