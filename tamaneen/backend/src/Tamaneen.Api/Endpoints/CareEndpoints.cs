@@ -27,6 +27,9 @@ public static class CareEndpoints
 
     public sealed record HelpResponseDto(bool Crisis, int Level, string? Script, bool EventOpen);
 
+    /// <summary>Optional body of POST /v1/crisis/help: the id the device generated for this press (idempotency key).</summary>
+    public sealed record HelpRequestBody(Guid? RequestId);
+
     public sealed record HomeworkTodayDto(Guid Id, string Title, int? Minutes, int DoneDays, int TotalDays);
 
     public sealed record FeedbackDto(string TherapistName, string Initials, string Text, DateTimeOffset At);
@@ -106,11 +109,52 @@ public static class CareEndpoints
         return TypedResults.Ok(new CrisisStatusDto(locked, open is not null, open?.Status == CrisisEventStatus.Acknowledged, digits is { Length: >= 4 } ? digits[^4..] : null, script));
     }
 
-    /// <summary>"Ask a professional to call me now": always a Critical event, paged at once.</summary>
-    internal static async Task<Ok<HelpResponseDto>> HelpAsync(PatientContext p, CancellationToken ct)
+    /// <summary>
+    /// "Help now" / "Ask a professional to call me now": always a Critical event, paged at once. With a request id
+    /// the call is idempotent: a double tap or a queued resend (EC-04) gets the first answer back and never reaches
+    /// the gate again, so it cannot open a second event after the first one was closed.
+    /// </summary>
+    internal static async Task<Ok<HelpResponseDto>> HelpAsync(HelpRequestBody? request, PatientContext p, IOptions<PlatformOptions> platform, IClock clock, CancellationToken ct)
     {
+        var key = request?.RequestId is { } id && id != Guid.Empty ? id : (Guid?)null;
+        if (key is not null && await ReplayHelpAsync(p, key.Value, platform.Value, ct).ConfigureAwait(false) is { } replay)
+        {
+            return TypedResults.Ok(replay);
+        }
+
         var verdict = await p.GateAsync(null, null, "help_now", ct).ConfigureAwait(false);
+        if (key is not null)
+        {
+            var row = HelpRequest.Record(p.PatientId, key.Value, verdict.CrisisEventId, clock);
+            p.Db.HelpRequests.Add(row);
+            try
+            {
+                await p.Db.SaveChangesAsync(ct).ConfigureAwait(false);
+            }
+            catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("UX_HelpRequests_PatientKey", StringComparison.Ordinal) == true)
+            {
+                // The same press arrived twice at once. The gate keeps one open event per patient, so both share it.
+                p.Db.Entry(row).State = EntityState.Detached;
+            }
+        }
+
         return TypedResults.Ok(new HelpResponseDto(verdict.Crisis, (int)verdict.Level, verdict.Script, verdict.CrisisEventId is not null));
+    }
+
+    private static async Task<HelpResponseDto?> ReplayHelpAsync(PatientContext p, Guid key, PlatformOptions platform, CancellationToken ct)
+    {
+        var seen = await p.Db.HelpRequests.AsNoTracking().Where(h => h.PatientId == p.PatientId && h.RequestKey == key).FirstOrDefaultAsync(ct).ConfigureAwait(false);
+        if (seen is null)
+        {
+            return null;
+        }
+
+        var crisisEvent = seen.CrisisEventId is { } eventId
+            ? await p.Db.CrisisEvents.AsNoTracking().FirstOrDefaultAsync(e => e.Id == eventId, ct).ConfigureAwait(false)
+            : null;
+        var level = crisisEvent?.Level ?? RiskLevel.Critical;
+        var script = Scripts.Value.Render(CrisisScripts.KindFor(level), p.Language, platform.EmergencyNumber, platform.SupportLine);
+        return new HelpResponseDto(true, (int)level, script, crisisEvent is { Status: not CrisisEventStatus.Closed });
     }
 
     // ---------- P09 ----------

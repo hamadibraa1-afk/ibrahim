@@ -109,6 +109,7 @@ export interface DeleteAccountRequest { password: string }
 // ---------- Screening (P23) ----------
 export interface ScreeningQuestion { index: number; text: string }
 export interface ScreeningForm { instrument: 'cssrs'; version: string; questions: ScreeningQuestion[]; note: string }
+/** The answers given so far, in order (1 to 6). Sent after every answer; only a complete set is stored. */
 export interface ScreeningSubmit { answers: boolean[] }
 export interface GateOutcome { crisis: boolean; level: number; script?: string }
 
@@ -143,6 +144,8 @@ export interface AddToSummaryRequest { text: string }
 // ---------- Crisis (P06, P14) ----------
 export interface CrisisStatus { locked: boolean; eventOpen: boolean; acknowledged: boolean; contactPhoneLast4: string | null; script: string | null }
 export interface HelpResponse extends GateOutcome { eventOpen: boolean }
+/** Body of POST /v1/crisis/help. requestId is the device-generated idempotency key, reused on every retry. */
+export interface HelpRequest { requestId?: string }
 
 // ---------- Therapists, matching, booking ----------
 export type Gender = 'female' | 'male';

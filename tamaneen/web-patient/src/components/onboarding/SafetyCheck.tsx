@@ -14,8 +14,9 @@ import { Spinner } from '@/components/ui/Spinner';
 import { problemText } from '@/components/auth/errorText';
 
 /**
- * P23 Safety check (C-SSRS screener) for the direct-booking path. One question at a time; the last
- * answer submits. The answers go through the crisis gate: crisis → P06 at once, otherwise the directory.
+ * P23 Safety check (C-SSRS screener) for the direct-booking path. One question at a time, no skipping and no
+ * going back. Every answer goes to the crisis gate as it is given (the answers so far): a «نعم» that triggers
+ * the gate opens P06 at once, even before the last question. After the last answer, the directory.
  */
 export function SafetyCheck({ form, emergencyNumber }: { form: ScreeningForm; emergencyNumber: string | null }) {
   const t = useTranslations('safetyCheck');
@@ -39,17 +40,23 @@ export function SafetyCheck({ form, emergencyNumber }: { form: ScreeningForm; em
     headingRef.current?.focus();
   }, [index]);
 
-  async function submit(final: boolean[]) {
+  /** Sends the answers given so far (index 0..upTo) to the gate, then moves on. */
+  async function submit(given: boolean[]) {
     setBusy(true);
     setError(null);
     try {
-      const body: ScreeningSubmit = { answers: final };
+      const body: ScreeningSubmit = { answers: given };
       const outcome = await api<GateOutcome>('screening/cssrs', { method: 'POST', body });
       if (outcome.crisis) {
         router.replace('/crisis');
         return;
       }
-      router.push('/therapists');
+      if (given.length >= total) {
+        router.push('/therapists');
+        return;
+      }
+      setIndex(given.length);
+      setBusy(false);
     } catch (e) {
       setError(problemText(e, te('network')));
       setBusy(false);
@@ -57,13 +64,10 @@ export function SafetyCheck({ form, emergencyNumber }: { form: ScreeningForm; em
   }
 
   function answer(value: boolean) {
+    if (busy || answers[index] !== undefined) return;
     const next = answers.map((a, i) => (i === index ? value : a));
     setAnswers(next);
-    if (index < total - 1) {
-      setIndex(index + 1);
-    } else if (next.every((a) => a !== undefined)) {
-      void submit(next as boolean[]);
-    }
+    void submit(next.slice(0, index + 1) as boolean[]);
   }
 
   const question = questions[index];
@@ -91,21 +95,13 @@ export function SafetyCheck({ form, emergencyNumber }: { form: ScreeningForm; em
             {question.text}
           </h2>
           <div role="radiogroup" aria-labelledby="cssrs-question" className="grid grid-cols-2 gap-3">
-            <OptionButton selected={current === true} onClick={() => answer(true)} disabled={busy} className="min-h-[60px] justify-center text-center">
+            <OptionButton selected={current === true} onClick={() => answer(true)} disabled={busy || current !== undefined} className="min-h-[60px] justify-center text-center">
               {tu('yes')}
             </OptionButton>
-            <OptionButton selected={current === false} onClick={() => answer(false)} disabled={busy} className="min-h-[60px] justify-center text-center">
+            <OptionButton selected={current === false} onClick={() => answer(false)} disabled={busy || current !== undefined} className="min-h-[60px] justify-center text-center">
               {tu('no')}
             </OptionButton>
           </div>
-          {index > 0 ? (
-            <Button variant="ghost" compact onClick={() => setIndex(index - 1)} disabled={busy} className="self-start">
-              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="rtl:rotate-180">
-                <path d="M15 6l-6 6 6 6" />
-              </svg>
-              {t('previous')}
-            </Button>
-          ) : null}
         </Card>
       ) : null}
 
@@ -115,7 +111,7 @@ export function SafetyCheck({ form, emergencyNumber }: { form: ScreeningForm; em
       {error ? (
         <div className="flex flex-col gap-3">
           <Notice tone="danger">{error}</Notice>
-          <Button variant="secondary" onClick={() => void submit(answers as boolean[])}>
+          <Button variant="secondary" onClick={() => void submit(answers.slice(0, index + 1) as boolean[])}>
             {t('retry')}
           </Button>
         </div>

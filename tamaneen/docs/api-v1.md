@@ -55,7 +55,7 @@ Login: 5 failures lock the account for 15 minutes.
 | GET/POST | /v1/me/data-export | → DataRequestStatus | P11 |
 | POST | /v1/me/delete-account | DeleteAccountRequest → 202 | P11 |
 | GET | /v1/screening/cssrs | → ScreeningForm | P23 |
-| POST | /v1/screening/cssrs | ScreeningSubmit → GateOutcome (gate) | P23 |
+| POST | /v1/screening/cssrs | ScreeningSubmit { answers: the answers given so far, 1–6 } → GateOutcome (gate). P23 sends it after every answer, so a «yes» escalates at once; only the complete set of 6 is stored | P23 |
 | POST | /v1/intake | → IntakeState (starts or resumes) | P04 |
 | GET | /v1/intake/current | → IntakeState (404 if none) | P04, P22 |
 | POST | /v1/intake/{id}/messages | SendMessageRequest → IntakeTurnResponse (gate, then AI) | P04 |
@@ -67,7 +67,7 @@ Login: 5 failures lock the account for 15 minutes.
 | GET | /v1/triage | → TriageState | P36 |
 | POST | /v1/triage/addendum | AddToSummaryRequest → TriageState (gate) | P36 |
 | GET | /v1/crisis/status | → CrisisStatus | P06 |
-| POST | /v1/crisis/help | → HelpResponse (gate source help_now: always opens a level 4 event) | help button |
+| POST | /v1/crisis/help | HelpRequest { requestId? } → HelpResponse (gate source help_now: always opens a level 4 event; the same requestId is answered from the first call and never reaches the gate again) | help button, P06, P14 |
 | GET | /v1/matches | → MatchList | P07 |
 | POST | /v1/matches/{therapistId}/dismiss | → MatchList | P07 |
 | GET | /v1/therapists?q&specialty&language&gender&evening | → TherapistSummary[] | P24 |

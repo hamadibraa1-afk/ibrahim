@@ -84,10 +84,16 @@ public static class IntakeEndpoints
         return TypedResults.Ok(new ScreeningFormDto("cssrs", catalog.Version, questions, note));
     }
 
+    /// <summary>
+    /// P23 sends the answers given so far after every answer, so the gate sees each «yes» the moment it is given
+    /// (Q1–Q3 High, Q4–Q6 Critical) and P06 opens before the remaining questions. A partial set that passes is not
+    /// stored; the complete set records the screening as before. A partial set that escalates is audited only:
+    /// the check is not complete, so the patient takes it again once the crisis event is closed.
+    /// </summary>
     internal static async Task<Ok<GateOutcomeDto>> SubmitScreeningAsync(ScreeningSubmit request, PatientContext p, QuestionnaireCatalog catalog, IAuditLog audit, IClock clock, CancellationToken ct)
     {
         var count = catalog.ItemCount("C-SSRS-SCREEN");
-        if (request.Answers is not { } answers || answers.Count != count)
+        if (request.Answers is not { Count: > 0 } answers || answers.Count > count)
         {
             throw MeEndpoints.Invalid("answers");
         }
@@ -96,6 +102,17 @@ public static class IntakeEndpoints
         var verdict = await p.GateAsync(null, new GateAnswers("C-SSRS-SCREEN", scores), "screening", ct).ConfigureAwait(false);
         var positive = answers.Any(a => a);
         var level = verdict.Level < RiskLevel.Routine ? RiskLevel.Routine : verdict.Level;
+        if (answers.Count < count)
+        {
+            if (verdict.Crisis)
+            {
+                audit.Append("screening.escalated", "Screening", null, (await p.AccountAsync(ct).ConfigureAwait(false)).PseudonymId, $"item={answers.Count};level={(int)level}");
+                await p.Db.SaveChangesAsync(ct).ConfigureAwait(false);
+            }
+
+            return TypedResults.Ok(PatientContext.Outcome(verdict));
+        }
+
         var screening = Screening.Record(p.PatientId, "C-SSRS-SCREEN", catalog.Version, positive, level, await p.EncryptJsonAsync(Fields.ScreeningAnswers, answers, ct).ConfigureAwait(false), clock);
         p.Db.Screenings.Add(screening);
         audit.Append("screening.completed", "Screening", screening.Id.ToString(), (await p.AccountAsync(ct).ConfigureAwait(false)).PseudonymId, $"positive={positive};level={(int)level}");

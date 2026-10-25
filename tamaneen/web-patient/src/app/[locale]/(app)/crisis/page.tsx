@@ -1,5 +1,6 @@
 import { unstable_rethrow } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { AbroadEmergencyLine } from '@/components/crisis/AbroadEmergencyLine';
 import { CallLink } from '@/components/crisis/CallLink';
 import { CrisisStatusPanel } from '@/components/crisis/CrisisStatusPanel';
 import { Link } from '@/i18n/navigation';
@@ -60,6 +61,7 @@ export default async function CrisisPage({ params }: { params: Promise<{ locale:
             {t('supportLine')}
           </CallLink>
         ) : null}
+        <AbroadEmergencyLine />
       </section>
 
       <section aria-labelledby="crisis-until" className="flex flex-col gap-2 rounded-card bg-tint-sand p-5">
@@ -69,7 +71,7 @@ export default async function CrisisPage({ params }: { params: Promise<{ locale:
         <p className="leading-relaxed">{t('untilBody')}</p>
       </section>
 
-      <p className="text-center text-sm leading-relaxed text-muted">{t('chatPaused')}</p>
+      {status?.locked ? <p className="text-center text-sm leading-relaxed text-muted">{t('chatPaused')}</p> : null}
 
       <Link href="/settings/safety" className="flex min-h-touch items-center justify-center text-center font-semibold text-primary underline underline-offset-4">
         {t('updateNumber')}

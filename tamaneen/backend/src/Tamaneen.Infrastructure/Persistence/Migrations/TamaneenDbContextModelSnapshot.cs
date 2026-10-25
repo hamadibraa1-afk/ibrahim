@@ -896,6 +896,34 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Tamaneen.Crisis.HelpRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("CrisisEventId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("ReceivedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("RequestKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CrisisEventId");
+
+                    b.HasIndex("PatientId", "RequestKey")
+                        .IsUnique()
+                        .HasDatabaseName("UX_HelpRequests_PatientKey");
+
+                    b.ToTable("HelpRequests", "crisis");
+                });
+
             modelBuilder.Entity("Tamaneen.Crisis.PageRequest", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1625,6 +1653,20 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Tamaneen.Crisis.CrisisEvent", b =>
                 {
+                    b.HasOne("Tamaneen.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Tamaneen.Crisis.HelpRequest", b =>
+                {
+                    b.HasOne("Tamaneen.Crisis.CrisisEvent", null)
+                        .WithMany()
+                        .HasForeignKey("CrisisEventId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Tamaneen.Identity.UserAccount", null)
                         .WithMany()
                         .HasForeignKey("PatientId")
