@@ -165,13 +165,14 @@ public static class SchedulingEndpoints
         return TypedResults.Ok(new HoldDto(holdId, slot.Id, slot.StartsAtUtc, slot.HeldUntilUtc!.Value, therapist));
     }
 
-    internal static async Task<NoContent> ReleaseAsync(Guid holdId, PatientContext p, CancellationToken ct)
+    internal static async Task<NoContent> ReleaseAsync(Guid holdId, PatientContext p, WaitlistNotifier waitlist, CancellationToken ct)
     {
         var slot = await p.Db.AvailabilitySlots.FirstOrDefaultAsync(s => s.HoldId == holdId && s.HeldByPatientId == p.PatientId, ct).ConfigureAwait(false);
         if (slot is not null && slot.Status == SlotStatus.Held)
         {
             slot.Release();
             await SaveOrConflictAsync(p.Db, ct).ConfigureAwait(false);
+            await waitlist.CheckAsync(ct).ConfigureAwait(false);
         }
 
         return TypedResults.NoContent();
@@ -267,7 +268,7 @@ public static class SchedulingEndpoints
     }
 
     /// <summary>P28 cancel (PB-45): the patient picks a reason code from <see cref="CancelReasons.Patient"/>.</summary>
-    internal static async Task<Ok<AppointmentDetailDto>> CancelAsync(Guid id, CancelRequest? request, PatientContext p, TherapistDirectory directory, IAuditLog audit, IOptions<PlatformOptions> platform, IClock clock, CancellationToken ct)
+    internal static async Task<Ok<AppointmentDetailDto>> CancelAsync(Guid id, CancelRequest? request, PatientContext p, TherapistDirectory directory, WaitlistNotifier waitlist, IAuditLog audit, IOptions<PlatformOptions> platform, IClock clock, CancellationToken ct)
     {
         var reason = request?.ReasonCode?.Trim();
         if (string.IsNullOrEmpty(reason) || !CancelReasons.Patient.Contains(reason))
@@ -282,10 +283,13 @@ public static class SchedulingEndpoints
         slot.Free();
         audit.Append("appointment.cancelled", "Appointment", appointment.Id.ToString(), (await p.AccountAsync(ct).ConfigureAwait(false)).PseudonymId, $"patient:{reason}");
         await SaveOrConflictAsync(p.Db, ct).ConfigureAwait(false);
+
+        // P56: the freed time may be what someone on the waitlist is waiting for.
+        await waitlist.CheckAsync(ct).ConfigureAwait(false);
         return TypedResults.Ok(await DetailDtoAsync(p, directory, appointment, platform, clock, ct).ConfigureAwait(false));
     }
 
-    internal static async Task<Ok<AppointmentDetailDto>> RescheduleAsync(Guid id, RescheduleRequest request, PatientContext p, TherapistDirectory directory, IAuditLog audit, IOptions<PlatformOptions> platform, IClock clock, CancellationToken ct)
+    internal static async Task<Ok<AppointmentDetailDto>> RescheduleAsync(Guid id, RescheduleRequest request, PatientContext p, TherapistDirectory directory, WaitlistNotifier waitlist, IAuditLog audit, IOptions<PlatformOptions> platform, IClock clock, CancellationToken ct)
     {
         var appointment = await FindAsync(p, id, ct).ConfigureAwait(false);
         var target = await p.Db.AvailabilitySlots.FirstOrDefaultAsync(s => s.Id == request.SlotId, ct).ConfigureAwait(false)
@@ -296,6 +300,7 @@ public static class SchedulingEndpoints
         old.Free();
         audit.Append("appointment.rescheduled", "Appointment", appointment.Id.ToString(), (await p.AccountAsync(ct).ConfigureAwait(false)).PseudonymId);
         await SaveOrConflictAsync(p.Db, ct).ConfigureAwait(false);
+        await waitlist.CheckAsync(ct).ConfigureAwait(false);
         return TypedResults.Ok(await DetailDtoAsync(p, directory, appointment, platform, clock, ct).ConfigureAwait(false));
     }
 

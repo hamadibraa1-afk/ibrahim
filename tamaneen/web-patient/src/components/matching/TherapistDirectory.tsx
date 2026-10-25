@@ -133,7 +133,22 @@ export function TherapistDirectory({ initialFilters, initialResults, timeZone }:
       {problem ? <ProblemNotice problem={problem} /> : null}
 
       {results.length === 0 && !loading ? (
-        <EmptyState title={t('emptyTitle')} body={t('emptyBody')} />
+        <EmptyState
+          title={t('emptyTitle')}
+          body={t('emptyBody')}
+          action={
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              {showClear ? (
+                <Chip selected={false} onClick={clear}>
+                  {t('emptyClear')}
+                </Chip>
+              ) : null}
+              <Link href="/waitlist" className="inline-flex min-h-touch items-center font-semibold text-primary underline underline-offset-4">
+                {t('emptyWaitlist')}
+              </Link>
+            </div>
+          }
+        />
       ) : (
         <ul aria-label={t('listLabel')} aria-busy={loading || undefined} className={`flex flex-col gap-3 ${loading ? 'opacity-60' : ''}`}>
           {results.map((therapist) => {

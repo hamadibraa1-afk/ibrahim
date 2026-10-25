@@ -809,6 +809,79 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                     b.ToTable("TherapistProfiles", "clinical");
                 });
 
+            modelBuilder.Entity("Tamaneen.Clinical.Scheduling.WaitlistEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Days")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(32)");
+
+                    b.Property<string>("Gender")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(8)");
+
+                    b.Property<DateTimeOffset>("JoinedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(8)");
+
+                    b.Property<DateTimeOffset?>("LeftAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset?>("NotifiedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("NotifiedSlotId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte>("RiskLevel")
+                        .HasColumnType("tinyint");
+
+                    b.Property<byte>("Status")
+                        .HasColumnType("tinyint");
+
+                    b.Property<Guid?>("TherapistUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("TimeZone")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(64)");
+
+                    b.Property<string>("Times")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(64)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PatientId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_WaitlistEntries_OneActive")
+                        .HasFilter("[Status] <> 2");
+
+                    b.HasIndex("TherapistUserId");
+
+                    b.HasIndex("Status", "RiskLevel", "JoinedAtUtc");
+
+                    b.ToTable("WaitlistEntries", "clinical");
+                });
+
             modelBuilder.Entity("Tamaneen.Crisis.ChatLock", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1771,6 +1844,20 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                         .HasForeignKey("Tamaneen.Clinical.Scheduling.TherapistProfile", "UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Tamaneen.Clinical.Scheduling.WaitlistEntry", b =>
+                {
+                    b.HasOne("Tamaneen.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Tamaneen.Clinical.Scheduling.TherapistProfile", null)
+                        .WithMany()
+                        .HasForeignKey("TherapistUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("Tamaneen.Crisis.ChatLock", b =>

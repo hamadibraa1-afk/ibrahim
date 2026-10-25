@@ -17,6 +17,7 @@
     "noSlots": "No times available right now",
     "choose": "Choose a time",
     "noSlotsNote": "This therapist has no times right now. The waiting list is not available yet, so you can choose another therapist.",
-    "otherTherapists": "See therapists"
+    "otherTherapists": "See therapists",
+    "waitlistLink": "Join the waitlist"
   }
 }

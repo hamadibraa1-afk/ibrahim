@@ -17,6 +17,9 @@ public enum MessagePurpose
 
     /// <summary>Someone tried to sign up with a contact that already has an account.</summary>
     AlreadyRegistered = 3,
+
+    /// <summary>A time that fits the patient's waitlist preferences opened (P56). Neutral text, no names.</summary>
+    WaitlistSlotOpen = 4,
 }
 
 public sealed record OutgoingMessage(string Channel, string To, string Language, MessagePurpose Purpose, string Text);
@@ -41,6 +44,7 @@ public sealed class MessageComposer(IStringLocalizer<SharedResource> text)
                 MessagePurpose.SignupCode => text["message.code.signup", code ?? string.Empty].Value,
                 MessagePurpose.RecoverCode => text["message.code.recover", code ?? string.Empty].Value,
                 MessagePurpose.LoginCode => text["message.code.login", code ?? string.Empty].Value,
+                MessagePurpose.WaitlistSlotOpen => text["message.waitlist.slot_open"].Value,
                 _ => text["message.already_registered"].Value,
             }));
 }

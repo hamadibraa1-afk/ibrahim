@@ -25,6 +25,8 @@
     "noSlots": "No times soon",
     "loading": "Searching…",
     "emptyTitle": "No matching therapists",
-    "emptyBody": "Try fewer filters or a different search word."
+    "emptyBody": "Try fewer filters or a different search word.",
+    "emptyWaitlist": "Join the waitlist",
+    "emptyClear": "Clear filters"
   }
 }

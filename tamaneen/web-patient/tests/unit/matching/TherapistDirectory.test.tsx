@@ -94,4 +94,9 @@ describe('TherapistDirectory (P24)', () => {
     expect(screen.getByRole('button', { name: 'العربية' })).toHaveAttribute('aria-pressed', 'false');
     expect(mocks.api).not.toHaveBeenCalled();
   });
+  it('offers clearing the filters and the waitlist when nothing matches (P56)', () => {
+    renderWithIntl(<TherapistDirectory initialFilters={{ ...emptyFilters, gender: 'male', evening: true }} initialResults={[]} timeZone="Asia/Riyadh" />);
+    expect(screen.getByRole('button', { name: 'مسح الفلاتر' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'انضم لقائمة الانتظار' })).toHaveAttribute('href', '/waitlist');
+  });
 });

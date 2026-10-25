@@ -86,6 +86,17 @@ export function MatchSuggestions({ initial, patientLanguage, timeZone }: { initi
         </div>
       ) : null}
 
+      {/* «لا سعة متاحة: إحالة لقائمة الانتظار (P56)»: no suggested therapist has a free time. */}
+      {items.length > 0 && items.every((s) => !s.therapist.nextAvailableAt && !s.reasons.nextAvailableAt) ? (
+        <Card tone="sand" className="flex flex-col gap-2" data-testid="no-capacity">
+          <p className="font-bold">{t('noCapacityTitle')}</p>
+          <p className="text-sm">{t('noCapacityBody')}</p>
+          <ButtonLink href="/waitlist" variant="secondary" full>
+            {t('waitlist.join')}
+          </ButtonLink>
+        </Card>
+      ) : null}
+
       {items.length === 0 ? (
         <EmptyState title={t('emptyTitle')} body={t('emptyBody')} />
       ) : (

@@ -70,6 +70,8 @@ public sealed class TamaneenDbContext : DbContext
 
     public DbSet<MatchSuggestion> MatchSuggestions => Set<MatchSuggestion>();
 
+    public DbSet<WaitlistEntry> WaitlistEntries => Set<WaitlistEntry>();
+
     public DbSet<IntakeSession> IntakeSessions => Set<IntakeSession>();
 
     public DbSet<IntakeMessage> IntakeMessages => Set<IntakeMessage>();

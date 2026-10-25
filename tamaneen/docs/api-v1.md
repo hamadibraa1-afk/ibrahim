@@ -79,6 +79,9 @@ and P01, P02, P12 and P15 show the emergency numbers instead of the start button
 | POST | /v1/bookings/holds | { slotId } → Hold (5 minutes) | P08 |
 | POST | /v1/bookings/holds/{holdId}/confirm | → AppointmentDetail | P08 → P26 |
 | DELETE | /v1/bookings/holds/{holdId} | → 204 | P08 |
+| GET | /v1/me/waitlist | → Waitlist (`status`: none, waiting, available; `offer` once a fitting time opened) | P56 |
+| PUT | /v1/me/waitlist | JoinWaitlistRequest { therapistId?, gender: any/female/male, language: any/ar/en, timesOfDay: morning/afternoon/evening[], days: weekdays/weekend[] } → Waitlist (joins, or changes the preferences and keeps the place; booking eligibility required, 400 field errors for unknown values) | P56 (from P07, P24, P25) |
+| DELETE | /v1/me/waitlist | → 204 (leaves) | P56 |
 | GET | /v1/appointments | → AppointmentList | P27 |
 | GET | /v1/appointments/{id} | → AppointmentDetail | P26, P28 |
 | GET | /v1/appointments/{id}/calendar | → text/calendar `appointment.ics`, neutral title «موعد» / "Appointment" with no platform, therapist or patient name (PB-42) | P26 |
@@ -91,6 +94,14 @@ and P01, P02, P12 and P15 show the emergency numbers instead of the start button
 | GET | /v1/homework/{id} | → HomeworkDetail | P10 |
 | POST | /v1/homework/{id}/checkins | CheckinRequest → CheckinResponse (note gated) | P10 |
 | GET/PUT | /v1/safety-plan | SafetyPlan / UpdateSafetyPlanRequest (gate; sections and contact names). `contacts`: up to 5 `{ name ≤ 100, phone }`, encrypted with the patient key like the sections | P37 |
+
+Waitlist (P56): the queue is ordered by risk, then by time waited. Whenever a time becomes free (a patient cancels or moves a
+session, a hold is released, a therapist records a cancellation, a patient joins), the scheduling service matches the
+waiting entries against the bookable times of the next 14 days (times of day in the patient's time zone: morning 06–12,
+afternoon 12–17, evening 17–23; weekend Friday and Saturday), one patient per time. The patient gets a neutral SMS or e-mail
+(`WaitlistSlotOpen`) and `GET /v1/me/waitlist` shows `available` with the offer. `expectedDaysMin/Max` come from
+`Platform:WaitlistExpectedDays*` until S50 computes them. The table is under row-level security on PatientId; the
+scheduling service may read and mark entries.
 
 Booking needs either a passed safety check (direct path) or a reviewed triage (intake path).
 Gated writes that return an object (`PUT /v1/intake/{id}/summary`, `POST /v1/triage/addendum`, `PUT /v1/safety-plan`,
