@@ -1,0 +1,159 @@
+<div class="layout">
+  <aside class="queue" [attr.aria-label]="'triage.queue.title' | translate" data-testid="triage-queue">
+    <div class="queue-head">
+      <h2 class="queue-title">{{ 'triage.queue.title' | translate }}</h2>
+      <p class="tm-muted small">{{ 'triage.queue.count' | translate: { count: queue().length } }}</p>
+    </div>
+    <tm-problem-message [error]="queueError()" />
+    @for (item of queue(); track item.id) {
+      <a class="q" [routerLink]="['/triage', item.id]" [class.active]="item.id === id()" [attr.aria-current]="item.id === id() ? 'page' : null" data-testid="queue-item">
+        <span class="q-top">
+          <strong dir="ltr" class="pseudonym">{{ item.pseudonymId }}</strong>
+          <span class="tm-tag lv" [class]="'tm-tag lv tm-risk-' + item.riskLevel">{{ item.riskLevel }}</span>
+        </span>
+        <span class="tm-muted small">
+          @if (heldByOther(item)) {
+            {{ 'triage.queue.heldBy' | translate: { name: item.claim.by, time: (item.claim.until | tmDate: 'time' : language.language()) } }}
+          } @else {
+            {{ sourceKey(item) | translate }} ·
+            @if (left(item.dueAt); as l) {
+              @if (l.overdue) { <span class="overdue">{{ 'triage.queue.overdue' | translate }}</span> }
+              @else { {{ 'triage.queue.left' | translate: { h: l.hours, m: l.minutes } }} }
+            }
+            @if (item.pendingRiskLevel) { · {{ 'triage.queue.coSign' | translate }} }
+          }
+        </span>
+      </a>
+    } @empty {
+      <p class="tm-muted small pad">{{ 'triage.queue.empty' | translate }}</p>
+    }
+  </aside>
+
+  <div class="main">
+    @if (loading()) {
+      <mat-progress-bar mode="indeterminate" [attr.aria-label]="'common.loading' | translate" />
+    }
+    <tm-problem-message [error]="loadError()" />
+
+    @if (!id()) {
+      <section class="tm-card"><p class="tm-muted">{{ 'triage.pick' | translate }}</p></section>
+    }
+
+    @if (detail(); as d) {
+      <header class="head">
+        <h1 class="title" dir="ltr" data-testid="case-pseudonym">{{ d.pseudonymId }}</h1>
+        @if (claimMine()) {
+          <div class="claim" [class.warn]="claimWarning()" role="status" data-testid="claim-bar">
+            {{ 'triage.claim.mine' | translate: { time: (d.claim.until | tmDate: 'time' : language.language()) } }}
+            @if (claimWarning()) { · {{ 'triage.claim.endsIn' | translate: { time: claimCountdown() } }} }
+            · <button type="button" class="claim-btn" (click)="release()" data-testid="release">{{ 'triage.claim.release' | translate }}</button>
+          </div>
+        } @else if (claimExpired()) {
+          <div class="claim warn" role="alert" data-testid="claim-expired">
+            {{ 'triage.claim.expired' | translate }} · <button type="button" class="claim-btn" (click)="reclaim()" data-testid="reclaim">{{ 'triage.claim.again' | translate }}</button>
+          </div>
+        } @else if (heldBy(); as h) {
+          <div class="claim other" role="status" data-testid="held-by">
+            {{ 'triage.claim.other' | translate: { name: h.by ?? '', time: (h.until | tmDate: 'time' : language.language()) } }}
+          </div>
+        } @else if (d.status !== 'pending') {
+          <span class="tm-tag tm-risk-1">{{ 'triage.status.' + d.status | translate }}</span>
+        }
+      </header>
+
+      @if (d.pendingCoSign; as p) {
+        <div class="tm-problem cosign" role="status" data-testid="pending-cosign">
+          {{ 'triage.coSign.pending' | translate: { level: p.riskLevel, name: p.requestedBy ?? '' } }}
+        </div>
+      }
+
+      <section class="cards">
+        <div class="tm-card kv" data-testid="rule-level">
+          <span class="tm-muted label">{{ 'triage.cards.rules' | translate }}</span>
+          <span class="big">{{ d.ruleRiskLevel }} · {{ 'risk.' + d.ruleRiskLevel | translate }}</span>
+          <span class="tm-muted small">
+            @for (r of d.ruleReasons; track r) {
+              <span>{{ 'triage.reasons.' + r | translate: { phq9: d.phq9, gad7: d.gad7 } }}</span>@if (!$last) { · }
+            }
+          </span>
+          @if (d.riskLevel !== d.ruleRiskLevel) {
+            <span class="small">{{ 'triage.cards.now' | translate }} <tm-risk-tag [level]="d.riskLevel" /></span>
+          }
+        </div>
+        <div class="tm-card kv">
+          <span class="tm-muted label">{{ 'triage.cards.ai' | translate }}</span>
+          <span class="big">
+            @if (d.aiRiskLevel) { {{ d.aiRiskLevel }} · {{ 'risk.' + d.aiRiskLevel | translate }} } @else { {{ 'triage.cards.aiNone' | translate }} }
+          </span>
+          <span class="tm-muted small">{{ 'triage.cards.aiNote' | translate }}</span>
+        </div>
+        <div class="tm-card kv" data-testid="safety">
+          <span class="tm-muted label">{{ 'triage.cards.safety' | translate }}</span>
+          <span class="big">{{ (d.cssrsPositive || (d.phq9Item9 ?? 0) > 0 || d.crisisFloor > 0 ? 'triage.cards.safetyFlag' : 'triage.cards.safetyNone') | translate }}</span>
+          <span class="tm-muted small">
+            {{ (d.cssrsPositive === null ? 'triage.cards.cssrsMissing' : d.cssrsPositive ? 'triage.cards.cssrsPositive' : 'triage.cards.cssrsNegative') | translate }}
+            @if (d.phq9Item9 !== null) { · {{ 'triage.cards.item9' | translate: { value: d.phq9Item9 } }} }
+            @if (d.crisisFloor > 0) { · {{ 'triage.cards.floor' | translate: { level: d.crisisFloor } }} }
+          </span>
+        </div>
+        <div class="tm-card kv">
+          <span class="tm-muted label">{{ 'triage.cards.language' | translate }}</span>
+          <span class="big">{{ 'triage.language.' + d.language | translate }}</span>
+          <span class="tm-muted small">{{ sourceKey(d) | translate }} · {{ 'triage.cards.due' | translate: { time: (d.dueAt | tmDate: 'dayTime' : language.language()) } }}</span>
+        </div>
+      </section>
+
+      <section class="tm-card block">
+        <div class="block-head">
+          <h2 class="tm-card-title">{{ 'triage.summary.title' | translate }}</h2>
+          <a [routerLink]="['/patients', d.pseudonymId]" class="link" data-testid="full-file">{{ 'triage.summary.fullFile' | translate }}</a>
+        </div>
+        <p class="summary">{{ d.summary || ('triage.summary.none' | translate) }}</p>
+      </section>
+
+      <section class="tm-card block" data-testid="suggestions">
+        <div class="block-head">
+          <h2 class="tm-card-title">{{ 'triage.suggestions.title' | translate }}</h2>
+          <button mat-stroked-button type="button" (click)="changeSuggestions()" [disabled]="!canDecide()" data-testid="change-suggestions">{{ 'triage.suggestions.change' | translate }}</button>
+        </div>
+        @for (t of d.suggestions; track t.id) {
+          <div class="therapist" data-testid="suggested">
+            <span class="rank">{{ t.rank }}</span>
+            <span class="name">{{ t.displayName }}</span>
+            <span class="tm-muted small grow">
+              @if (t.shared.length) { {{ t.shared.join('، ') }} · }
+              {{ therapistLine(t) }}
+              @if (t.nextAvailableAt) { · {{ 'triage.suggestions.next' | translate: { time: (t.nextAvailableAt | tmDate: 'dayTime' : language.language()) } }} }
+            </span>
+          </div>
+        } @empty {
+          <p class="tm-problem" data-testid="no-therapist">{{ 'triage.noTherapist' | translate }}</p>
+        }
+      </section>
+
+      <section class="tm-card block">
+        <mat-form-field appearance="outline" class="tm-full">
+          <mat-label>{{ 'triage.reason' | translate }}</mat-label>
+          <textarea matInput id="decision-reason" rows="3" [maxlength]="maxReason" [(ngModel)]="reason" [disabled]="!claimMine() && !d.canCoSign" data-testid="decision-reason"></textarea>
+          <mat-hint align="end">{{ reason.length }} / {{ maxReason }}</mat-hint>
+        </mat-form-field>
+        @if (reasonMissing()) {
+          <p class="tm-problem" role="alert" data-testid="reason-missing">{{ 'triage.reasonRequired' | translate }}</p>
+        }
+        <tm-problem-message [error]="decisionError()" />
+        @if (d.canCoSign) {
+          <div class="actions">
+            <button mat-flat-button type="button" (click)="coSign(true)" [disabled]="busy()" data-testid="cosign-approve">{{ 'triage.coSign.approve' | translate: { level: d.pendingCoSign?.riskLevel } }}</button>
+            <button mat-stroked-button type="button" (click)="coSign(false)" [disabled]="busy()" data-testid="cosign-refuse">{{ 'triage.coSign.refuse' | translate }}</button>
+          </div>
+        }
+        <div class="actions">
+          <button mat-flat-button type="button" (click)="approve()" [disabled]="!canDecide() || !d.suggestions.length || !!d.pendingCoSign" data-testid="approve">{{ 'triage.actions.approve' | translate }}</button>
+          <button mat-stroked-button type="button" (click)="overrideRisk()" [disabled]="!canDecide()" data-testid="override">{{ 'triage.actions.override' | translate }}</button>
+          <button mat-stroked-button type="button" class="tm-danger-outline" (click)="escalate()" [disabled]="!canDecide()" data-testid="escalate">{{ 'triage.actions.escalate' | translate }}</button>
+          <button mat-stroked-button type="button" (click)="close()" [disabled]="!canDecide() || !!d.pendingCoSign" data-testid="close">{{ 'triage.actions.close' | translate }}</button>
+        </div>
+      </section>
+    }
+  </div>
+</div>

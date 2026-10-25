@@ -8,7 +8,7 @@ describe('SessionService', () => {
     session.setRoles(['therapist', 'supervisor', 'therapist']);
     expect(session.roles()).toEqual(['therapist', 'supervisor']);
     expect(session.role()).toBe('therapist');
-    expect(session.navigation()[0].items.map((i) => i.key)).toEqual(['dashboard']);
+    expect(session.navigation()[0].items.map((i) => i.key)).toEqual(['dashboard', 'patients']);
     expect(session.home()).toBe('/dashboard');
   });
 
@@ -16,7 +16,7 @@ describe('SessionService', () => {
     const session = TestBed.inject(SessionService);
     session.setRoles(['therapist', 'supervisor']);
     session.switchTo('supervisor');
-    expect(session.navigation()[0].items.map((i) => i.key)).toEqual(['crisis']);
+    expect(session.navigation()[0].items.map((i) => i.key)).toEqual(['triage', 'crisis']);
     expect(session.home()).toBe('/crisis');
     expect(() => session.switchTo('admin')).toThrowError(/not held/);
   });
@@ -28,7 +28,7 @@ describe('SessionService', () => {
     expect(session.crisisAccess()).toBeFalse();
     session.setProfile({ displayName: 'Sara', onCall: true });
     expect(session.crisisAccess()).toBeTrue();
-    expect(session.navigation().flatMap((g) => g.items.map((i) => i.key))).toEqual(['dashboard', 'crisis']);
+    expect(session.navigation().flatMap((g) => g.items.map((i) => i.key))).toEqual(['dashboard', 'patients', 'crisis']);
   });
 
   it('gives admins no clinical pages and no links to screens that do not exist', () => {
@@ -37,6 +37,12 @@ describe('SessionService', () => {
     expect(session.navigation()).toEqual([]);
     expect(session.crisisAccess()).toBeFalse();
     expect(session.home()).toBe('/home');
+  });
+
+  it('gives the clinical lead the triage queue to co-sign', () => {
+    const session = TestBed.inject(SessionService);
+    session.setRoles(['lead']);
+    expect(session.navigation()[0].items.map((i) => i.key)).toEqual(['triage', 'crisis']);
   });
 
   it('shows nothing when signed out', () => {
@@ -53,7 +59,7 @@ describe('SessionService', () => {
 describe('navigation filter', () => {
   it('keeps only implemented items and drops empty groups', () => {
     const groups = [
-      { key: 'a', items: [{ key: 'dashboard' }, { key: 'patients' }] },
+      { key: 'a', items: [{ key: 'dashboard' }, { key: 'messages' }] },
       { key: 'b', items: [{ key: 'modules' }] },
       { key: 'c', items: [{ key: 'crisis' }] },
     ];

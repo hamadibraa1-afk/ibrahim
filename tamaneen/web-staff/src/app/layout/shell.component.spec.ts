@@ -72,8 +72,8 @@ describe('ShellComponent', () => {
   it('lists only screens that exist: no links to pages without a screen', async () => {
     const { el } = await render(['therapist']);
     const links = Array.from(el.querySelectorAll('nav a')).map((a) => a.getAttribute('href'));
-    expect(links).toEqual(['/dashboard']);
-    expect(el.textContent).not.toContain('مرضاي');
+    expect(links).toEqual(['/dashboard', '/patients']);
+    expect(el.textContent).not.toContain('المحادثات');
   });
 
   it('shows the signed-in name and signs out from the toolbar', async () => {

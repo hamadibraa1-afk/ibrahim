@@ -93,9 +93,9 @@
               <th mat-header-cell *matHeaderCellDef scope="col"><span class="tm-visually-hidden">{{ 'dashboard.pending.action' | translate }}</span></th>
               <td mat-cell *matCellDef="let p; let first = first">
                 @if (first) {
-                  <button mat-flat-button type="button" (click)="openIntake(p.pseudonymId)" data-testid="review-file">{{ 'dashboard.pending.review' | translate }}</button>
+                  <a mat-flat-button [routerLink]="['/patients', p.pseudonymId]" data-testid="review-file">{{ 'dashboard.pending.review' | translate }}</a>
                 } @else {
-                  <button mat-stroked-button type="button" (click)="openIntake(p.pseudonymId)" data-testid="review-file">{{ 'dashboard.pending.review' | translate }}</button>
+                  <a mat-stroked-button [routerLink]="['/patients', p.pseudonymId]" data-testid="review-file">{{ 'dashboard.pending.review' | translate }}</a>
                 }
               </td>
             </ng-container>
@@ -137,9 +137,9 @@
                     }
                   </mat-menu>
                 }
-                <button mat-button type="button" (click)="openIntake(s.pseudonymId)" [attr.aria-label]="'dashboard.today.fileFor' | translate: { id: s.pseudonymId }" data-testid="open-file">
+                <a mat-button [routerLink]="['/patients', s.pseudonymId]" [attr.aria-label]="'dashboard.today.fileFor' | translate: { id: s.pseudonymId }" data-testid="open-file">
                   {{ 'dashboard.today.file' | translate }}
-                </button>
+                </a>
               </span>
             </li>
           }

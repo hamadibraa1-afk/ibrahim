@@ -84,3 +84,87 @@ export interface Excerpt { excerpt: string; hideAt: string }
 export interface CrisisActionRequest { kind: CrisisActionKind; text?: string }
 export interface CloseCrisisRequest { outcome: 'safe_contacted' | 'emergency_services' | 'unreachable_referred' | 'false_alarm'; reason: string }
 export interface CrisisHealth { gate: 'ok' | 'degraded' | 'down'; classifier: 'ok' | 'degraded' | 'down'; comms: 'ok' | 'degraded' | 'down'; onCall: string | null; backup: string | null }
+
+/** S02 clinical file (GET /v1/staff/patients/{id}/file). `version` is also the ETag sent back as If-Match on approve. */
+export type StatementKey = 'concern' | 'goals' | 'supports' | 'priorCare' | 'hypotheses';
+export interface FileStatement { key: StatementKey; text: string; editedByPatient: boolean; editedByTherapist: boolean; hypothesis: boolean; sourceCount: number }
+export interface TranscriptTurn { id: string; turn: number; role: 'patient' | 'assistant'; text: string; at: string }
+export interface ScoreItem { item: number; text: string; value: number | null }
+export type Severity = 'minimal' | 'mild' | 'moderate' | 'moderately_severe' | 'severe';
+export interface InstrumentScore { instrument: 'PHQ-9' | 'GAD-7'; total: number | null; severity: Severity | null; item9: number | null; version: string; items: ScoreItem[] }
+export interface CssrsResult { positive: boolean; level: number; version: string; completedAt: string; items: { index: number; text: string; answer: boolean | null }[] }
+export interface FileCorrection { key: string; aiText: string | null; patientText: string }
+export interface PatientFile {
+  pseudonymId: string;
+  riskLevel: RiskLevel;
+  crisisFloor: number;
+  firstSessionAt: string | null;
+  path: 'intake' | 'direct';
+  version: string;
+  generatedByAi: boolean;
+  statements: FileStatement[];
+  transcript: TranscriptTurn[];
+  transcriptRemoved: boolean;
+  phq9: InstrumentScore | null;
+  gad7: InstrumentScore | null;
+  cssrs: CssrsResult | null;
+  corrections: FileCorrection[];
+  addenda: string[];
+  approval: { approved: boolean; approvedBy: string | null; approvedAt: string | null };
+  feedback: { rating: number | null; comment: string | null };
+  canEdit: boolean;
+  submittedAt: string | null;
+}
+export interface Evidence { statementKey: StatementKey; messageIds: string[]; turns: number[]; removed: boolean }
+export interface CaseloadItem { pseudonymId: string; riskLevel: RiskLevel; fileApproved: boolean; nextSessionAt: string | null }
+export interface ManualCrisisResult { crisisEventId: string; level: RiskLevel }
+
+/** S03 triage review. */
+export interface TriageClaim { by: string | null; until: string | null; mine: boolean }
+export interface TriageQueueItem {
+  id: string;
+  pseudonymId: string;
+  path: 'intake' | 'direct';
+  contactRequested: boolean;
+  riskLevel: RiskLevel;
+  phq9: number | null;
+  gad7: number | null;
+  cssrsPositive: boolean | null;
+  submittedAt: string;
+  dueAt: string;
+  claim: TriageClaim;
+  pendingRiskLevel: RiskLevel | null;
+}
+export interface SuggestedTherapist { id: string; rank: number; displayName: string; specialties: string[]; shared: string[]; languages: string[]; load: number; capacity: number; nextAvailableAt: string | null }
+export type RuleReason = 'phq9' | 'gad7' | 'cssrs' | 'crisis' | 'routine';
+export interface TriageCaseDetail {
+  id: string;
+  pseudonymId: string;
+  path: 'intake' | 'direct';
+  contactRequested: boolean;
+  status: 'pending' | 'reviewed' | 'matched' | 'escalated' | 'closed';
+  riskLevel: RiskLevel;
+  ruleRiskLevel: RiskLevel;
+  ruleReasons: RuleReason[];
+  aiRiskLevel: RiskLevel | null;
+  crisisFloor: number;
+  phq9: number | null;
+  gad7: number | null;
+  cssrsPositive: boolean | null;
+  phq9Item9: number | null;
+  language: Lang;
+  carePath: string | null;
+  summary: string;
+  suggestions: SuggestedTherapist[];
+  suggestionsSaved: boolean;
+  claim: TriageClaim;
+  pendingCoSign: { riskLevel: RiskLevel; requestedBy: string | null; requestedAt: string } | null;
+  canCoSign: boolean;
+  submittedAt: string;
+  dueAt: string;
+  serverNow: string;
+}
+export type TriageDecisionKind = 'approve' | 'override_risk' | 'reassign' | 'escalate' | 'close' | 'cosign';
+export type ReferralCode = 'crisis_line' | 'primary_care' | 'psychiatry' | 'community_support' | 'emergency_services';
+export interface TriageDecisionRequest { kind: TriageDecisionKind; reason?: string; riskLevel?: RiskLevel; therapistIds?: string[]; focus?: string[]; referrals?: ReferralCode[]; approve?: boolean }
+export interface TriageDecisionResult { kind: TriageDecisionKind; status: TriageCaseDetail['status']; riskLevel: RiskLevel; coSignRequested: boolean; crisisEventId: string | null }

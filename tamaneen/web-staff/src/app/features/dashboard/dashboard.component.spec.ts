@@ -135,46 +135,10 @@ describe('DashboardComponent', () => {
     expect(el.querySelectorAll('[data-testid="outcome-recorded"]').length).toBe(2);
   });
 
-  it('opens the intake file with scores and the C-SSRS flag, and approves it', async () => {
-    const { el, overlay, update } = await render('en');
-    (el.querySelector('[data-testid="review-file"]') as HTMLButtonElement).click();
-    await update();
-    const intake = backend.expectOne(`${API}/v1/staff/patients/P-7Q4K-82XM/intake`);
-    intake.flush({
-      pseudonymId: 'P-7Q4K-82XM',
-      riskLevel: 2,
-      phq9: 16,
-      gad7: 12,
-      cssrsPositive: true,
-      sections: { concern: 'Trouble sleeping since the move', goals: 'Sleep through the night', supports: 'Sister', priorCare: '', extra: '' },
-      submittedAt: '2026-10-18T10:00:00Z',
-      approved: false,
-    });
-    await update();
-    const dialog = overlay().querySelector('mat-dialog-container') as HTMLElement;
-    expect(dialog.textContent).toContain('File P-7Q4K-82XM');
-    expect(dialog.querySelector('[data-testid="intake-scores"]')!.textContent).toContain('16');
-    expect(dialog.querySelector('[data-testid="cssrs"]')!.textContent).toContain('Positive');
-    expect(dialog.textContent).toContain('Trouble sleeping since the move');
-    expect(dialog.textContent).toContain('Not answered');
-
-    (dialog.querySelector('[data-testid="approve"]') as HTMLButtonElement).click();
-    backend.expectOne(`${API}/v1/staff/patients/P-7Q4K-82XM/intake/approve`).flush(null, { status: 204, statusText: 'No Content' });
-    await update();
-    expect(overlay().querySelector('mat-dialog-container')).toBeNull();
-    expect(el.querySelectorAll('[data-testid="pending-table"] tr.mat-mdc-row').length).toBe(1);
-    expect(el.querySelector('[data-testid="stat-pending"]')!.textContent).toContain('1');
-  });
-
-  it('opens the same file from a session of today', async () => {
-    const { el, overlay, update } = await render('en');
-    (el.querySelectorAll('[data-testid="open-file"]')[1] as HTMLButtonElement).click();
-    await update();
-    backend.expectOne(`${API}/v1/staff/patients/P-3HX9-14QA/intake`).flush({ title: 'Not your patient', status: 403 }, { status: 403, statusText: 'Forbidden' });
-    await update();
-    expect(overlay().querySelector('mat-dialog-container [data-testid="problem"]')!.textContent).toContain('Not your patient');
-    (overlay().querySelector('[mat-dialog-close]') as HTMLButtonElement).click();
-    await update();
+  it('links «review file» and each session «file» to the clinical file of the patient (S02)', async () => {
+    const { el } = await render('en');
+    expect(el.querySelector('[data-testid="review-file"]')!.getAttribute('href')).toBe('/patients/P-7Q4K-82XM');
+    expect(el.querySelectorAll('[data-testid="open-file"]')[1].getAttribute('href')).toBe('/patients/P-3HX9-14QA');
   });
 
   it('reloads in the new language after a switch so server-localized text changes', async () => {
