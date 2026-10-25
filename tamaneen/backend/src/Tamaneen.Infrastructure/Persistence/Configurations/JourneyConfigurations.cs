@@ -6,6 +6,7 @@ using Tamaneen.Clinical.Scheduling;
 using Tamaneen.Crisis;
 using Tamaneen.Identity;
 using Tamaneen.Identity.Auth;
+using Tamaneen.Infrastructure.Idempotency;
 
 namespace Tamaneen.Infrastructure.Persistence.Configurations;
 
@@ -378,5 +379,20 @@ internal sealed class CrisisActionConfiguration : IEntityTypeConfiguration<Crisi
         b.Property(x => x.Detail).HasMaxLength(32).IsUnicode(false);
         b.HasIndex(x => new { x.CrisisEventId, x.OccurredAtUtc });
         b.HasOne<CrisisEvent>().WithMany().HasForeignKey(x => x.CrisisEventId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+internal sealed class IdempotencyRecordConfiguration : IEntityTypeConfiguration<IdempotencyRecord>
+{
+    public void Configure(EntityTypeBuilder<IdempotencyRecord> b)
+    {
+        b.ToTable("IdempotencyRecords", Schemas.Clinical);
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).ValueGeneratedNever();
+        b.Property(x => x.Method).HasMaxLength(8).IsUnicode(false).IsRequired();
+        b.Property(x => x.Path).HasMaxLength(256).IsUnicode(false).IsRequired();
+        b.Ignore(x => x.IsCompleted);
+        b.HasIndex(x => new { x.PatientId, x.Key }).IsUnique().HasDatabaseName("UX_IdempotencyRecords_PatientKey");
+        b.HasOne<UserAccount>().WithMany().HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Restrict);
     }
 }

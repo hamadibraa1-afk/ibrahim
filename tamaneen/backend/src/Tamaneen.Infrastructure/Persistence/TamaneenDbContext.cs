@@ -8,6 +8,7 @@ using Tamaneen.Crisis;
 using Tamaneen.Identity;
 using Tamaneen.Identity.Auth;
 using Tamaneen.Infrastructure.Auditing;
+using Tamaneen.Infrastructure.Idempotency;
 using Tamaneen.Infrastructure.Security;
 
 namespace Tamaneen.Infrastructure.Persistence;
@@ -91,6 +92,8 @@ public sealed class TamaneenDbContext : DbContext
     public DbSet<CareRequest> CareRequests => Set<CareRequest>();
 
     public DbSet<CrisisAction> CrisisActions => Set<CrisisAction>();
+
+    public DbSet<IdempotencyRecord> IdempotencyRecords => Set<IdempotencyRecord>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

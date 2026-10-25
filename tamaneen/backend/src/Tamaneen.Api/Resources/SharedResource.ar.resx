@@ -95,4 +95,7 @@
   <data name="error.file.version_changed" xml:space="preserve"><value>تغيّر الملف منذ فتحته. راجع الإصدار الأحدث ثم اعتمده من جديد.</value></data>
   <data name="error.file.approved" xml:space="preserve"><value>هذا الملف معتمد ولم يعد قابلًا للتعديل.</value></data>
   <data name="error.risk.not_higher" xml:space="preserve"><value>اختر مستوى أعلى من الحالي. خفض المستوى يمر عبر المشرف.</value></data>
+  <data name="error.idempotency.invalid_key" xml:space="preserve"><value>تعذّر ربط هذا الطلب بما حفظته. حاول مرة أخرى.</value></data>
+  <data name="error.idempotency.key_reused" xml:space="preserve"><value>هذا العنصر المحفوظ يخص طلبًا آخر، لذلك لم نرسله. يمكنك تجاهله وإدخاله من جديد.</value></data>
+  <data name="error.idempotency.in_progress" xml:space="preserve"><value>ما زلنا نحفظ هذا الطلب. سنتحقق مرة أخرى بعد قليل.</value></data>
 </root>

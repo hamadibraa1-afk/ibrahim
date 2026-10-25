@@ -92,6 +92,14 @@ and P01, P02, P12 and P15 show the emergency numbers instead of the start button
 | POST | /v1/homework/{id}/checkins | CheckinRequest → CheckinResponse (note gated) | P10 |
 | GET/PUT | /v1/safety-plan | SafetyPlan / UpdateSafetyPlanRequest (gate; sections and contact names). `contacts`: up to 5 `{ name ≤ 100, phone }`, encrypted with the patient key like the sections | P37 |
 
+Idempotency (P66 outbox, EC-01, EC-07): `POST /v1/mood`, `POST /v1/homework/{id}/checkins` and `PUT /v1/safety-plan` accept an
+`Idempotency-Key` header (one GUID per write, the same on every retry; the BFF forwards it). The first request with a key runs
+and its successful response is stored, encrypted with the patient's key; a repeat gets that first response back with
+`Idempotent-Replayed: true` and runs nothing (no second entry, no second pass through the gate). A failed first request
+(4xx, 5xx, gate unavailable) frees the key. While the first copy is still running a repeat gets 409 `error.idempotency.in_progress`
+with `Retry-After`; the same key on another endpoint is 422 `error.idempotency.key_reused`; a malformed key is 400
+`error.idempotency.invalid_key`. Keys are per patient (RLS). Intake turns use `clientMessageId` and Help now `requestId` instead.
+
 Booking needs either a passed safety check (direct path) or a reviewed triage (intake path).
 Gated writes that return an object (`PUT /v1/intake/{id}/summary`, `POST /v1/triage/addendum`, `PUT /v1/safety-plan`,
 `POST /v1/mood`, `POST /v1/homework/{id}/checkins`, intake turns) also carry `crisis` and `script`. If the crisis worker

@@ -66,6 +66,9 @@ public sealed partial class DomainExceptionHandler<TResource> : IExceptionHandle
         [ErrorCodes.FileVersionChanged] = StatusCodes.Status412PreconditionFailed,
         [ErrorCodes.FileApproved] = StatusCodes.Status409Conflict,
         [ErrorCodes.RiskNotHigher] = StatusCodes.Status400BadRequest,
+        [ErrorCodes.IdempotencyKeyInvalid] = StatusCodes.Status400BadRequest,
+        [ErrorCodes.IdempotencyKeyReused] = StatusCodes.Status422UnprocessableEntity,
+        [ErrorCodes.IdempotencyInProgress] = StatusCodes.Status409Conflict,
     };
 
     private readonly IProblemDetailsService _problems;

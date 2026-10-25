@@ -1565,6 +1565,50 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Tamaneen.Infrastructure.Idempotency.IdempotencyRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("CompletedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("Key")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Method")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(8)");
+
+                    b.Property<string>("Path")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(256)");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("ReservedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<byte[]>("ResponseCipher")
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<int?>("StatusCode")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PatientId", "Key")
+                        .IsUnique()
+                        .HasDatabaseName("UX_IdempotencyRecords_PatientKey");
+
+                    b.ToTable("IdempotencyRecords", "clinical");
+                });
+
             modelBuilder.Entity("Tamaneen.Infrastructure.Security.PatientKey", b =>
                 {
                     b.Property<Guid>("PatientId")
@@ -1905,6 +1949,15 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                     b.HasOne("Tamaneen.Identity.UserAccount", null)
                         .WithOne()
                         .HasForeignKey("Tamaneen.Identity.StaffProfile", "UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Tamaneen.Infrastructure.Idempotency.IdempotencyRecord", b =>
+                {
+                    b.HasOne("Tamaneen.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("PatientId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

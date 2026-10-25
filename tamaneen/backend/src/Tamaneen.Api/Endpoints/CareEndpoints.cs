@@ -79,13 +79,14 @@ public static class CareEndpoints
         g.MapGet("/crisis/status", CrisisStatusAsync);
         g.MapPost("/crisis/help", HelpAsync);
         g.MapGet("/home", HomeAsync);
-        g.MapPost("/mood", SaveMoodAsync);
+        // The writes the patient app's outbox (P66) queues offline carry an Idempotency-Key: a resend gets the first result.
+        g.MapPost("/mood", SaveMoodAsync).WithIdempotency();
         g.MapGet("/mood", MoodAsync);
         g.MapGet("/homework", HomeworkListAsync);
         g.MapGet("/homework/{id:guid}", HomeworkDetailAsync);
-        g.MapPost("/homework/{id:guid}/checkins", CheckinAsync);
+        g.MapPost("/homework/{id:guid}/checkins", CheckinAsync).WithIdempotency();
         g.MapGet("/safety-plan", SafetyPlanAsync);
-        g.MapPut("/safety-plan", UpdateSafetyPlanAsync);
+        g.MapPut("/safety-plan", UpdateSafetyPlanAsync).WithIdempotency();
         return app;
     }
 

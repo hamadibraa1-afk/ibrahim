@@ -92,4 +92,7 @@ public static class ErrorCodes
     public const string FileVersionChanged = "error.file.version_changed";
     public const string FileApproved = "error.file.approved";
     public const string RiskNotHigher = "error.risk.not_higher";
+    public const string IdempotencyKeyInvalid = "error.idempotency.invalid_key";
+    public const string IdempotencyKeyReused = "error.idempotency.key_reused";
+    public const string IdempotencyInProgress = "error.idempotency.in_progress";
 }
