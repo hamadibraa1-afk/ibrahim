@@ -24,7 +24,6 @@
     "saved": "Your plan is saved.",
     "loading": "Loading your plan…",
     "offlineNotice": "You're offline. This is the last copy saved on your device, from {date}.",
-    "editOffline": "You can edit the plan when you're back online.",
     "unavailable": "We couldn't load your plan, and there's no copy saved on this device yet. Emergency numbers are always available below.",
     "contacts": {
       "legend": "People to call for help (up to 5)",
@@ -32,6 +31,8 @@
       "phone": "Contact {n} mobile number",
       "add": "Add a contact",
       "remove": "Remove contact {n}"
-    }
+    },
+    "queued": "Saved on your phone; it will be sent when you are online.",
+    "pending": "Your changes are waiting to send · saved on your phone"
   }
 }

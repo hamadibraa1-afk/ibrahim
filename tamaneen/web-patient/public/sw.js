@@ -18,8 +18,8 @@ const LOCALES = ['ar', 'en'];
 const DEFAULT_LOCALE = 'ar';
 const CRISIS_PATH = '/crisis-resources';
 const OFFLINE_PATH = '/offline';
-/** Pages whose last successful response is kept for offline use (no personal data in their HTML). */
-const OFFLINE_CAPABLE = [CRISIS_PATH, OFFLINE_PATH, '/safety-plan'];
+/** Pages whose last successful response is kept for offline use (no personal data in their HTML; P66's list is read on the device). */
+const OFFLINE_CAPABLE = [CRISIS_PATH, OFFLINE_PATH, '/safety-plan', '/outbox'];
 const PRECACHE_PAGES = LOCALES.flatMap((l) => [`/${l}${CRISIS_PATH}`, `/${l}${OFFLINE_PATH}`]);
 const STATIC_FILES = ['/manifest.webmanifest', '/icon.svg'];
 const CRISIS_TIMEOUT_MS = 3000;

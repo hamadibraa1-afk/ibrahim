@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { AnchorHTMLAttributes, ReactNode } from 'react';
 import type { MoodEntry } from '@/lib/api/types';
@@ -17,6 +17,7 @@ vi.mock('@/i18n/navigation', () => ({
 }));
 
 import { CheckInForm } from '@/components/mood/CheckInForm';
+import { OUTBOX_SENT_EVENT, outboxItems, resetOutbox, setOutboxOwner } from '@/components/pwa/outbox';
 import { buildWeek } from '@/components/mood/MoodChart';
 
 // Tuesday 20 October 2026, 15:00 in Riyadh.
@@ -82,7 +83,7 @@ describe('CheckInForm', () => {
     expect(screen.getByRole('button', { name: 'متعب' })).toHaveAttribute('aria-pressed', 'true');
     await userEvent.type(screen.getByRole('textbox', { name: /ملاحظة/ }), '  يوم طويل ');
     await userEvent.click(screen.getByRole('button', { name: 'حفظ' }));
-    expect(mocks.api).toHaveBeenCalledWith('mood', { method: 'POST', body: { score: 3, tags: ['tired', 'work_stress'], note: 'يوم طويل' } });
+    expect(mocks.api).toHaveBeenCalledWith('mood', expect.objectContaining({ method: 'POST', body: { score: 3, tags: ['tired', 'work_stress'], note: 'يوم طويل' }, idempotencyKey: expect.any(String) }));
     expect(await screen.findByText('حفظنا مزاجك اليوم.')).toBeInTheDocument();
     expect(screen.getByRole('rowheader', { name: 'الثلاثاء، 20 أكتوبر' }).closest('tr')).toHaveTextContent('3 من 10');
   });
@@ -95,25 +96,42 @@ describe('CheckInForm', () => {
     await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith('/crisis'));
   });
 
-  it('says plainly when offline that nothing was sent, and keeps the answers', async () => {
-    const onLine = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
-    try {
-      renderWithIntl(<CheckInForm initialEntries={[]} nowIso={nowIso} timeZone="Asia/Riyadh" />, 'ar');
-      expect(screen.getByRole('status')).toHaveTextContent('أنت غير متصل بالإنترنت الآن');
-      await userEvent.type(screen.getByRole('textbox', { name: /ملاحظة/ }), 'يوم طويل');
-      await userEvent.click(screen.getByRole('button', { name: 'حفظ' }));
-      expect(mocks.api).not.toHaveBeenCalled();
-      expect(screen.getByRole('alert')).toHaveTextContent('لم نرسل تسجيلك لأنك غير متصل');
-      expect(screen.getByRole('textbox', { name: /ملاحظة/ })).toHaveValue('يوم طويل');
-    } finally {
-      onLine.mockRestore();
-    }
-  });
+  describe('offline (P66 outbox)', () => {
+    beforeEach(() => {
+      resetOutbox();
+      setOutboxOwner('P-TEST1');
+    });
+    afterEach(() => {
+      resetOutbox();
+      window.localStorage.clear();
+    });
 
-  it('treats a dropped connection during save the same way (English)', async () => {
-    mocks.api.mockRejectedValue(new TypeError('Failed to fetch'));
-    renderWithIntl(<CheckInForm initialEntries={[]} nowIso={nowIso} timeZone="Asia/Riyadh" />, 'en');
-    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent("We didn't send your check-in because you're offline.");
+    it('keeps the check-in on the phone while offline and says it will be sent', async () => {
+      const onLine = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+      try {
+        renderWithIntl(<CheckInForm initialEntries={[]} nowIso={nowIso} timeZone="Asia/Riyadh" />, 'ar');
+        expect(screen.getByRole('status')).toHaveTextContent('أنت غير متصل الآن');
+        await userEvent.type(screen.getByRole('textbox', { name: /ملاحظة/ }), 'يوم طويل');
+        await userEvent.click(screen.getByRole('button', { name: 'حفظ' }));
+        expect(mocks.api).not.toHaveBeenCalled();
+        expect(await screen.findByTestId('checkin-queued')).toHaveTextContent('سنرسلها عند عودة الاتصال');
+        expect(outboxItems()).toEqual([expect.objectContaining({ kind: 'mood', state: 'waiting', body: { score: 5, tags: [], note: 'يوم طويل' } })]);
+      } finally {
+        onLine.mockRestore();
+      }
+    });
+
+    it('queues on a dropped connection too, and adds the entry to the chart once it arrives (English)', async () => {
+      mocks.api.mockRejectedValue(new TypeError('Failed to fetch'));
+      renderWithIntl(<CheckInForm initialEntries={[]} nowIso={nowIso} timeZone="Asia/Riyadh" />, 'en');
+      fireEvent.change(screen.getByRole('slider'), { target: { value: '3' } });
+      await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+      expect(await screen.findByTestId('checkin-queued')).toHaveTextContent('We will send it when you are back online.');
+      const [item] = outboxItems();
+      act(() => {
+        window.dispatchEvent(new CustomEvent(OUTBOX_SENT_EVENT, { detail: { item, response: { crisis: false, level: 0, entry: { id: 'q', score: 3, tags: [], at: nowIso } } } }));
+      });
+      expect(screen.getByRole('rowheader', { name: 'Tuesday 20 October' }).closest('tr')).toHaveTextContent('3 of 10');
+    });
   });
 });

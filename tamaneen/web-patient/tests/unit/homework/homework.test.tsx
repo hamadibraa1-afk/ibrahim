@@ -19,6 +19,7 @@ vi.mock('@/i18n/navigation', () => ({
 
 import { HomeworkDetailView } from '@/components/homework/HomeworkDetailView';
 import { HomeworkListView } from '@/components/homework/HomeworkListView';
+import { outboxItems, resetOutbox, setOutboxOwner } from '@/components/pwa/outbox';
 
 const item = (over: Partial<HomeworkItem>): HomeworkItem => ({
   id: 'h1',
@@ -135,9 +136,25 @@ describe('HomeworkDetailView', () => {
     fireEvent.change(screen.getByRole('slider'), { target: { value: '7' } });
     await userEvent.type(screen.getByRole('textbox', { name: /ملاحظة لأخصائيتك/ }), 'نمت أسرع من الأمس.');
     await userEvent.click(screen.getByRole('button', { name: 'حفظ المتابعة' }));
-    expect(mocks.api).toHaveBeenCalledWith('homework/h1/checkins', { method: 'POST', body: { status: 'done', feeling: 7, note: 'نمت أسرع من الأمس.' } });
+    expect(mocks.api).toHaveBeenCalledWith('homework/h1/checkins', expect.objectContaining({ method: 'POST', body: { status: 'done', feeling: 7, note: 'نمت أسرع من الأمس.' } }));
     expect(await screen.findByText('حفظنا متابعة اليوم. ستراها أخصائيتك.')).toBeInTheDocument();
     expect(screen.getByRole('figure')).toHaveTextContent('رائع!');
+  });
+
+  it('keeps the check-in on the phone when the connection drops and says it will be sent (English, P66)', async () => {
+    resetOutbox();
+    setOutboxOwner('P-TEST1');
+    try {
+      mocks.api.mockRejectedValue(new TypeError('Failed to fetch'));
+      renderWithIntl(<HomeworkDetailView homework={detail()} locale="en" timeZone="Asia/Riyadh" />, 'en');
+      await userEvent.click(screen.getByRole('radio', { name: 'Done it' }));
+      await userEvent.click(screen.getByRole('button', { name: /Save/ }));
+      expect(await screen.findByTestId('homework-queued')).toHaveTextContent('We will send it when you are back online.');
+      expect(outboxItems()).toEqual([expect.objectContaining({ kind: 'homework-checkin', path: 'homework/h1/checkins', label: 'تمرين التنفس قبل النوم', state: 'waiting' })]);
+    } finally {
+      resetOutbox();
+      window.localStorage.clear();
+    }
   });
 
   it("prefills from today's check-in", () => {
@@ -167,7 +184,7 @@ describe('HomeworkDetailView', () => {
     await userEvent.click(screen.getByRole('radio', { name: 'ليس اليوم' }));
     expect(screen.queryByRole('slider')).toBeNull();
     await userEvent.click(screen.getByRole('button', { name: 'حفظ المتابعة' }));
-    expect(mocks.api).toHaveBeenCalledWith('homework/h1/checkins', { method: 'POST', body: { status: 'skipped', feeling: null } });
+    expect(mocks.api).toHaveBeenCalledWith('homework/h1/checkins', expect.objectContaining({ method: 'POST', body: { status: 'skipped', feeling: null } }));
   });
 
   it('opens the crisis screen when the note is blocked', async () => {

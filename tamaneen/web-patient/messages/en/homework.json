@@ -40,6 +40,7 @@
     "save": "Save check-in",
     "saved": "Today's check-in is saved. Your specialist will see it.",
     "back": "My homework",
-    "readOnly": "This exercise ended on {date}. You can read it, but new check-ins are no longer recorded."
+    "readOnly": "This exercise ended on {date}. You can read it, but new check-ins are no longer recorded.",
+    "queued": "We will send it when you are back online. Your check-in is saved on your phone."
   }
 }

@@ -18,6 +18,42 @@
       "bodySoon": "We'll be back soon. The emergency team keeps working during maintenance.",
       "danger": "If you are in danger now:",
       "resources": "Emergency resources"
+    },
+    "outbox": {
+      "metaTitle": "Weak connection",
+      "title": "Weak connection",
+      "weak": "Weak connection · retrying automatically",
+      "retryNow": "Try again now",
+      "waitingCount": "{count, plural, one {# item} other {# items}} waiting to send · saved on your phone",
+      "failedCount": "{count, plural, one {# item not sent} other {# items not sent}}",
+      "view": "View",
+      "intro": "What you save while offline is kept on your phone and sent automatically, in order, when the connection returns. Nothing is deleted unless you choose to.",
+      "empty": "Nothing is waiting to send. Everything you saved has arrived.",
+      "waiting": "◷ Waiting to send · saved on your phone",
+      "failed": "Not sent",
+      "failedGeneric": "The server refused this request.",
+      "queuedAt": "Saved {time}",
+      "retry": "Send again",
+      "discard": "Discard",
+      "discardConfirm": "Discard this item? It will be deleted from your phone and not sent.",
+      "discardYes": "Yes, discard it",
+      "cancel": "Cancel",
+      "kinds": {
+        "mood": "Mood check-in",
+        "homework-checkin": "Exercise check-in",
+        "safety-plan": "Safety plan edit"
+      },
+      "moodDetail": "Mood {score} out of 10",
+      "checkinStatus": {
+        "done": "Done",
+        "partial": "Partly",
+        "skipped": "Not today"
+      },
+      "planDetail": "The whole plan as you edited it",
+      "emergency": "If you are in danger and the internet is weak: call the emergency number directly. Calling does not need the internet.",
+      "call": "📞 Call emergency",
+      "resources": "Emergency resources",
+      "home": "Home"
     }
   }
 }

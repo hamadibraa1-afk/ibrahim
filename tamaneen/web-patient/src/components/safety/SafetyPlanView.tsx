@@ -5,10 +5,10 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { useRouter } from '@/i18n/navigation';
 import { isLocale, routing } from '@/i18n/routing';
 import { api } from '@/lib/api/client';
+import { OUTBOX_SENT_EVENT, submitWrite, useOutbox, type OutboxSentDetail } from '@/components/pwa/outbox';
 import type { PlanContact, SafetyPlan, SafetyPlanSection } from '@/lib/api/types';
 import { formatDate } from '@/lib/format';
 import { apiMessage, isCrisis, isNetworkError } from '@/components/pwa/errors';
-import { useOnline } from '@/components/pwa/hooks';
 import { Button } from '@/components/ui/Button';
 import { Notice } from '@/components/ui/Notice';
 import { Spinner } from '@/components/ui/Spinner';
@@ -47,7 +47,8 @@ function emptyPlan(plan: SafetyPlan): boolean {
 /**
  * P37 Safety plan. Shows the last copy saved on this device at once, refreshes it from the API, and keeps
  * working from the saved copy when offline or when the API fails. `numbers` are the server-rendered
- * emergency tel: links, so they show even before (or without) JavaScript.
+ * emergency tel: links, so they show even before (or without) JavaScript. Edits work offline too: they go
+ * through the outbox (P66) and the plan shows them, marked as waiting to send, until the server has them.
  */
 export function SafetyPlanView({ numbers }: { numbers: ReactNode }) {
   const t = useTranslations('safetyPlan');
@@ -55,7 +56,6 @@ export function SafetyPlanView({ numbers }: { numbers: ReactNode }) {
   const current = useLocale();
   const locale = isLocale(current) ? current : routing.defaultLocale;
   const router = useRouter();
-  const online = useOnline();
 
   const [plan, setPlan] = useState<SafetyPlan | null>(null);
   const [source, setSource] = useState<Source | null>(null);
@@ -67,6 +67,9 @@ export function SafetyPlanView({ numbers }: { numbers: ReactNode }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  // The newest edit still waiting on the phone is what the plan will be once it is sent: show that.
+  const pendingEdit = useOutbox().filter((i) => i.kind === 'safety-plan' && i.state === 'waiting').at(-1);
+  const pendingBody = pendingEdit?.body as { sections?: Partial<Record<SafetyPlanSection, string>>; contacts?: PlanContact[] } | undefined;
 
   useEffect(() => {
     let cancelled = false;
@@ -102,12 +105,26 @@ export function SafetyPlanView({ numbers }: { numbers: ReactNode }) {
     };
   }, [locale]);
 
-  const canEdit = online && source === 'network';
+  // A queued edit arrives: the server's answer becomes the plan and the saved copy.
+  useEffect(() => {
+    const sent = (event: Event) => {
+      const { item, response } = (event as CustomEvent<OutboxSentDetail>).detail;
+      if (item.kind !== 'safety-plan' || isCrisis(response) || !response) return;
+      const updated = { ...(response as SafetyPlan), contacts: (response as SafetyPlan).contacts ?? [] };
+      void writeCachedPlan(updated, locale);
+      setPlan(updated);
+      setSource('network');
+    };
+    window.addEventListener(OUTBOX_SENT_EVENT, sent);
+    return () => window.removeEventListener(OUTBOX_SENT_EVENT, sent);
+  }, [locale]);
+
+  const shown: SafetyPlan | null = plan && pendingBody ? { ...plan, sections: { ...plan.sections, ...(pendingBody.sections ?? {}) }, contacts: pendingBody.contacts ?? plan.contacts } : plan;
 
   function startEdit() {
-    if (!plan) return;
-    setDrafts(Object.fromEntries(ALL.map((s) => [s, plan.sections[s] ?? ''])) as Record<SafetyPlanSection, string>);
-    setContactDrafts((plan.contacts ?? []).map((c) => ({ ...c })));
+    if (!shown) return;
+    setDrafts(Object.fromEntries(ALL.map((s) => [s, shown.sections[s] ?? ''])) as Record<SafetyPlanSection, string>);
+    setContactDrafts((shown.contacts ?? []).map((c) => ({ ...c })));
     setEditing(true);
     setSaved(false);
     setError(null);
@@ -120,7 +137,17 @@ export function SafetyPlanView({ numbers }: { numbers: ReactNode }) {
     try {
       const sections = Object.fromEntries(ALL.map((s) => [s, drafts[s].trim()])) as Record<SafetyPlanSection, string>;
       const contacts = contactDrafts.map((c) => ({ name: c.name.trim(), phone: c.phone.trim() })).filter((c) => c.name || c.phone);
-      const response = await api<SafetyPlan>('safety-plan', { method: 'PUT', body: { sections, contacts } });
+      const result = await submitWrite<SafetyPlan>({ kind: 'safety-plan', method: 'PUT', path: 'safety-plan', body: { sections, contacts } });
+      if (result.status === 'rejected') {
+        const e = result.error;
+        setError(apiMessage(e) ?? (isNetworkError(e) ? tErrors('network') : tErrors('generic')));
+        return;
+      }
+      if (result.status === 'queued') {
+        setEditing(false);
+        return;
+      }
+      const response = result.response;
       if (isCrisis(response)) {
         router.replace('/crisis');
         return;
@@ -130,8 +157,6 @@ export function SafetyPlanView({ numbers }: { numbers: ReactNode }) {
       setPlan(updated);
       setEditing(false);
       setSaved(true);
-    } catch (e) {
-      setError(apiMessage(e) ?? (isNetworkError(e) ? tErrors('network') : tErrors('generic')));
     } finally {
       setBusy(false);
     }
@@ -242,7 +267,8 @@ export function SafetyPlanView({ numbers }: { numbers: ReactNode }) {
     );
   }
 
-  const reason = (plan.sections.reasonToLive ?? '').trim();
+  const view = shown ?? plan;
+  const reason = (view.sections.reasonToLive ?? '').trim();
 
   return (
     <div className="flex flex-col gap-3 pt-2">
@@ -254,13 +280,18 @@ export function SafetyPlanView({ numbers }: { numbers: ReactNode }) {
         </Notice>
       ) : null}
       <div aria-live="polite" className="empty:hidden">
-        {saved ? <Notice tone="success">{t('saved')}</Notice> : null}
+        {saved && !pendingEdit ? <Notice tone="success">{t('saved')}</Notice> : null}
+        {pendingEdit ? (
+          <Notice tone="warning">
+            <span data-testid="plan-pending">{t('pending')}</span>
+          </Notice>
+        ) : null}
       </div>
-      {emptyPlan(plan) ? <p className="leading-relaxed text-muted">{t('emptyPlan')}</p> : null}
+      {emptyPlan(view) ? <p className="leading-relaxed text-muted">{t('emptyPlan')}</p> : null}
 
       <ol className="flex flex-col gap-3">
         {NUMBERED.map((section, i) => {
-          const text = (plan.sections[section] ?? '').trim();
+          const text = (view.sections[section] ?? '').trim();
           return (
             <li key={section} className="flex items-start gap-3 rounded-card bg-surface p-4 shadow-[0_1px_0_rgb(var(--line))]" data-testid={`plan-${section}`}>
               <span aria-hidden="true" className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-bold ${BADGE[section]}`}>
@@ -270,9 +301,9 @@ export function SafetyPlanView({ numbers }: { numbers: ReactNode }) {
                 <h2 className="text-base font-bold">{t(`sections.${section}`)}</h2>
                 {section === 'peopleToAsk' ? (
                   <>
-                    {(plan.contacts ?? []).length > 0 ? (
+                    {(view.contacts ?? []).length > 0 ? (
                       <ul className="flex flex-wrap gap-2" data-testid="plan-contacts">
-                        {(plan.contacts ?? []).map((contact) => (
+                        {(view.contacts ?? []).map((contact) => (
                           <li key={`${contact.name}-${contact.phone}`}>
                             <CallLink number={contact.phone} variant="chip">
                               <bdi dir="auto">{contact.name}</bdi>
@@ -290,7 +321,7 @@ export function SafetyPlanView({ numbers }: { numbers: ReactNode }) {
                         ))}
                       </ul>
                     ) : null}
-                    {!text && (plan.contacts ?? []).length === 0 ? <p className="leading-relaxed text-muted">{t('empty')}</p> : null}
+                    {!text && (view.contacts ?? []).length === 0 ? <p className="leading-relaxed text-muted">{t('empty')}</p> : null}
                   </>
                 ) : section === 'professionals' ? (
                   <>
@@ -327,14 +358,9 @@ export function SafetyPlanView({ numbers }: { numbers: ReactNode }) {
       </section>
 
       <div className="flex flex-col gap-2 pt-2">
-        <Button variant="secondary" full disabled={!canEdit} aria-describedby={canEdit ? undefined : 'plan-edit-offline'} onClick={startEdit}>
+        <Button variant="secondary" full onClick={startEdit}>
           {t('edit')}
         </Button>
-        {!canEdit && source !== 'cache' ? (
-          <p id="plan-edit-offline" className="text-center text-sm text-muted">
-            {t('editOffline')}
-          </p>
-        ) : null}
       </div>
     </div>
   );

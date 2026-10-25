@@ -3,13 +3,13 @@
 import { useTranslations } from 'next-intl';
 import { useId, useState, type FormEvent } from 'react';
 import { useRouter } from '@/i18n/navigation';
-import { api } from '@/lib/api/client';
 import type { CheckinRequest, CheckinResponse, CheckinStatus, HomeworkDetail } from '@/lib/api/types';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
 import { Notice } from '@/components/ui/Notice';
 import { TextArea } from '@/components/ui/TextField';
 import { ScoreSlider } from '@/components/mood/ScoreSlider';
+import { submitWrite, useOutbox } from '@/components/pwa/outbox';
 import { problemMessage } from '@/components/settings/problem';
 import { SegmentedControl } from '@/components/settings/SegmentedControl';
 
@@ -18,6 +18,7 @@ const STATUSES: CheckinStatus[] = ['done', 'partial', 'skipped'];
 /**
  * P10 check-in: how today went, how the patient felt afterwards (not asked on a skipped day), and an
  * optional note for the therapist, which goes through the crisis gate. Prefilled from today's check-in.
+ * Saving goes through the outbox (P66, PB-50): offline, the check-in waits on the phone and is sent on reconnect.
  */
 export function HomeworkCheckinForm({ homework }: { homework: HomeworkDetail }) {
   const t = useTranslations('homework');
@@ -34,6 +35,8 @@ export function HomeworkCheckinForm({ homework }: { homework: HomeworkDetail }) 
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
+  const path = `homework/${encodeURIComponent(homework.id)}/checkins`;
+  const pending = useOutbox().some((i) => i.kind === 'homework-checkin' && i.path === path && i.state === 'waiting');
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -47,15 +50,18 @@ export function HomeworkCheckinForm({ homework }: { homework: HomeworkDetail }) 
     if (note.trim()) body.note = note.trim();
     setBusy(true);
     try {
-      const result = await api<CheckinResponse>(`homework/${encodeURIComponent(homework.id)}/checkins`, { method: 'POST', body });
-      if (result.crisis) {
+      const result = await submitWrite<CheckinResponse>({ kind: 'homework-checkin', method: 'POST', path, body, label: homework.title });
+      if (result.status === 'rejected') {
+        setError(problemMessage(result.error, te('network')));
+        return;
+      }
+      if (result.status === 'queued') return;
+      if (result.response.crisis) {
         router.replace('/crisis');
         return;
       }
-      setFeedback(result.homework.latestFeedback);
+      setFeedback(result.response.homework.latestFeedback);
       setSaved(true);
-    } catch (e) {
-      setError(problemMessage(e, te('network')));
     } finally {
       setBusy(false);
     }
@@ -117,6 +123,11 @@ export function HomeworkCheckinForm({ homework }: { homework: HomeworkDetail }) 
       ) : null}
 
       {error ? <Notice tone="danger">{error}</Notice> : null}
+      {pending ? (
+        <Notice tone="warning">
+          <span data-testid="homework-queued">{t('queued')}</span>
+        </Notice>
+      ) : null}
       {saved ? <Notice tone="success">{t('saved')}</Notice> : null}
 
       <Button type="submit" full busy={busy}>

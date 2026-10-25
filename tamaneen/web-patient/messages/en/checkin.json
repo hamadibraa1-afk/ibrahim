@@ -31,8 +31,8 @@
     "chartEmpty": "You haven't logged your mood this week yet.",
     "save": "Save",
     "saved": "Your mood for today is saved.",
-    "offline": "You're offline right now. Your check-in can't be sent until you're back online.",
-    "offlineNotSent": "We didn't send your check-in because you're offline. Your answers are still here, so press \"Save\" again once you're back online.",
-    "backHome": "Back to home"
+    "offline": "You are offline right now. When you save, we keep your check-in on your phone and send it when you are back online.",
+    "backHome": "Back to home",
+    "queued": "We will send it when you are back online. Your check-in is saved on your phone."
   }
 }

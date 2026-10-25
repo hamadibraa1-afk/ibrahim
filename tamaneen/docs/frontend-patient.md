@@ -13,7 +13,7 @@ Signed in, under the `(app)` route group, whose layout already requires a sessio
 `/matches` P07 · `/therapists` P24 · `/therapists/[id]` P25 · `/therapists/[id]/book` P08 · `/appointments` P27 ·
 `/appointments/[id]` P28 · `/appointments/[id]/confirmed` P26 · `/home` P09 · `/homework` P29 · `/homework/[id]` P10 ·
 `/check-in` P30 · `/safety-plan` P37 · `/settings` P31 · `/settings/security` P32 · `/settings/notifications` P33 ·
-`/settings/safety` P34 · `/privacy` P11.
+`/settings/safety` P34 · `/privacy` P11 · `/outbox` P66.
 
 Put a page at `src/app/[locale]/(app)/<route>/page.tsx` (signed in) or `src/app/[locale]/(public)/<route>/page.tsx`.
 Route groups don't appear in the URL.
@@ -25,6 +25,7 @@ Route groups don't appear in the URL.
 - Client components: `api<T>('mood', { method: 'POST', body })` from `@/lib/api/client`. It goes through the BFF, refreshes once on 401, and sends the user to `/crisis` if the API says the chat is locked.
 - Sign-in steps that return tokens use `authApi('signup-verify' | 'login' | 'login-mfa' | 'logout', body)`. Tokens never reach the browser.
 - Errors are `ApiError` with `problem.title/detail` already in the user's language: show them, never a hard-coded English string. `fieldErrors()` maps validation errors to fields.
+- Writes that must survive going offline (P30 mood, P10 check-in, P37 plan) use `submitWrite()` from `@/components/pwa/outbox`, not `api()`: it stores the write (encrypted IndexedDB, per patient), sends it with an `Idempotency-Key` now or on reconnect, and returns `sent`, `queued` or `rejected`. `OutboxStatus` in the signed-in layout sends the queue, shows the banner and opens `/crisis` when a queued note is a crisis. Sign-out and account deletion clear it.
 - If a gated response has `crisis: true` (GateOutcome), navigate to `/crisis` at once with `router.replace`.
 - After onboarding steps, use `onboardingStep(me)` / `landingPath(me)` from `@/lib/onboarding` to choose the next screen.
 

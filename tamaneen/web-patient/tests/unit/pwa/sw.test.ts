@@ -100,6 +100,7 @@ describe('service worker routing', () => {
     expect(sw.offlinePageFor('/en/appointments/12')).toBe('/en/offline');
     expect(sw.offlinePageFor('/somewhere')).toBe('/ar/offline');
     expect(sw.isOfflineCapable('/ar/safety-plan')).toBe(true);
+    expect(sw.isOfflineCapable('/en/outbox')).toBe(true);
     expect(sw.isOfflineCapable('/ar/intake')).toBe(false);
   });
 

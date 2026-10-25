@@ -1,9 +1,8 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useId, useState, type FormEvent } from 'react';
+import { useEffect, useId, useState, type FormEvent } from 'react';
 import { useRouter } from '@/i18n/navigation';
-import { api } from '@/lib/api/client';
 import type { MoodEntry, MoodEntryRequest, MoodSaveResponse, MoodTag } from '@/lib/api/types';
 import { Button, ButtonLink } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -12,16 +11,16 @@ import { Notice } from '@/components/ui/Notice';
 import { TextArea } from '@/components/ui/TextField';
 import { problemMessage } from '@/components/settings/problem';
 import { dayKey } from '@/components/settings/time';
-import { isNetworkError } from '@/components/pwa/errors';
 import { useOnline } from '@/components/pwa/hooks';
+import { OUTBOX_SENT_EVENT, submitWrite, type OutboxSentDetail } from '@/components/pwa/outbox';
 import { MoodChart } from './MoodChart';
 import { MOOD_TAGS, moodWord } from './scale';
 import { ScoreSlider } from './ScoreSlider';
 
 /**
  * P30: mood 0–10, optional tags and note, and the last seven days. The note goes through the crisis gate.
- * There is no offline queue (the pilot has no outbox): when offline, the form says plainly that nothing was
- * sent and keeps the answers on screen so «حفظ» can be pressed again once the connection is back.
+ * «حفظ» goes through the outbox (P66): offline, the check-in is kept on the phone and sent when the connection
+ * returns (the banner says so); a queued note that turns out to be a crisis opens the crisis screen on arrival.
  */
 export function CheckInForm({ initialEntries, nowIso, timeZone }: { initialEntries: MoodEntry[]; nowIso: string; timeZone: string }) {
   const t = useTranslations('checkin');
@@ -40,7 +39,19 @@ export function CheckInForm({ initialEntries, nowIso, timeZone }: { initialEntri
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [queued, setQueued] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // A check-in queued earlier arrives: it joins the chart.
+  useEffect(() => {
+    const sent = (event: Event) => {
+      const { item, response } = (event as CustomEvent<OutboxSentDetail>).detail;
+      const entry = (response as Partial<MoodSaveResponse> | null)?.entry;
+      if (item.kind === 'mood' && entry) setEntries((current) => (current.some((e) => e.id === entry.id) ? current : [...current, entry]));
+    };
+    window.addEventListener(OUTBOX_SENT_EVENT, sent);
+    return () => window.removeEventListener(OUTBOX_SENT_EVENT, sent);
+  }, []);
 
   function toggle(tag: MoodTag) {
     setSaved(false);
@@ -51,24 +62,28 @@ export function CheckInForm({ initialEntries, nowIso, timeZone }: { initialEntri
     event.preventDefault();
     setError(null);
     setSaved(false);
-    if (!navigator.onLine) {
-      setError(t('offlineNotSent'));
-      return;
-    }
+    setQueued(false);
     setBusy(true);
     const body: MoodEntryRequest = { score, tags };
     if (note.trim()) body.note = note.trim();
     try {
-      const result = await api<MoodSaveResponse>('mood', { method: 'POST', body });
-      if (result.crisis) {
+      const result = await submitWrite<MoodSaveResponse>({ kind: 'mood', method: 'POST', path: 'mood', body });
+      if (result.status === 'rejected') {
+        setError(problemMessage(result.error, te('network')));
+        return;
+      }
+      if (result.status === 'queued') {
+        setNote('');
+        setQueued(true);
+        return;
+      }
+      if (result.response.crisis) {
         router.replace('/crisis');
         return;
       }
-      setEntries((current) => [...current, result.entry]);
+      setEntries((current) => [...current, result.response.entry]);
       setNote('');
       setSaved(true);
-    } catch (e) {
-      setError(isNetworkError(e) ? t('offlineNotSent') : problemMessage(e, te('network')));
     } finally {
       setBusy(false);
     }
@@ -108,7 +123,12 @@ export function CheckInForm({ initialEntries, nowIso, timeZone }: { initialEntri
 
       <MoodChart entries={entries} now={now} timeZone={timeZone} />
 
-      {!online && !error ? <Notice tone="warning">{t('offline')}</Notice> : null}
+      {!online && !error && !queued ? <Notice tone="warning">{t('offline')}</Notice> : null}
+      {queued ? (
+        <Notice tone="warning">
+          <span data-testid="checkin-queued">{t('queued')}</span>
+        </Notice>
+      ) : null}
       {error ? <Notice tone="danger">{error}</Notice> : null}
       {saved ? (
         <Notice tone="success">

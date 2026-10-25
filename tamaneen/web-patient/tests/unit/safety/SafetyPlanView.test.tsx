@@ -2,6 +2,7 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { clearCachedPlan, LEGACY_PLAN_KEY, readCachedPlan, SAFETY_PLAN_KEY, setPlanKeyStore, writeCachedPlan, type PlanKeyStore } from '@/components/safety/planCache';
 import type { SafetyPlan } from '@/lib/api/types';
+import { outboxItems, resetOutbox, setOutboxOwner } from '@/components/pwa/outbox';
 import { renderWithIntl } from '../intl';
 import { api, Link, resetMocks, routeApi, router } from '../intake/mocks';
 
@@ -86,8 +87,35 @@ describe('SafetyPlanView (P37)', () => {
     renderWithIntl(<SafetyPlanView numbers={numbers} />, 'ar');
     expect(await screen.findByTestId('plan-offline')).toHaveTextContent('لا يوجد اتصال الآن. هذه آخر نسخة محفوظة على جهازك');
     expect(screen.getByText('ابنة أختي الصغيرة، وحلمي أن أسافر.')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'تعديل الخطة' })).toBeDisabled();
-    expect(screen.getByText('يمكنك تعديل الخطة عند عودة الاتصال.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'تعديل الخطة' })).toBeEnabled();
+  });
+
+  it('edits offline from the saved copy: the edit waits on the phone and the plan shows it as waiting (P66)', async () => {
+    resetOutbox();
+    setOutboxOwner('P-TEST1');
+    try {
+      await writeCachedPlan(plan, 'ar', new Date('2026-10-19T08:00:00Z'));
+      routeApi({
+        'GET safety-plan': () => {
+          throw new TypeError('Failed to fetch');
+        },
+        'PUT safety-plan': () => {
+          throw new TypeError('Failed to fetch');
+        },
+      });
+      renderWithIntl(<SafetyPlanView numbers={numbers} />, 'ar');
+      await userEvent.click(await screen.findByRole('button', { name: 'تعديل الخطة' }));
+      const reason = screen.getByRole('textbox', { name: 'سببي للاستمرار' });
+      await userEvent.clear(reason);
+      await userEvent.type(reason, 'أمي.');
+      await userEvent.click(screen.getByRole('button', { name: 'حفظ الخطة' }));
+      expect(await screen.findByTestId('plan-pending')).toHaveTextContent('تعديلاتك بانتظار الإرسال');
+      expect(screen.getByTestId('plan-reasonToLive')).toHaveTextContent('أمي.');
+      expect(outboxItems()).toEqual([expect.objectContaining({ kind: 'safety-plan', method: 'PUT', state: 'waiting' })]);
+    } finally {
+      resetOutbox();
+      window.localStorage.clear();
+    }
   });
 
   it('says so when there is neither a connection nor a saved copy, and still shows the numbers', async () => {
