@@ -6,6 +6,7 @@ using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
 using Tamaneen.Crisis.Assessment;
 using Tamaneen.Crisis.Gate;
+using Tamaneen.Crisis.Rules;
 using Tamaneen.Crisis.Worker.Escalation;
 using Tamaneen.Crisis.Worker.Hubs;
 using Tamaneen.Hosting;
@@ -38,9 +39,25 @@ public static class ConsoleEndpoints
 
     public sealed record StepUpRequest(string? TotpCode, string? Reason);
 
-    public sealed record ActionRequest(string? Kind, string? Text);
+    /// <summary>Three call attempts within this window without reaching the patient bring up the next step (EC-33).</summary>
+    public static readonly TimeSpan CallAttemptWindow = TimeSpan.FromMinutes(15);
+
+    public const int CallAttemptsBeforeAdvice = 3;
+
+    public sealed record ActionRequest(string? Kind, string? Text, string? Outcome);
+
+    public sealed record HandoverRequest(Guid? ToUserId, string? Note);
 
     public sealed record TimelineEntry(DateTimeOffset At, string Kind, string Text, string? Actor);
+
+    /// <summary>A handover offered and not yet accepted (SB-43). ForMe: the signed-in user is the one asked.</summary>
+    public sealed record PendingHandover(Guid ToUserId, string? ToName, string? FromName, DateTimeOffset RequestedAtUtc, bool ForMe);
+
+    /// <summary>A supervisor's "unreachable" close waiting for the clinical lead (SB-44).</summary>
+    public sealed record PendingClose(string Outcome, string Reason, string? ByName, DateTimeOffset RequestedAtUtc);
+
+    /// <summary>A colleague who can take a handover: supervisors, the clinical lead and on-call clinicians.</summary>
+    public sealed record Responder(Guid UserId, string DisplayName, string Role, bool OnCall);
 
     /// <summary>The alert fields (same as CrisisAlertMessage, flat) plus what only the console detail shows.</summary>
     public sealed record CrisisEventDetail(
@@ -72,7 +89,17 @@ public static class ConsoleEndpoints
         bool LocationConsent,
         string? MaskedPhone,
         IReadOnlyList<TimelineEntry> Timeline,
-        bool CanClose);
+        bool CanClose,
+        bool CanAct,
+        bool IsOwner,
+        PendingHandover? PendingHandover,
+        PendingClose? PendingClose,
+        bool CanCoSign,
+        string EmergencyNumber,
+        string EmergencyScript,
+        int RecentCallAttempts,
+        string? CallAdvice,
+        DateTimeOffset? ReviewDueAtUtc);
 
     public sealed record ExcerptResponse(string Excerpt, DateTimeOffset HideAt);
 
@@ -91,7 +118,12 @@ public static class ConsoleEndpoints
         group.MapPost("/events/{id:guid}/excerpt", ExcerptAsync).RequireAuthorization(AuthSetup.CrisisResponderPolicy);
         group.MapPost("/events/{id:guid}/reveal-contact", RevealContactAsync).RequireAuthorization(AuthSetup.CrisisResponderPolicy);
         group.MapPost("/events/{id:guid}/actions", ActionAsync).RequireAuthorization(AuthSetup.CrisisResponderPolicy);
+        group.MapPost("/events/{id:guid}/handover", HandoverAsync).RequireAuthorization(AuthSetup.CrisisResponderPolicy);
+        group.MapPost("/events/{id:guid}/handover/accept", AcceptHandoverAsync).RequireAuthorization(AuthSetup.CrisisResponderPolicy);
+        group.MapPost("/events/{id:guid}/handover/decline", DeclineHandoverAsync).RequireAuthorization(AuthSetup.CrisisResponderPolicy);
         group.MapPost("/events/{id:guid}/close", CloseAsync).RequireAuthorization(AuthSetup.CrisisCloserPolicy);
+        group.MapPost("/events/{id:guid}/close/cosign", CoSignCloseAsync).RequireAuthorization(AuthSetup.CrisisCloserPolicy);
+        group.MapGet("/responders", RespondersAsync).RequireAuthorization(AuthSetup.CrisisResponderPolicy);
         group.MapGet("/health", HealthAsync).RequireAuthorization(AuthSetup.CrisisResponderPolicy);
         return app;
     }
@@ -109,7 +141,7 @@ public static class ConsoleEndpoints
     internal static async Task<Ok<CrisisEventDetail>> DetailAsync(Guid id, HttpContext http, ICurrentUser user, TamaneenDbContext db, CrisisAlertFactory factory, IPatientDataProtector protector, IStringLocalizer<CrisisResource> text, IClock clock, CancellationToken ct)
     {
         var evt = await FindAsync(db, id, ct).ConfigureAwait(false);
-        return TypedResults.Ok(await BuildDetailAsync(evt, LocalizationSetup.RequestLanguage(http), user, db, factory, protector, text, ct).ConfigureAwait(false));
+        return TypedResults.Ok(await BuildDetailAsync(evt, http, user, db, factory, protector, text, ct).ConfigureAwait(false));
     }
 
     internal static async Task<Ok<CrisisAlertMessage>> AcknowledgeAsync(
@@ -193,34 +225,93 @@ public static class ConsoleEndpoints
         CancellationToken ct)
     {
         var kind = request.Kind ?? string.Empty;
-        if (!CrisisAction.Kinds.Contains(kind))
+        if (!CrisisAction.RequestKinds.Contains(kind))
         {
             throw new DomainException(ErrorCodes.Validation, $"Unknown action {kind}.");
         }
 
         var note = request.Text?.Trim();
-        if (note is { Length: > 2000 } || (kind is "note" or "local_emergency" && string.IsNullOrEmpty(note)))
+        if (note is { Length: > 2000 } || (kind is "note" or "local_emergency" or "contacted" or "refer" && string.IsNullOrEmpty(note)))
         {
             throw new DomainException(ErrorCodes.Validation, "Action text missing or too long.");
         }
 
         var evt = await FindAsync(db, id, ct).ConfigureAwait(false);
+
+        // The patient's therapist may always leave the case with the on-call (S01) without taking it; every other
+        // action is for the owner, a supervisor or the clinical lead once someone took the case (EC-35).
+        if (kind != "refer")
+        {
+            evt.EnsureCanAct(user.UserId!.Value, user.Role);
+        }
+
         var cipher = string.IsNullOrEmpty(note) ? null : await protector.EncryptAsync(evt.PatientId, ActionTextField, note, ct).ConfigureAwait(false);
-        db.CrisisActions.Add(CrisisAction.Record(evt, kind, user.UserId!.Value, user.Role!, cipher, clock));
-        if (kind == "handover")
+        db.CrisisActions.Add(CrisisAction.Record(evt, kind, user.UserId!.Value, user.Role!, cipher, kind == "call_outcome" ? request.Outcome : null, null, clock));
+        CrisisUpdateKind? update = null;
+        switch (kind)
         {
-            evt.HandOver(sla.Value.AcknowledgeWithin(evt.Level), clock);
+            case "handover":
+                evt.HandOver(sla.Value.AcknowledgeWithin(evt.Level), clock);
+                update = CrisisUpdateKind.HandedOver;
+                break;
+            case "contacted":
+                evt.MarkInContact();
+                update = CrisisUpdateKind.Updated;
+                break;
         }
 
-        audit.Append($"crisis.{kind}", "CrisisEvent", evt.Id.ToString(), evt.PseudonymId);
-        await db.SaveChangesAsync(ct).ConfigureAwait(false);
-        if (kind == "handover")
+        audit.Append($"crisis.{kind}", "CrisisEvent", evt.Id.ToString(), evt.PseudonymId, kind == "call_outcome" ? request.Outcome : null);
+        await SaveAsync(db, evt.Id, ct).ConfigureAwait(false);
+        if (update is { } u)
         {
-            await alerts.EventUpdatedAsync(evt, CrisisUpdateKind.HandedOver, ct).ConfigureAwait(false);
+            await alerts.EventUpdatedAsync(evt, u, ct).ConfigureAwait(false);
         }
 
-        return TypedResults.Ok(await BuildDetailAsync(evt, LocalizationSetup.RequestLanguage(http), user, db, factory, protector, text, ct).ConfigureAwait(false));
+        return TypedResults.Ok(await BuildDetailAsync(evt, http, user, db, factory, protector, text, ct).ConfigureAwait(false));
     }
+
+    /// <summary>Offers the case to a colleague with a note. Ownership moves only when they accept (SB-43).</summary>
+    internal static async Task<Ok<CrisisEventDetail>> HandoverAsync(
+        Guid id,
+        HandoverRequest request,
+        HttpContext http,
+        ICurrentUser user,
+        TamaneenDbContext db,
+        CrisisAlertFactory factory,
+        IPatientDataProtector protector,
+        ICrisisAlertPublisher alerts,
+        IAuditLog audit,
+        IStringLocalizer<CrisisResource> text,
+        IClock clock,
+        CancellationToken ct)
+    {
+        var note = request.Note?.Trim();
+        if (request.ToUserId is not { } to || note is { Length: > 2000 })
+        {
+            throw new DomainException(ErrorCodes.Validation, "A colleague is required and the note is at most 2000 characters.");
+        }
+
+        if (to == user.UserId || !(await RespondersQueryAsync(db, user.UserId!.Value, SupportedLanguages.Default, ct).ConfigureAwait(false)).Any(r => r.UserId == to))
+        {
+            throw new DomainException(ErrorCodes.Validation, "The colleague cannot take crisis events.").With("errors", new Dictionary<string, string[]> { ["toUserId"] = ["invalid"] });
+        }
+
+        var evt = await FindAsync(db, id, ct).ConfigureAwait(false);
+        evt.EnsureCanAct(user.UserId!.Value, user.Role);
+        evt.RequestHandover(user.UserId!.Value, to, clock);
+        var cipher = string.IsNullOrEmpty(note) ? null : await protector.EncryptAsync(evt.PatientId, ActionTextField, note, ct).ConfigureAwait(false);
+        db.CrisisActions.Add(CrisisAction.Record(evt, "handover_requested", user.UserId!.Value, user.Role!, cipher, null, to, clock));
+        audit.Append("crisis.handover_requested", "CrisisEvent", evt.Id.ToString(), evt.PseudonymId);
+        await SaveAsync(db, evt.Id, ct).ConfigureAwait(false);
+        await alerts.EventUpdatedAsync(evt, CrisisUpdateKind.Updated, ct).ConfigureAwait(false);
+        return TypedResults.Ok(await BuildDetailAsync(evt, http, user, db, factory, protector, text, ct).ConfigureAwait(false));
+    }
+
+    internal static Task<Ok<CrisisEventDetail>> AcceptHandoverAsync(Guid id, HttpContext http, ICurrentUser user, TamaneenDbContext db, CrisisAlertFactory factory, IPatientDataProtector protector, ICrisisAlertPublisher alerts, IAuditLog audit, IStringLocalizer<CrisisResource> text, IClock clock, CancellationToken ct) =>
+        AnswerHandoverAsync(id, true, http, user, db, factory, protector, alerts, audit, text, clock, ct);
+
+    internal static Task<Ok<CrisisEventDetail>> DeclineHandoverAsync(Guid id, HttpContext http, ICurrentUser user, TamaneenDbContext db, CrisisAlertFactory factory, IPatientDataProtector protector, ICrisisAlertPublisher alerts, IAuditLog audit, IStringLocalizer<CrisisResource> text, IClock clock, CancellationToken ct) =>
+        AnswerHandoverAsync(id, false, http, user, db, factory, protector, alerts, audit, text, clock, ct);
 
     internal static async Task<Ok<CrisisAlertMessage>> CloseAsync(
         Guid id,
@@ -239,22 +330,102 @@ public static class ConsoleEndpoints
         {
             evt.Close(user.UserId!.Value, user.Role!, request.Reason ?? string.Empty, clock);
         }
-        else
+        else if (!evt.Close(user.UserId!.Value, user.Role!, request.Outcome, request.Reason ?? string.Empty, clock))
         {
-            evt.Close(user.UserId!.Value, user.Role!, request.Outcome, request.Reason ?? string.Empty, clock);
+            // "Unreachable" from a supervisor waits for the clinical lead; the event stays open (SB-44).
+            db.CrisisActions.Add(CrisisAction.Record(evt, "close_requested", user.UserId!.Value, user.Role!, null, request.Outcome, null, clock));
+            audit.Append("crisis.close_requested", "CrisisEvent", evt.Id.ToString(), evt.PseudonymId, $"{request.Outcome}: {evt.PendingCloseReason}");
+            await SaveAsync(db, evt.Id, cancellationToken).ConfigureAwait(false);
+            await alerts.EventUpdatedAsync(evt, CrisisUpdateKind.Updated, cancellationToken).ConfigureAwait(false);
+            return TypedResults.Ok(factory.Create(evt, CrisisUpdateKind.Updated, LocalizationSetup.RequestLanguage(http)));
         }
 
+        await FinishCloseAsync(evt, user, db, audit, clock, cancellationToken).ConfigureAwait(false);
+        await alerts.EventUpdatedAsync(evt, CrisisUpdateKind.Closed, cancellationToken).ConfigureAwait(false);
+        return TypedResults.Ok(factory.Create(evt, CrisisUpdateKind.Closed, LocalizationSetup.RequestLanguage(http)));
+    }
+
+    /// <summary>The clinical lead signs a supervisor's "unreachable" close; it closes with a 72-hour review entry.</summary>
+    internal static async Task<Ok<CrisisAlertMessage>> CoSignCloseAsync(Guid id, HttpContext http, ICurrentUser user, TamaneenDbContext db, IAuditLog audit, ICrisisAlertPublisher alerts, CrisisAlertFactory factory, IClock clock, CancellationToken ct)
+    {
+        var evt = await FindAsync(db, id, ct).ConfigureAwait(false);
+        evt.CoSignClose(user.UserId!.Value, user.Role!, clock);
+        db.CrisisActions.Add(CrisisAction.Record(evt, "close_cosigned", user.UserId!.Value, user.Role!, null, evt.CloseOutcome, null, clock));
+        audit.Append("crisis.close_cosigned", "CrisisEvent", evt.Id.ToString(), evt.PseudonymId, evt.CloseOutcome);
+        await FinishCloseAsync(evt, user, db, audit, clock, ct).ConfigureAwait(false);
+        await alerts.EventUpdatedAsync(evt, CrisisUpdateKind.Closed, ct).ConfigureAwait(false);
+        return TypedResults.Ok(factory.Create(evt, CrisisUpdateKind.Closed, LocalizationSetup.RequestLanguage(http)));
+    }
+
+    /// <summary>Colleagues who can take a handover, without the signed-in user.</summary>
+    internal static async Task<Ok<List<Responder>>> RespondersAsync(HttpContext http, ICurrentUser user, TamaneenDbContext db, CancellationToken ct) =>
+        TypedResults.Ok(await RespondersQueryAsync(db, user.UserId!.Value, LocalizationSetup.RequestLanguage(http), ct).ConfigureAwait(false));
+
+    private static async Task<List<Responder>> RespondersQueryAsync(TamaneenDbContext db, Guid self, string language, CancellationToken ct)
+    {
+        var rows = await (from s in db.StaffProfiles.AsNoTracking()
+                          join a in db.UserAccounts.AsNoTracking() on s.UserId equals a.Id
+                          where s.UserId != self && a.Status == Identity.AccountStatus.Active
+                              && (a.Role == AppRoles.Supervisor || a.Role == AppRoles.ClinicalLead || (a.Role == AppRoles.Therapist && s.OnCallTier != null))
+                          select new { Profile = s, a.Role })
+            .ToListAsync(ct).ConfigureAwait(false);
+        return rows
+            .Select(r => new Responder(r.Profile.UserId, r.Profile.DisplayName(language), RoleCode(r.Role), r.Profile.OnCallTier is not null))
+            .OrderByDescending(r => r.OnCall).ThenBy(r => r.DisplayName, StringComparer.Ordinal)
+            .ToList();
+    }
+
+    private static string RoleCode(string role) => role switch
+    {
+        AppRoles.Supervisor => "supervisor",
+        AppRoles.ClinicalLead => "lead",
+        _ => "therapist",
+    };
+
+    private static async Task<Ok<CrisisEventDetail>> AnswerHandoverAsync(Guid id, bool accept, HttpContext http, ICurrentUser user, TamaneenDbContext db, CrisisAlertFactory factory, IPatientDataProtector protector, ICrisisAlertPublisher alerts, IAuditLog audit, IStringLocalizer<CrisisResource> text, IClock clock, CancellationToken ct)
+    {
+        var evt = await FindAsync(db, id, ct).ConfigureAwait(false);
+        if (accept)
+        {
+            evt.AcceptHandover(user.UserId!.Value);
+        }
+        else
+        {
+            evt.CancelHandover(user.UserId!.Value, user.Role);
+        }
+
+        var kind = accept ? "handover_accepted" : "handover_declined";
+        db.CrisisActions.Add(CrisisAction.Record(evt, kind, user.UserId!.Value, user.Role!, null, clock));
+        audit.Append($"crisis.{kind}", "CrisisEvent", evt.Id.ToString(), evt.PseudonymId);
+        await SaveAsync(db, evt.Id, ct).ConfigureAwait(false);
+        await alerts.EventUpdatedAsync(evt, CrisisUpdateKind.Updated, ct).ConfigureAwait(false);
+        return TypedResults.Ok(await BuildDetailAsync(evt, http, user, db, factory, protector, text, ct).ConfigureAwait(false));
+    }
+
+    private static async Task FinishCloseAsync(CrisisEvent evt, ICurrentUser user, TamaneenDbContext db, IAuditLog audit, IClock clock, CancellationToken ct)
+    {
         // Closing is the only way a locked chat reopens.
-        var locks = await db.ChatLocks.Where(l => l.CrisisEventId == evt.Id && l.ReleasedAtUtc == null).ToListAsync(cancellationToken).ConfigureAwait(false);
+        var locks = await db.ChatLocks.Where(l => l.CrisisEventId == evt.Id && l.ReleasedAtUtc == null).ToListAsync(ct).ConfigureAwait(false);
         foreach (var chatLock in locks)
         {
             chatLock.Release(user.UserId!.Value, clock);
         }
 
         audit.Append("crisis.closed", "CrisisEvent", evt.Id.ToString(), evt.PseudonymId, evt.CloseOutcome is null ? evt.CloseReason : $"{evt.CloseOutcome}: {evt.CloseReason}");
-        await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        await alerts.EventUpdatedAsync(evt, CrisisUpdateKind.Closed, cancellationToken).ConfigureAwait(false);
-        return TypedResults.Ok(factory.Create(evt, CrisisUpdateKind.Closed, LocalizationSetup.RequestLanguage(http)));
+        await SaveAsync(db, evt.Id, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>One owner per event: a concurrent change (RowVersion) loses, as for acknowledging.</summary>
+    private static async Task SaveAsync(TamaneenDbContext db, Guid id, CancellationToken ct)
+    {
+        try
+        {
+            await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            throw new DomainException(ErrorCodes.CrisisAlreadyAcknowledged, $"Crisis event {id} changed concurrently.");
+        }
     }
 
     /// <summary>
@@ -273,8 +444,12 @@ public static class ConsoleEndpoints
         return TypedResults.Ok(new HealthResponse("ok", classifier, comms, rota.FirstOrDefault(r => r.OnCallTier == 0)?.DisplayName(language), rota.FirstOrDefault(r => r.OnCallTier == 1)?.DisplayName(language)));
     }
 
-    private static async Task<CrisisEventDetail> BuildDetailAsync(CrisisEvent evt, string language, ICurrentUser user, TamaneenDbContext db, CrisisAlertFactory factory, IPatientDataProtector protector, IStringLocalizer<CrisisResource> text, CancellationToken ct)
+    private static async Task<CrisisEventDetail> BuildDetailAsync(CrisisEvent evt, HttpContext http, ICurrentUser user, TamaneenDbContext db, CrisisAlertFactory factory, IPatientDataProtector protector, IStringLocalizer<CrisisResource> text, CancellationToken ct)
     {
+        var language = LocalizationSetup.RequestLanguage(http);
+        var scripts = http.RequestServices.GetRequiredService<CrisisScripts>();
+        var contacts = http.RequestServices.GetRequiredService<IOptions<CrisisContactOptions>>().Value;
+        var clock = http.RequestServices.GetRequiredService<IClock>();
         var profile = await db.PatientProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.PatientId == evt.PatientId, ct).ConfigureAwait(false);
         var hasSafety = profile?.EmergencyContactCipher is not null;
         SafetyInfoData? safety = null;
@@ -297,12 +472,21 @@ public static class ConsoleEndpoints
         var pages = await db.PageRequests.AsNoTracking().Where(p => p.CrisisEventId == evt.Id).ToListAsync(ct).ConfigureAwait(false);
         var audits = await db.AuditEntries.AsNoTracking().Where(a => a.EntityType == "CrisisEvent" && a.EntityId == evt.Id.ToString()
             && (a.Action == "crisis.excerpt_viewed" || a.Action == "crisis.contact_revealed")).ToListAsync(ct).ConfigureAwait(false);
-        var actorIds = actions.Select(a => (Guid?)a.ActorUserId).Concat(audits.Select(a => a.ActorUserId)).Append(evt.AcknowledgedByUserId).Append(evt.ClosedByUserId);
+        var actorIds = actions.Select(a => (Guid?)a.ActorUserId).Concat(actions.Select(a => a.TargetUserId)).Concat(audits.Select(a => a.ActorUserId))
+            .Append(evt.AcknowledgedByUserId).Append(evt.ClosedByUserId).Append(evt.HandoverToUserId).Append(evt.HandoverFromUserId).Append(evt.PendingCloseByUserId);
         var names = await NamesAsync(db, actorIds, language, ct).ConfigureAwait(false);
         string? Name(Guid? userId) => userId is { } u ? names.GetValueOrDefault(u) : null;
+        var now = clock.UtcNow;
 
         var timeline = LocalizationSetup.WithLanguage(language, () =>
         {
+            string ActionText(CrisisAction a) => a.Kind switch
+            {
+                "call_outcome" => text["timeline.call_outcome", text[$"call.{a.Detail}"].Value].Value,
+                "handover_requested" => text["timeline.handover_requested", Name(a.TargetUserId) ?? string.Empty].Value,
+                _ => text[$"timeline.{a.Kind}"].Value,
+            };
+
             var entries = new List<TimelineEntry> { new(evt.OpenedAtUtc, "opened", text["timeline.opened", factory.SourceLabel(evt.Source)].Value, null) };
             entries.AddRange(pages.Where(p => p.SentAtUtc is not null).Select(p => new TimelineEntry(p.SentAtUtc!.Value, "paged", text["timeline.paged", text[$"tier.{Math.Min((int)p.Tier, 2)}"].Value].Value, null)));
             if (evt.AcknowledgedAtUtc is { } ackAt)
@@ -310,11 +494,22 @@ public static class ConsoleEndpoints
                 entries.Add(new TimelineEntry(ackAt, "acknowledged", text["timeline.acknowledged"].Value, Name(evt.AcknowledgedByUserId)));
             }
 
-            entries.AddRange(actions.Select(a => new TimelineEntry(a.OccurredAtUtc, a.Kind, text[$"timeline.{a.Kind}"].Value, Name(a.ActorUserId))));
+            entries.AddRange(actions.Select(a => new TimelineEntry(a.OccurredAtUtc, a.Kind, ActionText(a), Name(a.ActorUserId))));
             entries.AddRange(audits.Select(a => new TimelineEntry(a.OccurredAtUtc, a.Action == "crisis.excerpt_viewed" ? "excerpt_viewed" : "contact_revealed", text[$"timeline.{(a.Action == "crisis.excerpt_viewed" ? "excerpt_viewed" : "contact_revealed")}"].Value, Name(a.ActorUserId))));
             if (evt.ClosedAtUtc is { } closedAt)
             {
                 entries.Add(new TimelineEntry(closedAt, "closed", text["timeline.closed"].Value, Name(evt.ClosedByUserId)));
+            }
+
+            // What happens next, in the future: the next escalation while nobody took the case, and the review after an unreachable close.
+            if (evt.Status == CrisisEventStatus.Open)
+            {
+                entries.Add(new TimelineEntry(evt.AckDeadlineUtc, "next_escalation", text["timeline.next_escalation", text[$"tier.{Math.Min(evt.EscalationTier + 1, 2)}"].Value].Value, null));
+            }
+
+            if (evt.ReviewDueAtUtc is { } reviewAt)
+            {
+                entries.Add(new TimelineEntry(reviewAt, "review_due", text["timeline.review_due"].Value, null));
             }
 
             return entries.OrderBy(e => e.At).ToList();
@@ -331,6 +526,25 @@ public static class ConsoleEndpoints
             }
         }
 
+        // EC-33: three attempts in 15 minutes without reaching a Critical patient: local emergency if the location
+        // is known, otherwise close as unreachable with the clinical lead's co-sign.
+        var since = now - CallAttemptWindow;
+        var recentCalls = actions.Count(a => a.Kind == "call_attempt" && a.OccurredAtUtc >= since);
+        var reached = evt.Status == CrisisEventStatus.InContact || actions.Any(a => a.Kind == "call_outcome" && a.Detail == "answered" && a.OccurredAtUtc >= since);
+        var locationKnown = profile?.ShareLocation ?? false;
+        var advice = evt.Level >= RiskLevel.Critical && evt.Status != CrisisEventStatus.Closed && recentCalls >= CallAttemptsBeforeAdvice && !reached
+            ? (locationKnown ? "local_emergency" : "unreachable")
+            : null;
+
+        var userId = user.UserId!.Value;
+        var pendingHandover = evt.HandoverToUserId is { } to
+            ? new PendingHandover(to, Name(to), Name(evt.HandoverFromUserId), evt.HandoverRequestedAtUtc!.Value, to == userId)
+            : null;
+        var pendingClose = evt.PendingCloseOutcome is { } outcome
+            ? new PendingClose(outcome, evt.PendingCloseReason ?? string.Empty, Name(evt.PendingCloseByUserId), evt.PendingCloseAtUtc!.Value)
+            : null;
+        var script = scripts.Render(locationKnown ? CrisisScriptKind.ResponderEmergency : CrisisScriptKind.ResponderNoLocation, language, contacts.EmergencyNumber, contacts.SupportLine);
+
         var a = factory.Create(evt, null, language, Name(evt.AcknowledgedByUserId));
         return new CrisisEventDetail(
             a.EventId, a.Kind, a.PseudonymId, a.Level, a.LevelLabel, a.Title, a.Body, a.PatientLanguage, a.PatientLanguageName,
@@ -340,10 +554,20 @@ public static class ConsoleEndpoints
             evt.ContactDeadlineUtc,
             phone is not null,
             safety?.TrustedName is not null || safety?.TrustedPhone is not null,
-            profile?.ShareLocation ?? false,
+            locationKnown,
             masked,
             timeline,
-            user.Role is AppRoles.Supervisor or AppRoles.ClinicalLead && evt.Status != CrisisEventStatus.Closed);
+            user.Role is AppRoles.Supervisor or AppRoles.ClinicalLead && evt.Status != CrisisEventStatus.Closed && pendingClose is null,
+            evt.Status != CrisisEventStatus.Closed && evt.CanAct(userId, user.Role),
+            evt.IsOwned && evt.AcknowledgedByUserId == userId,
+            pendingHandover,
+            pendingClose,
+            user.Role == AppRoles.ClinicalLead && pendingClose is not null,
+            contacts.EmergencyNumber,
+            script,
+            recentCalls,
+            advice,
+            evt.ReviewDueAtUtc);
     }
 
     private static async Task<Dictionary<Guid, string>> NamesAsync(TamaneenDbContext db, IEnumerable<Guid?> userIds, string language, CancellationToken ct)

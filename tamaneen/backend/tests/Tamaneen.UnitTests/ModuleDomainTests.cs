@@ -83,6 +83,87 @@ public class CrisisEventTests
         var ack = () => evt.Acknowledge(Guid.NewGuid(), _clock);
         ack.Should().Throw<DomainException>().Which.Code.Should().Be(ErrorCodes.CrisisClosed);
     }
+
+    [Fact]
+    public void Once_taken_only_the_owner_a_supervisor_or_the_lead_can_act()
+    {
+        var evt = Critical();
+        var owner = Guid.NewGuid();
+        var other = Guid.NewGuid();
+        evt.CanAct(other, AppRoles.Therapist).Should().BeTrue("nobody owns it yet, so nothing urgent waits");
+
+        evt.Acknowledge(owner, _clock);
+        evt.CanAct(owner, AppRoles.Therapist).Should().BeTrue();
+        evt.CanAct(Guid.NewGuid(), AppRoles.Supervisor).Should().BeTrue();
+        evt.CanAct(Guid.NewGuid(), AppRoles.ClinicalLead).Should().BeTrue();
+        var act = () => evt.EnsureCanAct(other, AppRoles.Therapist);
+        act.Should().Throw<DomainException>().Which.Code.Should().Be(ErrorCodes.CrisisNotOwner);
+    }
+
+    [Fact]
+    public void Contact_needs_an_owner_and_keeps_the_event_owned()
+    {
+        var evt = Critical();
+        var early = () => evt.MarkInContact();
+        early.Should().Throw<DomainException>().Which.Code.Should().Be(ErrorCodes.CrisisNotAcknowledged);
+
+        evt.Acknowledge(Guid.NewGuid(), _clock);
+        evt.MarkInContact();
+        evt.Status.Should().Be(CrisisEventStatus.InContact);
+        evt.IsOwned.Should().BeTrue();
+        var again = () => evt.Acknowledge(Guid.NewGuid(), _clock);
+        again.Should().Throw<DomainException>().Which.Code.Should().Be(ErrorCodes.CrisisAlreadyAcknowledged);
+    }
+
+    [Fact]
+    public void A_handover_moves_ownership_only_when_the_colleague_accepts()
+    {
+        var evt = Critical();
+        var owner = Guid.NewGuid();
+        var colleague = Guid.NewGuid();
+        evt.Acknowledge(owner, _clock);
+        evt.RequestHandover(owner, colleague, _clock);
+        evt.AcknowledgedByUserId.Should().Be(owner);
+        evt.HandoverToUserId.Should().Be(colleague);
+
+        var wrong = () => evt.AcceptHandover(Guid.NewGuid());
+        wrong.Should().Throw<DomainException>().Which.Code.Should().Be(ErrorCodes.CrisisNothingPending);
+
+        evt.AcceptHandover(colleague);
+        evt.AcknowledgedByUserId.Should().Be(colleague);
+        evt.HandoverToUserId.Should().BeNull();
+        evt.Status.Should().Be(CrisisEventStatus.Acknowledged);
+
+        evt.RequestHandover(colleague, owner, _clock);
+        evt.CancelHandover(owner, AppRoles.Therapist);
+        evt.AcknowledgedByUserId.Should().Be(colleague, "a declined offer changes nothing");
+    }
+
+    [Fact]
+    public void Unreachable_from_a_supervisor_waits_for_the_lead_who_closes_it_with_a_72_hour_review()
+    {
+        var evt = Critical();
+        var supervisor = Guid.NewGuid();
+        evt.Close(supervisor, AppRoles.Supervisor, CrisisEvent.UnreachableOutcome, "Three calls, no answer, no location", _clock).Should().BeFalse();
+        evt.Status.Should().Be(CrisisEventStatus.Open);
+        evt.PendingCloseOutcome.Should().Be(CrisisEvent.UnreachableOutcome);
+
+        var notLead = () => evt.CoSignClose(Guid.NewGuid(), AppRoles.Supervisor, _clock);
+        notLead.Should().Throw<DomainException>().Which.Code.Should().Be(ErrorCodes.CrisisCloseNotAllowed);
+
+        var lead = Guid.NewGuid();
+        evt.CoSignClose(lead, AppRoles.ClinicalLead, _clock);
+        evt.Status.Should().Be(CrisisEventStatus.Closed);
+        evt.CloseOutcome.Should().Be(CrisisEvent.UnreachableOutcome);
+        evt.ClosedByUserId.Should().Be(supervisor);
+        evt.CoSignedByUserId.Should().Be(lead);
+        evt.ReviewDueAtUtc.Should().Be(_clock.UtcNow.AddHours(72));
+        evt.PendingCloseOutcome.Should().BeNull();
+
+        var other = Critical();
+        other.Close(Guid.NewGuid(), AppRoles.Supervisor, "safe_contacted", "Reached and safe", _clock).Should().BeTrue();
+        other.ReviewDueAtUtc.Should().BeNull();
+    }
 }
 
 public class CareAssignmentTests

@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { CRISIS_BASE_URL } from '../api';
-import type { CloseCrisisRequest, CrisisActionRequest, CrisisEventDetail, CrisisHealth, Excerpt, OpenCrisisEvent, RevealRequest, RevealedContact } from './types';
+import type { CloseCrisisRequest, CrisisActionRequest, CrisisEventDetail, CrisisHealth, Excerpt, HandoverRequest, OpenCrisisEvent, Responder, RevealRequest, RevealedContact } from './types';
 
 /** Tamaneen.Crisis.Worker endpoints (docs/api-v1.md, Staff, "(worker)"). */
 @Injectable({ providedIn: 'root' })
@@ -41,8 +41,33 @@ export class CrisisApiService {
     return this.http.post<CrisisEventDetail>(`${this.event(id)}/actions`, request);
   }
 
-  close(id: string, request: CloseCrisisRequest): Observable<void> {
-    return this.http.post<void>(`${this.event(id)}/close`, request);
+  /** Closed, or still open when a supervisor's "unreachable" close waits for the clinical lead's co-sign. */
+  close(id: string, request: CloseCrisisRequest): Observable<OpenCrisisEvent> {
+    return this.http.post<OpenCrisisEvent>(`${this.event(id)}/close`, request);
+  }
+
+  /** Clinical lead: signs the waiting "unreachable" close. */
+  coSignClose(id: string): Observable<OpenCrisisEvent> {
+    return this.http.post<OpenCrisisEvent>(`${this.event(id)}/close/cosign`, {});
+  }
+
+  /** Colleagues who can take a handover. */
+  responders(): Observable<Responder[]> {
+    return this.http.get<Responder[]>(`${this.base}/v1/crisis/responders`);
+  }
+
+  /** Offers the case; the owner keeps it until the colleague accepts. */
+  handover(id: string, request: HandoverRequest): Observable<CrisisEventDetail> {
+    return this.http.post<CrisisEventDetail>(`${this.event(id)}/handover`, request);
+  }
+
+  acceptHandover(id: string): Observable<CrisisEventDetail> {
+    return this.http.post<CrisisEventDetail>(`${this.event(id)}/handover/accept`, {});
+  }
+
+  /** The colleague declines, or the owner withdraws the offer. */
+  declineHandover(id: string): Observable<CrisisEventDetail> {
+    return this.http.post<CrisisEventDetail>(`${this.event(id)}/handover/decline`, {});
   }
 
   health(): Observable<CrisisHealth> {

@@ -81,4 +81,21 @@
   <data name="error.crisis.not_acknowledged" xml:space="preserve"><value>لم يتولَّ أحد هذه الحالة بعد.</value></data>
   <data name="validation.required" xml:space="preserve"><value>هذا الحقل مطلوب.</value></data>
   <data name="validation.invalid" xml:space="preserve"><value>القيمة غير صحيحة.</value></data>
+  <data name="error.crisis.not_owner" xml:space="preserve"><value>هذه الحالة يتولاها شخص آخر. يمكنك قراءتها، والإجراءات للمالك أو المشرف أو المسؤول السريري فقط.</value></data>
+  <data name="error.crisis.nothing_pending" xml:space="preserve"><value>لم يعد في هذه الحالة شيء ينتظرك.</value></data>
+  <data name="timeline.call_attempt" xml:space="preserve"><value>محاولة اتصال بالمريض</value></data>
+  <data name="timeline.call_outcome" xml:space="preserve"><value>نتيجة المكالمة: {0}</value></data>
+  <data name="timeline.refer" xml:space="preserve"><value>تُرك مع المناوب من أخصائي المريض</value></data>
+  <data name="timeline.handover_requested" xml:space="preserve"><value>عُرض التسليم على {0}</value></data>
+  <data name="timeline.handover_accepted" xml:space="preserve"><value>قُبل التسليم وأصبح مالك الحالة</value></data>
+  <data name="timeline.handover_declined" xml:space="preserve"><value>سُحب عرض التسليم أو رُفض</value></data>
+  <data name="timeline.close_requested" xml:space="preserve"><value>طُلب الإغلاق لتعذّر الوصول، بانتظار المسؤول السريري</value></data>
+  <data name="timeline.close_cosigned" xml:space="preserve"><value>وقّع المسؤول السريري الإغلاق لتعذّر الوصول</value></data>
+  <data name="timeline.review_due" xml:space="preserve"><value>موعد مراجعة المتابعة (72 ساعة بعد الإغلاق لتعذّر الوصول)</value></data>
+  <data name="timeline.next_escalation" xml:space="preserve"><value>إن لم يُقَرّ: اتصال بـ{0}</value></data>
+  <data name="call.answered" xml:space="preserve"><value>تم الرد</value></data>
+  <data name="call.no_answer" xml:space="preserve"><value>لم يرد</value></data>
+  <data name="call.voicemail" xml:space="preserve"><value>بريد صوتي</value></data>
+  <data name="call.wrong_number" xml:space="preserve"><value>رقم خاطئ</value></data>
+  <data name="alert.updated.title" xml:space="preserve"><value>تحديث على الحالة {0}</value></data>
 </root>

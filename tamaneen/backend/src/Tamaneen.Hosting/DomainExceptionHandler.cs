@@ -20,6 +20,8 @@ public sealed partial class DomainExceptionHandler<TResource> : IExceptionHandle
         [ErrorCodes.AssignmentAlreadyEnded] = StatusCodes.Status409Conflict,
         [ErrorCodes.CrisisClosed] = StatusCodes.Status409Conflict,
         [ErrorCodes.CrisisCloseNotAllowed] = StatusCodes.Status403Forbidden,
+        [ErrorCodes.CrisisNotOwner] = StatusCodes.Status403Forbidden,
+        [ErrorCodes.CrisisNothingPending] = StatusCodes.Status409Conflict,
         [ErrorCodes.PatientDataShredded] = StatusCodes.Status410Gone,
         [ErrorCodes.Validation] = StatusCodes.Status400BadRequest,
         [ErrorCodes.AiMessageInvalid] = StatusCodes.Status400BadRequest,

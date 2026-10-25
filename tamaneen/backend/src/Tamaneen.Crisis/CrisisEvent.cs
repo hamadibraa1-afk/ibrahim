@@ -7,6 +7,9 @@ public enum CrisisEventStatus
     Open = 0,
     Acknowledged = 1,
     Closed = 2,
+
+    /// <summary>The owner reached the patient ("تم التواصل"); still owned and open until closed with an outcome.</summary>
+    InContact = 3,
 }
 
 /// <summary>
@@ -88,12 +91,69 @@ public sealed class CrisisEvent : Entity
 
     public static readonly IReadOnlySet<string> CloseOutcomes = new HashSet<string>(StringComparer.Ordinal) { "safe_contacted", "emergency_services", "unreachable_referred", "false_alarm" };
 
+    /// <summary>Closing as unreachable needs the clinical lead's signature and leaves a follow-up review (EC-33, SB-44).</summary>
+    public const string UnreachableOutcome = "unreachable_referred";
+
+    public static readonly TimeSpan UnreachableReviewWithin = TimeSpan.FromHours(72);
+
+    /// <summary>The colleague a handover was offered to; ownership moves only when they accept (SB-43).</summary>
+    public Guid? HandoverToUserId { get; private set; }
+
+    public Guid? HandoverFromUserId { get; private set; }
+
+    public DateTimeOffset? HandoverRequestedAtUtc { get; private set; }
+
+    /// <summary>A supervisor's "unreachable" close waiting for the clinical lead's co-sign.</summary>
+    public string? PendingCloseOutcome { get; private set; }
+
+    public string? PendingCloseReason { get; private set; }
+
+    public Guid? PendingCloseByUserId { get; private set; }
+
+    public DateTimeOffset? PendingCloseAtUtc { get; private set; }
+
+    public Guid? CoSignedByUserId { get; private set; }
+
+    /// <summary>When an unreachable close must be reviewed (72 hours after closing). Shown on the timeline.</summary>
+    public DateTimeOffset? ReviewDueAtUtc { get; private set; }
+
+    /// <summary>Acknowledged or in contact: one person owns the event.</summary>
+    public bool IsOwned => Status is CrisisEventStatus.Acknowledged or CrisisEventStatus.InContact;
+
     public void SetExcerpt(byte[] cipher) => ExcerptCipher = cipher;
+
+    /// <summary>
+    /// One owner per event (EC-35): once someone took it, only that person, a supervisor or the clinical lead act
+    /// on it; others read. Before anyone took it, every responder who can see it may act, so nothing urgent waits.
+    /// </summary>
+    public bool CanAct(Guid userId, string? role) =>
+        role is AppRoles.Supervisor or AppRoles.ClinicalLead || !IsOwned || AcknowledgedByUserId == userId;
+
+    public void EnsureCanAct(Guid userId, string? role)
+    {
+        EnsureNotClosed();
+        if (!CanAct(userId, role))
+        {
+            throw new DomainException(ErrorCodes.CrisisNotOwner, $"Crisis event {Id} is owned by someone else.");
+        }
+    }
+
+    /// <summary>The owner reached the patient (SB-40).</summary>
+    public void MarkInContact()
+    {
+        EnsureNotClosed();
+        if (!IsOwned)
+        {
+            throw new DomainException(ErrorCodes.CrisisNotAcknowledged, $"Crisis event {Id} is not acknowledged.");
+        }
+
+        Status = CrisisEventStatus.InContact;
+    }
 
     /// <summary>The responder hands the case back to the on-call queue: it is open again with a fresh deadline.</summary>
     public void HandOver(TimeSpan acknowledgeWithin, IClock clock)
     {
-        if (Status != CrisisEventStatus.Acknowledged)
+        if (!IsOwned)
         {
             throw new DomainException(ErrorCodes.CrisisNotAcknowledged, $"Crisis event {Id} is not acknowledged.");
         }
@@ -102,18 +162,131 @@ public sealed class CrisisEvent : Entity
         AcknowledgedByUserId = null;
         AcknowledgedAtUtc = null;
         ContactDeadlineUtc = null;
+        ClearHandover();
         AckDeadlineUtc = clock.UtcNow + acknowledgeWithin;
     }
 
-    public void Close(Guid userId, string role, string outcome, string reason, IClock clock)
+    /// <summary>Offers the case to a colleague. The current owner keeps it until they accept (SB-43).</summary>
+    public void RequestHandover(Guid fromUserId, Guid toUserId, IClock clock)
+    {
+        EnsureNotClosed();
+        if (!IsOwned)
+        {
+            throw new DomainException(ErrorCodes.CrisisNotAcknowledged, $"Crisis event {Id} is not acknowledged.");
+        }
+
+        if (toUserId == AcknowledgedByUserId)
+        {
+            throw new DomainException(ErrorCodes.Validation, "The case cannot be handed over to its owner.");
+        }
+
+        HandoverToUserId = toUserId;
+        HandoverFromUserId = fromUserId;
+        HandoverRequestedAtUtc = clock.UtcNow;
+    }
+
+    /// <summary>The colleague the case was offered to takes it over.</summary>
+    public void AcceptHandover(Guid userId)
+    {
+        EnsureNotClosed();
+        if (HandoverToUserId is null || HandoverToUserId != userId || !IsOwned)
+        {
+            throw new DomainException(ErrorCodes.CrisisNothingPending, $"No handover of {Id} is waiting for {userId}.");
+        }
+
+        AcknowledgedByUserId = userId;
+        ClearHandover();
+    }
+
+    /// <summary>The colleague declines, or the owner withdraws the offer. Ownership does not change.</summary>
+    public void CancelHandover(Guid userId, string? role)
+    {
+        if (HandoverToUserId is null || (userId != HandoverToUserId && !CanAct(userId, role)))
+        {
+            throw new DomainException(ErrorCodes.CrisisNothingPending, $"No handover of {Id} is waiting.");
+        }
+
+        ClearHandover();
+    }
+
+    /// <summary>
+    /// Closes with an outcome. A supervisor's "unreachable" close is held for the clinical lead's co-sign and
+    /// returns false; everything else closes now and returns true.
+    /// </summary>
+    public bool Close(Guid userId, string role, string outcome, string reason, IClock clock)
     {
         if (!CloseOutcomes.Contains(outcome))
         {
             throw new DomainException(ErrorCodes.Validation, $"Unknown close outcome '{outcome}'.");
         }
 
+        if (outcome == UnreachableOutcome && role != AppRoles.ClinicalLead)
+        {
+            EnsureCloser(role, reason);
+            PendingCloseOutcome = outcome;
+            PendingCloseReason = reason.Trim();
+            PendingCloseByUserId = userId;
+            PendingCloseAtUtc = clock.UtcNow;
+            return false;
+        }
+
         Close(userId, role, reason, clock);
         CloseOutcome = outcome;
+        if (outcome == UnreachableOutcome)
+        {
+            CoSignedByUserId = userId;
+            ReviewDueAtUtc = clock.UtcNow + UnreachableReviewWithin;
+        }
+
+        return true;
+    }
+
+    /// <summary>The clinical lead signs a supervisor's "unreachable" close; it closes now with a 72-hour review.</summary>
+    public void CoSignClose(Guid leadUserId, string role, IClock clock)
+    {
+        if (role != AppRoles.ClinicalLead)
+        {
+            throw new DomainException(ErrorCodes.CrisisCloseNotAllowed, $"Role {role} cannot co-sign crisis closes.");
+        }
+
+        if (PendingCloseOutcome is null)
+        {
+            throw new DomainException(ErrorCodes.CrisisNothingPending, $"No close of {Id} waits for a co-sign.");
+        }
+
+        var (outcome, reason, by) = (PendingCloseOutcome, PendingCloseReason!, PendingCloseByUserId!.Value);
+        Close(by, AppRoles.Supervisor, reason, clock);
+        CloseOutcome = outcome;
+        CoSignedByUserId = leadUserId;
+        ReviewDueAtUtc = clock.UtcNow + UnreachableReviewWithin;
+    }
+
+    private void ClearHandover()
+    {
+        HandoverToUserId = null;
+        HandoverFromUserId = null;
+        HandoverRequestedAtUtc = null;
+    }
+
+    private void EnsureNotClosed()
+    {
+        if (Status == CrisisEventStatus.Closed)
+        {
+            throw new DomainException(ErrorCodes.CrisisClosed, $"Crisis event {Id} is closed.");
+        }
+    }
+
+    private static void EnsureCloser(string role, string reason)
+    {
+        if (role is not (AppRoles.Supervisor or AppRoles.ClinicalLead))
+        {
+            throw new DomainException(ErrorCodes.CrisisCloseNotAllowed, $"Role {role} cannot close crisis events.");
+        }
+
+        if (string.IsNullOrWhiteSpace(reason))
+        {
+            throw new DomainException(ErrorCodes.ReasonRequired, "A reason is required to close a crisis event.");
+        }
     }
 
     public static CrisisEvent Open(Guid patientId, string pseudonymId, RiskLevel level, string language, string rulePackVersion, TimeSpan acknowledgeWithin, IClock clock) =>
@@ -189,7 +362,7 @@ public sealed class CrisisEvent : Entity
     {
         switch (Status)
         {
-            case CrisisEventStatus.Acknowledged:
+            case CrisisEventStatus.Acknowledged or CrisisEventStatus.InContact:
                 throw new DomainException(ErrorCodes.CrisisAlreadyAcknowledged, $"Crisis event {Id} is already acknowledged.");
             case CrisisEventStatus.Closed:
                 throw new DomainException(ErrorCodes.CrisisClosed, $"Crisis event {Id} is closed.");
@@ -204,24 +377,16 @@ public sealed class CrisisEvent : Entity
     /// <summary>Only a supervisor or the clinical lead may close an event, and always with a reason.</summary>
     public void Close(Guid userId, string role, string reason, IClock clock)
     {
-        if (Status == CrisisEventStatus.Closed)
-        {
-            throw new DomainException(ErrorCodes.CrisisClosed, $"Crisis event {Id} is closed.");
-        }
-
-        if (role is not (AppRoles.Supervisor or AppRoles.ClinicalLead))
-        {
-            throw new DomainException(ErrorCodes.CrisisCloseNotAllowed, $"Role {role} cannot close crisis events.");
-        }
-
-        if (string.IsNullOrWhiteSpace(reason))
-        {
-            throw new DomainException(ErrorCodes.ReasonRequired, "A reason is required to close a crisis event.");
-        }
-
+        EnsureNotClosed();
+        EnsureCloser(role, reason);
         ClosedByUserId = userId;
         ClosedAtUtc = clock.UtcNow;
         CloseReason = reason.Trim();
         Status = CrisisEventStatus.Closed;
+        ClearHandover();
+        PendingCloseOutcome = null;
+        PendingCloseReason = null;
+        PendingCloseByUserId = null;
+        PendingCloseAtUtc = null;
     }
 }

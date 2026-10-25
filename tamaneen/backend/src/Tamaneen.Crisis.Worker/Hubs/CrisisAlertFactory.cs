@@ -44,6 +44,7 @@ public sealed class CrisisAlertFactory
                 CrisisUpdateKind.Acknowledged => ("acknowledged", _text["alert.acknowledged.title", e.PseudonymId].Value),
                 CrisisUpdateKind.Closed => ("closed", _text["alert.closed.title", e.PseudonymId].Value),
                 CrisisUpdateKind.HandedOver => ("updated", _text["alert.handed_over.title", e.PseudonymId].Value),
+                CrisisUpdateKind.Updated => ("updated", _text["alert.updated.title", e.PseudonymId].Value),
                 _ => throw new ArgumentOutOfRangeException(nameof(update)),
             };
             var categories = _categories.CategoriesOf(e.TriggerRuleIds).Select(c => _text[$"category.{c}"].Value).ToList();

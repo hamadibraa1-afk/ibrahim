@@ -77,4 +77,6 @@
   <data name="calendar.description" xml:space="preserve"><value>يظهر رابط الجلسة في صفحة الموعد قبلها بعشر دقائق.</value></data>
   <data name="validation.required" xml:space="preserve"><value>هذا الحقل مطلوب.</value></data>
   <data name="validation.invalid" xml:space="preserve"><value>القيمة غير صحيحة.</value></data>
+  <data name="error.crisis.not_owner" xml:space="preserve"><value>هذه الحالة يتولاها شخص آخر. يمكنك قراءتها، والإجراءات للمالك أو المشرف أو المسؤول السريري فقط.</value></data>
+  <data name="error.crisis.nothing_pending" xml:space="preserve"><value>لم يعد في هذه الحالة شيء ينتظرك.</value></data>
 </root>

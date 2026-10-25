@@ -209,7 +209,7 @@ public sealed class PatientJourneyTests : IAsyncLifetime
         var excerpt = await Read(await saraConsole.PostAsJsonAsync($"/v1/crisis/events/{eventId}/excerpt", new { totpCode = StaffTotp("sara@staff.tamaneen.dev") }));
         excerpt.GetProperty("excerpt").GetString().Should().Be("ما عاد أتحمل، أبي أموت الليلة");
         await Read(await saraConsole.PostAsync($"/v1/crisis/events/{eventId}/acknowledge", null));
-        await Read(await saraConsole.PostAsJsonAsync($"/v1/crisis/events/{eventId}/actions", new { kind = "contacted" }));
+        await Read(await saraConsole.PostAsJsonAsync($"/v1/crisis/events/{eventId}/actions", new { kind = "contacted", text = "ردّت على الجوال وهي بخير." }));
         detail = await Read(await saraConsole.PostAsJsonAsync($"/v1/crisis/events/{eventId}/actions", new { kind = "note", text = "تحدثت معها وهي في أمان مع أختها." }));
         var timeline = detail.GetProperty("timeline").EnumerateArray().Select(t => t.GetProperty("kind").GetString()).ToList();
         timeline.Should().ContainInOrder("opened", "contact_revealed", "excerpt_viewed", "acknowledged", "contacted", "note");

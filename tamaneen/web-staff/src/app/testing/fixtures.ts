@@ -41,6 +41,16 @@ export function eventDetail(overrides: Partial<CrisisEventDetail> = {}): CrisisE
     maskedPhone: '••• ••• ••21',
     timeline: [{ at: new Date().toISOString(), kind: 'opened', text: 'Event opened automatically and the chat was paused', actor: null }],
     canClose: true,
+    canAct: true,
+    isOwner: false,
+    pendingHandover: null,
+    pendingClose: null,
+    canCoSign: false,
+    emergencyNumber: '997',
+    emergencyScript: '1) Call emergency services on 997 and give the location shown.',
+    recentCallAttempts: 0,
+    callAdvice: null,
+    reviewDueAtUtc: null,
     ...overrides,
   };
 }

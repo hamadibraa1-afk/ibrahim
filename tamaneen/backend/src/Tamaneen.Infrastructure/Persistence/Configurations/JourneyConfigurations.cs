@@ -349,6 +349,7 @@ internal sealed class CrisisActionConfiguration : IEntityTypeConfiguration<Crisi
         b.Property(x => x.Kind).HasMaxLength(32).IsUnicode(false).IsRequired();
         b.Property(x => x.ActorRole).HasMaxLength(32).IsUnicode(false).IsRequired();
         b.Property(x => x.TextCipher).HasMaxLength(8100);
+        b.Property(x => x.Detail).HasMaxLength(32).IsUnicode(false);
         b.HasIndex(x => new { x.CrisisEventId, x.OccurredAtUtc });
         b.HasOne<CrisisEvent>().WithMany().HasForeignKey(x => x.CrisisEventId).OnDelete(DeleteBehavior.Restrict);
     }

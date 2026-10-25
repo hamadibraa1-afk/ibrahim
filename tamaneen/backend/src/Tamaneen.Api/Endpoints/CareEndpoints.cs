@@ -103,7 +103,7 @@ public static class CareEndpoints
 
         var digits = phone is null ? null : new string(phone.Where(char.IsDigit).ToArray());
         var script = open is null ? null : Scripts.Value.Render(CrisisScripts.KindFor(open.Level), p.Language, platform.Value.EmergencyNumber, platform.Value.SupportLine);
-        return TypedResults.Ok(new CrisisStatusDto(locked, open is not null, open?.Status == CrisisEventStatus.Acknowledged, digits is { Length: >= 4 } ? digits[^4..] : null, script));
+        return TypedResults.Ok(new CrisisStatusDto(locked, open is not null, open is { IsOwned: true }, digits is { Length: >= 4 } ? digits[^4..] : null, script));
     }
 
     /// <summary>"Ask a professional to call me now": always a Critical event, paged at once.</summary>

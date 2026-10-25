@@ -62,6 +62,8 @@ public static class ErrorCodes
     public const string InvalidCarePath = "error.path.invalid";
     public const string CrisisLocked = "error.crisis.locked";
     public const string CrisisNotAcknowledged = "error.crisis.not_acknowledged";
+    public const string CrisisNotOwner = "error.crisis.not_owner";
+    public const string CrisisNothingPending = "error.crisis.nothing_pending";
     public const string CrisisServiceUnavailable = "error.crisis.unavailable";
     public const string SlotUnavailable = "error.slot.unavailable";
     public const string HoldExpired = "error.slot.hold_expired";
