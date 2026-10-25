@@ -6,6 +6,7 @@ import {
   discardOutboxItem,
   flushOutbox,
   localStorageStore,
+  outboxKeptOnDevice,
   outboxItems,
   resetOutbox,
   retryOutboxItem,
@@ -217,23 +218,33 @@ describe('localStorage fallback', () => {
     window.localStorage.clear();
   });
 
-  it('is used when IndexedDB is missing, survives a reload, and is cleared', async () => {
+  it('without IndexedDB keeps the queue in memory only, never in plain localStorage, and says so', async () => {
     setOutboxStore(null);
     resetOutbox();
     expect(typeof indexedDB).toBe('undefined');
     Object.defineProperty(window.navigator, 'onLine', { configurable: true, get: () => false });
     setOutboxOwner('P-AAAA');
     await submitWrite(mood);
-    expect(JSON.parse(window.localStorage.getItem(OUTBOX_LOCAL_KEY)!)).toHaveLength(1);
-
-    resetOutbox();
-    setOutboxOwner('P-AAAA');
-    await flushOutbox();
+    expect(window.localStorage.getItem(OUTBOX_LOCAL_KEY)).toBeNull();
     expect(outboxItems()).toHaveLength(1);
-    expect(await localStorageStore.load()).toHaveLength(1);
+    expect(outboxKeptOnDevice()).toBe(false);
 
     await clearOutbox();
+    expect(outboxItems()).toHaveLength(0);
+    Object.defineProperty(window.navigator, 'onLine', { configurable: true, get: () => true });
+  });
+
+  it('moves items an earlier version left in plain localStorage into memory and removes them from the disk', async () => {
+    setOutboxStore(null);
+    resetOutbox();
+    const legacy = { id: 'k-legacy', owner: 'P-AAAA', kind: 'mood', method: 'POST', path: 'mood', body: { score: 5 }, createdAt: new Date().toISOString(), attempts: 0 };
+    window.localStorage.setItem(OUTBOX_LOCAL_KEY, JSON.stringify([legacy]));
+    Object.defineProperty(window.navigator, 'onLine', { configurable: true, get: () => false });
+    setOutboxOwner('P-AAAA');
+    await flushOutbox();
+    expect(outboxItems().map((i) => i.id)).toContain('k-legacy');
     expect(window.localStorage.getItem(OUTBOX_LOCAL_KEY)).toBeNull();
+    await clearOutbox();
     Object.defineProperty(window.navigator, 'onLine', { configurable: true, get: () => true });
   });
 });

@@ -17,9 +17,10 @@ import { ApiError } from '@/lib/api/errors';
  * good (4xx) stays, marked as not sent with the API's message, until the patient discards it.
  *
  * Storage: IndexedDB, each item encrypted with AES-GCM under a non-extractable device key kept in the same
- * database (the P66 rule: the local box is encrypted). If IndexedDB is unavailable (some private windows), the
- * queue falls back to localStorage in plain form, because losing the patient's words would be worse; that
- * storage is cleared on sign-out like the rest. Help now keeps its own, smaller queue (crisis/helpNow.ts).
+ * database (the P66 rule: the local box is encrypted). If IndexedDB is unavailable (some private windows),
+ * nothing is written to the device in plain form: the queue lives in this tab's memory only, is still sent
+ * when the connection returns, and the banner says it is lost if the page is closed (outboxKeptOnDevice).
+ * localStorage is only read and cleared, for items an earlier version left there. Help now keeps its own, smaller queue (crisis/helpNow.ts).
  */
 
 export type OutboxKind = 'mood' | 'homework-checkin' | 'safety-plan';
@@ -158,12 +159,26 @@ function writeLocal(list: OutboxItem[]) {
   else window.localStorage.setItem(OUTBOX_LOCAL_KEY, JSON.stringify(list));
 }
 
-/** The fallback when IndexedDB is missing. Throws when storage is blocked; the item then lives in memory only. */
+/** Items an earlier version kept in plain localStorage: read once into the queue, then cleared. Never written. */
 export const localStorageStore: OutboxStore = {
   load: async () => readLocal(),
   put: async (item) => writeLocal([...readLocal().filter((i) => i.id !== item.id), item]),
   remove: async (id) => writeLocal(readLocal().filter((i) => i.id !== id)),
   clear: async () => window.localStorage.removeItem(OUTBOX_LOCAL_KEY),
+};
+
+const memoryRows = new Map<string, OutboxItem>();
+
+/** The fallback when IndexedDB is missing or blocked: this tab's memory, never the disk. */
+export const memoryStore: OutboxStore = {
+  load: async () => [...memoryRows.values()],
+  put: async (item) => {
+    memoryRows.set(item.id, item);
+  },
+  remove: async (id) => {
+    memoryRows.delete(id);
+  },
+  clear: async () => memoryRows.clear(),
 };
 
 let override: OutboxStore | null = null;
@@ -192,8 +207,20 @@ async function storage(): Promise<OutboxStore> {
       // Blocked (private window, quota): fall through.
     }
   }
-  chosen = localStorageStore;
+  // Bring over anything an earlier version left in plain localStorage, then remove it from the disk.
+  try {
+    for (const item of await localStorageStore.load()) await memoryStore.put(item);
+    await localStorageStore.clear();
+  } catch {
+    // Storage blocked: nothing to bring over.
+  }
+  chosen = memoryStore;
   return chosen;
+}
+
+/** False when the queue lives in this tab's memory only (no IndexedDB): closing the page loses it. */
+export function outboxKeptOnDevice(): boolean {
+  return chosen !== memoryStore;
 }
 
 // ---------- state ----------
@@ -411,7 +438,7 @@ export async function clearOutbox(): Promise<void> {
   loading = Promise.resolve();
   publish();
   await Promise.all(
-    [override, idbUsable() ? indexedDbStore : null, localStorageStore].map(async (s) => {
+    [override, idbUsable() ? indexedDbStore : null, localStorageStore, memoryStore].map(async (s) => {
       try {
         await s?.clear();
       } catch {

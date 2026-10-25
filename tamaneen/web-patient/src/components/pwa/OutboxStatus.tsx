@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { isCrisis } from './errors';
 import { useOnline } from './hooks';
-import { OUTBOX_SENT_EVENT, flushOutbox, nextAttemptAt, setOutboxOwner, useOutbox, type OutboxSentDetail } from './outbox';
+import { OUTBOX_SENT_EVENT, flushOutbox, nextAttemptAt, outboxKeptOnDevice, setOutboxOwner, useOutbox, type OutboxSentDetail } from './outbox';
 
 /** Shortest wait between timer runs, so a clock jump never turns into a tight loop. */
 const MIN_TIMER_MS = 2_000;
@@ -101,6 +101,7 @@ export function OutboxStatus({ owner }: { owner: string }) {
         </button>
       </div>
       {!online && waiting > 0 ? <p className="text-muted">{t('waitingCount', { count: waiting })}</p> : null}
+      {waiting > 0 && !outboxKeptOnDevice() ? <p className="font-semibold" data-testid="outbox-memory-only">{t('memoryOnly')}</p> : null}
       {failed > 0 ? <p className="font-semibold text-help">{t('failedCount', { count: failed })}</p> : null}
       {(waiting > 0 || failed > 0) && !onOutboxPage ? (
         <Link href="/outbox" className="inline-flex min-h-touch items-center self-start font-semibold text-primary underline">

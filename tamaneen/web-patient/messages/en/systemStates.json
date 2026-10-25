@@ -53,7 +53,8 @@
       "emergency": "If you are in danger and the internet is weak: call the emergency number directly. Calling does not need the internet.",
       "call": "📞 Call emergency",
       "resources": "Emergency resources",
-      "home": "Home"
+      "home": "Home",
+      "memoryOnly": "This browser does not allow saving it on the device: keep this page open until it is sent, or it will be lost."
     }
   }
 }
