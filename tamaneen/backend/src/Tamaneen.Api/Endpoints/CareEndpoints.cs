@@ -35,7 +35,11 @@ public static class CareEndpoints
 
     public sealed record FeedbackDto(string TherapistName, string Initials, string Text, DateTimeOffset At);
 
-    public sealed record HomeSummaryDto(string Nickname, SchedulingEndpoints.AppointmentDto? NextAppointment, HomeworkTodayDto? TodayHomework, FeedbackDto? LatestFeedback, int? MoodToday, bool HasSafetyPlan, IntakeEndpoints.TriageStateDto Triage);
+    public sealed record HomeSummaryDto(string Nickname, SchedulingEndpoints.AppointmentDto? NextAppointment, HomeworkTodayDto? TodayHomework, FeedbackDto? LatestFeedback, int? MoodToday, bool HasSafetyPlan, IntakeEndpoints.TriageStateDto Triage,
+        AppointmentNoticeDto? AppointmentNotice);
+
+    /// <summary>A session the therapist cancelled (P67) or marked missed (P63) in the last 7 days, until the patient books again.</summary>
+    public sealed record AppointmentNoticeDto(Guid AppointmentId, string Kind);
 
     public sealed record MoodEntryRequest(int Score, List<string>? Tags, string? Note);
 
@@ -183,7 +187,8 @@ public static class CareEndpoints
         if (next is not null)
         {
             var t = (await directory.ListAsync(p.Language, [next.TherapistUserId], ct).ConfigureAwait(false)).Single();
-            nextDto = new SchedulingEndpoints.AppointmentDto(next.Id, t, next.StartsAtUtc, next.DurationMinutes, next.SequenceNumber, "confirmed", next.Rescheduled);
+            nextDto = new SchedulingEndpoints.AppointmentDto(next.Id, t, next.StartsAtUtc, next.DurationMinutes, next.SequenceNumber, "confirmed", next.Rescheduled,
+                next.TherapistLateMinutes, null, null, false);
         }
 
         var today = Today(profile.TimeZone, clock);
@@ -205,7 +210,26 @@ public static class CareEndpoints
         var mood = await p.Db.MoodEntries.AsNoTracking().Where(m => m.PatientId == p.PatientId && m.RecordedAtUtc >= dayStart)
             .OrderByDescending(m => m.RecordedAtUtc).Select(m => (int?)m.Score).FirstOrDefaultAsync(ct).ConfigureAwait(false);
         var hasPlan = await p.Db.SafetyPlans.AnyAsync(s => s.PatientId == p.PatientId, ct).ConfigureAwait(false);
-        return TypedResults.Ok(new HomeSummaryDto(nickname, nextDto, homework, feedback, mood, hasPlan, await IntakeEndpoints.TriageStateAsync(p, ct).ConfigureAwait(false)));
+        var notice = await AppointmentNoticeAsync(p, clock, ct).ConfigureAwait(false);
+        return TypedResults.Ok(new HomeSummaryDto(nickname, nextDto, homework, feedback, mood, hasPlan, await IntakeEndpoints.TriageStateAsync(p, ct).ConfigureAwait(false), notice));
+    }
+
+    internal static async Task<AppointmentNoticeDto?> AppointmentNoticeAsync(PatientContext p, IClock clock, CancellationToken ct)
+    {
+        var since = clock.UtcNow.AddDays(-7);
+        var recent = await p.Db.Appointments.AsNoTracking()
+            .Where(a => a.PatientId == p.PatientId
+                        && ((a.Status == Tamaneen.Clinical.Scheduling.AppointmentStatus.CancelledByTherapist && a.CancelledAtUtc >= since)
+                            || (a.Status == Tamaneen.Clinical.Scheduling.AppointmentStatus.NoShow && a.OutcomeRecordedAtUtc >= since)))
+            .OrderByDescending(a => a.CancelledAtUtc ?? a.OutcomeRecordedAtUtc).FirstOrDefaultAsync(ct).ConfigureAwait(false);
+        if (recent is null)
+        {
+            return null;
+        }
+
+        var at = recent.CancelledAtUtc ?? recent.OutcomeRecordedAtUtc;
+        var rebooked = await p.Db.Appointments.AnyAsync(a => a.PatientId == p.PatientId && a.Status == Tamaneen.Clinical.Scheduling.AppointmentStatus.Confirmed && a.CreatedAtUtc >= at, ct).ConfigureAwait(false);
+        return rebooked ? null : new AppointmentNoticeDto(recent.Id, recent.Missed ? "missed" : "cancelled");
     }
 
     // ---------- P30 ----------

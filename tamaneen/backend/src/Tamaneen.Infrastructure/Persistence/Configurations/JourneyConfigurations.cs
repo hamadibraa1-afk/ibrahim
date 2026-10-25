@@ -147,10 +147,26 @@ internal sealed class AvailabilitySlotConfiguration : IEntityTypeConfiguration<A
         b.HasKey(x => x.Id);
         b.Property(x => x.Id).ValueGeneratedNever();
         b.Property(x => x.Status).HasConversion<byte>();
+        b.Property(x => x.Source).HasConversion<byte>();
+        b.Ignore(x => x.EndsAtUtc);
         b.Property(x => x.RowVersion).IsRowVersion();
         b.HasIndex(x => new { x.TherapistUserId, x.StartsAtUtc }).IsUnique();
         b.HasIndex(x => x.HoldId).HasFilter("[HoldId] IS NOT NULL");
         b.HasOne<TherapistProfile>().WithMany().HasForeignKey(x => x.TherapistUserId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+internal sealed class TherapistAvailabilityConfiguration : IEntityTypeConfiguration<TherapistAvailability>
+{
+    public void Configure(EntityTypeBuilder<TherapistAvailability> b)
+    {
+        b.ToTable("TherapistAvailabilities", Schemas.Clinical);
+        b.HasKey(x => x.TherapistUserId);
+        b.Property(x => x.WeeklyJson).HasMaxLength(4000).IsUnicode(false).IsRequired();
+        b.Property(x => x.ExceptionsJson).HasMaxLength(8000).IsUnicode(false).IsRequired();
+        b.Ignore(x => x.Weekly);
+        b.Ignore(x => x.Exceptions);
+        b.HasOne<TherapistProfile>().WithOne().HasForeignKey<TherapistAvailability>(x => x.TherapistUserId).OnDelete(DeleteBehavior.Restrict);
     }
 }
 
@@ -164,6 +180,9 @@ internal sealed class AppointmentConfiguration : IEntityTypeConfiguration<Appoin
         b.Property(x => x.Status).HasConversion<byte>();
         b.Property(x => x.RoomId).HasMaxLength(64).IsUnicode(false).IsRequired();
         b.Property(x => x.CancelReason).HasMaxLength(CancelReasons.MaxLength).IsUnicode(false);
+        b.Property(x => x.TherapistCancelNoteCipher).HasMaxLength(4096);
+        b.Ignore(x => x.CancelledBy);
+        b.Ignore(x => x.Missed);
         b.HasIndex(x => new { x.PatientId, x.StartsAtUtc });
         b.HasIndex(x => new { x.TherapistUserId, x.StartsAtUtc });
         b.HasIndex(x => x.SlotId).IsUnique().HasFilter("[Status] = 0").HasDatabaseName("UX_Appointments_OneConfirmedPerSlot");

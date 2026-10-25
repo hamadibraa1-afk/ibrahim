@@ -7,6 +7,16 @@ public enum SlotStatus
     Open = 0,
     Held = 1,
     Booked = 2,
+
+    /// <summary>A generated time the therapist took out (S19). Kept so the next save does not generate it again; never bookable.</summary>
+    Blocked = 3,
+}
+
+/// <summary>Where a slot came from: the weekly pattern of S19, or a one-off time the therapist added.</summary>
+public enum SlotSource
+{
+    Template = 0,
+    Manual = 1,
 }
 
 /// <summary>
@@ -18,12 +28,13 @@ public sealed class AvailabilitySlot : Entity
 {
     public static readonly TimeSpan HoldDuration = TimeSpan.FromMinutes(5);
 
-    private AvailabilitySlot(Guid id, Guid therapistUserId, DateTimeOffset startsAtUtc, int durationMinutes)
+    private AvailabilitySlot(Guid id, Guid therapistUserId, DateTimeOffset startsAtUtc, int durationMinutes, SlotSource source)
         : base(id)
     {
         TherapistUserId = therapistUserId;
         StartsAtUtc = startsAtUtc;
         DurationMinutes = durationMinutes;
+        Source = source;
     }
 
     // EF Core
@@ -39,6 +50,10 @@ public sealed class AvailabilitySlot : Entity
 
     public SlotStatus Status { get; private set; }
 
+    public SlotSource Source { get; private set; }
+
+    public DateTimeOffset EndsAtUtc => StartsAtUtc.AddMinutes(DurationMinutes);
+
     public Guid? HoldId { get; private set; }
 
     public Guid? HeldByPatientId { get; private set; }
@@ -47,10 +62,68 @@ public sealed class AvailabilitySlot : Entity
 
     public byte[] RowVersion { get; private set; } = Array.Empty<byte>();
 
-    public static AvailabilitySlot Create(Guid therapistUserId, DateTimeOffset startsAtUtc, int durationMinutes) =>
+    public static AvailabilitySlot Create(Guid therapistUserId, DateTimeOffset startsAtUtc, int durationMinutes, SlotSource source = SlotSource.Template) =>
         durationMinutes is < 15 or > 180
             ? throw new ArgumentOutOfRangeException(nameof(durationMinutes))
-            : new AvailabilitySlot(Guid.NewGuid(), therapistUserId, startsAtUtc, durationMinutes);
+            : new AvailabilitySlot(Guid.NewGuid(), therapistUserId, startsAtUtc, durationMinutes, source);
+
+    /// <summary>Booked, or held by a patient whose hold has not run out: the therapist can neither remove nor move it.</summary>
+    public bool IsTaken(IClock clock) => Status == SlotStatus.Booked || (Status == SlotStatus.Held && HeldUntilUtc > clock.UtcNow);
+
+    public bool Overlaps(DateTimeOffset startUtc, DateTimeOffset endUtc) => StartsAtUtc < endUtc && startUtc < EndsAtUtc;
+
+    /// <summary>Takes a free generated time out of the calendar (S19).</summary>
+    public void Block(IClock clock)
+    {
+        EnsureFree(clock);
+        Status = SlotStatus.Blocked;
+        HoldId = null;
+        HeldByPatientId = null;
+        HeldUntilUtc = null;
+    }
+
+    /// <summary>Puts a time the therapist took out back on offer.</summary>
+    public void Reopen(int durationMinutes)
+    {
+        if (Status == SlotStatus.Blocked)
+        {
+            Status = SlotStatus.Open;
+            DurationMinutes = durationMinutes;
+        }
+    }
+
+    /// <summary>Moves a free time (S19). A moved time is the therapist's own choice from then on, not the pattern's.</summary>
+    public void MoveTo(DateTimeOffset startsAtUtc, int durationMinutes, IClock clock)
+    {
+        EnsureFree(clock);
+        if (durationMinutes is < 15 or > 180)
+        {
+            throw new ArgumentOutOfRangeException(nameof(durationMinutes));
+        }
+
+        StartsAtUtc = startsAtUtc;
+        DurationMinutes = durationMinutes;
+        Source = SlotSource.Manual;
+        Release();
+    }
+
+    /// <summary>A free generated time the new pattern wants again with another length: open, with that length.</summary>
+    public void ResetTo(int durationMinutes, IClock clock)
+    {
+        EnsureFree(clock);
+        Release();
+        Status = SlotStatus.Open;
+        DurationMinutes = durationMinutes;
+        Source = SlotSource.Template;
+    }
+
+    private void EnsureFree(IClock clock)
+    {
+        if (IsTaken(clock))
+        {
+            throw new DomainException(ErrorCodes.SlotTaken, $"Slot {Id} is booked or held.");
+        }
+    }
 
     public bool IsAvailable(IClock clock) =>
         StartsAtUtc > clock.UtcNow && (Status == SlotStatus.Open || (Status == SlotStatus.Held && HeldUntilUtc <= clock.UtcNow));

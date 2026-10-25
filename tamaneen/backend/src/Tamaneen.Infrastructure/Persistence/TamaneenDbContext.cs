@@ -67,6 +67,8 @@ public sealed class TamaneenDbContext : DbContext
 
     public DbSet<AvailabilitySlot> AvailabilitySlots => Set<AvailabilitySlot>();
 
+    public DbSet<TherapistAvailability> TherapistAvailabilities => Set<TherapistAvailability>();
+
     public DbSet<Appointment> Appointments => Set<Appointment>();
 
     public DbSet<MatchSuggestion> MatchSuggestions => Set<MatchSuggestion>();

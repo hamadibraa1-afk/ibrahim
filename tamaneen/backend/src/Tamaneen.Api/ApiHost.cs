@@ -11,6 +11,8 @@ using Tamaneen.Hosting;
 using Tamaneen.Infrastructure;
 using Tamaneen.Infrastructure.Persistence;
 using Tamaneen.SharedKernel;
+using Tamaneen.SharedKernel.Notifications;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Tamaneen.Api;
 
@@ -82,6 +84,8 @@ public static class ApiHost
         builder.Services.AddScoped<PatientContext>();
         builder.Services.AddScoped<TherapistDirectory>();
         builder.Services.AddScoped<WaitlistNotifier>();
+        builder.Services.AddScoped<AppointmentNotices>();
+        builder.Services.TryAddSingleton<INotifier, NullNotifier>();
         builder.Services.AddHttpClient("crisis-console");
         builder.Services.AddScoped<StepUpVerifier>();
         if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing"))
@@ -142,6 +146,8 @@ public static class ApiHost
         app.MapWaitlistEndpoints();
         app.MapCareEndpoints();
         app.MapStaffEndpoints();
+        app.MapStaffScheduleEndpoints();
+        app.MapAvailabilityEndpoints();
         app.MapStaffAccessEndpoints();
         if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))
         {

@@ -36,9 +36,11 @@ public static class SchedulingEndpoints
 
     public sealed record HoldDto(Guid HoldId, Guid SlotId, DateTimeOffset StartsAt, DateTimeOffset ExpiresAt, TherapistSummaryDto Therapist);
 
-    public sealed record AppointmentDto(Guid Id, TherapistSummaryDto Therapist, DateTimeOffset StartsAt, int DurationMinutes, int SequenceNumber, string Status, bool Rescheduled);
+    public sealed record AppointmentDto(Guid Id, TherapistSummaryDto Therapist, DateTimeOffset StartsAt, int DurationMinutes, int SequenceNumber, string Status, bool Rescheduled,
+        int? TherapistLateMinutes, string? CancelledBy, string? CancelReasonCode, bool Missed);
 
-    public sealed record AppointmentDetailDto(Guid Id, TherapistSummaryDto Therapist, DateTimeOffset StartsAt, int DurationMinutes, int SequenceNumber, string Status, bool Rescheduled, bool CanChange, DateTimeOffset ChangeDeadline, string? JoinUrl, DateTimeOffset JoinAvailableAt);
+    public sealed record AppointmentDetailDto(Guid Id, TherapistSummaryDto Therapist, DateTimeOffset StartsAt, int DurationMinutes, int SequenceNumber, string Status, bool Rescheduled, bool CanChange, DateTimeOffset ChangeDeadline, string? JoinUrl, DateTimeOffset JoinAvailableAt,
+        int? TherapistLateMinutes, string? CancelledBy, string? CancelReasonCode, bool Missed);
 
     public sealed record AppointmentListDto(IReadOnlyList<AppointmentDto> Upcoming, IReadOnlyList<AppointmentDto> Past);
 
@@ -228,7 +230,8 @@ public static class SchedulingEndpoints
         var all = await p.Db.Appointments.AsNoTracking().Where(a => a.PatientId == p.PatientId).OrderBy(a => a.StartsAtUtc).ToListAsync(ct).ConfigureAwait(false);
         var cards = (await directory.ListAsync(p.Language, all.Select(a => a.TherapistUserId).Distinct(), ct).ConfigureAwait(false)).ToDictionary(t => t.Id);
         var now = clock.UtcNow;
-        AppointmentDto Map(Appointment a) => new(a.Id, cards[a.TherapistUserId], a.StartsAtUtc, a.DurationMinutes, a.SequenceNumber, StatusCode(a.Status), a.Rescheduled);
+        AppointmentDto Map(Appointment a) => new(a.Id, cards[a.TherapistUserId], a.StartsAtUtc, a.DurationMinutes, a.SequenceNumber, StatusCode(a.Status), a.Rescheduled,
+            a.TherapistLateMinutes, a.CancelledBy, PatientCancelReason(a), a.Missed);
         var upcoming = all.Where(a => a.Status == AppointmentStatus.Confirmed && a.StartsAtUtc.AddMinutes(a.DurationMinutes) > now).Select(Map).ToList();
         var past = all.Where(a => !(a.Status == AppointmentStatus.Confirmed && a.StartsAtUtc.AddMinutes(a.DurationMinutes) > now)).OrderByDescending(a => a.StartsAtUtc).Select(Map).ToList();
         return TypedResults.Ok(new AppointmentListDto(upcoming, past));
@@ -334,8 +337,12 @@ public static class SchedulingEndpoints
     {
         var therapist = (await directory.ListAsync(p.Language, [a.TherapistUserId], ct).ConfigureAwait(false)).Single();
         var join = a.JoinOpen(clock) ? $"{platform.Value.VideoBaseUrl.TrimEnd('/')}/{a.RoomId}" : null;
-        return new AppointmentDetailDto(a.Id, therapist, a.StartsAtUtc, a.DurationMinutes, a.SequenceNumber, StatusCode(a.Status), a.Rescheduled, a.CanChange(clock), a.ChangeDeadlineUtc, join, a.StartsAtUtc - Appointment.JoinOpensBefore);
+        return new AppointmentDetailDto(a.Id, therapist, a.StartsAtUtc, a.DurationMinutes, a.SequenceNumber, StatusCode(a.Status), a.Rescheduled, a.CanChange(clock), a.ChangeDeadlineUtc, join, a.StartsAtUtc - Appointment.JoinOpensBefore,
+            a.TherapistLateMinutes, a.CancelledBy, PatientCancelReason(a), a.Missed);
     }
+
+    /// <summary>The patient sees their own cancel reason; a therapist's real reason is never shown to them (P67).</summary>
+    internal static string? PatientCancelReason(Appointment a) => a.Status == AppointmentStatus.CancelledByPatient ? a.CancelReason : null;
 
     private static async Task<Appointment> FindAsync(PatientContext p, Guid id, CancellationToken ct) =>
         await p.Db.Appointments.FirstOrDefaultAsync(a => a.Id == id && a.PatientId == p.PatientId, ct).ConfigureAwait(false)

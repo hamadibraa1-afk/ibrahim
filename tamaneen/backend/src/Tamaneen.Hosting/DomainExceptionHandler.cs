@@ -71,6 +71,10 @@ public sealed partial class DomainExceptionHandler<TResource> : IExceptionHandle
         [ErrorCodes.IdempotencyInProgress] = StatusCodes.Status409Conflict,
         [ErrorCodes.SettingsVersionRequired] = StatusCodes.Status428PreconditionRequired,
         [ErrorCodes.SettingsVersionChanged] = StatusCodes.Status412PreconditionFailed,
+        [ErrorCodes.SlotTaken] = StatusCodes.Status409Conflict,
+        [ErrorCodes.SlotOverlap] = StatusCodes.Status409Conflict,
+        [ErrorCodes.SlotTooSoon] = StatusCodes.Status400BadRequest,
+        [ErrorCodes.AppointmentNotLateable] = StatusCodes.Status409Conflict,
     };
 
     private readonly IProblemDetailsService _problems;

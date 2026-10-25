@@ -97,4 +97,8 @@ public static class ErrorCodes
     public const string IdempotencyInProgress = "error.idempotency.in_progress";
     public const string SettingsVersionRequired = "error.settings.version_required";
     public const string SettingsVersionChanged = "error.settings.version_changed";
+    public const string SlotTaken = "error.slot.taken";
+    public const string SlotOverlap = "error.slot.overlap";
+    public const string SlotTooSoon = "error.slot.too_soon";
+    public const string AppointmentNotLateable = "error.appointment.not_lateable";
 }

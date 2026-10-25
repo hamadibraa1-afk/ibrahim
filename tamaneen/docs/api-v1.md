@@ -82,12 +82,12 @@ and P01, P02, P12 and P15 show the emergency numbers instead of the start button
 | GET | /v1/me/waitlist | → Waitlist (`status`: none, waiting, available; `offer` once a fitting time opened) | P56 |
 | PUT | /v1/me/waitlist | JoinWaitlistRequest { therapistId?, gender: any/female/male, language: any/ar/en, timesOfDay: morning/afternoon/evening[], days: weekdays/weekend[] } → Waitlist (joins, or changes the preferences and keeps the place; booking eligibility required, 400 field errors for unknown values) | P56 (from P07, P24, P25) |
 | DELETE | /v1/me/waitlist | → 204 (leaves) | P56 |
-| GET | /v1/appointments | → AppointmentList | P27 |
-| GET | /v1/appointments/{id} | → AppointmentDetail | P26, P28 |
+| GET | /v1/appointments | → AppointmentList (each item has `therapistLateMinutes`, `cancelledBy`, `cancelReasonCode`, `missed`) | P27 |
+| GET | /v1/appointments/{id} | → AppointmentDetail (same four fields; P54 reads `therapistLateMinutes`, P67 `cancelledBy: therapist`, P63 `missed`) | P26, P28, P54, P63, P67 |
 | GET | /v1/appointments/{id}/calendar | → text/calendar `appointment.ics`, neutral title «موعد» / "Appointment" with no platform, therapist or patient name (PB-42) | P26 |
 | POST | /v1/appointments/{id}/cancel | CancelRequest { reasonCode: schedule_conflict, feeling_better, unwell, therapist_fit, other } → AppointmentDetail (400 field error without a known reason; 409 within 24 h) | P28 |
 | POST | /v1/appointments/{id}/reschedule | RescheduleRequest → AppointmentDetail | P28 |
-| GET | /v1/home | → HomeSummary | P09 |
+| GET | /v1/home | → HomeSummary (`appointmentNotice`: `{ appointmentId, kind: cancelled \| missed }` for a session the therapist cancelled or marked missed in the last 7 days, until the patient books again) | P09 → P63, P67 |
 | POST | /v1/mood | MoodEntryRequest → MoodSaveResponse (note gated) | P09, P30 |
 | GET | /v1/mood?days=7 | → MoodEntry[] | P30 |
 | GET | /v1/homework | → HomeworkList | P29 |
@@ -127,7 +127,17 @@ During scheduled maintenance (`Platform:Maintenance` true) every patient endpoin
 | GET | /v1/staff/dashboard | → TherapistDashboard | S01 |
 | GET | /v1/staff/patients/{pseudonymId}/intake | → StaffIntakeView (audited) | S01 |
 | POST | /v1/staff/patients/{pseudonymId}/intake/approve | → 204 | S01 |
-| POST | /v1/staff/appointments/{id}/outcome | { outcome: attended, no_show, cancelled } → 204 | S01 |
+| POST | /v1/staff/appointments/{id}/outcome | { outcome: attended, no_show, cancelled } → 204 | S01, S18 |
+| GET | /v1/staff/schedule?from=yyyy-MM-dd&days=1\|7 | → Schedule { from, to, timeZone, items: StaffAppointment[] } (the therapist's own sessions; audited `schedule.viewed`; therapist) | S18 |
+| GET | /v1/staff/appointments/{id} | → StaffAppointment (audited `appointment.viewed`; therapist, own sessions only) | S18, session page |
+| POST | /v1/staff/appointments/{id}/running-late | { minutes 1–60 } → StaffAppointment (from 10 minutes before until the planned end, else 409 `error.appointment.not_lateable`; a new value replaces the old; notifies the patient) | S18 → P54 |
+| POST | /v1/staff/appointments/{id}/cancel | { reasonCode: emergency, illness, schedule_conflict, technical, other; note? ≤ 500 } → StaffAppointment (400 field error without a known reason; 409 once over or not confirmed; frees the slot, runs the waitlist check, notifies the patient and the supervisors) | S18 → P67 |
+| GET | /v1/staff/availability?therapistId= | → Availability (own; supervisors and the lead may pass `therapistId` and read any therapist's, a therapist asking for another gets 404) | S19 |
+| PUT | /v1/staff/availability | SaveAvailabilityRequest { sessionMinutes, bufferMinutes, weekly: { day 0–6, start, end "HH:mm" }[], exceptions: { id?, kind: leave\|absence, startsAt, endsAt }[] } → SaveAvailabilityResult { added, removed, affected, availability } (400 field errors `weekly.N`: overlap, end_before_start, invalid; therapist) | S19 |
+| POST | /v1/staff/availability/preview | SaveAvailabilityRequest → { added, removed, affected } (nothing saved) | S19 |
+| POST | /v1/staff/availability/slots | { startsAt } → 201 AvailabilitySlot (one-off time, profile session length; 400 `error.slot.too_soon` within 2 h; 409 `error.slot.overlap`) | S19 |
+| PATCH | /v1/staff/availability/slots/{slotId} | { startsAt } → AvailabilitySlot (free times only: 409 `error.slot.taken` when booked or held) | S19 |
+| DELETE | /v1/staff/availability/slots/{slotId} | → 204 (free times only, 409 `error.slot.taken`) | S19 |
 | POST | /v1/staff/patients/{pseudonymId}/homework | { title, instructions[], minutes, frequency, startsOn, endsOn } → 201 | (S16 later) |
 | POST | /v1/staff/checkins/{id}/feedback | { text } → 204 | (S16 later) |
 | GET | /v1/staff/patients | → CaseloadItem[] (the therapist's active patients; supervisors see all assigned) | menu "My patients" |
@@ -158,6 +168,24 @@ During scheduled maintenance (`Platform:Maintenance` true) every patient endpoin
 | (worker) POST | /v1/crisis/events/{id}/close/cosign | → OpenCrisisEvent (clinical lead only; closes and sets a review 72 hours later, shown on the timeline) | S04 |
 | (worker) GET | /v1/crisis/health | → CrisisHealth | S04 |
 | (worker) hub | /hubs/crisis?lang= | crisisAlert (kind: opened, raised, escalated, acknowledged, updated, closed) | S01, S04 |
+
+Scheduling (S18, S19). The guide's SVC-49 `/v1/therapist/availability` lives under `/v1/staff/availability` like the other
+staff endpoints. Saving the usual week generates the bookable times of the next 56 days in the platform time zone
+(`Platform:TimeZone`): as many sessions (`TherapistProfile.SessionMinutes`, set here) plus the gap as fit in each period, never
+within the 2-hour minimum notice and never inside leave or an absence. Saving again reconciles: free generated times the new
+pattern no longer has are deleted (or `blocked` when a cancelled session still points at them), booked and held times are
+never removed or moved and come back in `affected` (SB-28), one-off times (`source: manual`) stay until removed. Removing a
+generated time blocks it so the next save does not bring it back; moving one leaves such a marker and makes the time a
+one-off. A blocked time is never bookable. Every time that opens runs the waitlist check (the internal
+`availability.slot_opened`). An unverified licence stops new times; the pattern is still saved. Prayer times, holidays and
+Ramadan (S69) are not applied yet: that belongs with P60. Slots have no PatientId, so they are not under row-level security;
+the endpoints restrict changes to the therapist's own rows.
+
+Appointment fields for the session screens: `therapistLateMinutes` (S18 running late, for P54), `cancelledBy`
+(`patient`, `therapist` or null), `cancelReasonCode` (the patient sees only their own reason; staff see the therapist's) and
+`missed` (no-show recorded, P63). Notifications through `INotifier`: `appointment.running_late`,
+`appointment.cancelled_by_therapist` and `appointment.missed` to the patient; `appointment.rebook_needed` (EC-52) and
+`appointment.no_show_followup` (a second missed session in a row, EC-53, or one at risk 3–4, §11.1) to supervisors.
 
 Clinical file (S02). Statements are `concern`, `goals`, `supports`, `priorCare` and `hypotheses` (therapist only, always
 "not a diagnosis"). Each links to the patient messages it came from: the summary model cites the patient lines it used, and
