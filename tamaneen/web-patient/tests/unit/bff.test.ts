@@ -19,6 +19,13 @@ describe('BFF language negotiation', () => {
     expect(h.get('cookie')).toBeNull();
   });
 
+  it("forwards the outbox's Idempotency-Key, and the replay marker back", () => {
+    const key = '3f0c1d9e-7a54-4b8e-9a51-2d7c0f6b1e22';
+    expect(upstreamHeaders({ locale: 'ar', idempotencyKey: key }).get('idempotency-key')).toBe(key);
+    expect(upstreamHeaders({ locale: 'ar', idempotencyKey: 'bad key\r\nx: y' }).get('idempotency-key')).toBeNull();
+    expect(downstreamHeaders(new Headers({ 'idempotent-replayed': 'true' })).get('idempotent-replayed')).toBe('true');
+  });
+
   it('forwards only safe response headers', () => {
     const upstream = new Headers({ 'content-type': 'application/problem+json', 'content-language': 'ar', 'set-cookie': 'x=1', server: 'kestrel' });
     const h = downstreamHeaders(upstream);

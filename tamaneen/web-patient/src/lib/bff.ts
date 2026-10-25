@@ -5,7 +5,9 @@ export const ACCESS_TOKEN_COOKIE = 'tamaneen_at';
 export const LOCALE_COOKIE = 'NEXT_LOCALE';
 
 const SAFE_SEGMENT = /^[A-Za-z0-9._~-]+$/;
-const FORWARDED_RESPONSE_HEADERS = ['content-type', 'content-language', 'content-disposition', 'cache-control', 'retry-after', 'etag'];
+const FORWARDED_RESPONSE_HEADERS = ['content-type', 'content-language', 'content-disposition', 'cache-control', 'retry-after', 'etag', 'idempotent-replayed'];
+/** The outbox's Idempotency-Key (a UUID); anything else is not forwarded and the API treats the write as keyless. */
+const IDEMPOTENCY_KEY = /^[A-Za-z0-9-]{1,64}$/;
 
 /** The language the API should answer in: the user's saved choice, then the browser's, then Arabic. */
 export function resolveLocale(cookieLocale: string | undefined, acceptLanguage: string | null): Locale {
@@ -28,11 +30,12 @@ export function upstreamUrl(apiBase: string, segments: string[], search: string)
   return url;
 }
 
-export function upstreamHeaders(input: { locale: Locale; accessToken?: string; contentType?: string | null; requestId?: string | null }): Headers {
+export function upstreamHeaders(input: { locale: Locale; accessToken?: string; contentType?: string | null; requestId?: string | null; idempotencyKey?: string | null }): Headers {
   const headers = new Headers({ 'Accept-Language': input.locale, Accept: 'application/json' });
   if (input.accessToken) headers.set('Authorization', `Bearer ${input.accessToken}`);
   if (input.contentType) headers.set('Content-Type', input.contentType);
   if (input.requestId) headers.set('X-Request-Id', input.requestId);
+  if (input.idempotencyKey && IDEMPOTENCY_KEY.test(input.idempotencyKey)) headers.set('Idempotency-Key', input.idempotencyKey);
   return headers;
 }
 

@@ -26,13 +26,23 @@ function currentLocale(): string {
  * Calls the API through the BFF (/api/v1/...). The session cookie is attached server-side; this code never
  * sees a token. A 401 triggers one silent refresh. If the session is gone the user lands on the
  * session-expired page, and if the chat is locked by a crisis event, on the crisis screen.
+ *
+ * `idempotencyKey` is sent as the Idempotency-Key header (the outbox, P66: the API answers a repeat with the
+ * first result). `navigate: false` leaves the page where it is on 401 or maintenance, for background sends
+ * that must not pull the patient away from what they are doing; the crisis-lock redirect always applies.
  */
-export async function api<T>(path: string, options: { method?: Method; body?: unknown; signal?: AbortSignal } = {}): Promise<T> {
+export async function api<T>(
+  path: string,
+  options: { method?: Method; body?: unknown; signal?: AbortSignal; idempotencyKey?: string; navigate?: boolean } = {},
+): Promise<T> {
   const url = `/api/v1/${path.replace(/^\/+/, '')}`;
+  const headers: Record<string, string> = { Accept: 'application/json' };
+  if (options.body !== undefined) headers['Content-Type'] = 'application/json';
+  if (options.idempotencyKey) headers['Idempotency-Key'] = options.idempotencyKey;
   const init: RequestInit = {
     method: options.method ?? 'GET',
     credentials: 'same-origin',
-    headers: options.body === undefined ? { Accept: 'application/json' } : { Accept: 'application/json', 'Content-Type': 'application/json' },
+    headers,
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
     signal: options.signal,
   };
@@ -45,7 +55,9 @@ export async function api<T>(path: string, options: { method?: Method; body?: un
   if (!response.ok) {
     const error = await toApiError(response);
     if (typeof window !== 'undefined') {
-      if (response.status === 401) {
+      if (options.navigate === false) {
+        if (error.code === CRISIS_LOCKED_CODE) window.location.assign(`/${currentLocale()}/crisis`);
+      } else if (response.status === 401) {
         const here = `${window.location.pathname}${window.location.search}`;
         rememberReturnPath(here);
         window.location.assign(sessionExpiredUrl(currentLocale(), here));

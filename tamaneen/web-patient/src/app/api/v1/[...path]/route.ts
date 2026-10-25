@@ -48,6 +48,7 @@ async function proxy(request: NextRequest, { params }: { params: Promise<{ path:
         accessToken: jar.get(ACCESS_TOKEN_COOKIE)?.value,
         contentType: request.headers.get('content-type'),
         requestId: request.headers.get('x-request-id'),
+        idempotencyKey: hasBody ? request.headers.get('idempotency-key') : null,
       }),
       body: hasBody ? await request.arrayBuffer() : undefined,
       cache: 'no-store',

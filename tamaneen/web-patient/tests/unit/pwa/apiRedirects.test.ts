@@ -36,4 +36,19 @@ describe('api() system-state redirects (P35)', () => {
     await expect(api('mood', { method: 'POST', body: {} })).rejects.toThrow();
     expect(assign).not.toHaveBeenCalled();
   });
+
+  it('background sends (the outbox) carry the Idempotency-Key and stay on the page on 401 or maintenance', async () => {
+    const fetchMock = vi.fn(async (url: string) => (url === '/api/auth/refresh' ? new Response(null, { status: 401 }) : problem(401, 'error.auth.session_revoked')));
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(api('mood', { method: 'POST', body: {}, idempotencyKey: 'k-1', navigate: false })).rejects.toThrow();
+    expect((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].headers).toMatchObject({ 'Idempotency-Key': 'k-1' });
+    vi.stubGlobal('fetch', vi.fn(async () => problem(503, 'error.maintenance')));
+    await expect(api('mood', { method: 'POST', body: {}, navigate: false })).rejects.toThrow();
+    expect(assign).not.toHaveBeenCalled();
+
+    // A crisis lock still opens the crisis screen.
+    vi.stubGlobal('fetch', vi.fn(async () => problem(409, 'error.crisis.locked')));
+    await expect(api('mood', { method: 'POST', body: {}, navigate: false })).rejects.toThrow();
+    expect(assign).toHaveBeenCalledWith('/ar/crisis');
+  });
 });
