@@ -20,7 +20,7 @@ async function requestLocale(): Promise<Locale> {
  * GET from a server component with the session cookie. 401 → session-expired page (the middleware has
  * already tried a refresh), crisis lock → crisis screen. Other errors throw ApiError for error.tsx.
  */
-export async function serverGet<T>(path: string): Promise<T> {
+export async function serverGet<T>(path: string, onResponse?: (response: Response) => void): Promise<T> {
   const locale = await requestLocale();
   const jar = await cookies();
   const requestHeaders = await headers();
@@ -36,7 +36,17 @@ export async function serverGet<T>(path: string): Promise<T> {
     if (error.code === MAINTENANCE_CODE) redirect(`/${locale}/maintenance`);
     throw error;
   }
+  onResponse?.(response);
   return (await response.json()) as T;
+}
+
+/** serverGet that also returns the ETag, for the settings forms that save with If-Match (P21, P31, P34). */
+export async function serverGetVersioned<T>(path: string): Promise<{ data: T; etag: string | null }> {
+  let etag: string | null = null;
+  const data = await serverGet<T>(path, (response) => {
+    etag = response.headers.get('etag');
+  });
+  return { data, etag };
 }
 
 /** Like serverGet but returns null on 404 instead of throwing. */

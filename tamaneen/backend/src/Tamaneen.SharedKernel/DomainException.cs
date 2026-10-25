@@ -95,4 +95,6 @@ public static class ErrorCodes
     public const string IdempotencyKeyInvalid = "error.idempotency.invalid_key";
     public const string IdempotencyKeyReused = "error.idempotency.key_reused";
     public const string IdempotencyInProgress = "error.idempotency.in_progress";
+    public const string SettingsVersionRequired = "error.settings.version_required";
+    public const string SettingsVersionChanged = "error.settings.version_changed";
 }

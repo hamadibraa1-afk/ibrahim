@@ -30,12 +30,14 @@ export function upstreamUrl(apiBase: string, segments: string[], search: string)
   return url;
 }
 
-export function upstreamHeaders(input: { locale: Locale; accessToken?: string; contentType?: string | null; requestId?: string | null; idempotencyKey?: string | null }): Headers {
+/** If-Match passes through, so the API can refuse a save based on stale settings (412, PB-52). */
+export function upstreamHeaders(input: { locale: Locale; accessToken?: string; contentType?: string | null; requestId?: string | null; idempotencyKey?: string | null; ifMatch?: string | null }): Headers {
   const headers = new Headers({ 'Accept-Language': input.locale, Accept: 'application/json' });
   if (input.accessToken) headers.set('Authorization', `Bearer ${input.accessToken}`);
   if (input.contentType) headers.set('Content-Type', input.contentType);
   if (input.requestId) headers.set('X-Request-Id', input.requestId);
   if (input.idempotencyKey && IDEMPOTENCY_KEY.test(input.idempotencyKey)) headers.set('Idempotency-Key', input.idempotencyKey);
+  if (input.ifMatch) headers.set('If-Match', input.ifMatch);
   return headers;
 }
 

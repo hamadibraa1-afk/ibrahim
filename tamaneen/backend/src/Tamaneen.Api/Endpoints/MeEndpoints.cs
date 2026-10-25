@@ -136,7 +136,13 @@ public static class MeEndpoints
         return TypedResults.Ok(new ChangeLanguageResponse(account.PreferredLanguage, SupportedLanguages.Direction(account.PreferredLanguage), message));
     }
 
-    internal static async Task<Ok<MeDto>> GetMeAsync(PatientContext p, IClock clock, CancellationToken ct) => TypedResults.Ok(await BuildMeAsync(p, clock, ct).ConfigureAwait(false));
+    /// <summary>The ETag is the profile version (nickname and time zone) that PUT /v1/me/profile must send back in If-Match.</summary>
+    internal static async Task<Ok<MeDto>> GetMeAsync(HttpContext http, PatientContext p, IClock clock, CancellationToken ct)
+    {
+        var me = await BuildMeAsync(p, clock, ct).ConfigureAwait(false);
+        SettingsVersion.Send(http, SettingsVersion.Profile(await p.ProfileAsync(ct).ConfigureAwait(false)));
+        return TypedResults.Ok(me);
+    }
 
     internal static async Task<MeDto> BuildMeAsync(PatientContext p, IClock clock, CancellationToken ct)
     {
@@ -184,9 +190,11 @@ public static class MeEndpoints
         _ => "matched",
     };
 
-    internal static async Task<Ok<MeDto>> UpdateProfileAsync(UpdateProfileRequest request, PatientContext p, IClock clock, CancellationToken ct)
+    /// <summary>P31 save with If-Match (PB-52): 428 without it, 412 when another device saved first.</summary>
+    internal static async Task<Ok<MeDto>> UpdateProfileAsync(UpdateProfileRequest request, HttpContext http, PatientContext p, IClock clock, CancellationToken ct)
     {
         var profile = await p.ProfileAsync(ct).ConfigureAwait(false);
+        SettingsVersion.Require(http, SettingsVersion.Profile(profile));
         if (!Nicknames.IsAcceptable(request.Nickname))
         {
             throw Invalid("nickname");
@@ -199,6 +207,7 @@ public static class MeEndpoints
         }
 
         await p.Db.SaveChangesAsync(ct).ConfigureAwait(false);
+        SettingsVersion.Send(http, SettingsVersion.Profile(profile));
         return TypedResults.Ok(await BuildMeAsync(p, clock, ct).ConfigureAwait(false));
     }
 
@@ -278,14 +287,16 @@ public static class MeEndpoints
 
     // ---------- Safety info (P21, P34) ----------
 
-    internal static async Task<Ok<SafetyInfoDto>> GetSafetyInfoAsync(PatientContext p, CancellationToken ct)
+    internal static async Task<Ok<SafetyInfoDto>> GetSafetyInfoAsync(HttpContext http, PatientContext p, CancellationToken ct)
     {
         var profile = await p.ProfileAsync(ct).ConfigureAwait(false);
+        SettingsVersion.Send(http, SettingsVersion.SafetyInfo(profile));
         var data = await p.DecryptJsonAsync<SafetyInfoData>(Fields.SafetyInfo, profile.EmergencyContactCipher, ct).ConfigureAwait(false);
         return TypedResults.Ok(new SafetyInfoDto(data?.ContactPhone, data?.TrustedName, data?.TrustedPhone, profile.ShareLocation, profile.ShareLocationSinceUtc));
     }
 
-    internal static async Task<Ok<SafetyInfoDto>> UpdateSafetyInfoAsync(UpdateSafetyInfoRequest request, PatientContext p, IAuditLog audit, IClock clock, CancellationToken ct)
+    /// <summary>P21, P34 save with If-Match: 428 without it, 412 when the stored values changed since the GET.</summary>
+    internal static async Task<Ok<SafetyInfoDto>> UpdateSafetyInfoAsync(UpdateSafetyInfoRequest request, HttpContext http, PatientContext p, IAuditLog audit, IClock clock, CancellationToken ct)
     {
         var contact = CleanPhone(request.ContactPhone, "contactPhone");
         var trustedPhone = CleanPhone(request.TrustedPhone, "trustedPhone");
@@ -307,16 +318,19 @@ public static class MeEndpoints
         }
 
         var profile = await p.ProfileAsync(ct).ConfigureAwait(false);
+        SettingsVersion.Require(http, SettingsVersion.SafetyInfo(profile));
         var data = new SafetyInfoData(contact, trustedName, trustedPhone);
         var empty = contact is null && trustedName is null && trustedPhone is null;
         profile.SetSafetyInfo(empty ? null : await p.EncryptJsonAsync(Fields.SafetyInfo, data, ct).ConfigureAwait(false), request.ShareLocation, clock);
         await SyncLocationConsentAsync(p, request.ShareLocation, clock, ct).ConfigureAwait(false);
         audit.Append("patient.safety_info_updated", "PatientProfile", null, profile.PseudonymId);
         await p.Db.SaveChangesAsync(ct).ConfigureAwait(false);
+        SettingsVersion.Send(http, SettingsVersion.SafetyInfo(profile));
         return TypedResults.Ok(new SafetyInfoDto(contact, trustedName, trustedPhone, profile.ShareLocation, profile.ShareLocationSinceUtc));
     }
 
-    internal static async Task<NoContent> DeleteTrustedContactAsync(PatientContext p, IAuditLog audit, IClock clock, CancellationToken ct)
+    /// <summary>Answers with the new safety-info ETag, so the next save on P34 does not need a reload.</summary>
+    internal static async Task<NoContent> DeleteTrustedContactAsync(HttpContext http, PatientContext p, IAuditLog audit, IClock clock, CancellationToken ct)
     {
         var profile = await p.ProfileAsync(ct).ConfigureAwait(false);
         var data = await p.DecryptJsonAsync<SafetyInfoData>(Fields.SafetyInfo, profile.EmergencyContactCipher, ct).ConfigureAwait(false);
@@ -324,6 +338,7 @@ public static class MeEndpoints
         profile.SetSafetyInfo(kept is null ? null : await p.EncryptJsonAsync(Fields.SafetyInfo, new SafetyInfoData(kept, null, null), ct).ConfigureAwait(false), profile.ShareLocation, clock);
         audit.Append("patient.trusted_contact_deleted", "PatientProfile", null, profile.PseudonymId);
         await p.Db.SaveChangesAsync(ct).ConfigureAwait(false);
+        SettingsVersion.Send(http, SettingsVersion.SafetyInfo(profile));
         return TypedResults.NoContent();
     }
 

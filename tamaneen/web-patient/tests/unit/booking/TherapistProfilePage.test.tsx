@@ -76,5 +76,6 @@ describe('TherapistProfilePage (P25)', () => {
     expect(screen.queryByRole('link', { name: 'اختيار موعد' })).toBeNull();
     expect(screen.getByRole('status')).toHaveTextContent('لا مواعيد حاليًا');
     expect(screen.getByRole('link', { name: 'عرض الأخصائيين' })).toHaveAttribute('href', '/therapists');
+    expect(screen.getByRole('link', { name: 'انضم لقائمة الانتظار' })).toHaveAttribute('href', '/waitlist?therapist=t-sara');
   });
 });

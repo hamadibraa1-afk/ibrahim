@@ -218,7 +218,7 @@ public static class StaffEndpoints
         return TypedResults.NoContent();
     }
 
-    internal static async Task<NoContent> OutcomeAsync(Guid id, OutcomeRequest request, ICurrentUser user, TamaneenDbContext db, IAuditLog audit, IClock clock, CancellationToken ct)
+    internal static async Task<NoContent> OutcomeAsync(Guid id, OutcomeRequest request, ICurrentUser user, TamaneenDbContext db, Clinical.WaitlistNotifier waitlist, IAuditLog audit, IClock clock, CancellationToken ct)
     {
         var outcome = request.Outcome switch
         {
@@ -238,6 +238,11 @@ public static class StaffEndpoints
         var pseudonym = await db.UserAccounts.Where(a => a.Id == appointment.PatientId).Select(a => a.PseudonymId).FirstAsync(ct).ConfigureAwait(false);
         audit.Append("appointment.outcome_recorded", "Appointment", appointment.Id.ToString(), pseudonym, request.Outcome);
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        if (outcome == AppointmentStatus.CancelledByTherapist)
+        {
+            // P56: the freed time goes to the waitlist.
+            await waitlist.CheckAsync(ct).ConfigureAwait(false);
+        }
         return TypedResults.NoContent();
     }
 

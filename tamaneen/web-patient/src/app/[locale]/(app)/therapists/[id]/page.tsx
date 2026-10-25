@@ -91,6 +91,14 @@ export default async function TherapistProfilePage({ params }: { params: Params 
           <Link href="/therapists" className="font-semibold underline underline-offset-4">
             {t('otherTherapists')}
           </Link>
+          {eligible ? (
+            <>
+              {' · '}
+              <Link href={`/waitlist?therapist=${encodeURIComponent(therapist.id)}`} className="font-semibold underline underline-offset-4">
+                {t('waitlistLink')}
+              </Link>
+            </>
+          ) : null}
         </Notice>
       ) : null}
 

@@ -4,6 +4,7 @@ import type { Me } from './api/types';
  * Where a signed-in patient should be, given what they have finished. Returns null once onboarding is
  * done (the home screen takes over). Order: consents (P03) → safety info (P21, skippable) → path (P22) →
  * safety check (P23, direct path) or intake (P04) → summary (P05) → waiting for review (P36) → matches (P07).
+ * A case the reviewer closed with referrals or escalated also opens P36, which explains what happens instead.
  */
 export function onboardingStep(me: Me): string | null {
   const o = me.onboarding;
@@ -24,7 +25,7 @@ export function onboardingStep(me: Me): string | null {
     default:
       break;
   }
-  if (o.triageStatus === 'pending') return '/waiting';
+  if (o.triageStatus === 'pending' || o.triageStatus === 'closed' || o.triageStatus === 'escalated') return '/waiting';
   return null;
 }
 

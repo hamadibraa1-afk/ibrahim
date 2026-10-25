@@ -10,7 +10,8 @@ export const MATCH_POLL_MS = 30_000;
 /**
  * P36 «اعتماد الفرز: MatchReady ينقل إلى P07». The contract has no patient hub, so this polls GET /v1/triage
  * while the tab is visible (and once more when it becomes visible again), and moves to the matches as soon as
- * the suggestions are ready. Failed polls are ignored; the next one tries again. Renders nothing.
+ * the suggestions are ready. If the reviewer closes the case with referrals or escalates it instead, the page
+ * is refreshed so it shows that state. Failed polls are ignored; the next one tries again. Renders nothing.
  */
 export function MatchReadyWatcher({ intervalMs = MATCH_POLL_MS }: { intervalMs?: number }) {
   const router = useRouter();
@@ -27,6 +28,9 @@ export function MatchReadyWatcher({ intervalMs = MATCH_POLL_MS }: { intervalMs?:
         if (!stopped && triage.suggestionsReady) {
           stopped = true;
           router.replace('/matches');
+        } else if (!stopped && (triage.status === 'closed' || triage.status === 'escalated')) {
+          stopped = true;
+          router.refresh();
         }
       } catch {
         // Offline or a hiccup: keep waiting.

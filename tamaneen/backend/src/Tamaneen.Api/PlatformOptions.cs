@@ -45,6 +45,13 @@ public sealed class PlatformOptions
 
     public string TimeZone { get; set; } = "Asia/Riyadh";
 
+    /// <summary>The expected wait P56 shows, in days (until S50 computes it from capacity).</summary>
+    [Range(1, 90)]
+    public int WaitlistExpectedDaysMin { get; set; } = 3;
+
+    [Range(1, 90)]
+    public int WaitlistExpectedDaysMax { get; set; } = 5;
+
     /// <summary>False pauses new sign-ups (EC-26): eligibility and sign-up are refused and the apps show the emergency numbers instead.</summary>
     public bool SignupsOpen { get; set; } = true;
 

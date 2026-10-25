@@ -4,7 +4,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useId, useState, useTransition, type FormEvent } from 'react';
 import { usePathname, useRouter } from '@/i18n/navigation';
 import { isLocale, routing } from '@/i18n/routing';
-import { api, authApi } from '@/lib/api/client';
+import { api, apiVersioned, authApi, isVersionConflict } from '@/lib/api/client';
 import type { Lang, Me, UpdateProfileRequest } from '@/lib/api/types';
 import { Button } from '@/components/ui/Button';
 import { Notice } from '@/components/ui/Notice';
@@ -27,8 +27,10 @@ export const TIME_ZONES = [
 /**
  * P31 profile: nickname and time zone (saved together), and the language, which applies at once: the API
  * stores it, then the same page reloads under the other locale so the whole interface flips direction.
+ * The save sends the profile version from GET /v1/me (If-Match, PB-52); on a 412 the form shows the values
+ * saved from the other device and says so.
  */
-export function ProfileForm({ me }: { me: Me }) {
+export function ProfileForm({ me, version: initialVersion }: { me: Me; version: string | null }) {
   const t = useTranslations('settings.profile');
   const te = useTranslations('errors');
   const current = useLocale();
@@ -46,6 +48,7 @@ export function ProfileForm({ me }: { me: Me }) {
   const [saved, setSaved] = useState(false);
   const [languageBusy, setLanguageBusy] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [version, setVersion] = useState(initialVersion);
 
   const knownZone = TIME_ZONES.some((z) => z.id === timeZone);
 
@@ -78,14 +81,28 @@ export function ProfileForm({ me }: { me: Me }) {
     setBusy(true);
     try {
       const body: UpdateProfileRequest = { nickname: name, timeZone };
-      const updated = await api<Me>('me/profile', { method: 'PUT', body });
+      const { data: updated, etag } = await apiVersioned<Me>('me/profile', { method: 'PUT', body, ifMatch: version });
       if (updated) {
         setNickname(updated.nickname);
         setTimeZone(updated.timeZone);
       }
+      if (etag) setVersion(etag);
       setSaved(true);
       router.refresh();
     } catch (e) {
+      if (isVersionConflict(e)) {
+        // «تعارض 412: عرض القيم الحالية»: load what the other device saved.
+        try {
+          const latest = await apiVersioned<Me>('me');
+          setNickname(latest.data.nickname);
+          setTimeZone(latest.data.timeZone);
+          setVersion(latest.etag);
+        } catch {
+          // Keep the screen; the next save answers 412 again.
+        }
+        setError(problemMessage(e, te('network')));
+        return;
+      }
       const fields = fieldProblems(e);
       setErrors(fields);
       if (!fields.nickname && !fields.timeZone) setError(problemMessage(e, te('network')));

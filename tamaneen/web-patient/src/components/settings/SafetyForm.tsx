@@ -3,7 +3,7 @@
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type FormEvent } from 'react';
 import { isLocale, routing } from '@/i18n/routing';
-import { api } from '@/lib/api/client';
+import { apiVersioned, isVersionConflict } from '@/lib/api/client';
 import type { SafetyInfo, UpdateSafetyInfoRequest } from '@/lib/api/types';
 import { asciiDigits, formatDate } from '@/lib/format';
 import { Button } from '@/components/ui/Button';
@@ -18,10 +18,10 @@ const text = (value: string) => value.trim() || null;
 
 /**
  * P34: the patient's number, a trusted person, and location sharing, used only in an emergency. The trusted
- * name and number go together; turning location sharing off asks first. (The API has no ETags yet, so the
- * save has no If-Match.)
+ * name and number go together; turning location sharing off asks first. The save sends the version that was
+ * read (If-Match); on a 412 the form shows the values saved from the other device and says so.
  */
-export function SafetyForm({ initial, timeZone }: { initial: SafetyInfo; timeZone: string }) {
+export function SafetyForm({ initial, version: initialVersion, timeZone }: { initial: SafetyInfo; version: string | null; timeZone: string }) {
   const t = useTranslations('settings.safety');
   const te = useTranslations('errors');
   const current = useLocale();
@@ -40,6 +40,7 @@ export function SafetyForm({ initial, timeZone }: { initial: SafetyInfo; timeZon
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmLocation, setConfirmLocation] = useState(false);
+  const [version, setVersion] = useState(initialVersion);
 
   function apply(info: SafetyInfo) {
     setContactPhone(info.contactPhone ?? '');
@@ -62,10 +63,16 @@ export function SafetyForm({ initial, timeZone }: { initial: SafetyInfo; timeZon
     setBusy(true);
     const body: UpdateSafetyInfoRequest = { contactPhone: phone(contactPhone), trustedName: text(trustedName), trustedPhone: phone(trustedPhone), shareLocation };
     try {
-      const result = await api<SafetyInfo | undefined>('me/safety-info', { method: 'PUT', body });
+      const { data: result, etag } = await apiVersioned<SafetyInfo | undefined>('me/safety-info', { method: 'PUT', body, ifMatch: version });
       apply(result ?? { ...body, shareLocationSince: shareLocation ? (since ?? new Date().toISOString()) : null });
+      if (etag) setVersion(etag);
       setNotice(t('saved'));
     } catch (e) {
+      if (isVersionConflict(e)) {
+        await reload();
+        setError(problemMessage(e, te('network')));
+        return;
+      }
       const fields = fieldProblems(e);
       setErrors(fields);
       if (!fields.contactPhone && !fields.trustedName && !fields.trustedPhone) setError(problemMessage(e, te('network')));
@@ -74,11 +81,24 @@ export function SafetyForm({ initial, timeZone }: { initial: SafetyInfo; timeZon
     }
   }
 
+  /** Another device saved first (412): show what is stored now, with its version. */
+  async function reload() {
+    try {
+      const latest = await apiVersioned<SafetyInfo>('me/safety-info');
+      apply(latest.data);
+      setVersion(latest.etag);
+      setErrors({});
+    } catch {
+      // Keep what is on screen; the next save answers 412 again and retries the reload.
+    }
+  }
+
   async function deleteTrusted() {
     setDeleting(true);
     setError(null);
     try {
-      await api('me/safety-info/trusted-contact', { method: 'DELETE' });
+      const { etag } = await apiVersioned('me/safety-info/trusted-contact', { method: 'DELETE' });
+      if (etag) setVersion(etag);
       setTrustedName('');
       setTrustedPhone('');
       setHasTrusted(false);

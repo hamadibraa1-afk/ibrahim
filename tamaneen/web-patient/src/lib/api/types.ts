@@ -179,7 +179,29 @@ export interface TherapistQuery { q?: string; specialty?: string; language?: Lan
 export interface Slot { slotId: string; startsAt: string }
 export interface Hold { holdId: string; slotId: string; startsAt: string; expiresAt: string; therapist: TherapistSummary }
 
-export type AppointmentStatus = 'confirmed' | 'cancelled_by_patient' | 'cancelled_by_therapist' | 'completed' | 'no_show';
+// ---------- Waitlist (P56) ----------
+export type WaitlistGender = 'any' | Gender;
+export type WaitlistLanguage = 'any' | Lang;
+export type TimeOfDay = 'morning' | 'afternoon' | 'evening';
+export type DayKind = 'weekdays' | 'weekend';
+/** Empty timesOfDay or days means any. */
+export interface WaitlistPreferences { gender: WaitlistGender; language: WaitlistLanguage; timesOfDay: TimeOfDay[]; days: DayKind[] }
+/** The time that opened for the patient; book it on P08. */
+export interface WaitlistOffer { therapistId: string; therapistName: string; startsAt: string }
+export interface Waitlist {
+  status: 'none' | 'waiting' | 'available';
+  /** Joined for one therapist (from P25), or null for any therapist who fits. */
+  therapistId: string | null;
+  therapistName: string | null;
+  preferences: WaitlistPreferences | null;
+  joinedAt: string | null;
+  expectedDaysMin: number;
+  expectedDaysMax: number;
+  offer: WaitlistOffer | null;
+}
+export interface JoinWaitlistRequest extends WaitlistPreferences { therapistId?: string | null }
+
+export type AppointmentStatus ='confirmed' | 'cancelled_by_patient' | 'cancelled_by_therapist' | 'completed' | 'no_show';
 export interface Appointment {
   id: string;
   therapist: TherapistSummary;

@@ -37,6 +37,44 @@
       "stop": "Stop",
       "again": "Start again",
       "remaining": "{time} left"
+    },
+    "closed": {
+      "title": "Thank you for sharing with us",
+      "body": "A professional has read your file carefully. We think another service can help you better right now, so we will not suggest therapists here. This is not a rejection of you, and what you are going through deserves care.",
+      "referralsTitle": "Where we suggest you reach out",
+      "call": "Call",
+      "referrals": {
+        "emergency_services": {
+          "title": "Emergency services",
+          "body": "If you are in danger now or thinking about harming yourself, call emergency services right away."
+        },
+        "crisis_line": {
+          "title": "Mental health support line",
+          "body": "Trained people who will listen and guide you, at any time."
+        },
+        "psychiatry": {
+          "title": "A psychiatrist",
+          "body": "For a deeper assessment, which may include medication. Ask your doctor or the nearest hospital for a referral."
+        },
+        "primary_care": {
+          "title": "Your primary care doctor",
+          "body": "Visit your nearest primary health care centre, and take what you wrote in your summary with you if you like."
+        },
+        "community_support": {
+          "title": "Community support",
+          "body": "Groups and support programmes in your area that can be with you meanwhile."
+        }
+      },
+      "stillHere": "Your account, safety plan and exercises stay available to you. If you feel worse, press Help now at any time.",
+      "resources": "Help numbers",
+      "home": "Home"
+    },
+    "escalated": {
+      "title": "We want to check on you now",
+      "body": "A professional has read your file and thinks it is best for our immediate support team to contact you directly. Open the help screen to see the emergency numbers and how we are reaching you.",
+      "openCrisis": "Open the help screen",
+      "callEmergency": "Call emergency services",
+      "hint": "If you are in danger now, do not wait: call emergency services."
     }
   }
 }

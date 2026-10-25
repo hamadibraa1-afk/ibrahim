@@ -39,12 +39,12 @@ and P01, P02, P12 and P15 show the emergency numbers instead of the start button
 
 | Method | Path | Body → Response | Screen |
 |---|---|---|---|
-| GET | /v1/me | → Me | all (routing) |
-| PUT | /v1/me/profile | UpdateProfileRequest → Me | P31 |
+| GET | /v1/me | → Me + `ETag` (profile version) | all (routing) |
+| PUT | /v1/me/profile | `If-Match` + UpdateProfileRequest → Me + `ETag` (428 `error.settings.version_required` without If-Match, 412 `error.settings.version_changed` when another device saved first) | P31 |
 | PUT | /v1/me/language | { language } | toggle, P31 |
 | GET/PUT | /v1/me/consents | → Consent[] / UpdateConsentsRequest → Consent[] | P03, P11 |
-| GET/PUT | /v1/me/safety-info | SafetyInfo / UpdateSafetyInfoRequest (trustedName ≤ 100 and trustedPhone go together: one without the other is a 400 field error) | P21, P34 |
-| DELETE | /v1/me/safety-info/trusted-contact | → 204 | P34 |
+| GET/PUT | /v1/me/safety-info | SafetyInfo + `ETag` / `If-Match` + UpdateSafetyInfoRequest → SafetyInfo + `ETag` (trustedName ≤ 100 and trustedPhone go together: one without the other is a 400 field error; 428 without If-Match, 412 on a stale version) | P21, P34 |
+| DELETE | /v1/me/safety-info/trusted-contact | → 204 + `ETag` (the new safety-info version) | P34 |
 | PUT | /v1/me/path | { path } → Me | P22 |
 | POST | /v1/me/contact-request?source= | → ContactRequestCreated (`expectedBy`, `withinHours` from the triage SLA) | P04, P22 |
 | GET | /v1/me/security | → SecurityOverview | P32 |
@@ -79,6 +79,9 @@ and P01, P02, P12 and P15 show the emergency numbers instead of the start button
 | POST | /v1/bookings/holds | { slotId } → Hold (5 minutes) | P08 |
 | POST | /v1/bookings/holds/{holdId}/confirm | → AppointmentDetail | P08 → P26 |
 | DELETE | /v1/bookings/holds/{holdId} | → 204 | P08 |
+| GET | /v1/me/waitlist | → Waitlist (`status`: none, waiting, available; `offer` once a fitting time opened) | P56 |
+| PUT | /v1/me/waitlist | JoinWaitlistRequest { therapistId?, gender: any/female/male, language: any/ar/en, timesOfDay: morning/afternoon/evening[], days: weekdays/weekend[] } → Waitlist (joins, or changes the preferences and keeps the place; booking eligibility required, 400 field errors for unknown values) | P56 (from P07, P24, P25) |
+| DELETE | /v1/me/waitlist | → 204 (leaves) | P56 |
 | GET | /v1/appointments | → AppointmentList | P27 |
 | GET | /v1/appointments/{id} | → AppointmentDetail | P26, P28 |
 | GET | /v1/appointments/{id}/calendar | → text/calendar `appointment.ics`, neutral title «موعد» / "Appointment" with no platform, therapist or patient name (PB-42) | P26 |
@@ -99,6 +102,14 @@ and its successful response is stored, encrypted with the patient's key; a repea
 (4xx, 5xx, gate unavailable) frees the key. While the first copy is still running a repeat gets 409 `error.idempotency.in_progress`
 with `Retry-After`; the same key on another endpoint is 422 `error.idempotency.key_reused`; a malformed key is 400
 `error.idempotency.invalid_key`. Keys are per patient (RLS). Intake turns use `clientMessageId` and Help now `requestId` instead.
+
+Waitlist (P56): the queue is ordered by risk, then by time waited. Whenever a time becomes free (a patient cancels or moves a
+session, a hold is released, a therapist records a cancellation, a patient joins), the scheduling service matches the
+waiting entries against the bookable times of the next 14 days (times of day in the patient's time zone: morning 06–12,
+afternoon 12–17, evening 17–23; weekend Friday and Saturday), one patient per time. The patient gets a neutral SMS or e-mail
+(`WaitlistSlotOpen`) and `GET /v1/me/waitlist` shows `available` with the offer. `expectedDaysMin/Max` come from
+`Platform:WaitlistExpectedDays*` until S50 computes them. The table is under row-level security on PatientId; the
+scheduling service may read and mark entries.
 
 Booking needs either a passed safety check (direct path) or a reviewed triage (intake path).
 Gated writes that return an object (`PUT /v1/intake/{id}/summary`, `POST /v1/triage/addendum`, `PUT /v1/safety-plan`,

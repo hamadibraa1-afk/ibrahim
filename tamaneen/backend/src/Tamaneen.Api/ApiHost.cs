@@ -81,6 +81,7 @@ public static class ApiHost
         builder.Services.AddScoped<AuthService>();
         builder.Services.AddScoped<PatientContext>();
         builder.Services.AddScoped<TherapistDirectory>();
+        builder.Services.AddScoped<WaitlistNotifier>();
         builder.Services.AddHttpClient("crisis-console");
         builder.Services.AddScoped<StepUpVerifier>();
         if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing"))
@@ -138,6 +139,7 @@ public static class ApiHost
         app.MapAuthEndpoints();
         app.MapIntakeEndpoints();
         app.MapSchedulingEndpoints();
+        app.MapWaitlistEndpoints();
         app.MapCareEndpoints();
         app.MapStaffEndpoints();
         app.MapStaffAccessEndpoints();

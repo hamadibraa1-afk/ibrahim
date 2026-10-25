@@ -131,13 +131,58 @@ public sealed class PatientSafetyTests : IAsyncLifetime
     public async Task A_trusted_name_needs_a_number_and_a_number_needs_a_name()
     {
         using var me = await OnboardedPatientAsync("en");
-        (await Problem(await me.PutAsJsonAsync("/v1/me/safety-info", new { trustedName = "My sister", shareLocation = false }), 400))
+        (await Problem(await PutSafetyInfoAsync(me, new { trustedName = "My sister", shareLocation = false }), 400))
             .GetProperty("errors").TryGetProperty("trustedPhone", out _).Should().BeTrue();
-        (await Problem(await me.PutAsJsonAsync("/v1/me/safety-info", new { trustedPhone = "0559876543", shareLocation = false }), 400))
+        (await Problem(await PutSafetyInfoAsync(me, new { trustedPhone = "0559876543", shareLocation = false }), 400))
             .GetProperty("errors").TryGetProperty("trustedName", out _).Should().BeTrue();
-        await Problem(await me.PutAsJsonAsync("/v1/me/safety-info", new { trustedName = new string('a', 101), trustedPhone = "0559876543", shareLocation = false }), 400);
-        var ok = await Read(await me.PutAsJsonAsync("/v1/me/safety-info", new { trustedName = new string('a', 100), trustedPhone = "0559876543", shareLocation = false }));
+        await Problem(await PutSafetyInfoAsync(me, new { trustedName = new string('a', 101), trustedPhone = "0559876543", shareLocation = false }), 400);
+        var ok = await Read(await PutSafetyInfoAsync(me, new { trustedName = new string('a', 100), trustedPhone = "0559876543", shareLocation = false }));
         ok.GetProperty("trustedPhone").GetString().Should().Be("0559876543");
+    }
+
+    [Fact]
+    public async Task Safety_info_and_profile_saves_need_the_version_that_was_read()
+    {
+        using var me = await OnboardedPatientAsync("ar");
+
+        // Safety info (P21, P34): no If-Match is 428, an old one is 412, both localized.
+        using var first = await me.GetAsync("/v1/me/safety-info");
+        var read = first.Headers.ETag!;
+        (await Problem(await me.PutAsJsonAsync("/v1/me/safety-info", new { contactPhone = "0551234500", shareLocation = false }), 428))
+            .GetProperty("code").GetString().Should().Be("error.settings.version_required");
+        var saved = await SendWithIfMatch(me, "/v1/me/safety-info", read, new { contactPhone = "0551234500", shareLocation = false });
+        await Read(saved);
+        saved.Headers.ETag.Should().NotBeNull().And.NotBe(read, "a save gives a new version");
+        var stale = await Problem(await SendWithIfMatch(me, "/v1/me/safety-info", read, new { contactPhone = "0551234511", shareLocation = true }), 412);
+        stale.GetProperty("code").GetString().Should().Be("error.settings.version_changed");
+        stale.GetProperty("detail").GetString().Should().Contain("جهاز آخر");
+        (await Read(await me.GetAsync("/v1/me/safety-info"))).GetProperty("contactPhone").GetString().Should().Be("0551234500", "the stale save changed nothing");
+        await Read(await SendWithIfMatch(me, "/v1/me/safety-info", saved.Headers.ETag!, new { contactPhone = "0551234511", shareLocation = false }));
+
+        // Deleting the trusted contact answers with the new version.
+        using var deleted = await me.DeleteAsync("/v1/me/safety-info/trusted-contact");
+        deleted.Headers.ETag.Should().NotBeNull();
+        await Read(await SendWithIfMatch(me, "/v1/me/safety-info", deleted.Headers.ETag!, new { contactPhone = "0551234522", shareLocation = false }));
+
+        // Profile (P31): the ETag of GET /v1/me.
+        me.DefaultRequestHeaders.AcceptLanguage.Clear();
+        me.DefaultRequestHeaders.AcceptLanguage.ParseAdd("en");
+        using var meRead = await me.GetAsync("/v1/me");
+        var profileTag = meRead.Headers.ETag!;
+        (await Problem(await me.PutAsJsonAsync("/v1/me/profile", new { nickname = "Quiet River", timeZone = "Asia/Riyadh" }), 428))
+            .GetProperty("detail").GetString().Should().Contain("Reopen the page");
+        var renamed = await SendWithIfMatch(me, "/v1/me/profile", profileTag, new { nickname = "Quiet River", timeZone = "Asia/Riyadh" });
+        (await Read(renamed)).GetProperty("nickname").GetString().Should().Be("Quiet River");
+        (await Problem(await SendWithIfMatch(me, "/v1/me/profile", profileTag, new { nickname = "Other Name", timeZone = "Asia/Riyadh" }), 412))
+            .GetProperty("detail").GetString().Should().Contain("another device");
+        await Read(await PutProfileAsync(me, new { nickname = "Other Name", timeZone = "Asia/Riyadh" }));
+    }
+
+    private static async Task<HttpResponseMessage> SendWithIfMatch(HttpClient client, string path, System.Net.Http.Headers.EntityTagHeaderValue tag, object body)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Put, path) { Content = JsonContent.Create(body) };
+        request.Headers.IfMatch.Add(tag);
+        return await client.SendAsync(request);
     }
 
     private async Task<HttpClient> OnboardedPatientAsync(string language, string path = "direct")
@@ -149,7 +194,7 @@ public sealed class PatientSafetyTests : IAsyncLifetime
         var verified = await Read(await anon.PostAsJsonAsync("/v1/auth/signup/verify", new { challengeId = challenge.GetProperty("challengeId").GetGuid(), code = _hosts.CodeSentTo(email) }));
         var me = _hosts.ApiClient(language, verified.GetProperty("tokens").GetProperty("accessToken").GetString());
         await Read(await me.PutAsJsonAsync("/v1/me/consents", new { items = new[] { "platform", "ai", "share_with_therapist" }.Select(k => new { key = k, granted = true }) }));
-        await Read(await me.PutAsJsonAsync("/v1/me/safety-info", new { shareLocation = false }));
+        await Read(await PutSafetyInfoAsync(me, new { shareLocation = false }));
         await Read(await me.PutAsJsonAsync("/v1/me/path", new { path }));
         return me;
     }

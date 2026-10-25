@@ -120,6 +120,14 @@ describe('HomeView', () => {
     expect(screen.getByRole('link', { name: /طلبك قيد المراجعة/ })).toHaveAttribute('href', '/waiting');
   });
 
+  it('points to P36 when the case was closed with referrals or escalated', () => {
+    const { unmount } = renderWithIntl(<HomeView home={{ ...home, triage: { status: 'closed', submittedAt: null, expectedBy: null, suggestionsReady: false, referrals: ['crisis_line'] } }} locale="ar" timeZone="Asia/Riyadh" now={evening} />, 'ar');
+    expect(screen.getByRole('link', { name: /راجعنا ملفك/ })).toHaveAttribute('href', '/waiting');
+    unmount();
+    renderWithIntl(<HomeView home={{ ...home, triage: { status: 'escalated', submittedAt: null, expectedBy: null, suggestionsReady: false } }} locale="en" timeZone="Asia/Riyadh" now={evening} />, 'en');
+    expect(screen.getByRole('link', { name: /We want to check on you/ })).toHaveAttribute('href', '/waiting');
+  });
+
   it('points to the matches when suggestions are ready', () => {
     renderWithIntl(<HomeView home={{ ...home, triage: { status: 'reviewed', submittedAt: null, expectedBy: null, suggestionsReady: true } }} locale="en" timeZone="Asia/Riyadh" now={evening} />, 'en');
     expect(screen.getByRole('link', { name: /Your suggestions are ready/ })).toHaveAttribute('href', '/matches');

@@ -229,7 +229,7 @@ public sealed class StaffFileAndTriageTests : IAsyncLifetime
         var verified = await Read(await anon.PostAsJsonAsync("/v1/auth/signup/verify", new { challengeId = challenge.GetProperty("challengeId").GetGuid(), code = _hosts.CodeSentTo(email) }));
         var me = _hosts.ApiClient("ar", verified.GetProperty("tokens").GetProperty("accessToken").GetString());
         await Read(await me.PutAsJsonAsync("/v1/me/consents", new { items = new[] { "platform", "ai", "share_with_therapist" }.Select(k => new { key = k, granted = true }) }));
-        await Read(await me.PutAsJsonAsync("/v1/me/safety-info", new { shareLocation = false }));
+        await Read(await PutSafetyInfoAsync(me, new { shareLocation = false }));
         await Read(await me.PutAsJsonAsync("/v1/me/path", new { path = "intake" }));
         var intake = await Read(await me.PostAsync("/v1/intake", null));
         var intakeId = intake.GetProperty("intakeId").GetGuid();

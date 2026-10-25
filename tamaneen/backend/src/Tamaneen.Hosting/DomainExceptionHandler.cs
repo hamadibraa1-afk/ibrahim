@@ -69,6 +69,8 @@ public sealed partial class DomainExceptionHandler<TResource> : IExceptionHandle
         [ErrorCodes.IdempotencyKeyInvalid] = StatusCodes.Status400BadRequest,
         [ErrorCodes.IdempotencyKeyReused] = StatusCodes.Status422UnprocessableEntity,
         [ErrorCodes.IdempotencyInProgress] = StatusCodes.Status409Conflict,
+        [ErrorCodes.SettingsVersionRequired] = StatusCodes.Status428PreconditionRequired,
+        [ErrorCodes.SettingsVersionChanged] = StatusCodes.Status412PreconditionFailed,
     };
 
     private readonly IProblemDetailsService _problems;

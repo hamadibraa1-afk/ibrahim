@@ -51,6 +51,64 @@
       "other": "Another reason"
     },
     "dismissConfirm": "Yes, remove the suggestion",
-    "dismissCancel": "Cancel"
+    "dismissCancel": "Cancel",
+    "noCapacityTitle": "All your suggested therapists are fully booked right now",
+    "noCapacityBody": "Join the waitlist and we'll notify you as soon as a time opens.",
+    "waitlistLink": "Waitlist",
+    "waitlist": {
+      "metaTitle": "Waitlist",
+      "home": "Home",
+      "title": "We're finding the right therapist for you",
+      "joinTitle": "Join the waitlist",
+      "busy": "All the therapists who match your preferences are busy right now.",
+      "busyOne": "{name} has no free times right now.",
+      "joinBody": "Choose what suits you, and we'll notify you as soon as a time opens. Expected wait: {range}.",
+      "expected": "Expected wait",
+      "expectedRange": "{min}–{max} days",
+      "notify": "We'll notify you as soon as a time opens.",
+      "fasterTitle": "Want it sooner?",
+      "fasterBody": "Widening your preferences shortens the wait",
+      "editPrefs": "Edit my preferences",
+      "join": "Join the waitlist",
+      "save": "Save my preferences",
+      "cancelEdit": "Cancel",
+      "joined": "You're on the waitlist. We'll notify you as soon as a time opens.",
+      "updated": "Your preferences are saved, and your place in the queue stays the same.",
+      "left": "You left the waitlist. You can join again at any time.",
+      "leave": "Leave the waitlist",
+      "availableTitle": "A time that suits you is free",
+      "availableBody": "A session with {name}:",
+      "book": "Book this time",
+      "meanwhile": "Meanwhile",
+      "meanwhileCheckIn": "📝 Log your mood so we can check on you",
+      "meanwhileSafetyPlan": "🛟 My safety plan",
+      "meanwhileDirectory": "📚 Browse all therapists",
+      "emergency": "If you feel worse while you wait, press Help now. You will never wait in an emergency.",
+      "prefs": {
+        "gender": "I'd prefer my therapist to be",
+        "genders": {
+          "any": "No preference",
+          "female": "A woman",
+          "male": "A man"
+        },
+        "language": "Session language",
+        "languages": {
+          "ar": "العربية",
+          "en": "English",
+          "any": "Either"
+        },
+        "times": "Times that suit me",
+        "timesOfDay": {
+          "morning": "Mornings",
+          "afternoon": "Afternoons",
+          "evening": "Evenings"
+        },
+        "days": {
+          "weekdays": "Weekdays",
+          "weekend": "Weekends"
+        },
+        "anyHint": "If you pick no time or day, any time suits you."
+      }
+    }
   }
 }
