@@ -10,7 +10,7 @@
     "sentAt": "{day} {time}",
     "reviewing": "A professional is reviewing your file",
     "expected": "Expected within about {hours, plural, one {# hour} other {# hours}}",
-    "expectedSoon": "We expect the review to finish very soon",
+    "expectedSoon": "We are reviewing your file. Thank you for your patience",
     "reviewed": "A professional has reviewed your file",
     "suggestions": "We'll suggest three therapists",
     "notify": "We'll send you a notification",
