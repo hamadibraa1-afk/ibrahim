@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useEffect, useState, type FormEvent } from 'react';
 import { useRouter } from '@/i18n/navigation';
-import { api, authApi } from '@/lib/api/client';
+import { api, ApiError, authApi } from '@/lib/api/client';
 import type { MfaMethod } from '@/lib/api/types';
 import { Button } from '@/components/ui/Button';
 import { Notice } from '@/components/ui/Notice';
@@ -15,8 +15,15 @@ import { StepHeading } from '@/components/onboarding/StepHeading';
 import { CODE_LENGTH, normalizeCode, normalizeRecoveryCode } from './contact';
 import { fieldErrorsOf, problemText } from './errorText';
 import { signedInPath } from './finishSignIn';
+import { formatSeconds, useCountdown } from './useCountdown';
 
-/** P19 Login MFA: authenticator code, or an SMS code, or a recovery code. No passkeys in this release. */
+/** A new SMS code can be requested after this long (docs/api-v1.md; the API answers 429 sooner). */
+export const SMS_RESEND_SECONDS = 60;
+
+/**
+ * P19 Login MFA: authenticator code, or an SMS code, or a recovery code. No passkeys in this release.
+ * After an SMS is sent, a 60-second countdown precedes a "resend" button.
+ */
 export function MfaForm() {
   const t = useTranslations('loginMfa');
   const tu = useTranslations('ui');
@@ -25,6 +32,11 @@ export function MfaForm() {
   const [state, setState] = useState<MfaState | null>(null);
   const [method, setMethod] = useState<MfaMethod>('totp');
   const [smsSent, setSmsSent] = useState(false);
+  const [smsAgainAt, setSmsAgainAt] = useState<number | null>(null);
+  const [resent, setResent] = useState(false);
+  const ticking = useCountdown(smsAgainAt);
+  // The hook catches up one render after a new deadline; until then count from the deadline itself.
+  const smsWait = ticking > 0 || smsAgainAt === null ? ticking : Math.max(0, Math.ceil((smsAgainAt - Date.now()) / 1000));
   const [code, setCode] = useState('');
   const [remember, setRemember] = useState(false);
   const [busy, setBusy] = useState<'confirm' | 'sms' | null>(null);
@@ -50,14 +62,22 @@ export function MfaForm() {
   }
 
   async function sendSms() {
+    const again = smsSent;
     setBusy('sms');
     setError(null);
+    setResent(false);
     try {
       await api<void>('auth/login/mfa/sms', { method: 'POST', body: { mfaToken: mfa.mfaToken } });
+      setSmsAgainAt(Date.now() + SMS_RESEND_SECONDS * 1000);
       setSmsSent(true);
-      switchTo('sms');
+      if (again) setResent(true);
+      if (method !== 'sms') switchTo('sms');
     } catch (e) {
-      setError(problemText(e, te('network')));
+      if (e instanceof ApiError && e.status === 429) {
+        setSmsAgainAt(Date.now() + (e.problem.retryAfterSeconds ?? SMS_RESEND_SECONDS) * 1000);
+      } else {
+        setError(problemText(e, te('network')));
+      }
     } finally {
       setBusy(null);
     }
@@ -151,7 +171,30 @@ export function MfaForm() {
       )}
 
       {needsSmsFirst && error ? <Notice tone="danger">{error}</Notice> : null}
-      {smsSent && method === 'sms' ? <p className="sr-only" aria-live="polite">{t('smsSent')}</p> : null}
+      {smsSent && method === 'sms' ? <p className="sr-only" aria-live="polite">{resent ? t('smsResent') : t('smsSent')}</p> : null}
+
+      {smsSent && method === 'sms' ? (
+        <div className="flex flex-col items-center gap-2 text-center" data-testid="sms-resend">
+          {smsWait > 0 ? (
+            <p className="text-sm text-muted">
+              {t.rich('smsWait', {
+                time: formatSeconds(smsWait),
+                b: (chunks) => (
+                  <b role="timer" dir="ltr" className="font-bold text-ink">
+                    {chunks}
+                  </b>
+                ),
+              })}
+            </p>
+          ) : (
+            <p className="text-sm text-muted">{t('smsReady')}</p>
+          )}
+          <Button variant="ghost" compact onClick={() => void sendSms()} disabled={smsWait > 0 || busy !== null} busy={busy === 'sms'}>
+            {t('smsResend')}
+          </Button>
+          {resent ? <p className="text-sm font-semibold text-primary">{t('smsResent')}</p> : null}
+        </div>
+      ) : null}
 
       {others.length > 0 ? (
         <section aria-labelledby="mfa-other" className="mt-4 flex flex-col gap-3">

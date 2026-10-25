@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react';
+import { act, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithIntl } from '../intl';
 import { apiError, resetAll, router } from '../onboarding/helpers';
@@ -82,5 +82,33 @@ describe('P19 Login MFA', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Confirm' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('The code is not correct.');
     expect(authMock).toHaveBeenCalledWith('login-mfa', { mfaToken: 'mfa-1', method: 'sms', code: '111111', rememberDevice: false });
+  });
+
+  it('counts down 60 seconds after an SMS, then offers to resend it (Arabic)', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      saveMfa(['sms']);
+      apiMock.mockResolvedValue(undefined);
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      renderWithIntl(<MfaForm />, 'ar');
+      await user.click(await screen.findByRole('button', { name: 'إرسال الرمز' }));
+      const box = await screen.findByTestId('sms-resend');
+      expect(box).toHaveTextContent('يمكنك طلب رمز جديد بعد');
+      expect(await screen.findByRole('timer')).toHaveTextContent(/^(1:00|0:59)$/);
+      const resend = screen.getByRole('button', { name: 'إعادة إرسال الرمز' });
+      expect(resend).toBeDisabled();
+
+      await act(async () => {
+        vi.advanceTimersByTime(61_000);
+      });
+      expect(box).toHaveTextContent('يمكنك طلب رمز جديد الآن.');
+      expect(resend).toBeEnabled();
+      await user.click(resend);
+      expect(apiMock).toHaveBeenCalledTimes(2);
+      expect(await screen.findByText('أرسلنا رمزًا جديدًا.', { selector: 'p:not(.sr-only)' })).toBeInTheDocument();
+      expect(await screen.findByRole('timer')).toHaveTextContent(/^(1:00|0:59)$/);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

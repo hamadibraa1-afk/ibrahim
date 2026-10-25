@@ -18,6 +18,10 @@
     "other": "Other ways",
     "useSms": "Send a code by text message",
     "useTotp": "Use the authenticator app",
-    "useRecovery": "Use a recovery code"
+    "useRecovery": "Use a recovery code",
+    "smsWait": "Didn't get the code? You can ask for a new one in <b>{time}</b>",
+    "smsReady": "Didn't get the code? You can ask for a new one now.",
+    "smsResend": "Resend the code",
+    "smsResent": "We sent a new code."
   }
 }
