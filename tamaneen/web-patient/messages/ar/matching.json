@@ -39,6 +39,18 @@
       "joinPair": "، و",
       "joinLast": "، و",
       "sentence": "{reasons}."
-    }
+    },
+    "dismissTitle": "إزالة {name} من اقتراحاتك؟",
+    "dismissBody": "لن يؤثر ذلك على ملفك أو دورك. يمكنك دائمًا تصفح جميع الأخصائيين.",
+    "dismissReasonLegend": "لماذا؟ (اختياري)",
+    "dismissReasons": {
+      "specialty": "التخصص لا يناسبني",
+      "gender": "أفضّل أخصائيًا من جنس آخر",
+      "language": "اللغة",
+      "schedule": "المواعيد لا تناسبني",
+      "other": "سبب آخر"
+    },
+    "dismissConfirm": "نعم، أزل الاقتراح",
+    "dismissCancel": "إلغاء"
   }
 }

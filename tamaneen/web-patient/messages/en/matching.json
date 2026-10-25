@@ -39,6 +39,18 @@
       "joinPair": " and ",
       "joinLast": ", and ",
       "sentence": "{reasons}."
-    }
+    },
+    "dismissTitle": "Remove {name} from your suggestions?",
+    "dismissBody": "This does not affect your file or your place. You can always browse all therapists.",
+    "dismissReasonLegend": "Why? (optional)",
+    "dismissReasons": {
+      "specialty": "The focus areas do not fit me",
+      "gender": "I prefer a therapist of another gender",
+      "language": "Language",
+      "schedule": "The times do not suit me",
+      "other": "Another reason"
+    },
+    "dismissConfirm": "Yes, remove the suggestion",
+    "dismissCancel": "Cancel"
   }
 }
