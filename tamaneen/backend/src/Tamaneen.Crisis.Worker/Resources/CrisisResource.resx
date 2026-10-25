@@ -65,6 +65,7 @@
   <data name="source.mood" xml:space="preserve"><value>Mood check-in</value></data>
   <data name="source.homework" xml:space="preserve"><value>Homework note</value></data>
   <data name="source.safety_plan" xml:space="preserve"><value>Safety plan</value></data>
+  <data name="source.session" xml:space="preserve"><value>Session</value></data>
   <data name="source.system" xml:space="preserve"><value>System</value></data>
   <data name="timeline.opened" xml:space="preserve"><value>Event opened automatically from {0}; the chat was paused and the patient saw the crisis screen</value></data>
   <data name="timeline.paged" xml:space="preserve"><value>Call and message to {0}</value></data>

@@ -83,7 +83,7 @@ and P01, P02, P12 and P15 show the emergency numbers instead of the start button
 | PUT | /v1/me/waitlist | JoinWaitlistRequest { therapistId?, gender: any/female/male, language: any/ar/en, timesOfDay: morning/afternoon/evening[], days: weekdays/weekend[] } → Waitlist (joins, or changes the preferences and keeps the place; booking eligibility required, 400 field errors for unknown values) | P56 (from P07, P24, P25) |
 | DELETE | /v1/me/waitlist | → 204 (leaves) | P56 |
 | GET | /v1/appointments | → AppointmentList | P27 |
-| GET | /v1/appointments/{id} | → AppointmentDetail | P26, P28 |
+| GET | /v1/appointments/{id} | → AppointmentDetail (`therapistLateMinutes: number \| null`, the therapist's own "running late" notice; `joinUrl` is kept for older clients, the apps now use the lobby) | P26, P28, P54 |
 | GET | /v1/appointments/{id}/calendar | → text/calendar `appointment.ics`, neutral title «موعد» / "Appointment" with no platform, therapist or patient name (PB-42) | P26 |
 | POST | /v1/appointments/{id}/cancel | CancelRequest { reasonCode: schedule_conflict, feeling_better, unwell, therapist_fit, other } → AppointmentDetail (400 field error without a known reason; 409 within 24 h) | P28 |
 | POST | /v1/appointments/{id}/reschedule | RescheduleRequest → AppointmentDetail | P28 |
@@ -117,6 +117,28 @@ Gated writes that return an object (`PUT /v1/intake/{id}/summary`, `POST /v1/tri
 cannot be reached, the API answers 503 `error.crisis.unavailable` and does not process the content.
 During scheduled maintenance (`Platform:Maintenance` true) every patient endpoint answers 503 `error.maintenance` and the app shows /maintenance (P35);
 `/v1/meta`, `/v1/auth`, `/v1/crisis` and `/v1/staff` keep working.
+
+## Session room (phase 5: P41 lobby, P54 therapist late, P42 live, P43 after the session, therapist session page)
+
+| Method | Path | Body → Response | Screen |
+|---|---|---|---|
+| GET | /v1/appointments/{id}/presence | → SessionState (no pass needed: the lobby polls it) | P41, P54 |
+| POST | /v1/appointments/{id}/join | → JoinDescriptor (409 `error.session.not_open` + `opensAt`, `closesAt` outside the window; audited `session.joined`) | P41 → P42 |
+| POST | /v1/appointments/{id}/presence | PresenceRequest { token, leaving? } → SessionState (403 `error.session.token_invalid` unless the pass is this patient's for this appointment) | P42 |
+| GET/PUT | /v1/appointments/{id}/pre-session-note | → { text, updatedAt } / { text ≤ 1,000 } → { crisis, level, script, text, updatedAt } (gate source `session`, encrypted; empty text removes it; 409 `error.session.note_closed` after the session) | P41 |
+| GET | /v1/appointments/{id}/feedback | → SessionFeedback (404 before any) | P43 |
+| POST | /v1/appointments/{id}/feedback | `Idempotency-Key`? + { rating?: not_helpful/okay/helpful, comfortable?, comment? ≤ 500 } → { crisis, level, script, feedback } (at least one field; the comment goes through the gate and is encrypted; once per session, 409 `error.session.feedback_exists`; 409 `error.session.feedback_not_yet` before the start or for a cancelled or missed session) | P43 |
+| GET | /v1/staff/appointments/{id}/session | → TherapistSessionPage { pseudonymId, sequenceNumber, riskLevel, state, preSessionNote, preSessionNoteAt } (the session's own therapist only, else 404; audited `session.opened`) | therapist /sessions/:appointmentId |
+| GET | /v1/staff/appointments/{id}/presence | → SessionState (+ `patientCrisisOpen`) | same |
+| POST | /v1/staff/appointments/{id}/join | → JoinDescriptor (same window; the first join notifies the patient `session.therapist_joined`; a join after the start is audited `session.therapist_late`) | same |
+| POST | /v1/staff/appointments/{id}/presence | PresenceRequest → SessionState | same |
+
+- **Window**: from 10 minutes before the start until the booked end. When the therapist joins after the start, the room stays open for the full length from that moment (late time is not deducted, §10.2).
+- **JoinDescriptor** `{ provider: dev|embed, mode: test_room|embed, url, token, expiresAt, opensAt, closesAt, participant: patient|therapist, heartbeatSeconds }`. `token` is the platform's session pass, bound to the appointment, the person and the side; it lives `Video:TokenMinutes` (15) and never past `closesAt`, and the apps join again before it ends. In `embed` mode `url` frames the provider's room with its own short-lived token.
+- **SessionState** `{ appointmentId, serverNow, startsAt, durationMinutes, opensAt, closesAt, open, status, peer: { present, joinedAt, lastSeenAt }, therapistLate, lateOptionsAfterMinutes, heartbeatSeconds, provider, patientCrisisOpen }`. `peer` is the therapist for the patient and the patient for the therapist; present means a heartbeat within the last 45 s and no leave. Countdowns use `serverNow` (EC-09).
+- **P54**: `therapistLate` is true after the start while the therapist has not joined. Then `POST /v1/appointments/{id}/reschedule` is free and not bound by the 24-hour limit (audited with reason `therapist_late`). From `lateOptionsAfterMinutes` (`Video:LateOptionsAfterMinutes`, 15) the lobby also offers another therapist (the directory).
+- **Providers** (`IVideoSessionProvider`): `Video:Provider=dev`, the default in Development and Testing, needs no external service: each app shows a local test room with its own camera preview and the other side's presence. `embed` is a generic adapter for an "embed URL + signed room token" service (`Video:Embed:UrlTemplate` with `{room}` and `{token}`, an HS256 JWT signed with `Video:Embed:SigningKeyBase64`). Production refuses `dev`. No audio or video passes through the API, and nothing is recorded.
+- **Row-level security**: presence and the pre-session note follow the appointment (patient, the session's therapist, supervisors, the lead). Feedback is the patient's and the supervisors' and the lead's only: a therapist never reads it.
 
 ## Staff (therapist, supervisor, clinical lead; the TOTP step is mandatory)
 

@@ -113,6 +113,28 @@ public sealed class Appointment : Entity
         Rescheduled = true;
     }
 
+    /// <summary>
+    /// P54: the therapist has not joined after the start time. Moving the session is then free and not bound by the
+    /// 24-hour limit; the caller has checked that the therapist is late.
+    /// </summary>
+    public void MoveAfterTherapistLate(AvailabilitySlot slot, IClock clock)
+    {
+        if (Status != AppointmentStatus.Confirmed || clock.UtcNow < StartsAtUtc)
+        {
+            throw new DomainException(ErrorCodes.AppointmentNotChangeable, $"Appointment {Id} is not waiting for a late therapist.");
+        }
+
+        if (slot.TherapistUserId != TherapistUserId)
+        {
+            throw new DomainException(ErrorCodes.SlotUnavailable, "A session can only move to the same therapist's slot.");
+        }
+
+        SlotId = slot.Id;
+        StartsAtUtc = slot.StartsAtUtc;
+        DurationMinutes = slot.DurationMinutes;
+        Rescheduled = true;
+    }
+
     public void RecordOutcome(AppointmentStatus outcome, IClock clock)
     {
         if (outcome is not (AppointmentStatus.Completed or AppointmentStatus.NoShow or AppointmentStatus.CancelledByTherapist))

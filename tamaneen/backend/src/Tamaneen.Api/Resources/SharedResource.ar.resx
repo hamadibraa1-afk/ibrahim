@@ -101,4 +101,9 @@
   <data name="error.idempotency.invalid_key" xml:space="preserve"><value>تعذّر ربط هذا الطلب بما حفظته. حاول مرة أخرى.</value></data>
   <data name="error.idempotency.key_reused" xml:space="preserve"><value>هذا العنصر المحفوظ يخص طلبًا آخر، لذلك لم نرسله. يمكنك تجاهله وإدخاله من جديد.</value></data>
   <data name="error.idempotency.in_progress" xml:space="preserve"><value>ما زلنا نحفظ هذا الطلب. سنتحقق مرة أخرى بعد قليل.</value></data>
+  <data name="error.session.not_open" xml:space="preserve"><value>تفتح غرفة الجلسة قبل البدء بـ 10 دقائق وتُغلق عند انتهاء الجلسة.</value></data>
+  <data name="error.session.token_invalid" xml:space="preserve"><value>رابط الجلسة هذا غير صالح لك أو انتهت صلاحيته. افتح الجلسة من جديد.</value></data>
+  <data name="error.session.feedback_exists" xml:space="preserve"><value>قيّمت هذه الجلسة من قبل. شكرًا لك.</value></data>
+  <data name="error.session.feedback_not_yet" xml:space="preserve"><value>يمكنك تقييم الجلسة بعد أن تبدأ.</value></data>
+  <data name="error.session.note_closed" xml:space="preserve"><value>انتهت هذه الجلسة، فلا يمكن تعديل الملاحظة بعد الآن.</value></data>
 </root>

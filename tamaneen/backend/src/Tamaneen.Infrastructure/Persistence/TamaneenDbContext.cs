@@ -4,6 +4,7 @@ using Tamaneen.Clinical;
 using Tamaneen.Clinical.Care;
 using Tamaneen.Clinical.Intake;
 using Tamaneen.Clinical.Scheduling;
+using Tamaneen.Clinical.Sessions;
 using Tamaneen.Crisis;
 using Tamaneen.Identity;
 using Tamaneen.Identity.Auth;
@@ -96,6 +97,12 @@ public sealed class TamaneenDbContext : DbContext
     public DbSet<CrisisAction> CrisisActions => Set<CrisisAction>();
 
     public DbSet<IdempotencyRecord> IdempotencyRecords => Set<IdempotencyRecord>();
+
+    public DbSet<SessionPresence> SessionPresence => Set<SessionPresence>();
+
+    public DbSet<SessionFeedback> SessionFeedback => Set<SessionFeedback>();
+
+    public DbSet<SessionPrep> SessionPrep => Set<SessionPrep>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

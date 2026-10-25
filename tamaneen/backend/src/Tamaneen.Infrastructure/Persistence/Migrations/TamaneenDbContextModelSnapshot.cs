@@ -882,6 +882,111 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                     b.ToTable("WaitlistEntries", "clinical");
                 });
 
+            modelBuilder.Entity("Tamaneen.Clinical.Sessions.SessionFeedback", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AppointmentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("Comfortable")
+                        .HasColumnType("bit");
+
+                    b.Property<byte[]>("CommentCipher")
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte?>("Rating")
+                        .HasColumnType("tinyint");
+
+                    b.Property<Guid>("TherapistUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppointmentId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_SessionFeedback_Appointment");
+
+                    b.HasIndex("PatientId");
+
+                    b.HasIndex("TherapistUserId", "CreatedAtUtc");
+
+                    b.ToTable("SessionFeedback", "clinical");
+                });
+
+            modelBuilder.Entity("Tamaneen.Clinical.Sessions.SessionPrep", b =>
+                {
+                    b.Property<Guid>("AppointmentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("NoteCipher")
+                        .IsRequired()
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("TherapistUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("AppointmentId");
+
+                    b.HasIndex("PatientId");
+
+                    b.HasIndex("TherapistUserId");
+
+                    b.ToTable("SessionPrep", "clinical");
+                });
+
+            modelBuilder.Entity("Tamaneen.Clinical.Sessions.SessionPresence", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AppointmentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("FirstJoinedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("LastSeenAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset?>("LeftAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<byte>("Participant")
+                        .HasColumnType("tinyint");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("TherapistUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PatientId");
+
+                    b.HasIndex("TherapistUserId");
+
+                    b.HasIndex("AppointmentId", "Participant")
+                        .IsUnique()
+                        .HasDatabaseName("UX_SessionPresence_AppointmentParticipant");
+
+                    b.ToTable("SessionPresence", "clinical");
+                });
+
             modelBuilder.Entity("Tamaneen.Crisis.ChatLock", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1902,6 +2007,69 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("TherapistUserId")
                         .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("Tamaneen.Clinical.Sessions.SessionFeedback", b =>
+                {
+                    b.HasOne("Tamaneen.Clinical.Scheduling.Appointment", null)
+                        .WithMany()
+                        .HasForeignKey("AppointmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Tamaneen.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Tamaneen.Clinical.Scheduling.TherapistProfile", null)
+                        .WithMany()
+                        .HasForeignKey("TherapistUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Tamaneen.Clinical.Sessions.SessionPrep", b =>
+                {
+                    b.HasOne("Tamaneen.Clinical.Scheduling.Appointment", null)
+                        .WithMany()
+                        .HasForeignKey("AppointmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Tamaneen.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Tamaneen.Clinical.Scheduling.TherapistProfile", null)
+                        .WithMany()
+                        .HasForeignKey("TherapistUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Tamaneen.Clinical.Sessions.SessionPresence", b =>
+                {
+                    b.HasOne("Tamaneen.Clinical.Scheduling.Appointment", null)
+                        .WithMany()
+                        .HasForeignKey("AppointmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Tamaneen.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Tamaneen.Clinical.Scheduling.TherapistProfile", null)
+                        .WithMany()
+                        .HasForeignKey("TherapistUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Tamaneen.Crisis.ChatLock", b =>

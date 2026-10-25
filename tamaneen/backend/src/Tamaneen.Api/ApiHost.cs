@@ -7,6 +7,9 @@ using Tamaneen.Api.Clinical;
 using Tamaneen.Api.Gate;
 using Tamaneen.Api.Patients;
 using Tamaneen.Api.Endpoints;
+using Tamaneen.Api.Sessions;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Tamaneen.SharedKernel.Notifications;
 using Tamaneen.Hosting;
 using Tamaneen.Infrastructure;
 using Tamaneen.Infrastructure.Persistence;
@@ -82,6 +85,9 @@ public static class ApiHost
         builder.Services.AddScoped<PatientContext>();
         builder.Services.AddScoped<TherapistDirectory>();
         builder.Services.AddScoped<WaitlistNotifier>();
+        // The notification service registers the real INotifier; until then calls are no-ops.
+        builder.Services.TryAddSingleton<INotifier, NullNotifier>();
+        builder.AddTamaneenVideo();
         builder.Services.AddHttpClient("crisis-console");
         builder.Services.AddScoped<StepUpVerifier>();
         if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing"))
@@ -143,6 +149,7 @@ public static class ApiHost
         app.MapCareEndpoints();
         app.MapStaffEndpoints();
         app.MapStaffAccessEndpoints();
+        app.MapSessionEndpoints();
         if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))
         {
             // Lets a developer or the end-to-end tests read the code that would have been sent by SMS or e-mail.

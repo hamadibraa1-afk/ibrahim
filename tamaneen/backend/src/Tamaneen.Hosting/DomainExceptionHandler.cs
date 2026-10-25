@@ -71,6 +71,11 @@ public sealed partial class DomainExceptionHandler<TResource> : IExceptionHandle
         [ErrorCodes.IdempotencyInProgress] = StatusCodes.Status409Conflict,
         [ErrorCodes.SettingsVersionRequired] = StatusCodes.Status428PreconditionRequired,
         [ErrorCodes.SettingsVersionChanged] = StatusCodes.Status412PreconditionFailed,
+        [ErrorCodes.SessionNotOpen] = StatusCodes.Status409Conflict,
+        [ErrorCodes.SessionTokenInvalid] = StatusCodes.Status403Forbidden,
+        [ErrorCodes.SessionFeedbackExists] = StatusCodes.Status409Conflict,
+        [ErrorCodes.SessionFeedbackNotYet] = StatusCodes.Status409Conflict,
+        [ErrorCodes.SessionNoteClosed] = StatusCodes.Status409Conflict,
     };
 
     private readonly IProblemDetailsService _problems;

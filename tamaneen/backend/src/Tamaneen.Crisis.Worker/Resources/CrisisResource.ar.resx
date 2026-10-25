@@ -65,6 +65,7 @@
   <data name="source.mood" xml:space="preserve"><value>تسجيل المزاج</value></data>
   <data name="source.homework" xml:space="preserve"><value>متابعة واجب</value></data>
   <data name="source.safety_plan" xml:space="preserve"><value>خطة الأمان</value></data>
+  <data name="source.session" xml:space="preserve"><value>الجلسة</value></data>
   <data name="source.system" xml:space="preserve"><value>النظام</value></data>
   <data name="timeline.opened" xml:space="preserve"><value>فُتح الحدث آليًا من {0}، وأُوقفت المحادثة، وظهرت شاشة الطوارئ للمريض</value></data>
   <data name="timeline.paged" xml:space="preserve"><value>اتصال ورسالة إلى {0}</value></data>

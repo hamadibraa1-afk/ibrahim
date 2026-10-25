@@ -121,6 +121,8 @@ public static class Fields
     public const string FileEdits = "clinical.file_edits";
     public const string FileFeedback = "clinical.file_feedback";
     public const string IdempotentResponse = "clinical.idempotent_response";
+    public const string PreSessionNote = "clinical.pre_session_note";
+    public const string SessionFeedbackComment = "clinical.session_feedback_comment";
 }
 
 public sealed record SafetyInfoData(string? ContactPhone, string? TrustedName, string? TrustedPhone);

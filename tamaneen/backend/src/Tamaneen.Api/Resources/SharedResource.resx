@@ -101,4 +101,9 @@
   <data name="error.idempotency.invalid_key" xml:space="preserve"><value>This request could not be matched to what you saved. Please try again.</value></data>
   <data name="error.idempotency.key_reused" xml:space="preserve"><value>This saved item belongs to a different request, so it was not sent. You can discard it and enter it again.</value></data>
   <data name="error.idempotency.in_progress" xml:space="preserve"><value>We are still saving this. We'll check again in a moment.</value></data>
+  <data name="error.session.not_open" xml:space="preserve"><value>The session room opens 10 minutes before the start and closes when the session ends.</value></data>
+  <data name="error.session.token_invalid" xml:space="preserve"><value>This session link is not valid for you or has expired. Open the session again.</value></data>
+  <data name="error.session.feedback_exists" xml:space="preserve"><value>You have already rated this session. Thank you.</value></data>
+  <data name="error.session.feedback_not_yet" xml:space="preserve"><value>You can rate the session once it has started.</value></data>
+  <data name="error.session.note_closed" xml:space="preserve"><value>This session has ended, so the note can no longer be changed.</value></data>
 </root>

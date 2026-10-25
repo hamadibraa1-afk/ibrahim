@@ -97,4 +97,9 @@ public static class ErrorCodes
     public const string IdempotencyInProgress = "error.idempotency.in_progress";
     public const string SettingsVersionRequired = "error.settings.version_required";
     public const string SettingsVersionChanged = "error.settings.version_changed";
+    public const string SessionNotOpen = "error.session.not_open";
+    public const string SessionTokenInvalid = "error.session.token_invalid";
+    public const string SessionFeedbackExists = "error.session.feedback_exists";
+    public const string SessionFeedbackNotYet = "error.session.feedback_not_yet";
+    public const string SessionNoteClosed = "error.session.note_closed";
 }

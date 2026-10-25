@@ -14,7 +14,7 @@ public static class GateEndpoints
     public const string ServiceKeyHeader = "X-Tamaneen-Service-Key";
     public const int MaxTextLength = 8000;
 
-    private static readonly HashSet<string> Sources = new(StringComparer.Ordinal) { "intake", "chat", "journal", "survey", "questionnaire", "help_now", "screening", "summary", "triage", "mood", "homework", "safety_plan", CrisisGate.StaffSource };
+    private static readonly HashSet<string> Sources = new(StringComparer.Ordinal) { "intake", "chat", "journal", "survey", "questionnaire", "help_now", "screening", "summary", "triage", "mood", "homework", "safety_plan", "session", CrisisGate.StaffSource };
 
     /// <summary><paramref name="Level"/> is read only for source "staff": the level a clinician chose for a manual alert (3 or 4).</summary>
     public sealed record EvaluateRequest(Guid PatientId, string? Language, string? Text, AnswersDto? Answers, string? Source, int? Level = null);

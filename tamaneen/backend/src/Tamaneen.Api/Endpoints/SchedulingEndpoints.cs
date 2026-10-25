@@ -38,7 +38,7 @@ public static class SchedulingEndpoints
 
     public sealed record AppointmentDto(Guid Id, TherapistSummaryDto Therapist, DateTimeOffset StartsAt, int DurationMinutes, int SequenceNumber, string Status, bool Rescheduled);
 
-    public sealed record AppointmentDetailDto(Guid Id, TherapistSummaryDto Therapist, DateTimeOffset StartsAt, int DurationMinutes, int SequenceNumber, string Status, bool Rescheduled, bool CanChange, DateTimeOffset ChangeDeadline, string? JoinUrl, DateTimeOffset JoinAvailableAt);
+    public sealed record AppointmentDetailDto(Guid Id, TherapistSummaryDto Therapist, DateTimeOffset StartsAt, int DurationMinutes, int SequenceNumber, string Status, bool Rescheduled, bool CanChange, DateTimeOffset ChangeDeadline, string? JoinUrl, DateTimeOffset JoinAvailableAt, int? TherapistLateMinutes = null);
 
     public sealed record AppointmentListDto(IReadOnlyList<AppointmentDto> Upcoming, IReadOnlyList<AppointmentDto> Past);
 
@@ -289,16 +289,28 @@ public static class SchedulingEndpoints
         return TypedResults.Ok(await DetailDtoAsync(p, directory, appointment, platform, clock, ct).ConfigureAwait(false));
     }
 
-    internal static async Task<Ok<AppointmentDetailDto>> RescheduleAsync(Guid id, RescheduleRequest request, PatientContext p, TherapistDirectory directory, WaitlistNotifier waitlist, IAuditLog audit, IOptions<PlatformOptions> platform, IClock clock, CancellationToken ct)
+    internal static async Task<Ok<AppointmentDetailDto>> RescheduleAsync(Guid id, RescheduleRequest request, PatientContext p, TherapistDirectory directory, WaitlistNotifier waitlist, SessionRoom room, IAuditLog audit, IOptions<PlatformOptions> platform, IClock clock, CancellationToken ct)
     {
         var appointment = await FindAsync(p, id, ct).ConfigureAwait(false);
         var target = await p.Db.AvailabilitySlots.FirstOrDefaultAsync(s => s.Id == request.SlotId, ct).ConfigureAwait(false)
             ?? throw new DomainException(ErrorCodes.SlotUnavailable, "Slot not found.");
         var old = await p.Db.AvailabilitySlots.FirstAsync(s => s.Id == appointment.SlotId, ct).ConfigureAwait(false);
+
+        // P54: when the therapist is late, moving the session is free and not bound by the 24-hour limit.
+        var therapistLate = !appointment.CanChange(clock)
+            && Tamaneen.Clinical.Sessions.SessionWindow.TherapistLate(appointment, clock.UtcNow, await room.TherapistJoinedAtAsync(appointment.Id, ct).ConfigureAwait(false));
         target.TakeFor(p.PatientId, clock);
-        appointment.MoveTo(target, clock);
+        if (therapistLate)
+        {
+            appointment.MoveAfterTherapistLate(target, clock);
+        }
+        else
+        {
+            appointment.MoveTo(target, clock);
+        }
+
         old.Free();
-        audit.Append("appointment.rescheduled", "Appointment", appointment.Id.ToString(), (await p.AccountAsync(ct).ConfigureAwait(false)).PseudonymId);
+        audit.Append("appointment.rescheduled", "Appointment", appointment.Id.ToString(), (await p.AccountAsync(ct).ConfigureAwait(false)).PseudonymId, therapistLate ? "therapist_late" : null);
         await SaveOrConflictAsync(p.Db, ct).ConfigureAwait(false);
         await waitlist.CheckAsync(ct).ConfigureAwait(false);
         return TypedResults.Ok(await DetailDtoAsync(p, directory, appointment, platform, clock, ct).ConfigureAwait(false));
