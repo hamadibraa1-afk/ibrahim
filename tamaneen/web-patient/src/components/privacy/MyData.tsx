@@ -11,6 +11,7 @@ import { Notice } from '@/components/ui/Notice';
 import { TextField } from '@/components/ui/TextField';
 import { Dialog, DialogCancel } from '@/components/settings/Dialog';
 import { problemMessage } from '@/components/settings/problem';
+import { clearLocalSafetyData } from '@/components/safety/clearOnSignOut';
 
 function Chevron() {
   return (
@@ -82,6 +83,7 @@ export function MyData({ initialExport, timeZone }: { initialExport: DataRequest
       setDeleting(false);
       return;
     }
+    await clearLocalSafetyData();
     await authApi('logout').catch(() => undefined);
     window.location.assign(`/${locale}?deleted=1`);
   }

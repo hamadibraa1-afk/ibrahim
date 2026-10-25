@@ -5,15 +5,16 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { useRouter } from '@/i18n/navigation';
 import { isLocale, routing } from '@/i18n/routing';
 import { api } from '@/lib/api/client';
-import type { SafetyPlan, SafetyPlanSection } from '@/lib/api/types';
+import type { PlanContact, SafetyPlan, SafetyPlanSection } from '@/lib/api/types';
 import { formatDate } from '@/lib/format';
 import { apiMessage, isCrisis, isNetworkError } from '@/components/pwa/errors';
 import { useOnline } from '@/components/pwa/hooks';
 import { Button } from '@/components/ui/Button';
 import { Notice } from '@/components/ui/Notice';
 import { Spinner } from '@/components/ui/Spinner';
-import { TextArea } from '@/components/ui/TextField';
-import { readCachedPlan, writeCachedPlan } from './planCache';
+import { TextArea, TextField } from '@/components/ui/TextField';
+import { CallLink } from '@/components/crisis/CallLink';
+import { readCachedPlan, writeCachedPlan, type CachedSafetyPlan } from './planCache';
 
 const NUMBERED: SafetyPlanSection[] = ['warningSigns', 'copingAlone', 'distractions', 'peopleToAsk', 'professionals', 'safeEnvironment'];
 const ALL: SafetyPlanSection[] = [...NUMBERED, 'reasonToLive'];
@@ -26,7 +27,9 @@ const BADGE: Record<SafetyPlanSection, string> = {
   safeEnvironment: 'bg-tint-teal text-primary-strong',
   reasonToLive: '',
 };
-const MAX_SECTION = 2000;
+const MAX_SECTION = 1500;
+const MAX_CONTACTS = 5;
+const MAX_CONTACT_NAME = 100;
 
 type Source = 'network' | 'cache' | 'offline-cache';
 
@@ -38,7 +41,7 @@ function people(text: string): string[] {
 }
 
 function emptyPlan(plan: SafetyPlan): boolean {
-  return ALL.every((s) => !(plan.sections[s] ?? '').trim());
+  return ALL.every((s) => !(plan.sections[s] ?? '').trim()) && (plan.contacts ?? []).length === 0;
 }
 
 /**
@@ -60,28 +63,36 @@ export function SafetyPlanView({ numbers }: { numbers: ReactNode }) {
   const [state, setState] = useState<'loading' | 'ready' | 'unavailable'>('loading');
   const [editing, setEditing] = useState(false);
   const [drafts, setDrafts] = useState<Record<SafetyPlanSection, string> | null>(null);
+  const [contactDrafts, setContactDrafts] = useState<PlanContact[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    const cached = readCachedPlan();
-    if (cached) {
-      setPlan(cached.plan);
-      setSavedAt(cached.savedAt);
+    let fresh = false;
+    let cached: CachedSafetyPlan | null = null;
+    // The device copy is decrypted while the network request runs; the network answer always wins.
+    const fromDevice = readCachedPlan().then((copy) => {
+      cached = copy;
+      if (cancelled || fresh || !copy) return;
+      setPlan(copy.plan);
+      setSavedAt(copy.savedAt);
       setSource('cache');
       setState('ready');
-    }
+    });
     api<SafetyPlan>('safety-plan')
-      .then((fresh) => {
+      .then((response) => {
         if (cancelled) return;
-        writeCachedPlan(fresh, locale);
-        setPlan(fresh);
+        fresh = true;
+        const latest = { ...response, contacts: response.contacts ?? [] };
+        void writeCachedPlan(latest, locale);
+        setPlan(latest);
         setSource('network');
         setState('ready');
       })
-      .catch(() => {
+      .catch(async () => {
+        await fromDevice;
         if (cancelled) return;
         if (cached) setSource('offline-cache');
         else setState('unavailable');
@@ -96,6 +107,7 @@ export function SafetyPlanView({ numbers }: { numbers: ReactNode }) {
   function startEdit() {
     if (!plan) return;
     setDrafts(Object.fromEntries(ALL.map((s) => [s, plan.sections[s] ?? ''])) as Record<SafetyPlanSection, string>);
+    setContactDrafts((plan.contacts ?? []).map((c) => ({ ...c })));
     setEditing(true);
     setSaved(false);
     setError(null);
@@ -107,13 +119,15 @@ export function SafetyPlanView({ numbers }: { numbers: ReactNode }) {
     setError(null);
     try {
       const sections = Object.fromEntries(ALL.map((s) => [s, drafts[s].trim()])) as Record<SafetyPlanSection, string>;
-      const response = await api<SafetyPlan>('safety-plan', { method: 'PUT', body: { sections } });
+      const contacts = contactDrafts.map((c) => ({ name: c.name.trim(), phone: c.phone.trim() })).filter((c) => c.name || c.phone);
+      const response = await api<SafetyPlan>('safety-plan', { method: 'PUT', body: { sections, contacts } });
       if (isCrisis(response)) {
         router.replace('/crisis');
         return;
       }
-      writeCachedPlan(response, locale);
-      setPlan(response);
+      const updated = { ...response, contacts: response.contacts ?? [] };
+      void writeCachedPlan(updated, locale);
+      setPlan(updated);
       setEditing(false);
       setSaved(true);
     } catch (e) {
@@ -177,6 +191,39 @@ export function SafetyPlanView({ numbers }: { numbers: ReactNode }) {
               onChange={(e) => setDrafts({ ...drafts, [section]: e.target.value })}
             />
           ))}
+          <fieldset className="flex flex-col gap-3 rounded-card border-[1.5px] border-line p-4">
+            <legend className="px-1 font-bold">{t('contacts.legend')}</legend>
+            {contactDrafts.map((contact, i) => (
+              <div key={i} className="flex flex-col gap-2" data-testid="plan-contact-row">
+                <TextField
+                  label={t('contacts.name', { n: i + 1 })}
+                  value={contact.name}
+                  maxLength={MAX_CONTACT_NAME}
+                  dir="auto"
+                  required
+                  onChange={(e) => setContactDrafts(contactDrafts.map((c, j) => (j === i ? { ...c, name: e.target.value } : c)))}
+                />
+                <TextField
+                  label={t('contacts.phone', { n: i + 1 })}
+                  value={contact.phone}
+                  type="tel"
+                  inputMode="tel"
+                  dir="ltr"
+                  maxLength={32}
+                  required
+                  onChange={(e) => setContactDrafts(contactDrafts.map((c, j) => (j === i ? { ...c, phone: e.target.value } : c)))}
+                />
+                <Button variant="ghost" compact className="self-start" onClick={() => setContactDrafts(contactDrafts.filter((_, j) => j !== i))}>
+                  {t('contacts.remove', { n: i + 1 })}
+                </Button>
+              </div>
+            ))}
+            {contactDrafts.length < MAX_CONTACTS ? (
+              <Button variant="secondary" compact className="self-start" onClick={() => setContactDrafts([...contactDrafts, { name: '', phone: '' }])}>
+                {t('contacts.add')}
+              </Button>
+            ) : null}
+          </fieldset>
           {error ? (
             <p role="alert" className="text-sm font-semibold text-help">
               {error}
@@ -221,14 +268,30 @@ export function SafetyPlanView({ numbers }: { numbers: ReactNode }) {
               </span>
               <div className="flex min-w-0 flex-1 flex-col gap-2">
                 <h2 className="text-base font-bold">{t(`sections.${section}`)}</h2>
-                {section === 'peopleToAsk' && text ? (
-                  <ul className="flex flex-wrap gap-2">
-                    {people(text).map((person) => (
-                      <li key={person} dir="auto" className="rounded-full bg-tint-teal px-4 py-2 text-sm font-semibold text-primary-strong">
-                        {person}
-                      </li>
-                    ))}
-                  </ul>
+                {section === 'peopleToAsk' ? (
+                  <>
+                    {(plan.contacts ?? []).length > 0 ? (
+                      <ul className="flex flex-wrap gap-2" data-testid="plan-contacts">
+                        {(plan.contacts ?? []).map((contact) => (
+                          <li key={`${contact.name}-${contact.phone}`}>
+                            <CallLink number={contact.phone} variant="chip">
+                              <bdi dir="auto">{contact.name}</bdi>
+                            </CallLink>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                    {text ? (
+                      <ul className="flex flex-wrap gap-2">
+                        {people(text).map((person) => (
+                          <li key={person} dir="auto" className="rounded-full bg-tint-teal px-4 py-2 text-sm font-semibold text-primary-strong">
+                            {person}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                    {!text && (plan.contacts ?? []).length === 0 ? <p className="leading-relaxed text-muted">{t('empty')}</p> : null}
+                  </>
                 ) : section === 'professionals' ? (
                   <>
                     {text ? (

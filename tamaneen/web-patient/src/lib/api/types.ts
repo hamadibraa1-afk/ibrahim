@@ -223,7 +223,9 @@ export interface CheckinRequest { status: CheckinStatus; feeling: number | null;
 export interface CheckinResponse extends GateOutcome { homework: HomeworkDetail }
 
 export type SafetyPlanSection = 'warningSigns' | 'copingAlone' | 'distractions' | 'peopleToAsk' | 'professionals' | 'safeEnvironment' | 'reasonToLive';
-export interface SafetyPlan { sections: Record<SafetyPlanSection, string>; updatedAt: string | null; coAuthor: string | null }
-export interface UpdateSafetyPlanRequest { sections: Record<SafetyPlanSection, string> }
+/** A personal help contact in section 4 (P37), shown as a tel: button. Name up to 100 characters; at most 5. */
+export interface PlanContact { name: string; phone: string }
+export interface SafetyPlan { sections: Record<SafetyPlanSection, string>; contacts: PlanContact[]; updatedAt: string | null; coAuthor: string | null }
+export interface UpdateSafetyPlanRequest { sections: Record<SafetyPlanSection, string>; contacts: PlanContact[] }
 
 export interface ContactRequestCreated { requestedAt: string }

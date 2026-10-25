@@ -87,6 +87,26 @@ public sealed class PatientSafetyTests : IAsyncLifetime
         db.Screenings.Count(x => x.PatientId == patientId).Should().Be(0);
     }
 
+    [Fact]
+    public async Task The_safety_plan_keeps_personal_contacts_with_phone_numbers()
+    {
+        using var me = await OnboardedPatientAsync("en");
+        var sections = new Dictionary<string, string> { ["peopleToAsk"] = "My sister", ["reasonToLive"] = "My niece." };
+
+        var invalid = await Problem(await me.PutAsJsonAsync("/v1/safety-plan", new { sections, contacts = new[] { new { name = "Khalid", phone = "12" } } }), 400);
+        invalid.GetProperty("errors").TryGetProperty("contacts[0].phone", out _).Should().BeTrue();
+        await Problem(await me.PutAsJsonAsync("/v1/safety-plan", new { sections, contacts = new[] { new { name = " ", phone = "+966550001111" } } }), 400);
+        await Problem(await me.PutAsJsonAsync("/v1/safety-plan", new { sections, contacts = Enumerable.Range(0, 6).Select(i => new { name = $"P{i}", phone = "+966550001111" }) }), 400);
+
+        var saved = await Read(await me.PutAsJsonAsync("/v1/safety-plan", new { sections, contacts = new[] { new { name = " Khalid ", phone = "+966 55 000 1111" } } }));
+        saved.GetProperty("crisis").GetBoolean().Should().BeFalse();
+        var plan = await Read(await me.GetAsync("/v1/safety-plan"));
+        var contact = plan.GetProperty("contacts").EnumerateArray().Should().ContainSingle().Subject;
+        contact.GetProperty("name").GetString().Should().Be("Khalid");
+        contact.GetProperty("phone").GetString().Should().Be("+966550001111");
+        plan.GetProperty("sections").GetProperty("reasonToLive").GetString().Should().Be("My niece.");
+    }
+
     private async Task<HttpClient> OnboardedPatientAsync(string language, string path = "direct")
     {
         var email = $"safety-{Guid.NewGuid():N}@example.com";

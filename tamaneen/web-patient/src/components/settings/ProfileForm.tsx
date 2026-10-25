@@ -11,6 +11,7 @@ import { Notice } from '@/components/ui/Notice';
 import { TextField } from '@/components/ui/TextField';
 import { fieldProblems, problemMessage } from './problem';
 import { SegmentedControl } from './SegmentedControl';
+import { clearLocalSafetyData } from '@/components/safety/clearOnSignOut';
 
 /** The Gulf zones offered in the pilot; Riyadh is the pilot region's own. */
 export const TIME_ZONES = [
@@ -94,6 +95,7 @@ export function ProfileForm({ me }: { me: Me }) {
 
   async function signOut() {
     setSigningOut(true);
+    await clearLocalSafetyData();
     await authApi('logout').catch(() => undefined);
     window.location.assign(`/${locale}`);
   }

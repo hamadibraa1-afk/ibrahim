@@ -12,6 +12,7 @@ import { TextField } from '@/components/ui/TextField';
 import { Dialog, DialogCancel } from './Dialog';
 import { fieldProblems, problemMessage } from './problem';
 import { formatAgo } from './time';
+import { clearLocalSafetyData } from '@/components/safety/clearOnSignOut';
 
 const RECOVERY_TOTAL = 10;
 const MIN_PASSWORD = 12;
@@ -215,6 +216,7 @@ export function SecurityPanel({ overview, nowIso }: { overview: SecurityOverview
       setRevokingAll(false);
       return;
     }
+    await clearLocalSafetyData();
     await authApi('logout').catch(() => undefined);
     window.location.assign(`/${locale}/login`);
   }

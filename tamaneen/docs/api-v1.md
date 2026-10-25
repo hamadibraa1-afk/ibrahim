@@ -87,7 +87,7 @@ Login: 5 failures lock the account for 15 minutes.
 | GET | /v1/homework | → HomeworkList | P29 |
 | GET | /v1/homework/{id} | → HomeworkDetail | P10 |
 | POST | /v1/homework/{id}/checkins | CheckinRequest → CheckinResponse (note gated) | P10 |
-| GET/PUT | /v1/safety-plan | SafetyPlan / UpdateSafetyPlanRequest (gate) | P37 |
+| GET/PUT | /v1/safety-plan | SafetyPlan / UpdateSafetyPlanRequest (gate; sections and contact names). `contacts`: up to 5 `{ name ≤ 100, phone }`, encrypted with the patient key like the sections | P37 |
 
 Booking needs either a passed safety check (direct path) or a reviewed triage (intake path).
 Gated writes that return an object (`PUT /v1/intake/{id}/summary`, `POST /v1/triage/addendum`, `PUT /v1/safety-plan`,
