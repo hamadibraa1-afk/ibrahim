@@ -9,6 +9,7 @@ import type { Lang, Me, UpdateProfileRequest } from '@/lib/api/types';
 import { Button } from '@/components/ui/Button';
 import { Notice } from '@/components/ui/Notice';
 import { TextField } from '@/components/ui/TextField';
+import { clearLocalCopies } from '@/components/pwa/signOut';
 import { fieldProblems, problemMessage } from './problem';
 import { SegmentedControl } from './SegmentedControl';
 
@@ -95,6 +96,7 @@ export function ProfileForm({ me }: { me: Me }) {
   async function signOut() {
     setSigningOut(true);
     await authApi('logout').catch(() => undefined);
+    await clearLocalCopies();
     window.location.assign(`/${locale}`);
   }
 

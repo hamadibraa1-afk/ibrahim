@@ -42,3 +42,17 @@ export function clearDraft(key: string): void {
     // Nothing to clear.
   }
 }
+
+/** Removes every draft on this device (sign-out: nothing the patient typed stays behind). */
+export function clearAllDrafts(): void {
+  try {
+    const keys: string[] = [];
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const key = window.localStorage.key(i);
+      if (key?.startsWith(PREFIX)) keys.push(key);
+    }
+    keys.forEach((key) => window.localStorage.removeItem(key));
+  } catch {
+    // Nothing to clear.
+  }
+}
