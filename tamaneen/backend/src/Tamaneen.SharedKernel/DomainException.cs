@@ -80,4 +80,16 @@ public static class ErrorCodes
     public const string HomeworkEnded = "error.homework.ended";
     public const string PasswordMismatch = "error.auth.password_mismatch";
     public const string DeletionBlockedByCrisis = "error.privacy.deletion_crisis_open";
+    public const string TriageClaimedByOther = "error.triage.claimed";
+    public const string TriageClaimRequired = "error.triage.claim_required";
+    public const string TriageBelowCrisisFloor = "error.triage.below_crisis_floor";
+    public const string TriageLoweringNeedsDecision = "error.triage.lowering_needs_decision";
+    public const string TriageCoSignPending = "error.triage.cosign_pending";
+    public const string TriageNoCoSignPending = "error.triage.no_cosign_pending";
+    public const string TriageCoSignNotAllowed = "error.triage.cosign_not_allowed";
+    public const string NoTherapistAvailable = "error.triage.no_therapist";
+    public const string FileVersionRequired = "error.file.version_required";
+    public const string FileVersionChanged = "error.file.version_changed";
+    public const string FileApproved = "error.file.approved";
+    public const string RiskNotHigher = "error.risk.not_higher";
 }

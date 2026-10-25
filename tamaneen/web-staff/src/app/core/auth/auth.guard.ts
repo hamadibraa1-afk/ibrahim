@@ -32,6 +32,20 @@ export const crisisAccessGuard: CanMatchFn = (_route, segments) => {
   return !inject(AuthService).signedIn() || allowed ? true : forbidden(segments);
 };
 
+/** Patient files (S02) and "My patients": therapists, supervisors and the clinical lead. The server limits a therapist to her patients. */
+export const clinicalGuard: CanMatchFn = () => {
+  const session = inject(SessionService);
+  const role = session.role();
+  return !inject(AuthService).signedIn() || role === 'therapist' || role === 'supervisor' || role === 'lead' ? true : inject(Router).parseUrl(session.home());
+};
+
+/** Triage review (S03): supervisors and the clinical lead. */
+export const triageGuard: CanMatchFn = () => {
+  const session = inject(SessionService);
+  const role = session.role();
+  return !inject(AuthService).signedIn() || role === 'supervisor' || role === 'lead' ? true : inject(Router).parseUrl(session.home());
+};
+
 /** Therapist dashboard. */
 export const therapistGuard: CanMatchFn = (_route, segments) => {
   const session = inject(SessionService);

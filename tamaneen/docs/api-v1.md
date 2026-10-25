@@ -111,8 +111,20 @@ During scheduled maintenance (`Platform:Maintenance` true) every patient endpoin
 | POST | /v1/staff/appointments/{id}/outcome | { outcome: attended, no_show, cancelled } → 204 | S01 |
 | POST | /v1/staff/patients/{pseudonymId}/homework | { title, instructions[], minutes, frequency, startsOn, endsOn } → 201 | (S16 later) |
 | POST | /v1/staff/checkins/{id}/feedback | { text } → 204 | (S16 later) |
-| GET | /v1/staff/triage | → pending triage cases (supervisor, lead) | (S03 later) |
-| POST | /v1/staff/triage/{id}/review | { riskLevel 1–4, focus: specialty codes } → creates up to three match suggestions | (S03 later) |
+| GET | /v1/staff/patients | → CaseloadItem[] (the therapist's active patients; supervisors see all assigned) | menu "My patients" |
+| GET | /v1/staff/patients/{pseudonymId}/file | → PatientFile + `ETag` (audited `patient.file_opened`) | S02 |
+| GET | /v1/staff/patients/{pseudonymId}/evidence/{statementKey} | → Evidence { messageIds, turns, removed } (audited `patient.evidence_viewed`) | S02 |
+| POST | /v1/staff/patients/{pseudonymId}/file/approve | `If-Match` + { edits?: { key: text } } → PatientFile (428 without If-Match, 412 when the file changed, 409 when already approved; therapist) | S02 |
+| POST | /v1/staff/patients/{pseudonymId}/file/dismiss-item | { statementKey, reason } → PatientFile (reason kept in the audit log; therapist) | S02 |
+| POST | /v1/staff/patients/{pseudonymId}/file-feedback | { rating 1–5, comment? ≤ 500 } → 204 (therapist) | S02 |
+| POST | /v1/staff/patients/{pseudonymId}/risk-flag | { riskLevel, reason } → { riskLevel } (higher than the current level only) | S02 |
+| POST | /v1/staff/patients/{pseudonymId}/crisis | { level 3 or 4, note } → { crisisEventId, level } (through the crisis worker, gate source `staff`: opens or raises the event, locks the chat, pages) | S02 |
+| GET | /v1/staff/triage | → TriageQueueItem[] (open cases, risk then due time; claim holder; supervisor, lead) | S03 |
+| GET | /v1/staff/triage/{id} | → TriageCase (audited `triage.case_opened`) | S03 |
+| GET | /v1/staff/triage/{id}/therapists | → SuggestedTherapist[] (approved, free capacity, a free slot) | S03 |
+| POST · DELETE | /v1/staff/triage/{id}/claim | → TriageCase (15 minutes of server time; 409 `error.triage.claimed` + claimedBy, claimedUntil) · → 204 | S03 |
+| POST | /v1/staff/triage/{id}/decisions | TriageDecisionRequest → TriageDecisionResult (claim required; reason required except approve) | S03 |
+| POST | /v1/staff/triage/{id}/review | { riskLevel 1–4, focus: specialty codes } → creates up to three match suggestions; cannot lower the level (409) | older single step |
 | (worker) GET | /v1/crisis/events/open | → OpenCrisisEvent[] | S01, S04 |
 | (worker) GET | /v1/crisis/events/{id} | → CrisisEventDetail | S04 |
 | (worker) POST | /v1/crisis/events/{id}/acknowledge | → OpenCrisisEvent | S01, S04 |
@@ -127,6 +139,21 @@ During scheduled maintenance (`Platform:Maintenance` true) every patient endpoin
 | (worker) POST | /v1/crisis/events/{id}/close/cosign | → OpenCrisisEvent (clinical lead only; closes and sets a review 72 hours later, shown on the timeline) | S04 |
 | (worker) GET | /v1/crisis/health | → CrisisHealth | S04 |
 | (worker) hub | /hubs/crisis?lang= | crisisAlert (kind: opened, raised, escalated, acknowledged, updated, closed) | S01, S04 |
+
+Clinical file (S02). Statements are `concern`, `goals`, `supports`, `priorCare` and `hypotheses` (therapist only, always
+"not a diagnosis"). Each links to the patient messages it came from: the summary model cites the patient lines it used, and
+without a citation the messages sharing the most words are used. A statement with no source is not shown (EC-15); a
+patient's own correction always is. The `version` (also the `ETag`) changes when the summary, an addendum, the level, an
+edit, a dismissal or the approval changes. Supervisors and the lead read the file (S03) but only the treating therapist
+edits, dismisses, rates and approves.
+
+Triage decisions (S03): `kind` is `approve` (optional `therapistIds` ≤ 3 and `focus`; else the saved or proposed
+suggestions), `override_risk` (`riskLevel`), `reassign` (`therapistIds`), `escalate` (opens or raises a crisis event, result
+`crisisEventId`), `close` (`referrals`: crisis_line, primary_care, psychiatry, community_support, emergency_services; the
+patient's `GET /v1/triage` shows status `closed` with `referrals`) or `cosign` (clinical lead, `approve: true|false`). The
+level never goes below an open or recent (30 days) crisis event (422 `error.triage.below_crisis_floor`). Lowering from 3 or 4
+by a supervisor waits for the clinical lead's co-sign (`coSignRequested: true`); approve and close are refused meanwhile.
+Review deadlines follow the level: 24 h for 1, 4 h for 2, 1 h for 3 and 4. Every decision is audited with its reason.
 
 Alerts and the open-events list carry `number` (CE-1001), `source`, `sourceLabel` and `acknowledgedBy`. Status is Open, Acknowledged, InContact or Closed. CrisisEventDetail adds `canAct`, `isOwner`, `pendingHandover`, `pendingClose`, `canCoSign`, `emergencyNumber`, `emergencyScript` (rule-pack responder script, with or without a known location), `recentCallAttempts`, `callAdvice` (local_emergency or unreachable after 3 calls in 15 minutes to a Critical patient, EC-33) and `reviewDueAtUtc`. The timeline ends with the next scheduled escalation while nobody owns the event. Supervisors, the
 clinical lead and on-call staff receive every alert; other therapists only receive alerts for their own patients. The console endpoints follow the same rule through RLS: on-call therapists see every crisis event, and contact data and excerpts only while the event is open.

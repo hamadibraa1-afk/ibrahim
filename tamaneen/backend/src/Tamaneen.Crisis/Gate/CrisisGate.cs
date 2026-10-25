@@ -25,6 +25,11 @@ public sealed partial class CrisisGate
 
     public const string HelpNowSource = "help_now";
 
+    /// <summary>A clinician raised the alert by hand from the patient's file (S02): the event opens at the level they chose.</summary>
+    public const string StaffManualRuleId = "STAFF-MANUAL";
+
+    public const string StaffSource = "staff";
+
     private readonly IRiskEvaluator _evaluator;
     private readonly ICrisisCaseStore _store;
     private readonly ICrisisAlertPublisher _alerts;
@@ -64,6 +69,11 @@ public sealed partial class CrisisGate
             if (request.Source == HelpNowSource)
             {
                 assessment = new RiskAssessment(RiskLevel.Critical, [.. assessment.Hits, new RuleHit(HelpNowRuleId, RiskLevel.Critical, "patient_request", RuleSource.System)], assessment.RulesVersion);
+            }
+            else if (request.Source == StaffSource && request.StaffLevel is { } staffLevel && staffLevel >= RiskLevel.High)
+            {
+                var level = staffLevel > assessment.Level ? staffLevel : assessment.Level;
+                assessment = new RiskAssessment(level, [.. assessment.Hits, new RuleHit(StaffManualRuleId, staffLevel, "staff_alert", RuleSource.System)], assessment.RulesVersion);
             }
 
             var activeLock = await _store.FindActiveLockAsync(request.PatientId, cancellationToken).ConfigureAwait(false);
@@ -192,8 +202,11 @@ public sealed partial class CrisisGate
     private static partial void LogPublishFailure(ILogger logger, Guid eventId, Exception exception);
 }
 
-/// <summary>What the API sends for each patient message, questionnaire answer or journal entry.</summary>
-public sealed record GateRequest(Guid PatientId, string Language, string? Text, QuestionnaireAnswers? Answers, string Source);
+/// <summary>
+/// What the API sends for each patient message, questionnaire answer or journal entry. <paramref name="StaffLevel"/>
+/// is set only for a clinician's manual alert (source "staff").
+/// </summary>
+public sealed record GateRequest(Guid PatientId, string Language, string? Text, QuestionnaireAnswers? Answers, string Source, RiskLevel? StaffLevel = null);
 
 public enum GateDecision
 {

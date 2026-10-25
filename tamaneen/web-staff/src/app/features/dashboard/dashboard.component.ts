@@ -18,7 +18,6 @@ import { LocalDatePipe } from '../../shared/local-date.pipe';
 import { ProblemMessageComponent } from '../../shared/problem-message.component';
 import { RiskTagComponent } from '../../shared/risk-tag.component';
 import { NoteDialogComponent, type NoteDialogData } from '../crisis/crisis-dialogs';
-import { IntakeDialogComponent, type IntakeDialogData, type IntakeDialogResult } from './intake-dialog.component';
 
 export const OUTCOMES: readonly SessionOutcome[] = ['attended', 'no_show', 'cancelled'];
 
@@ -42,8 +41,8 @@ export function partOfDay(date: Date): 'morning' | 'afternoon' | 'evening' {
 export class DashboardComponent {
   private readonly staff = inject(StaffApiService);
   private readonly crisis = inject(CrisisApiService);
-  private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly dialog = inject(MatDialog);
   private readonly translate = inject(TranslateService);
   private readonly destroyRef = inject(DestroyRef);
   protected readonly language = inject(LanguageService);
@@ -173,30 +172,6 @@ export class DashboardComponent {
         this.sessionErrors.update((e) => ({ ...e, [id]: shownError(error, 'common.error') }));
         this.done(id, this.busySessions);
       },
-    });
-  }
-
-  protected openIntake(pseudonymId: string): void {
-    const ref = this.dialog.open<IntakeDialogComponent, IntakeDialogData, IntakeDialogResult>(IntakeDialogComponent, {
-      data: { pseudonymId },
-      direction: this.language.direction(),
-      width: '640px',
-      maxWidth: '95vw',
-      autoFocus: 'dialog',
-      restoreFocus: true,
-    });
-    ref.afterClosed().subscribe((result) => {
-      if (result === 'approved') {
-        this.data.update((d) => {
-          if (!d) {
-            return d;
-          }
-          const pendingProfiles = d.pendingProfiles.filter((p) => p.pseudonymId !== pseudonymId);
-          const removed = d.pendingProfiles.length - pendingProfiles.length;
-          return { ...d, pendingProfiles, stats: { ...d.stats, pendingProfiles: Math.max(0, d.stats.pendingProfiles - removed) } };
-        });
-        this.notify(this.translate.instant('intake.approvedDone'));
-      }
     });
   }
 

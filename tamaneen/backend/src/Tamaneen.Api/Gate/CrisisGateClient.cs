@@ -38,7 +38,17 @@ public sealed partial class CrisisGateClient(HttpClient http, IOptions<CrisisGat
 {
     public const string ServiceKeyHeader = "X-Tamaneen-Service-Key";
 
-    public async Task<GateVerdict> EvaluateAsync(Guid patientId, string language, string? text, GateAnswers? answers, string source, CancellationToken cancellationToken)
+    /// <summary>Source of a clinician's manual alert (S02); the worker opens the event at <c>level</c>.</summary>
+    public const string StaffSource = "staff";
+
+    public Task<GateVerdict> EvaluateAsync(Guid patientId, string language, string? text, GateAnswers? answers, string source, CancellationToken cancellationToken) =>
+        SendAsync(patientId, language, text, answers, source, null, cancellationToken);
+
+    /// <summary>A clinician raises a crisis by hand (level 3 or 4). The worker opens or raises the event, locks the chat and pages.</summary>
+    public Task<GateVerdict> RaiseManualAsync(Guid patientId, string language, RiskLevel level, CancellationToken cancellationToken) =>
+        SendAsync(patientId, language, null, null, StaffSource, level, cancellationToken);
+
+    private async Task<GateVerdict> SendAsync(Guid patientId, string language, string? text, GateAnswers? answers, string source, RiskLevel? level, CancellationToken cancellationToken)
     {
         using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(new Uri(options.Value.BaseUrl), "internal/v1/gate/evaluate"))
         {
@@ -49,6 +59,7 @@ public sealed partial class CrisisGateClient(HttpClient http, IOptions<CrisisGat
                 text,
                 answers = answers is null ? null : new { instrument = answers.Instrument, scores = answers.Scores },
                 source,
+                level = level is null ? (int?)null : (int)level,
             }),
         };
         request.Headers.Add(ServiceKeyHeader, options.Value.ServiceKeyBase64);

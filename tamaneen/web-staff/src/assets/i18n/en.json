@@ -97,7 +97,11 @@
     "loading": "Loading…",
     "none": "—",
     "error": "Something went wrong. Please try again.",
-    "offline": "The server can’t be reached. Crisis alerts still arrive by phone and SMS until it’s back."
+    "offline": "The server can’t be reached. Crisis alerts still arrive by phone and SMS until it’s back.",
+    "level": "Level",
+    "choose": "Choose",
+    "chooseOne": "Choose at least one",
+    "chooseAtMost": "Choose at most {{count}}"
   },
   "risk": {
     "1": "routine",
@@ -420,5 +424,258 @@
     "logged": "This attempt was recorded in the audit log.",
     "logFailed": "The attempt could not be recorded right now; the page stays blocked.",
     "back": "Back to my dashboard"
+  },
+  "patients": {
+    "title": "My patients",
+    "approved": "File approved",
+    "awaiting": "File awaiting approval",
+    "next": "Next session {{time}}",
+    "noSession": "No session booked",
+    "empty": "No patients are assigned to you yet.",
+    "loadError": "Your patient list can’t be loaded right now."
+  },
+  "file": {
+    "loadError": "This file can’t be loaded right now.",
+    "notFound": "Not found",
+    "notFoundHint": "This patient does not exist or is not assigned to you.",
+    "back": "My patients",
+    "firstSession": "First session {{time}}",
+    "audited": "Opening this file and its sources is recorded in the audit log.",
+    "raiseRisk": "Raise risk level",
+    "manualCrisis": "Raise a crisis alert",
+    "scores": {
+      "region": "Scores",
+      "auto": "{{name}} · scored automatically",
+      "details": "Answers in detail",
+      "cssrs": "C-SSRS · quick screen",
+      "item9": "PHQ-9 item 9 = {{value}}",
+      "version": "Instrument version {{version}}",
+      "skipped": "Skipped",
+      "none": "No questionnaire answers in this file."
+    },
+    "severity": {
+      "minimal": "minimal",
+      "mild": "mild",
+      "moderate": "moderate",
+      "moderately_severe": "moderately severe",
+      "severe": "severe"
+    },
+    "cssrs": {
+      "positive": "Positive",
+      "negative": "Negative",
+      "missing": "Not completed",
+      "meta": "Version {{version}} · {{date}}",
+      "yes": "Yes",
+      "no": "No"
+    },
+    "tabs": {
+      "label": "Patient file sections",
+      "summary": "Intake summary",
+      "transcript": "Intake chat",
+      "scores": "Scores",
+      "cssrs": "C-SSRS",
+      "corrections": "Patient corrections"
+    },
+    "conflict": "The file changed since you opened it. This is the latest version; your edits are kept. Check it and approve again.",
+    "summary": {
+      "title": "Intake summary",
+      "approvedBy": "File approved by {{name}} on {{date}}",
+      "draft": "AI draft · needs your approval",
+      "manual": "The summary is being prepared by the team.",
+      "direct": "Direct booking: the safety check replaces the intake.",
+      "empty": "No statements to show."
+    },
+    "statement": {
+      "concern": "Main concern",
+      "goals": "Goals",
+      "supports": "Protective factors",
+      "priorCare": "Previous care",
+      "hypotheses": "Hypotheses to explore · not a diagnosis",
+      "extra": "Anything else",
+      "editLabel": "Your wording",
+      "keep": "Keep edit",
+      "correctedByPatient": "Corrected by the patient",
+      "editedByTherapist": "Edited by you",
+      "sources": "Source: {{count}} messages",
+      "edit": "Edit",
+      "dismiss": "Dismiss"
+    },
+    "approve": "Approve file",
+    "rating": {
+      "label": "How useful was this file:"
+    },
+    "corrections": {
+      "title": "Patient corrections",
+      "ai": "AI draft:",
+      "patient": "Patient’s version:",
+      "none": "The patient did not correct the summary.",
+      "addenda": "Added after submitting"
+    },
+    "transcript": {
+      "title": "Intake chat",
+      "retention": "Original messages are deleted 90 days after approval",
+      "sourceRemoved": "The source was deleted.",
+      "patient": "Patient",
+      "assistant": "AI",
+      "turn": "turn {{n}}",
+      "source": "source",
+      "removed": "The original messages were deleted 90 days after approval.",
+      "none": "No intake chat for this file."
+    },
+    "dismissDialog": {
+      "title": "Dismiss this statement?",
+      "body": "It is hidden from the file. The reason stays in the audit log.",
+      "reason": "Reason",
+      "confirm": "Dismiss"
+    },
+    "riskDialog": {
+      "title": "Raise the risk level",
+      "body": "Choose a level above the current one. Lowering goes through a supervisor.",
+      "reason": "Reason",
+      "level": "New level",
+      "confirm": "Raise level"
+    },
+    "crisisDialog": {
+      "title": "Raise a crisis alert?",
+      "body": "This opens a crisis event now: the patient’s chat pauses and the on-call clinician is called.",
+      "note": "Note for the on-call clinician",
+      "level": "Level",
+      "confirm": "Raise alert"
+    },
+    "dismissed": "Statement dismissed.",
+    "approvedDone": "File approved.",
+    "rated": "Thank you, your rating was saved.",
+    "riskRaised": "Risk level raised.",
+    "crisisRaised": "Crisis alert raised. The on-call clinician is being called."
+  },
+  "triage": {
+    "queue": {
+      "title": "Triage queue",
+      "count": "{{count}} cases · by risk, then deadline",
+      "heldBy": "Held by {{name}} until {{time}}",
+      "overdue": "Past the deadline",
+      "left": "{{h}} h {{m}} min left",
+      "coSign": "awaiting co-sign",
+      "empty": "No cases are waiting."
+    },
+    "queueError": "The triage queue can’t be loaded right now.",
+    "loadError": "This case can’t be loaded right now.",
+    "notFound": "This case was not found.",
+    "pick": "Choose a case from the queue.",
+    "source": {
+      "intake": "Full intake",
+      "direct": "Direct booking · safety check only",
+      "contact": "Asked to talk to a person"
+    },
+    "claim": {
+      "mine": "Held by you until {{time}}",
+      "endsIn": "ends in {{time}}",
+      "release": "Release",
+      "expired": "Your hold ended. Claim the case again to decide.",
+      "again": "Claim again",
+      "other": "Another supervisor is reviewing: {{name}}, until {{time}}. Read only."
+    },
+    "status": {
+      "pending": "Waiting",
+      "reviewed": "Approved",
+      "matched": "Matched",
+      "escalated": "Escalated",
+      "closed": "Closed"
+    },
+    "coSign": {
+      "pending": "Lowering to level {{level}} requested by {{name}} waits for the clinical lead’s co-sign.",
+      "approve": "Co-sign level {{level}}",
+      "refuse": "Refuse"
+    },
+    "cards": {
+      "rules": "Level by the rules",
+      "now": "Level now:",
+      "ai": "AI suggestion",
+      "aiNone": "None",
+      "aiNote": "The AI cannot lower the level",
+      "safety": "Safety indicators",
+      "safetyFlag": "Present",
+      "safetyNone": "None",
+      "cssrsMissing": "C-SSRS not done",
+      "cssrsPositive": "C-SSRS positive",
+      "cssrsNegative": "C-SSRS negative",
+      "item9": "item 9 = {{value}}",
+      "floor": "crisis floor {{level}}",
+      "language": "Language and preferences",
+      "due": "review by {{time}}"
+    },
+    "reasons": {
+      "phq9": "PHQ-9 = {{phq9}}",
+      "gad7": "GAD-7 = {{gad7}}",
+      "cssrs": "C-SSRS positive",
+      "crisis": "Crisis during intake",
+      "routine": "No risk items"
+    },
+    "language": {
+      "ar": "Arabic",
+      "en": "English"
+    },
+    "summary": {
+      "title": "Case summary",
+      "fullFile": "Full file and chat",
+      "none": "No summary."
+    },
+    "suggestions": {
+      "title": "Suggested therapists",
+      "change": "Change suggestions",
+      "next": "next opening {{time}}"
+    },
+    "capacity": "capacity {{load}}/{{capacity}}",
+    "noTherapist": "No approved therapist has room right now. Close with a referral, or keep the case in the queue.",
+    "reason": "Reason for the decision (required to change the level, change suggestions, escalate or close)",
+    "reasonRequired": "Write the reason for this decision first.",
+    "actions": {
+      "approve": "Approve and send suggestions to the patient",
+      "override": "Change risk level",
+      "escalate": "Escalate to crisis",
+      "close": "Close with referral"
+    },
+    "overrideDialog": {
+      "title": "Change the risk level",
+      "body": "The level can’t go below {{floor}} while there is an open or recent crisis.",
+      "bodyHigh": "Lowering from high or critical changes who is paged and how fast the patient is seen. It applies only after the clinical lead co-signs. The level can’t go below {{floor}} while there is an open or recent crisis.",
+      "level": "New level",
+      "confirm": "Save level"
+    },
+    "reassignDialog": {
+      "title": "Change the suggestions",
+      "body": "Only approved therapists with room are listed.",
+      "choose": "Therapists (up to 3)",
+      "confirm": "Save suggestions"
+    },
+    "escalateDialog": {
+      "title": "Escalate to a crisis?",
+      "body": "This opens a crisis event: the patient’s chat pauses and the on-call clinician is called. The case leaves the queue.",
+      "level": "Level",
+      "confirm": "Escalate"
+    },
+    "closeDialog": {
+      "title": "Close with referral",
+      "body": "The case closes without a match and the patient sees these resources.",
+      "referrals": "Referral resources",
+      "confirm": "Close case"
+    },
+    "referral": {
+      "crisis_line": "Crisis line",
+      "primary_care": "Primary care",
+      "psychiatry": "Psychiatry",
+      "community_support": "Community support",
+      "emergency_services": "Emergency services"
+    },
+    "done": {
+      "approve": "Approved. The patient can now see the suggestions.",
+      "override": "Risk level saved.",
+      "coSignRequested": "Sent to the clinical lead for co-sign.",
+      "reassign": "Suggestions changed.",
+      "escalate": "Crisis event opened.",
+      "close": "Case closed with referral.",
+      "coSigned": "Co-signed. The new level applies.",
+      "coSignRefused": "Lowering refused. The level stays."
+    }
   }
 }

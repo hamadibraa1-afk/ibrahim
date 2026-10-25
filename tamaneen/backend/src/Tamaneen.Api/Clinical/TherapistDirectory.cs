@@ -116,6 +116,22 @@ public sealed class TherapistDirectory(TamaneenDbContext db, IClock clock, IOpti
             .ToList();
     }
 
+    /// <summary>
+    /// Therapists a supervisor may propose (S03): licence verified, accepting new patients, a free slot ahead and
+    /// spare capacity. Each comes with its current load and capacity.
+    /// </summary>
+    public async Task<List<(TherapistSummaryDto Therapist, int Load, int Capacity)>> AvailableAsync(string language, CancellationToken ct)
+    {
+        var therapists = await ListAsync(language, null, ct).ConfigureAwait(false);
+        var load = await db.CareAssignments.AsNoTracking().Where(a => a.EndedAtUtc == null).GroupBy(a => a.TherapistUserId)
+            .Select(g => new { g.Key, Count = g.Count() }).ToDictionaryAsync(x => x.Key, x => x.Count, ct).ConfigureAwait(false);
+        var capacity = await db.TherapistProfiles.AsNoTracking().ToDictionaryAsync(t => t.UserId, t => t.Capacity, ct).ConfigureAwait(false);
+        return therapists
+            .Where(t => t.LicenseVerified && t.NextAvailableAt is not null && load.GetValueOrDefault(t.Id) < capacity.GetValueOrDefault(t.Id, 0))
+            .Select(t => (t, load.GetValueOrDefault(t.Id), capacity.GetValueOrDefault(t.Id, 0)))
+            .ToList();
+    }
+
     /// <summary>"أ. سارة م." → "س م"; "Dr. Sara M." → "S M".</summary>
     public static string Initials(string displayName)
     {

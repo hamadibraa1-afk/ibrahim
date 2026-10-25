@@ -246,6 +246,8 @@ public class AiGatewayServiceTests
     [InlineData("intake", "en")]
     [InlineData("intake-summary", "ar")]
     [InlineData("intake-summary", "en")]
+    [InlineData("intake-hypotheses", "ar")]
+    [InlineData("intake-hypotheses", "en")]
     [InlineData("journal-reflection", "ar")]
     [InlineData("journal-reflection", "en")]
     public async Task The_demo_model_passes_validation_in_the_patients_language(string purpose, string language)

@@ -98,4 +98,6 @@
   <data name="call.voicemail" xml:space="preserve"><value>voicemail</value></data>
   <data name="call.wrong_number" xml:space="preserve"><value>wrong number</value></data>
   <data name="alert.updated.title" xml:space="preserve"><value>Case {0} was updated</value></data>
+  <data name="category.staff_alert" xml:space="preserve"><value>Raised by a clinician</value></data>
+  <data name="source.staff" xml:space="preserve"><value>Clinician's manual alert</value></data>
 </root>

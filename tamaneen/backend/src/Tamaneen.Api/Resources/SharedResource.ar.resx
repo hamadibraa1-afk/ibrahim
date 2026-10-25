@@ -83,4 +83,16 @@
   <data name="validation.invalid" xml:space="preserve"><value>القيمة غير صحيحة.</value></data>
   <data name="error.crisis.not_owner" xml:space="preserve"><value>هذه الحالة يتولاها شخص آخر. يمكنك قراءتها، والإجراءات للمالك أو المشرف أو المسؤول السريري فقط.</value></data>
   <data name="error.crisis.nothing_pending" xml:space="preserve"><value>لم يعد في هذه الحالة شيء ينتظرك.</value></data>
+  <data name="error.triage.claimed" xml:space="preserve"><value>يراجع مشرف آخر هذه الحالة الآن. يمكنك قراءتها، والقرار بعد انتهاء حجزه.</value></data>
+  <data name="error.triage.claim_required" xml:space="preserve"><value>احجز الحالة قبل اتخاذ القرار. ربما انتهى حجزك.</value></data>
+  <data name="error.triage.below_crisis_floor" xml:space="preserve"><value>لا يمكن خفض المستوى عن {0} ما دام لدى المريض حدث طوارئ مفتوح أو حديث.</value></data>
+  <data name="error.triage.lowering_needs_decision" xml:space="preserve"><value>خفض المستوى يحتاج قرارًا مع السبب.</value></data>
+  <data name="error.triage.cosign_pending" xml:space="preserve"><value>خفض المستوى ينتظر توقيع المسؤول السريري. اتخذ القرار بعد التوقيع.</value></data>
+  <data name="error.triage.no_cosign_pending" xml:space="preserve"><value>لا يوجد في هذه الحالة ما ينتظر التوقيع.</value></data>
+  <data name="error.triage.cosign_not_allowed" xml:space="preserve"><value>التوقيع المشترك للمسؤول السريري وحده، ولا يوقّع على طلبه.</value></data>
+  <data name="error.triage.no_therapist" xml:space="preserve"><value>لا يوجد أخصائي معتمد لديه سعة متاحة الآن. أغلق الحالة مع إحالة أو أبقها في القائمة.</value></data>
+  <data name="error.file.version_required" xml:space="preserve"><value>أعد تحميل الملف قبل اعتماده.</value></data>
+  <data name="error.file.version_changed" xml:space="preserve"><value>تغيّر الملف منذ فتحته. راجع الإصدار الأحدث ثم اعتمده من جديد.</value></data>
+  <data name="error.file.approved" xml:space="preserve"><value>هذا الملف معتمد ولم يعد قابلًا للتعديل.</value></data>
+  <data name="error.risk.not_higher" xml:space="preserve"><value>اختر مستوى أعلى من الحالي. خفض المستوى يمر عبر المشرف.</value></data>
 </root>

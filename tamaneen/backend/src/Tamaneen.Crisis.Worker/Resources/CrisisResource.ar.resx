@@ -98,4 +98,6 @@
   <data name="call.voicemail" xml:space="preserve"><value>بريد صوتي</value></data>
   <data name="call.wrong_number" xml:space="preserve"><value>رقم خاطئ</value></data>
   <data name="alert.updated.title" xml:space="preserve"><value>تحديث على الحالة {0}</value></data>
+  <data name="category.staff_alert" xml:space="preserve"><value>أطلقه أخصائي</value></data>
+  <data name="source.staff" xml:space="preserve"><value>تنبيه يدوي من أخصائي</value></data>
 </root>

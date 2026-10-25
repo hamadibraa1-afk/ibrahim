@@ -62,8 +62,10 @@ public static class StaffEndpoints
         clinical.MapPost("/checkins/{id:guid}/feedback", FeedbackAsync);
 
         var supervisors = app.MapGroup("/v1/staff/triage").RequireAuthorization(AuthSetup.CrisisCloserPolicy);
-        supervisors.MapGet("", TriageListAsync);
+        supervisors.MapGet("", StaffTriageEndpoints.QueueAsync);
         supervisors.MapPost("/{id:guid}/review", ReviewAsync);
+        app.MapStaffFileEndpoints();
+        app.MapStaffTriageEndpoints();
         return app;
     }
 
@@ -289,15 +291,10 @@ public static class StaffEndpoints
 
     // ---------- Triage review (supervisors and the clinical lead) ----------
 
-    internal static async Task<Ok<List<TriageItemDto>>> TriageListAsync(TamaneenDbContext db, CancellationToken ct)
-    {
-        var cases = await db.TriageCases.AsNoTracking().Where(t => t.Status == TriageStatus.Pending).OrderByDescending(t => t.RiskLevel).ThenBy(t => t.DueAtUtc).Take(200).ToListAsync(ct).ConfigureAwait(false);
-        var ids = cases.Select(c => c.PatientId).ToList();
-        var pseudonyms = await db.UserAccounts.AsNoTracking().Where(a => ids.Contains(a.Id)).ToDictionaryAsync(a => a.Id, a => a.PseudonymId, ct).ConfigureAwait(false);
-        return TypedResults.Ok(cases.Select(c => new TriageItemDto(c.Id, pseudonyms[c.PatientId], c.Path, (int)c.RiskLevel, c.Phq9, c.Gad7, c.CssrsPositive, c.SubmittedAtUtc, c.DueAtUtc)).ToList());
-    }
-
-    /// <summary>The supervisor confirms the risk level and the focus areas; the platform proposes three therapists.</summary>
+    /// <summary>
+    /// The supervisor confirms (or raises) the risk level and the focus areas; the platform proposes three therapists.
+    /// It cannot lower the level: that needs a decision with a reason, and a co-sign from High or Critical (S03).
+    /// </summary>
     internal static async Task<Ok<TriageItemDto>> ReviewAsync(Guid id, ReviewRequest request, ICurrentUser user, TamaneenDbContext db, TherapistDirectory directory, IAuditLog audit, IClock clock, CancellationToken ct)
     {
         if (request.RiskLevel is < 1 or > 4 || request.Focus is not { Count: > 0 } || request.Focus.Any(f => !TherapistProfile.SpecialtyCodes.Contains(f)))
@@ -307,7 +304,8 @@ public static class StaffEndpoints
 
         var triage = await db.TriageCases.FirstOrDefaultAsync(t => t.Id == id, ct).ConfigureAwait(false)
             ?? throw new DomainException(ErrorCodes.NotFound, $"Triage {id} not found.");
-        triage.Review(user.UserId!.Value, (RiskLevel)request.RiskLevel, clock);
+        var floor = await StaffFileEndpoints.CrisisFloorAsync(db, triage.PatientId, clock, ct).ConfigureAwait(false);
+        triage.Review(user.UserId!.Value, (RiskLevel)request.RiskLevel, floor, clock);
         var patient = await db.UserAccounts.AsNoTracking().FirstAsync(a => a.Id == triage.PatientId, ct).ConfigureAwait(false);
         var suggestions = await directory.SuggestAsync(request.Focus, patient.PreferredLanguage, 3, ct).ConfigureAwait(false);
         var existing = await db.MatchSuggestions.Where(m => m.PatientId == triage.PatientId).ToListAsync(ct).ConfigureAwait(false);
@@ -323,7 +321,10 @@ public static class StaffEndpoints
         return TypedResults.Ok(new TriageItemDto(triage.Id, patient.PseudonymId, triage.Path, (int)triage.RiskLevel, triage.Phq9, triage.Gad7, triage.CssrsPositive, triage.SubmittedAtUtc, triage.DueAtUtc));
     }
 
-    private static async Task<Guid> PatientIdAsync(TamaneenDbContext db, string pseudonymId, CancellationToken ct)
+    /// <summary>The pseudonym as stored ("p-7q4k-82xm" → "P-7Q4K-82XM"), for audit rows.</summary>
+    internal static string Canonical(string pseudonymId) => PseudonymId.TryParse(pseudonymId, out var parsed) ? parsed.Value : pseudonymId;
+
+    internal static async Task<Guid> PatientIdAsync(TamaneenDbContext db, string pseudonymId, CancellationToken ct)
     {
         if (!PseudonymId.TryParse(pseudonymId, out var parsed))
         {

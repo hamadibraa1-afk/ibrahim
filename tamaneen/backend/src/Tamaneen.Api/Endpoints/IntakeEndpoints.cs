@@ -47,7 +47,8 @@ public static class IntakeEndpoints
 
     public sealed record UpdateSummaryRequest(Dictionary<string, string>? Sections);
 
-    public sealed record TriageStateDto(string Status, DateTimeOffset? SubmittedAt, DateTimeOffset? ExpectedBy, bool SuggestionsReady, bool Crisis = false, string? Script = null);
+    /// <summary><paramref name="Referrals"/> lists the referral codes when a supervisor closed the case without matching (S03).</summary>
+    public sealed record TriageStateDto(string Status, DateTimeOffset? SubmittedAt, DateTimeOffset? ExpectedBy, bool SuggestionsReady, bool Crisis = false, string? Script = null, IReadOnlyList<string>? Referrals = null);
 
     public sealed record AddendumRequest(string? Text);
 
@@ -57,8 +58,12 @@ public static class IntakeEndpoints
 
     public sealed record ScreeningSubmit(List<bool>? Answers);
 
-    /// <summary>Stored (encrypted) summary: section text plus whether the patient changed it.</summary>
-    public sealed record StoredSummary(Dictionary<string, SectionDto> Sections);
+    /// <summary>
+    /// Stored (encrypted) summary: section text plus whether the patient changed it. For the therapist only (S02):
+    /// the source messages of each section, the AI's hypotheses to explore, and the AI's wording of any section the
+    /// patient corrected. The patient endpoints return <see cref="Sections"/> alone.
+    /// </summary>
+    public sealed record StoredSummary(Dictionary<string, SectionDto> Sections, Dictionary<string, List<Guid>>? Sources = null, string? Hypotheses = null, Dictionary<string, string>? AiDraft = null);
 
     public static IEndpointRouteBuilder MapIntakeEndpoints(this IEndpointRouteBuilder app)
     {
@@ -243,26 +248,44 @@ public static class IntakeEndpoints
     {
         var intake = await FindAsync(p, id, ct).ConfigureAwait(false);
         await p.EnsureNotLockedAsync(ct).ConfigureAwait(false);
-        var history = await HistoryAsync(p, intake.Id, ct).ConfigureAwait(false);
-        var transcript = string.Join("\n", history.Select(t => (t.Role == ChatRole.User ? "Patient: " : "Assistant: ") + t.Text));
+        var turns = await TranscriptAsync(p.Db, p.DecryptAsync, intake.Id, ct).ConfigureAwait(false);
+        var transcript = EvidenceLinker.NumberedTranscript(turns);
         var sections = SummarySections.ToDictionary(s => s, _ => new SectionDto(string.Empty, false));
+        var sources = new Dictionary<string, List<Guid>>(StringComparer.Ordinal);
+        string? hypotheses = null;
         var byAi = false;
         // In form mode the assistant was down: the patient writes the sections on P05.
         if (!intake.FormMode && await p.HasConsentAsync(ConsentCatalog.Ai, ct).ConfigureAwait(false) && transcript.Length > 0)
         {
-            var response = await ai.AskAsync(new AiRequest((await p.AccountAsync(ct).ConfigureAwait(false)).PseudonymId, "intake-summary", p.Language, Truncate(transcript, 15000), [], await p.KnownIdentifiersAsync(ct).ConfigureAwait(false)), ct).ConfigureAwait(false);
+            var pseudonym = (await p.AccountAsync(ct).ConfigureAwait(false)).PseudonymId;
+            var known = await p.KnownIdentifiersAsync(ct).ConfigureAwait(false);
+            var response = await ai.AskAsync(new AiRequest(pseudonym, "intake-summary", p.Language, Truncate(transcript, 15000), [], known), ct).ConfigureAwait(false);
             var parts = response.IsFallback ? [] : response.Text.Split("\n---", StringSplitOptions.TrimEntries).Select(s => s.Trim('-', ' ', '\n', '\r')).Where(s => s.Length > 0).ToList();
             if (parts.Count == 4)
             {
-                sections["concern"] = new SectionDto(parts[0], false);
-                sections["goals"] = new SectionDto(parts[1], false);
-                sections["supports"] = new SectionDto(parts[2], false);
-                sections["priorCare"] = new SectionDto(parts[3], false);
+                string[] keys = ["concern", "goals", "supports", "priorCare"];
+                for (var i = 0; i < keys.Length; i++)
+                {
+                    // The citation is for the therapist; the patient reads the paragraph without it.
+                    var (text, cited) = EvidenceLinker.SplitCitation(parts[i]);
+                    sections[keys[i]] = new SectionDto(text, false);
+                    sources[keys[i]] = EvidenceLinker.Resolve(cited, turns);
+                }
+
                 byAi = true;
+
+                // Hypotheses to explore, for the therapist only and never shown to the patient (S02).
+                var draft = await ai.AskAsync(new AiRequest(pseudonym, "intake-hypotheses", p.Language, Truncate(transcript, 15000), [], known), ct).ConfigureAwait(false);
+                if (!draft.IsFallback)
+                {
+                    var (text, cited) = EvidenceLinker.SplitCitation(draft.Text);
+                    hypotheses = text;
+                    sources["hypotheses"] = EvidenceLinker.Resolve(cited, turns);
+                }
             }
         }
 
-        intake.Complete(await p.EncryptJsonAsync(Fields.IntakeSummary, new StoredSummary(sections), ct).ConfigureAwait(false), byAi, clock);
+        intake.Complete(await p.EncryptJsonAsync(Fields.IntakeSummary, new StoredSummary(sections, sources, hypotheses), ct).ConfigureAwait(false), byAi, clock);
         audit.Append("intake.summary_generated", "IntakeSession", intake.Id.ToString(), (await p.AccountAsync(ct).ConfigureAwait(false)).PseudonymId, byAi ? "ai" : "manual");
         await p.Db.SaveChangesAsync(ct).ConfigureAwait(false);
         return TypedResults.Ok(new SummaryDto(intake.Id, sections, byAi));
@@ -294,11 +317,19 @@ public static class IntakeEndpoints
             verdict = await p.GateAsync(newText, null, "summary", ct).ConfigureAwait(false);
         }
 
+        // The therapist sees what the AI wrote before the patient corrected it (S02 "patient corrections").
+        var draftText = stored.AiDraft is null ? new Dictionary<string, string>(StringComparer.Ordinal) : new Dictionary<string, string>(stored.AiDraft, StringComparer.Ordinal);
         foreach (var (key, value) in changes)
         {
+            if (stored.Sections.TryGetValue(key, out var before) && !before.EditedByPatient && !draftText.ContainsKey(key) && before.Text.Length > 0)
+            {
+                draftText[key] = before.Text;
+            }
+
             stored.Sections[key] = new SectionDto(value.Trim(), true);
         }
 
+        stored = stored with { AiDraft = draftText };
         intake.UpdateSummary(await p.EncryptJsonAsync(Fields.IntakeSummary, stored, ct).ConfigureAwait(false), clock);
         await p.Db.SaveChangesAsync(ct).ConfigureAwait(false);
         return TypedResults.Ok(new SummaryDto(intake.Id, stored.Sections, intake.SummaryByAi, verdict?.Crisis ?? false, verdict is { Crisis: true } ? verdict.Script : null));
@@ -332,8 +363,9 @@ public static class IntakeEndpoints
             return new TriageStateDto("none", null, null, false);
         }
 
-        var ready = triage.Status != TriageStatus.Pending && await p.Db.MatchSuggestions.AnyAsync(m => m.PatientId == p.PatientId && !m.Dismissed, ct).ConfigureAwait(false);
-        return new TriageStateDto(MeEndpoints.TriageStatusCode(triage.Status), triage.SubmittedAtUtc, triage.DueAtUtc, ready);
+        var ready = triage.Status is TriageStatus.Reviewed or TriageStatus.Matched && await p.Db.MatchSuggestions.AnyAsync(m => m.PatientId == p.PatientId && !m.Dismissed, ct).ConfigureAwait(false);
+        var referrals = triage.Status == TriageStatus.Closed ? (triage.Referrals ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries) : null;
+        return new TriageStateDto(MeEndpoints.TriageStatusCode(triage.Status), triage.SubmittedAtUtc, triage.DueAtUtc, ready, Referrals: referrals);
     }
 
     internal static async Task<Ok<TriageStateDto>> AddendumAsync(AddendumRequest request, PatientContext p, IAuditLog audit, CancellationToken ct)
@@ -386,6 +418,19 @@ public static class IntakeEndpoints
         foreach (var m in rows.Concat(tracked).OrderBy(m => m.CreatedAtUtc))
         {
             turns.Add(new ChatTurn(m.FromPatient ? ChatRole.User : ChatRole.Assistant, await p.DecryptAsync(Fields.IntakeMessage, m.TextCipher, ct).ConfigureAwait(false)));
+        }
+
+        return turns;
+    }
+
+    /// <summary>Every turn of an intake in order, numbered from 1, decrypted with the patient's key.</summary>
+    internal static async Task<List<TranscriptTurn>> TranscriptAsync(Tamaneen.Infrastructure.Persistence.TamaneenDbContext db, Func<string, byte[], CancellationToken, Task<string>> decrypt, Guid intakeId, CancellationToken ct)
+    {
+        var rows = await db.IntakeMessages.AsNoTracking().Where(m => m.IntakeId == intakeId).OrderBy(m => m.CreatedAtUtc).ToListAsync(ct).ConfigureAwait(false);
+        var turns = new List<TranscriptTurn>(rows.Count);
+        for (var i = 0; i < rows.Count; i++)
+        {
+            turns.Add(new TranscriptTurn(rows[i].Id, i + 1, rows[i].FromPatient, await decrypt(Fields.IntakeMessage, rows[i].TextCipher, ct).ConfigureAwait(false)));
         }
 
         return turns;

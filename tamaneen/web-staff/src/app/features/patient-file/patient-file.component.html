@@ -1,0 +1,243 @@
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" class="progress" [attr.aria-label]="'common.loading' | translate" />
+}
+
+@if (notFound()) {
+  <section class="tm-card" data-testid="not-found">
+    <h1 class="tm-card-title">{{ 'file.notFound' | translate }}</h1>
+    <p class="tm-muted">{{ 'file.notFoundHint' | translate }}</p>
+    <a mat-stroked-button routerLink="/patients">{{ 'file.back' | translate }}</a>
+  </section>
+}
+
+<tm-problem-message [error]="loadError()" />
+
+@if (file(); as f) {
+  <header class="head">
+    <div class="who">
+      <a routerLink="/patients" class="back">{{ 'file.back' | translate }}</a>
+      <div class="title-row">
+        <h1 class="title" dir="ltr" data-testid="file-pseudonym">{{ f.pseudonymId }}</h1>
+        <tm-risk-tag [level]="f.riskLevel" />
+        @if (f.firstSessionAt) {
+          <span class="tm-muted small">{{ 'file.firstSession' | translate: { time: (f.firstSessionAt | tmDate: 'dayTime' : language.language()) } }}</span>
+        }
+      </div>
+      <p class="tm-muted small audit">{{ 'file.audited' | translate }}</p>
+    </div>
+    <div class="head-actions">
+      <button mat-stroked-button type="button" (click)="raiseRisk()" [disabled]="f.riskLevel >= 4" data-testid="raise-risk">{{ 'file.raiseRisk' | translate }}</button>
+      <button mat-stroked-button type="button" class="tm-danger-outline" (click)="manualCrisis()" data-testid="manual-crisis">{{ 'file.manualCrisis' | translate }}</button>
+    </div>
+  </header>
+
+  <section class="scores" [attr.aria-label]="'file.scores.region' | translate">
+    @for (score of [f.phq9, f.gad7]; track $index) {
+      @if (score) {
+        <div class="tm-card score" [attr.data-testid]="'score-' + score.instrument">
+          <span class="tm-muted label">{{ 'file.scores.auto' | translate: { name: score.instrument } }}</span>
+          <span class="value">
+            {{ score.total ?? ('common.none' | translate) }}
+            @if (score.severity) { <span class="severity">{{ 'file.severity.' + score.severity | translate }}</span> }
+          </span>
+          <button mat-button type="button" class="link" (click)="selectTab('scores')">{{ 'file.scores.details' | translate }}</button>
+        </div>
+      }
+    }
+    <div class="tm-card score" data-testid="score-cssrs">
+      <span class="tm-muted label">{{ 'file.scores.cssrs' | translate }}</span>
+      <span class="value">
+        @if (f.cssrs; as c) {
+          {{ (c.positive ? 'file.cssrs.positive' : 'file.cssrs.negative') | translate }}
+        } @else {
+          <span class="tm-muted">{{ 'file.cssrs.missing' | translate }}</span>
+        }
+      </span>
+      @if (f.phq9?.item9 !== null && f.phq9?.item9 !== undefined) {
+        <span class="tm-muted small" data-testid="item9">{{ 'file.scores.item9' | translate: { value: f.phq9!.item9 } }}</span>
+      }
+    </div>
+  </section>
+
+  <nav class="tabs" role="tablist" [attr.aria-label]="'file.tabs.label' | translate">
+    @for (t of tabs; track t) {
+      <button type="button" role="tab" class="tab" [class.active]="tab() === t" [attr.aria-selected]="tab() === t" (click)="selectTab(t)" [attr.data-testid]="'tab-' + t">
+        {{ 'file.tabs.' + t | translate }}
+      </button>
+    }
+  </nav>
+
+  @if (conflict()) {
+    <div class="tm-problem" role="alert" data-testid="conflict">{{ 'file.conflict' | translate }}</div>
+  }
+  <tm-problem-message [error]="actionError()" />
+
+  @switch (tab()) {
+    @case ('summary') {
+      <div class="columns" role="tabpanel">
+        <section class="tm-card panel" aria-labelledby="summary-title">
+          <div class="panel-head">
+            <h2 class="tm-card-title" id="summary-title">{{ 'file.summary.title' | translate }}</h2>
+            @if (f.approval.approved) {
+              <span class="tm-tag tm-risk-1" data-testid="approved">
+                {{ 'file.summary.approvedBy' | translate: { name: f.approval.approvedBy ?? '', date: (f.approval.approvedAt | tmDate: 'longDate' : language.language()) } }}
+              </span>
+            } @else if (f.generatedByAi) {
+              <span class="tm-tag draft">{{ 'file.summary.draft' | translate }}</span>
+            }
+          </div>
+
+          @if (!f.generatedByAi && f.path === 'intake') {
+            <p class="tm-muted" data-testid="manual-summary">{{ 'file.summary.manual' | translate }}</p>
+          }
+          @if (f.path === 'direct') {
+            <p class="tm-muted">{{ 'file.summary.direct' | translate }}</p>
+          }
+
+          @for (s of statements(); track s.key) {
+            <article class="statement" [class.selected]="selected() === s.key" [class.hypothesis]="s.hypothesis" [attr.data-testid]="'statement-' + s.key">
+              <h3 class="statement-label">{{ 'file.statement.' + s.key | translate }}</h3>
+              @if (editing() === s.key) {
+                <mat-form-field appearance="outline" class="tm-full">
+                  <mat-label>{{ 'file.statement.editLabel' | translate }}</mat-label>
+                  <textarea matInput rows="3" maxlength="2000" [(ngModel)]="draft" data-testid="edit-text"></textarea>
+                </mat-form-field>
+                <div class="row">
+                  <button mat-flat-button type="button" (click)="saveEdit(s.key)" data-testid="edit-save">{{ 'file.statement.keep' | translate }}</button>
+                  <button mat-button type="button" (click)="cancelEdit()">{{ 'common.cancel' | translate }}</button>
+                </div>
+              } @else {
+                <p class="statement-text">
+                  {{ statementText(s) }}
+                  @if (s.editedByPatient) { <span class="tm-tag mini corrected" data-testid="corrected">{{ 'file.statement.correctedByPatient' | translate }}</span> }
+                  @if (isEdited(s)) { <span class="tm-tag mini" data-testid="edited">{{ 'file.statement.editedByTherapist' | translate }}</span> }
+                </p>
+                <div class="row">
+                  <button mat-button type="button" class="link" (click)="showSources(s)" [attr.aria-pressed]="selected() === s.key" data-testid="sources">
+                    {{ 'file.statement.sources' | translate: { count: s.sourceCount } }}
+                  </button>
+                  @if (canEdit() && !s.hypothesis) {
+                    <button mat-button type="button" class="link" (click)="startEdit(s)" data-testid="edit">{{ 'file.statement.edit' | translate }}</button>
+                  }
+                  @if (canEdit()) {
+                    <button mat-button type="button" class="link muted" (click)="dismiss(s)" data-testid="dismiss">{{ 'file.statement.dismiss' | translate }}</button>
+                  }
+                </div>
+              }
+            </article>
+          } @empty {
+            <p class="tm-muted">{{ 'file.summary.empty' | translate }}</p>
+          }
+
+          <div class="approve-row">
+            @if (canEdit()) {
+              <button mat-flat-button type="button" (click)="approve()" [disabled]="approving()" data-testid="approve">{{ 'file.approve' | translate }}</button>
+            }
+            @if (isTherapist()) {
+              <span class="tm-muted small" id="rating-label">{{ 'file.rating.label' | translate }}</span>
+              <div role="group" aria-labelledby="rating-label" class="rating" data-testid="rating">
+                @for (n of [1, 2, 3, 4, 5]; track n) {
+                  <button mat-stroked-button type="button" class="rate" [class.on]="f.feedback.rating === n" [attr.aria-pressed]="f.feedback.rating === n" (click)="rate(n)" [attr.data-testid]="'rate-' + n">{{ n }}</button>
+                }
+              </div>
+            }
+          </div>
+        </section>
+
+        <ng-container *ngTemplateOutlet="transcriptPanel" />
+      </div>
+    }
+    @case ('transcript') {
+      <div role="tabpanel"><ng-container *ngTemplateOutlet="transcriptPanel" /></div>
+    }
+    @case ('scores') {
+      <div class="columns" role="tabpanel">
+        @for (score of [f.phq9, f.gad7]; track $index) {
+          @if (score) {
+            <section class="tm-card panel" [attr.data-testid]="'items-' + score.instrument">
+              <h2 class="tm-card-title">{{ score.instrument }} · {{ score.total ?? ('common.none' | translate) }}</h2>
+              <p class="tm-muted small">{{ 'file.scores.version' | translate: { version: score.version } }}</p>
+              <ol class="items">
+                @for (item of score.items; track item.item) {
+                  <li [class.flag]="score.instrument === 'PHQ-9' && item.item === 9 && (item.value ?? 0) > 0">
+                    <span>{{ item.text }}</span>
+                    <strong>{{ item.value ?? ('file.scores.skipped' | translate) }}</strong>
+                  </li>
+                }
+              </ol>
+            </section>
+          }
+        }
+        @if (!f.phq9 && !f.gad7) {
+          <p class="tm-muted">{{ 'file.scores.none' | translate }}</p>
+        }
+      </div>
+    }
+    @case ('cssrs') {
+      <section class="tm-card panel" role="tabpanel" data-testid="cssrs-panel">
+        <h2 class="tm-card-title">{{ 'file.scores.cssrs' | translate }}</h2>
+        @if (f.cssrs; as c) {
+          <p>
+            <span class="tm-tag" [class.tm-risk-4]="c.positive" [class.tm-risk-1]="!c.positive">{{ (c.positive ? 'file.cssrs.positive' : 'file.cssrs.negative') | translate }}</span>
+            <span class="tm-muted small"> · {{ 'file.cssrs.meta' | translate: { version: c.version, date: (c.completedAt | tmDate: 'longDate' : language.language()) } }}</span>
+          </p>
+          <ol class="items">
+            @for (item of c.items; track item.index) {
+              <li [class.flag]="item.answer === true">
+                <span>{{ item.text }}</span>
+                <strong>{{ (item.answer === null ? 'file.scores.skipped' : item.answer ? 'file.cssrs.yes' : 'file.cssrs.no') | translate }}</strong>
+              </li>
+            }
+          </ol>
+        } @else {
+          <p class="tm-muted">{{ 'file.cssrs.missing' | translate }}</p>
+        }
+      </section>
+    }
+    @case ('corrections') {
+      <section class="tm-card panel" role="tabpanel" data-testid="corrections-panel">
+        <h2 class="tm-card-title">{{ 'file.corrections.title' | translate }}</h2>
+        @for (c of f.corrections; track c.key) {
+          <article class="correction">
+            <h3 class="statement-label">{{ 'file.statement.' + c.key | translate }}</h3>
+            @if (c.aiText) {
+              <p class="was"><span class="tm-muted small">{{ 'file.corrections.ai' | translate }}</span> {{ c.aiText }}</p>
+            }
+            <p><span class="tm-muted small">{{ 'file.corrections.patient' | translate }}</span> {{ c.patientText }}</p>
+          </article>
+        } @empty {
+          <p class="tm-muted">{{ 'file.corrections.none' | translate }}</p>
+        }
+        @if (f.addenda.length) {
+          <h3 class="statement-label">{{ 'file.corrections.addenda' | translate }}</h3>
+          <ul>
+            @for (a of f.addenda; track $index) { <li>{{ a }}</li> }
+          </ul>
+        }
+      </section>
+    }
+  }
+
+  <ng-template #transcriptPanel>
+    <section class="tm-card panel transcript" aria-labelledby="chat-title" data-testid="transcript">
+      <div class="panel-head">
+        <h2 class="tm-card-title" id="chat-title">{{ 'file.transcript.title' | translate }}</h2>
+        <span class="tm-muted small">{{ 'file.transcript.retention' | translate }}</span>
+      </div>
+      @if (sourceRemoved()) {
+        <p class="tm-problem" data-testid="source-removed">{{ 'file.transcript.sourceRemoved' | translate }}</p>
+      }
+      @for (m of f.transcript; track m.id) {
+        <div class="msg" [id]="'turn-' + m.id" [class.patient]="m.role === 'patient'" [class.source]="isSource(m.id)" [attr.data-testid]="isSource(m.id) ? 'source-turn' : 'turn'">
+          <div class="msg-meta">
+            {{ 'file.transcript.' + m.role | translate }} · {{ 'file.transcript.turn' | translate: { n: m.turn } }}
+            @if (isSource(m.id)) { · <strong>{{ 'file.transcript.source' | translate }}</strong> }
+          </div>
+          {{ m.text }}
+        </div>
+      } @empty {
+        <p class="tm-muted">{{ (f.transcriptRemoved ? 'file.transcript.removed' : 'file.transcript.none') | translate }}</p>
+      }
+    </section>
+  </ng-template>
+}

@@ -179,6 +179,8 @@ public static class MeEndpoints
     {
         TriageStatus.Pending => "pending",
         TriageStatus.Reviewed => "reviewed",
+        TriageStatus.Escalated => "escalated",
+        TriageStatus.Closed => "closed",
         _ => "matched",
     };
 

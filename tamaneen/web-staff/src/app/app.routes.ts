@@ -1,6 +1,6 @@
 import { Routes, type UrlMatchResult, type UrlSegment } from '@angular/router';
 import { inject } from '@angular/core';
-import { authGuard, crisisAccessGuard, signedOutGuard, therapistGuard } from './core/auth/auth.guard';
+import { authGuard, clinicalGuard, crisisAccessGuard, signedOutGuard, therapistGuard, triageGuard } from './core/auth/auth.guard';
 import { AuthService } from './core/auth/auth.service';
 import { SessionService } from './core/session/session.service';
 import { ShellComponent } from './layout/shell.component';
@@ -31,6 +31,10 @@ export const routes: Routes = [
       { path: 'dashboard', canMatch: [therapistGuard], loadComponent: () => import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent), title: 'Tamaneen' },
       { matcher: crisisMatcher, canMatch: [crisisAccessGuard], loadComponent: () => import('./features/crisis/crisis-console.component').then((m) => m.CrisisConsoleComponent), title: 'Tamaneen' },
       { path: 'forbidden', loadComponent: () => import('./features/forbidden/forbidden.component').then((m) => m.ForbiddenComponent), title: 'Tamaneen' },
+      { path: 'patients', canMatch: [clinicalGuard], loadComponent: () => import('./features/patient-file/patients.component').then((m) => m.PatientsComponent), title: 'Tamaneen' },
+      { path: 'patients/:id', canMatch: [clinicalGuard], loadComponent: () => import('./features/patient-file/patient-file.component').then((m) => m.PatientFileComponent), title: 'Tamaneen' },
+      { path: 'triage', canMatch: [triageGuard], loadComponent: () => import('./features/triage/triage-review.component').then((m) => m.TriageReviewComponent), title: 'Tamaneen' },
+      { path: 'triage/:id', canMatch: [triageGuard], loadComponent: () => import('./features/triage/triage-review.component').then((m) => m.TriageReviewComponent), title: 'Tamaneen' },
       { path: 'home', loadComponent: () => import('./features/home/home.component').then((m) => m.HomeComponent), title: 'Tamaneen' },
       { path: '**', redirectTo: '' },
     ],

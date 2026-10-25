@@ -231,11 +231,34 @@ internal sealed class TriageCaseConfiguration : IEntityTypeConfiguration<TriageC
         b.Property(x => x.Path).HasMaxLength(8).IsUnicode(false).IsRequired();
         b.Property(x => x.Status).HasConversion<byte>();
         b.Property(x => x.RiskLevel).HasConversion<byte>();
+        b.Property(x => x.RuleRiskLevel).HasConversion<byte>();
+        b.Property(x => x.PendingRiskLevel).HasConversion<byte?>();
+        b.Property(x => x.Referrals).HasMaxLength(200).IsUnicode(false);
+        b.Property(x => x.RowVersion).IsRowVersion();
         b.Property(x => x.AddendaCipher).HasMaxLength(16000);
+        b.Ignore(x => x.IsOpen);
         b.HasIndex(x => new { x.Status, x.DueAtUtc });
         b.HasIndex(x => x.PatientId);
         b.HasOne<UserAccount>().WithMany().HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<IntakeSession>().WithMany().HasForeignKey(x => x.IntakeId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+internal sealed class FileReviewConfiguration : IEntityTypeConfiguration<FileReview>
+{
+    public void Configure(EntityTypeBuilder<FileReview> b)
+    {
+        b.ToTable("FileReviews", Schemas.Clinical);
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).ValueGeneratedNever();
+        b.Property(x => x.EditsCipher).HasMaxLength(16000);
+        b.Property(x => x.DismissedKeys).HasMaxLength(400).IsUnicode(false).IsRequired();
+        b.Property(x => x.RatingCommentCipher).HasMaxLength(2000);
+        b.Ignore(x => x.Dismissed);
+        b.HasIndex(x => x.TriageCaseId).IsUnique();
+        b.HasIndex(x => x.PatientId);
+        b.HasOne<UserAccount>().WithMany().HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<TriageCase>().WithMany().HasForeignKey(x => x.TriageCaseId).OnDelete(DeleteBehavior.Cascade);
     }
 }
 

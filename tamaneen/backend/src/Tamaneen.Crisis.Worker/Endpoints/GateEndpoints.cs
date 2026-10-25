@@ -14,9 +14,10 @@ public static class GateEndpoints
     public const string ServiceKeyHeader = "X-Tamaneen-Service-Key";
     public const int MaxTextLength = 8000;
 
-    private static readonly HashSet<string> Sources = new(StringComparer.Ordinal) { "intake", "chat", "journal", "survey", "questionnaire", "help_now", "screening", "summary", "triage", "mood", "homework", "safety_plan" };
+    private static readonly HashSet<string> Sources = new(StringComparer.Ordinal) { "intake", "chat", "journal", "survey", "questionnaire", "help_now", "screening", "summary", "triage", "mood", "homework", "safety_plan", CrisisGate.StaffSource };
 
-    public sealed record EvaluateRequest(Guid PatientId, string? Language, string? Text, AnswersDto? Answers, string? Source);
+    /// <summary><paramref name="Level"/> is read only for source "staff": the level a clinician chose for a manual alert (3 or 4).</summary>
+    public sealed record EvaluateRequest(Guid PatientId, string? Language, string? Text, AnswersDto? Answers, string? Source, int? Level = null);
 
     public sealed record AnswersDto(string Instrument, Dictionary<int, int> Scores);
 
@@ -53,7 +54,7 @@ public static class GateEndpoints
         var gate = services.GetRequiredService<CrisisGate>();
         var answers = request.Answers is null ? null : new QuestionnaireAnswers(request.Answers.Instrument, request.Answers.Scores);
         var language = SupportedLanguages.Normalize(request.Language);
-        var result = await gate.EvaluateAsync(new GateRequest(request.PatientId, language, request.Text, answers, request.Source!), cancellationToken).ConfigureAwait(false);
+        var result = await gate.EvaluateAsync(new GateRequest(request.PatientId, language, request.Text, answers, request.Source!, request.Source == CrisisGate.StaffSource ? (RiskLevel?)request.Level : null), cancellationToken).ConfigureAwait(false);
         return TypedResults.Ok(new EvaluateResponse(
             result.Decision == GateDecision.Pass ? "pass" : "blocked",
             (int)result.Level,
@@ -82,7 +83,12 @@ public static class GateEndpoints
             errors["text"] = new[] { $"at most {MaxTextLength} characters" };
         }
 
-        if (string.IsNullOrWhiteSpace(request.Text) && request.Answers is null && request.Source != "help_now")
+        if (request.Source == CrisisGate.StaffSource && request.Level is not ((int)RiskLevel.High or (int)RiskLevel.Critical))
+        {
+            errors["level"] = new[] { "3 or 4" };
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Text) && request.Answers is null && request.Source is not ("help_now" or CrisisGate.StaffSource))
         {
             errors["text"] = new[] { "text or answers is required" };
         }

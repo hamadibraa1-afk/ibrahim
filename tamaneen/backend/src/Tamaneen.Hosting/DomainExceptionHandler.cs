@@ -55,6 +55,17 @@ public sealed partial class DomainExceptionHandler<TResource> : IExceptionHandle
         [ErrorCodes.DeletionBlockedByCrisis] = StatusCodes.Status409Conflict,
         [ErrorCodes.CrisisServiceUnavailable] = StatusCodes.Status503ServiceUnavailable,
         [ErrorCodes.Maintenance] = StatusCodes.Status503ServiceUnavailable,
+        [ErrorCodes.TriageClaimedByOther] = StatusCodes.Status409Conflict,
+        [ErrorCodes.TriageClaimRequired] = StatusCodes.Status409Conflict,
+        [ErrorCodes.TriageLoweringNeedsDecision] = StatusCodes.Status409Conflict,
+        [ErrorCodes.TriageCoSignPending] = StatusCodes.Status409Conflict,
+        [ErrorCodes.TriageNoCoSignPending] = StatusCodes.Status409Conflict,
+        [ErrorCodes.TriageCoSignNotAllowed] = StatusCodes.Status403Forbidden,
+        [ErrorCodes.NoTherapistAvailable] = StatusCodes.Status409Conflict,
+        [ErrorCodes.FileVersionRequired] = StatusCodes.Status428PreconditionRequired,
+        [ErrorCodes.FileVersionChanged] = StatusCodes.Status412PreconditionFailed,
+        [ErrorCodes.FileApproved] = StatusCodes.Status409Conflict,
+        [ErrorCodes.RiskNotHigher] = StatusCodes.Status400BadRequest,
     };
 
     private readonly IProblemDetailsService _problems;
