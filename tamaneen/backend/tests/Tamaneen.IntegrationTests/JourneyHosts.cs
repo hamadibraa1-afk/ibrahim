@@ -143,9 +143,16 @@ public sealed partial class JourneyHosts : IAsyncDisposable
 
             var arabic = request.System.Contains("in Arabic only", StringComparison.Ordinal) || request.System.Contains("Write in Arabic only", StringComparison.Ordinal);
             var summary = request.System.Contains("exactly four short paragraphs", StringComparison.Ordinal);
+            if (request.System.Contains("hypotheses to explore", StringComparison.Ordinal))
+            {
+                var hypotheses = arabic ? "يصف المريض ضغطًا مرتبطًا بالعمل مع صعوبة في بدء النوم. [2]" : "The patient describes work-related pressure with trouble falling asleep. [2]";
+                return Task.FromResult(new LanguageModelReply(hypotheses, LanguageModelStop.Completed, ModelId, 100, 20));
+            }
+
+            // The Arabic summary cites its sources for the first paragraph only; the others are linked by shared words.
             var text = (summary, arabic) switch
             {
-                (true, true) => "تشعر بضغط كبير في العمل منذ ثلاثة أشهر، ويصعب عليك النوم.\n---\nأن تتعلم طرقًا لتهدئة نفسك قبل النوم.\n---\nالحديث مع أختك والمشي في المساء.\n---\nلم تراجع مختصًا نفسيًا من قبل.",
+                (true, true) => "تشعر بضغط كبير في العمل منذ ثلاثة أشهر، ويصعب عليك النوم. [2, 4]\n---\nأن تتعلم طرقًا لتهدئة نفسك قبل النوم.\n---\nالحديث مع أختك والمشي في المساء.\n---\nلم تراجع مختصًا نفسيًا من قبل.",
                 (true, false) => "You have felt a lot of pressure at work for about three months, and sleep is hard.\n---\nTo learn ways to calm yourself before bed.\n---\nTalking with your sister and walking in the evening.\n---\nYou have not seen a mental-health professional before.",
                 (false, true) => "شكرًا لأنك شاركتني هذا. كيف يؤثر ذلك على نومك هذه الأيام؟",
                 _ => "Thank you for sharing that. How has it been affecting your sleep lately?",

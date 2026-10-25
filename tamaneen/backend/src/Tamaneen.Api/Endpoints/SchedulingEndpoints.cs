@@ -72,7 +72,7 @@ public static class SchedulingEndpoints
     {
         var triage = await p.Db.TriageCases.AsNoTracking().Where(t => t.PatientId == p.PatientId).OrderByDescending(t => t.SubmittedAtUtc).FirstOrDefaultAsync(ct).ConfigureAwait(false);
         var suggestions = await p.Db.MatchSuggestions.AsNoTracking().Where(m => m.PatientId == p.PatientId && !m.Dismissed).OrderBy(m => m.Rank).ToListAsync(ct).ConfigureAwait(false);
-        if (triage is null || triage.Status == TriageStatus.Pending || suggestions.Count == 0)
+        if (triage is null || triage.Status is not (TriageStatus.Reviewed or TriageStatus.Matched) || suggestions.Count == 0)
         {
             return new MatchListDto("pending", []);
         }
@@ -289,7 +289,8 @@ public static class SchedulingEndpoints
     {
         await p.EnsureNotLockedAsync(ct).ConfigureAwait(false);
         var profile = await p.ProfileAsync(ct).ConfigureAwait(false);
-        var reviewed = await p.Db.TriageCases.AnyAsync(t => t.PatientId == p.PatientId && t.Status != TriageStatus.Pending, ct).ConfigureAwait(false);
+        // Escalated or closed-with-referral cases do not open booking.
+        var reviewed = await p.Db.TriageCases.AnyAsync(t => t.PatientId == p.PatientId && (t.Status == TriageStatus.Reviewed || t.Status == TriageStatus.Matched), ct).ConfigureAwait(false);
         var screened = profile.CarePath == "direct" && await p.Db.Screenings.AnyAsync(s => s.PatientId == p.PatientId, ct).ConfigureAwait(false);
         var hasBooked = await p.Db.Appointments.AnyAsync(a => a.PatientId == p.PatientId, ct).ConfigureAwait(false);
         if (!reviewed && !screened && !hasBooked)

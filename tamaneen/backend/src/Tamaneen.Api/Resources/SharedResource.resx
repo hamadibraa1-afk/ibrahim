@@ -77,4 +77,16 @@
   <data name="calendar.description" xml:space="preserve"><value>The session link appears on the appointment page ten minutes before.</value></data>
   <data name="validation.required" xml:space="preserve"><value>This field is required.</value></data>
   <data name="validation.invalid" xml:space="preserve"><value>This value is not valid.</value></data>
+  <data name="error.triage.claimed" xml:space="preserve"><value>Another supervisor is reviewing this case right now. You can read it, and decide once their claim ends.</value></data>
+  <data name="error.triage.claim_required" xml:space="preserve"><value>Claim the case before you decide. Your claim may have ended.</value></data>
+  <data name="error.triage.below_crisis_floor" xml:space="preserve"><value>The level cannot go below {0} while the patient has an open or recent crisis.</value></data>
+  <data name="error.triage.lowering_needs_decision" xml:space="preserve"><value>Lowering the level needs a decision with a reason.</value></data>
+  <data name="error.triage.cosign_pending" xml:space="preserve"><value>A lower level is waiting for the clinical lead's co-sign. Decide after the co-sign.</value></data>
+  <data name="error.triage.no_cosign_pending" xml:space="preserve"><value>Nothing is waiting for a co-sign on this case.</value></data>
+  <data name="error.triage.cosign_not_allowed" xml:space="preserve"><value>Only the clinical lead can co-sign, and not their own request.</value></data>
+  <data name="error.triage.no_therapist" xml:space="preserve"><value>No approved therapist has free capacity right now. Close with a referral or keep the case in the queue.</value></data>
+  <data name="error.file.version_required" xml:space="preserve"><value>Reload the file before approving it.</value></data>
+  <data name="error.file.version_changed" xml:space="preserve"><value>The file changed since you opened it. Review the latest version, then approve again.</value></data>
+  <data name="error.file.approved" xml:space="preserve"><value>This file is already approved and can no longer be changed.</value></data>
+  <data name="error.risk.not_higher" xml:space="preserve"><value>Choose a level higher than the current one. Lowering goes through a supervisor.</value></data>
 </root>

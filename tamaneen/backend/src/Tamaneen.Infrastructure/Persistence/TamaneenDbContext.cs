@@ -76,6 +76,8 @@ public sealed class TamaneenDbContext : DbContext
 
     public DbSet<Screening> Screenings => Set<Screening>();
 
+    public DbSet<FileReview> FileReviews => Set<FileReview>();
+
     public DbSet<MoodEntry> MoodEntries => Set<MoodEntry>();
 
     public DbSet<HomeworkAssignment> HomeworkAssignments => Set<HomeworkAssignment>();

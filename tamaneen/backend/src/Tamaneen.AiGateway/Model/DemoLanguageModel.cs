@@ -38,6 +38,14 @@ public sealed class DemoLanguageModel : ILanguageModel
         {
             text = Summary(request, arabic);
         }
+        else if (request.System.Contains("hypotheses to explore", StringComparison.Ordinal))
+        {
+            var (_, turn) = FirstPatientLine(request);
+            var cite = turn is null ? string.Empty : $" [{turn}]";
+            text = arabic
+                ? $"يصف المريض ضغطًا يؤثر على يومه، ويستحق استكشاف ما يزيده وما يخففه في الجلسة الأولى.{cite}"
+                : $"The patient describes pressure that affects their days; what makes it worse or better is worth exploring in the first session.{cite}";
+        }
         else if (request.System.Contains("intake assistant", StringComparison.Ordinal))
         {
             var asked = request.Messages.Count(m => m.Role == ChatRole.Assistant);
@@ -60,17 +68,33 @@ public sealed class DemoLanguageModel : ILanguageModel
         return Task.FromResult(new LanguageModelReply(text, LanguageModelStop.Completed, ModelId, 0, 0));
     }
 
-    private static string Summary(LanguageModelRequest request, bool arabic)
+    /// <summary>The first patient line of a numbered transcript ("[2] Patient: …") and its number.</summary>
+    private static (string Text, int? Turn) FirstPatientLine(LanguageModelRequest request)
     {
         var words = request.Messages.LastOrDefault(m => m.Role == ChatRole.User)?.Text ?? string.Empty;
-        var first = words.Split('\n', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim() ?? string.Empty;
+        foreach (var line in words.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var marker = line.IndexOf("] Patient: ", StringComparison.Ordinal);
+            if (line.StartsWith('[') && marker > 1 && int.TryParse(line[1..marker], System.Globalization.CultureInfo.InvariantCulture, out var turn))
+            {
+                return (line[(marker + "] Patient: ".Length)..].Trim(), turn);
+            }
+        }
+
+        return (words.Split('\n', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim() ?? string.Empty, null);
+    }
+
+    private static string Summary(LanguageModelRequest request, bool arabic)
+    {
+        var (first, turn) = FirstPatientLine(request);
         if (first.Length > 240)
         {
             first = first[..240];
         }
 
+        var cite = turn is null ? string.Empty : $" [{turn}]";
         return arabic
-            ? $"{(first.Length > 0 ? $"شاركتنا أنك تمر بما يلي: {first}" : "شاركتنا ما يضايقك في الفترة الأخيرة.")}\n---\nأن تجد طرقًا تساعدك على الشعور بتحسن.\n---\nما ذكرته من أشخاص وأنشطة تساعدك.\n---\nسيراجع المختص تجربتك السابقة معك في الجلسة الأولى."
-            : $"{(first.Length > 0 ? $"You told us you are going through this: {first}" : "You told us what has been troubling you lately.")}\n---\nTo find ways that help you feel better.\n---\nThe people and activities you mentioned that help you.\n---\nYour therapist will go over any past experience with you in the first session.";
+            ? $"{(first.Length > 0 ? $"شاركتنا أنك تمر بما يلي: {first}{cite}" : "شاركتنا ما يضايقك في الفترة الأخيرة.")}\n---\nأن تجد طرقًا تساعدك على الشعور بتحسن.\n---\nما ذكرته من أشخاص وأنشطة تساعدك.\n---\nسيراجع المختص تجربتك السابقة معك في الجلسة الأولى."
+            : $"{(first.Length > 0 ? $"You told us you are going through this: {first}{cite}" : "You told us what has been troubling you lately.")}\n---\nTo find ways that help you feel better.\n---\nThe people and activities you mentioned that help you.\n---\nYour therapist will go over any past experience with you in the first session.";
     }
 }

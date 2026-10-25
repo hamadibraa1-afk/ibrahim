@@ -336,6 +336,50 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                     b.ToTable("CareAssignments", "clinical");
                 });
 
+            modelBuilder.Entity("Tamaneen.Clinical.Intake.FileReview", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("DismissedKeys")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(400)");
+
+                    b.Property<byte[]>("EditsCipher")
+                        .HasMaxLength(16000)
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("RatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte?>("Rating")
+                        .HasColumnType("tinyint");
+
+                    b.Property<byte[]>("RatingCommentCipher")
+                        .HasMaxLength(2000)
+                        .HasColumnType("varbinary(2000)");
+
+                    b.Property<Guid>("TriageCaseId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PatientId");
+
+                    b.HasIndex("TriageCaseId")
+                        .IsUnique();
+
+                    b.ToTable("FileReviews", "clinical");
+                });
+
             modelBuilder.Entity("Tamaneen.Clinical.Intake.IntakeMessage", b =>
                 {
                     b.Property<Guid>("Id")
@@ -469,6 +513,12 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                         .HasMaxLength(16000)
                         .HasColumnType("varbinary(max)");
 
+                    b.Property<Guid?>("ClaimedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("ClaimedUntilUtc")
+                        .HasColumnType("datetimeoffset");
+
                     b.Property<bool?>("CssrsPositive")
                         .HasColumnType("bit");
 
@@ -490,8 +540,22 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("PatientId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<byte?>("PendingRiskLevel")
+                        .HasColumnType("tinyint");
+
+                    b.Property<DateTimeOffset?>("PendingRiskRequestedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("PendingRiskRequestedBy")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<int?>("Phq9")
                         .HasColumnType("int");
+
+                    b.Property<string>("Referrals")
+                        .HasMaxLength(200)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(200)");
 
                     b.Property<DateTimeOffset?>("ReviewedAtUtc")
                         .HasColumnType("datetimeoffset");
@@ -500,6 +564,15 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<byte>("RiskLevel")
+                        .HasColumnType("tinyint");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<byte>("RuleRiskLevel")
                         .HasColumnType("tinyint");
 
                     b.Property<byte>("Status")
@@ -1501,6 +1574,21 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("TherapistUserId")
                         .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Tamaneen.Clinical.Intake.FileReview", b =>
+                {
+                    b.HasOne("Tamaneen.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Tamaneen.Clinical.Intake.TriageCase", null)
+                        .WithMany()
+                        .HasForeignKey("TriageCaseId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 

@@ -81,4 +81,6 @@
   <data name="error.crisis.not_acknowledged" xml:space="preserve"><value>Nobody has taken this case yet.</value></data>
   <data name="validation.required" xml:space="preserve"><value>This field is required.</value></data>
   <data name="validation.invalid" xml:space="preserve"><value>This value is not valid.</value></data>
+  <data name="category.staff_alert" xml:space="preserve"><value>Raised by a clinician</value></data>
+  <data name="source.staff" xml:space="preserve"><value>Clinician's manual alert</value></data>
 </root>

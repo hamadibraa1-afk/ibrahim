@@ -16,6 +16,7 @@ public sealed class RuleCategoryIndex
     public IReadOnlyList<string> CategoriesOf(string ruleIds) =>
         ruleIds.Split(',', StringSplitOptions.RemoveEmptyEntries)
             .Select(id => id == CrisisGate.SystemFailureRuleId ? "system"
+                : id == CrisisGate.StaffManualRuleId ? "staff_alert"
                 : id.StartsWith("Q-", StringComparison.Ordinal) ? "questionnaire"
                 : _categories.GetValueOrDefault(id, "suicidal_ideation"))
             .Distinct(StringComparer.Ordinal)

@@ -118,6 +118,8 @@ public static class Fields
     public const string CheckinFeedback = "clinical.checkin_feedback";
     public const string SafetyPlan = "clinical.safety_plan";
     public const string CrisisNote = "crisis.action_text";
+    public const string FileEdits = "clinical.file_edits";
+    public const string FileFeedback = "clinical.file_feedback";
 }
 
 public sealed record SafetyInfoData(string? ContactPhone, string? TrustedName, string? TrustedPhone);
