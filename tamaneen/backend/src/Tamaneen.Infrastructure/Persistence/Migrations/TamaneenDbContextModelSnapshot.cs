@@ -1427,9 +1427,89 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                     b.Property<bool>("Sms")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("StaffBookings")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("StaffDailyDigest")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("StaffWeeklyReport")
+                        .HasColumnType("bit");
+
                     b.HasKey("UserId");
 
                     b.ToTable("NotificationPreferences", "identity");
+                });
+
+            modelBuilder.Entity("Tamaneen.Identity.Notifications.UserNotification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(16)");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("DataJson")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("DedupeKey")
+                        .HasMaxLength(200)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<byte>("External")
+                        .HasColumnType("tinyint");
+
+                    b.Property<byte>("ExternalAttempts")
+                        .HasColumnType("tinyint");
+
+                    b.Property<string>("ExternalChannel")
+                        .HasMaxLength(8)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(8)");
+
+                    b.Property<DateTimeOffset?>("ExternalNotBeforeUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset?>("ExternalSentAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(64)");
+
+                    b.Property<string>("Link")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<DateTimeOffset?>("ReadAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("RecipientUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("External", "ExternalNotBeforeUtc");
+
+                    b.HasIndex("RecipientUserId", "CreatedAtUtc");
+
+                    b.HasIndex("RecipientUserId", "DedupeKey")
+                        .IsUnique()
+                        .HasDatabaseName("UX_Notifications_Dedupe")
+                        .HasFilter("[DedupeKey] IS NOT NULL");
+
+                    b.ToTable("Notifications", "identity");
                 });
 
             modelBuilder.Entity("Tamaneen.Identity.PatientProfile", b =>
@@ -2018,6 +2098,15 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                     b.HasOne("Tamaneen.Identity.UserAccount", null)
                         .WithOne()
                         .HasForeignKey("Tamaneen.Identity.NotificationPreferences", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Tamaneen.Identity.Notifications.UserNotification", b =>
+                {
+                    b.HasOne("Tamaneen.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("RecipientUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

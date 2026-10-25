@@ -41,6 +41,15 @@ public sealed class NotificationPreferences
 
     public TimeOnly QuietTo { get; private set; } = new(8, 0);
 
+    // Staff (S32). Risk alerts are not here: they cannot be switched off.
+
+    /// <summary>A patient booked, moved or cancelled a session with me.</summary>
+    public bool StaffBookings { get; private set; } = true;
+
+    public bool StaffWeeklyReport { get; private set; } = true;
+
+    public bool StaffDailyDigest { get; private set; }
+
     public static NotificationPreferences Default(Guid userId) => new(userId);
 
     public void Update(bool push, bool sms, bool email, bool neutralText, bool quickExit, ReminderFrequency reminder, string reminderTime, string quietFrom, string quietTo)
@@ -54,6 +63,20 @@ public sealed class NotificationPreferences
         ReminderTime = ParseTime(reminderTime, nameof(reminderTime));
         QuietFrom = ParseTime(quietFrom, nameof(quietFrom));
         QuietTo = ParseTime(quietTo, nameof(quietTo));
+    }
+
+    public void UpdateStaff(bool bookings, bool weeklyReport, bool dailyDigest)
+    {
+        StaffBookings = bookings;
+        StaffWeeklyReport = weeklyReport;
+        StaffDailyDigest = dailyDigest;
+    }
+
+    /// <summary>The end of the quiet window that <paramref name="local"/> falls in (the same or the next day).</summary>
+    public DateTime QuietEndsAfter(DateTime local)
+    {
+        var end = local.Date + QuietTo.ToTimeSpan();
+        return end > local ? end : end.AddDays(1);
     }
 
     public bool IsQuiet(TimeOnly local) =>

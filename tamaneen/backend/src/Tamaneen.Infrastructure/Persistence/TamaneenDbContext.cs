@@ -7,6 +7,7 @@ using Tamaneen.Clinical.Scheduling;
 using Tamaneen.Crisis;
 using Tamaneen.Identity;
 using Tamaneen.Identity.Auth;
+using Tamaneen.Identity.Notifications;
 using Tamaneen.Infrastructure.Auditing;
 using Tamaneen.Infrastructure.Idempotency;
 using Tamaneen.Infrastructure.Security;
@@ -58,6 +59,8 @@ public sealed class TamaneenDbContext : DbContext
     public DbSet<Consent> Consents => Set<Consent>();
 
     public DbSet<NotificationPreferences> NotificationPreferences => Set<NotificationPreferences>();
+
+    public DbSet<UserNotification> Notifications => Set<UserNotification>();
 
     public DbSet<StaffProfile> StaffProfiles => Set<StaffProfile>();
 

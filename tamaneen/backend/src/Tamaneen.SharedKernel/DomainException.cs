@@ -97,4 +97,7 @@ public static class ErrorCodes
     public const string IdempotencyInProgress = "error.idempotency.in_progress";
     public const string SettingsVersionRequired = "error.settings.version_required";
     public const string SettingsVersionChanged = "error.settings.version_changed";
+    public const string CapacityBelowCaseload = "error.profile.capacity_below_caseload";
+    public const string ProfileContactDetails = "error.profile.contact_details";
+    public const string TotpMoveExpired = "error.totp.move_expired";
 }

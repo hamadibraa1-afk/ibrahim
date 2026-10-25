@@ -53,6 +53,11 @@ and P01, P02, P12 and P15 show the emergency numbers instead of the start button
 | POST | /v1/me/recovery-codes | ReauthRequest { password, code? } → RecoveryCodes (code required while the authenticator is on) | P32 |
 | DELETE | /v1/me/sessions/{id} · POST /v1/me/sessions/revoke-all | → 204 | P32 |
 | GET/PUT | /v1/me/notifications | NotificationPrefs | P33 |
+| GET | /v1/me/inbox?cursor=&limit= | → Inbox { items: InboxItem[], unreadCount, nextCursor, counts } (newest first; `cursor` is the `nextCursor` of the previous page) | P46 |
+| GET | /v1/me/inbox/unread-count | → { unreadCount } | header bell |
+| POST | /v1/me/inbox/{id}/read · /v1/me/inbox/read-all | → 204 (404 for an entry that is not yours) | P46 |
+| GET | /v1/crisis/follow-up | → CrisisFollowUp (`state`: none, open, closed; audited `crisis.follow_up_viewed`) | P38 |
+| POST | /v1/crisis/follow-up/seen | → 204 (the follow-up notices are read; home stops opening P38) | P38 |
 | GET | /v1/me/access-log | → AccessLogEntry[] | P11 |
 | GET/POST | /v1/me/data-export | → DataRequestStatus / DataExportRequest { password } → DataRequestStatus (400 error.auth.password_mismatch) | P11 |
 | POST | /v1/me/delete-account | DeleteAccountRequest → 202 (409 error.privacy.deletion_crisis_open while a crisis event is open, EC-55) | P11 |
@@ -103,6 +108,32 @@ and its successful response is stored, encrypted with the patient's key; a repea
 with `Retry-After`; the same key on another endpoint is 422 `error.idempotency.key_reused`; a malformed key is 400
 `error.idempotency.invalid_key`. Keys are per patient (RLS). Intake turns use `clientMessageId` and Help now `requestId` instead.
 
+Notifications (P46, S41; guide `GET /me/notifications`). The spec's `/v1/me/notifications` already holds the P33
+preferences, so the inbox is `/v1/me/inbox` (patients) and `/v1/staff/inbox` (staff). An InboxItem is
+`{ id, kind, category, text, link, createdAt, read, pinned, data }`: `text` is written in the request language from the
+catalog (`Tamaneen.Api/Notifications`, resources `notify.<kind>`), `link` is an app-relative path in the reader's app,
+`data` holds only ids, times and display names (never patient free text). Categories: risk, appointments, messages,
+homework, care, security, system. Every entry is stored in `identity.Notifications` under its own row-level security
+policy (`security.NotificationPolicy`): a person reads and marks only their own; the notification service writes.
+A patient may also get an SMS or e-mail copy on their sign-up contact: always for crisis kinds; otherwise when the
+P33 switch for that channel is on, or, for important kinds (appointment changes, reminders, waitlist, matches ready),
+while app notifications are on (the web app has no push channel yet, P33 "بديل SMS"). Quiet hours (patient time zone)
+hold the copy until they end, except crisis kinds. Copies never name the therapist or say session, crisis or
+homework; "neutral notifications" send «لديك تذكير». Staff have no readable contact, so staff notices are in-app.
+Kinds: appointment.booked, appointment.rescheduled, appointment.cancelled, appointment.cancelled_by_therapist,
+appointment.running_late, appointment.missed, appointment.reminder_24h, appointment.reminder_1h,
+session.therapist_joined, waitlist.slot_open, triage.matches_ready, homework.assigned, homework.feedback, care.ended,
+safety_plan.updated, crisis.follow_up, security.new_sign_in (patient); staff.appointment.booked|rescheduled|cancelled,
+care.change_requested, crisis.closed, safety_plan.updated, security.new_sign_in (staff). Other modules call
+`INotifier.NotifyAsync(new Notification(recipientUserId, kind, data, link?))`; an unknown kind is stored with the
+generic text. A background worker (once a minute) sends the 24 h and 1 h reminders, the crisis follow-ups and the held
+copies; each reminder and follow-up has a per-recipient dedupe key, so restarts never repeat one. In Development the
+copies appear at `/dev/inbox`.
+
+P38 CrisisFollowUp: `{ state, eventId, closedAt, responder, talked, therapistInformed, therapistName,
+nextAppointmentId, nextAppointmentAt, unread }`, built from structured data only (who handled the event, whether the
+treating therapist was told, the next appointment), never the conversation, the level or the close reason.
+
 Waitlist (P56): the queue is ordered by risk, then by time waited. Whenever a time becomes free (a patient cancels or moves a
 session, a hold is released, a therapist records a cancellation, a patient joins), the scheduling service matches the
 waiting entries against the bookable times of the next 14 days (times of day in the patient's time zone: morning 06–12,
@@ -125,6 +156,18 @@ During scheduled maintenance (`Platform:Maintenance` true) every patient endpoin
 | GET | /v1/staff/me | → StaffMe | shell |
 | POST | /v1/staff/access-denied | { path } → 204 (audit `staff.access_denied`, the refused portal path as the reason) | S06 /forbidden |
 | GET | /v1/staff/dashboard | → TherapistDashboard | S01 |
+| GET | /v1/staff/inbox?category=all\|risk\|appointments\|messages\|system&cursor= | → Inbox (unacknowledged crisis events the reader may see come first with `pinned: true`; a therapist's are their own patients') | S41 |
+| GET | /v1/staff/inbox/unread-count | → { unreadCount } (stored unread + pinned alerts) | shell bell |
+| POST | /v1/staff/inbox/{id}/read · /v1/staff/inbox/read-all | → 204 (pinned alerts stay until acknowledged) | S41 |
+| GET | /v1/staff/alerts?status=open\|handled\|all | → Alerts { items: Alert[], openCount, handledCount } (open events and those closed in the last 30 days; a therapist sees their own patients only; audited `staff.alerts_viewed`). Acknowledge and hand to on-call use the worker's acknowledge and `actions` (kind refer) | S20 |
+| GET/PUT | /v1/staff/profile | → StaffProfile / UpdateStaffProfileRequest → StaffProfile (therapist; 400 `error.profile.capacity_below_caseload`, 400 `error.profile.contact_details` for phones, e-mails or links in the text, 400 field errors) | S21 |
+| GET | /v1/staff/me/security | → StaffSecurity { passwordChangedAt, totpEnabled, recoveryCodesRemaining, idleTimeoutMinutes: 15, sessions } | S32 |
+| PUT | /v1/staff/me/password | { currentPassword, newPassword, code } → 204 (the other sessions end) | S32 |
+| POST | /v1/staff/me/totp/move | { password, code } → { secret, otpauthUri, moveToken, expiresAt } (nothing changes yet) | S32 |
+| POST | /v1/staff/me/totp/move/confirm | { moveToken, code from the new device } → 204 (410 `error.totp.move_expired` after 10 minutes) | S32 |
+| POST | /v1/staff/me/recovery-codes | { password, code } → RecoveryCodes | S32 |
+| DELETE | /v1/staff/me/sessions/{id} · POST /v1/staff/me/sessions/revoke-others | → 204 | S32, S41 |
+| GET/PUT | /v1/staff/me/notifications | StaffNotificationPrefs { riskAlerts (always true), bookings, weeklyReport, dailyDigest } | S32 |
 | GET | /v1/staff/patients/{pseudonymId}/intake | → StaffIntakeView (audited) | S01 |
 | POST | /v1/staff/patients/{pseudonymId}/intake/approve | → 204 | S01 |
 | POST | /v1/staff/appointments/{id}/outcome | { outcome: attended, no_show, cancelled } → 204 | S01 |

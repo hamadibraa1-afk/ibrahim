@@ -101,4 +101,62 @@
   <data name="error.idempotency.invalid_key" xml:space="preserve"><value>تعذّر ربط هذا الطلب بما حفظته. حاول مرة أخرى.</value></data>
   <data name="error.idempotency.key_reused" xml:space="preserve"><value>هذا العنصر المحفوظ يخص طلبًا آخر، لذلك لم نرسله. يمكنك تجاهله وإدخاله من جديد.</value></data>
   <data name="error.idempotency.in_progress" xml:space="preserve"><value>ما زلنا نحفظ هذا الطلب. سنتحقق مرة أخرى بعد قليل.</value></data>
+  <data name="notify.generic" xml:space="preserve"><value>لديك إشعار جديد.</value></data>
+  <data name="notify.appointment.booked" xml:space="preserve"><value>تم حجز موعدك مع {therapist} يوم {time}.</value></data>
+  <data name="notify.appointment.booked.plain" xml:space="preserve"><value>تم حجز موعدك.</value></data>
+  <data name="notify.appointment.rescheduled" xml:space="preserve"><value>تغيّر موعدك مع {therapist} إلى {time}.</value></data>
+  <data name="notify.appointment.rescheduled.plain" xml:space="preserve"><value>تغيّر وقت موعدك.</value></data>
+  <data name="notify.appointment.cancelled" xml:space="preserve"><value>ألغيت موعدك يوم {time}. يمكنك حجز وقت آخر متى شئت.</value></data>
+  <data name="notify.appointment.cancelled.plain" xml:space="preserve"><value>ألغيت موعدك. يمكنك حجز وقت آخر متى شئت.</value></data>
+  <data name="notify.appointment.cancelled_by_therapist" xml:space="preserve"><value>أُلغي موعدك مع {therapist} يوم {time}. اختر وقتًا آخر يناسبك.</value></data>
+  <data name="notify.appointment.cancelled_by_therapist.plain" xml:space="preserve"><value>أُلغي أحد مواعيدك من جهة الأخصائي. اختر وقتًا آخر يناسبك.</value></data>
+  <data name="notify.appointment.running_late" xml:space="preserve"><value>تأخير نحو {minutes} دقيقة في بدء موعدك مع {therapist}.</value></data>
+  <data name="notify.appointment.running_late.plain" xml:space="preserve"><value>تأخير قليل في بدء موعدك.</value></data>
+  <data name="notify.appointment.missed" xml:space="preserve"><value>فاتك موعد {time}. لا بأس، يمكنك حجز موعد جديد.</value></data>
+  <data name="notify.appointment.missed.plain" xml:space="preserve"><value>فاتك أحد مواعيدك. لا بأس، يمكنك حجز موعد جديد.</value></data>
+  <data name="notify.appointment.reminder_24h" xml:space="preserve"><value>جلستك غدًا {time} مع {therapist}.</value></data>
+  <data name="notify.appointment.reminder_24h.plain" xml:space="preserve"><value>جلستك غدًا.</value></data>
+  <data name="notify.appointment.reminder_1h" xml:space="preserve"><value>جلستك بعد ساعة ({time}). يفتح رابط الدخول قبلها بعشر دقائق.</value></data>
+  <data name="notify.appointment.reminder_1h.plain" xml:space="preserve"><value>جلستك بعد ساعة.</value></data>
+  <data name="notify.session.therapist_joined" xml:space="preserve"><value>{therapist} في الجلسة الآن وبانتظارك.</value></data>
+  <data name="notify.session.therapist_joined.plain" xml:space="preserve"><value>الأخصائي في الجلسة الآن وبانتظارك.</value></data>
+  <data name="notify.waitlist.slot_open" xml:space="preserve"><value>توفر موعد يناسب تفضيلاتك. احجزه قبل أن يُحجز.</value></data>
+  <data name="notify.triage.matches_ready" xml:space="preserve"><value>اقتراحات الأخصائيين جاهزة لك.</value></data>
+  <data name="notify.homework.assigned" xml:space="preserve"><value>تمرين جديد في واجباتك.</value></data>
+  <data name="notify.homework.feedback" xml:space="preserve"><value>رد جديد من {therapist} على متابعتك للواجب.</value></data>
+  <data name="notify.homework.feedback.plain" xml:space="preserve"><value>رد جديد على متابعتك للواجب.</value></data>
+  <data name="notify.care.ended" xml:space="preserve"><value>اكتملت رحلتك مع {therapist}. ملخصك وخطواتك التالية جاهزة.</value></data>
+  <data name="notify.care.ended.plain" xml:space="preserve"><value>اكتملت رحلة الرعاية. ملخصك وخطواتك التالية جاهزة.</value></data>
+  <data name="notify.safety_plan.updated" xml:space="preserve"><value>تحدّثت خطة أمانك.</value></data>
+  <data name="notify.crisis.follow_up" xml:space="preserve"><value>نحن ما زلنا معك. اطّلع على ما اتفقنا عليه وخطتك للأيام القادمة.</value></data>
+  <data name="notify.security.new_sign_in" xml:space="preserve"><value>دخول جديد من {device}. ليس أنت؟ أنهِ الجلسة.</value></data>
+  <data name="notify.security.new_sign_in.plain" xml:space="preserve"><value>دخول جديد إلى حسابك. ليس أنت؟ أنهِ الجلسة.</value></data>
+  <data name="notify.care.change_requested" xml:space="preserve"><value>طلب {patient} تغيير الأخصائي.</value></data>
+  <data name="notify.care.change_requested.plain" xml:space="preserve"><value>طلب أحد المرضى تغيير الأخصائي.</value></data>
+  <data name="notify.staff.appointment.booked" xml:space="preserve"><value>حجز جديد: {patient} {time} · الملف بانتظار اعتمادك</value></data>
+  <data name="notify.staff.appointment.booked.plain" xml:space="preserve"><value>حجز جديد في جدولك.</value></data>
+  <data name="notify.staff.appointment.rescheduled" xml:space="preserve"><value>غيّر {patient} موعده إلى {time}.</value></data>
+  <data name="notify.staff.appointment.rescheduled.plain" xml:space="preserve"><value>تغيّر موعد في جدولك.</value></data>
+  <data name="notify.staff.appointment.cancelled" xml:space="preserve"><value>ألغى {patient} موعد {time}.</value></data>
+  <data name="notify.staff.appointment.cancelled.plain" xml:space="preserve"><value>أُلغي موعد في جدولك.</value></data>
+  <data name="notify.crisis.closed" xml:space="preserve"><value>أُغلق حدث الأزمة {number} لـ {patient}. راجع المتابعة وقدّم موعده إن لزم.</value></data>
+  <data name="notify.crisis.closed.plain" xml:space="preserve"><value>أُغلق حدث أزمة لأحد مرضاك.</value></data>
+  <data name="notify.crisis.alert" xml:space="preserve"><value>تنبيه خطر {0} · {1} · لم يُقَرّ بعد</value></data>
+  <data name="notify.level.1" xml:space="preserve"><value>روتيني</value></data>
+  <data name="notify.level.2" xml:space="preserve"><value>متوسط</value></data>
+  <data name="notify.level.3" xml:space="preserve"><value>عالٍ</value></data>
+  <data name="notify.level.4" xml:space="preserve"><value>حرج</value></data>
+  <data name="notify.sms.default" xml:space="preserve"><value>لديك تحديث جديد في حسابك. افتح التطبيق للاطلاع عليه.</value></data>
+  <data name="notify.sms.neutral" xml:space="preserve"><value>لديك تذكير.</value></data>
+  <data name="notify.sms.appointment.reminder_24h" xml:space="preserve"><value>تذكير: لديك موعد غدًا {time}.</value></data>
+  <data name="notify.sms.appointment.reminder_1h" xml:space="preserve"><value>تذكير: موعدك بعد ساعة ({time}).</value></data>
+  <data name="notify.sms.appointment.booked" xml:space="preserve"><value>تم تأكيد موعدك {time}.</value></data>
+  <data name="notify.sms.appointment.rescheduled" xml:space="preserve"><value>تغيّر وقت موعدك إلى {time}.</value></data>
+  <data name="notify.sms.appointment.cancelled_by_therapist" xml:space="preserve"><value>تغيّر أحد مواعيدك. افتح التطبيق لاختيار وقت آخر.</value></data>
+  <data name="notify.sms.appointment.running_late" xml:space="preserve"><value>موعدك سيبدأ متأخرًا قليلًا. افتح التطبيق للتفاصيل.</value></data>
+  <data name="notify.sms.waitlist.slot_open" xml:space="preserve"><value>توفر موعد يناسب تفضيلاتك. افتح التطبيق لتحجزه قبل أن يُحجز.</value></data>
+  <data name="notify.sms.crisis.follow_up" xml:space="preserve"><value>نطمئن عليك. افتح التطبيق، ومعك من يساعدك متى احتجت.</value></data>
+  <data name="error.profile.capacity_below_caseload" xml:space="preserve"><value>لا يمكن أن تقل السعة عن عدد مرضاك الحالي ({0}).</value></data>
+  <data name="error.profile.contact_details" xml:space="preserve"><value>احذف أرقام التواصل والبريد والروابط من النص. لا تظهر للمرضى طرق تواصل خارج المنصة.</value></data>
+  <data name="error.totp.move_expired" xml:space="preserve"><value>انتهت مهلة نقل تطبيق المصادقة. ابدأ النقل من جديد؛ ما زال جهازك الحالي يعمل.</value></data>
 </root>

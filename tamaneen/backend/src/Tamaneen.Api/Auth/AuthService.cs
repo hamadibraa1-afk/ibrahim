@@ -4,7 +4,9 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
+using Tamaneen.Api.Notifications;
 using Tamaneen.Hosting;
+using Tamaneen.SharedKernel.Notifications;
 using Tamaneen.Identity;
 using Tamaneen.Identity.Auth;
 using Tamaneen.Infrastructure.Auditing;
@@ -39,7 +41,8 @@ public sealed partial class AuthService(
     IMemoryCache cache,
     IClock clock,
     IOptions<PlatformOptions> platform,
-    ILogger<AuthService> logger)
+    ILogger<AuthService> logger,
+    INotifier notifier)
 {
     public const string ContactField = "identity.contact";
     public const string DisplayNameField = ProtectedFields.DisplayName;
@@ -260,6 +263,7 @@ public sealed partial class AuthService(
         {
             var (session, refresh) = StartSession(db, account!.Id, client, userAgent);
             await db.SaveChangesAsync(ct).ConfigureAwait(false);
+            await NoticeNewDeviceAsync(account.Id, session, ct).ConfigureAwait(false);
             return new LoginResult(tokens.Issue(account, session, refresh), null, [], null);
         }
 
@@ -354,6 +358,7 @@ public sealed partial class AuthService(
         var (session, refresh) = StartSession(db, account.Id, mfa.Client, userAgent);
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
         cache.Remove(failuresKey);
+        await NoticeNewDeviceAsync(account.Id, session, ct).ConfigureAwait(false);
         return new MfaResult(tokens.Issue(account, session, refresh), device);
     }
 
@@ -515,6 +520,23 @@ public sealed partial class AuthService(
     }
 
     // ---------------- helpers ----------------
+
+    /// <summary>
+    /// P46, S41: a sign-in from a device this account has not used before leaves a security notice ("not you? end
+    /// the session"). It cannot be switched off. The first session of an account is not news.
+    /// </summary>
+    private async Task NoticeNewDeviceAsync(Guid userId, AuthSession session, CancellationToken ct)
+    {
+        var earlier = await db.AuthSessions.AsNoTracking().Where(s => s.UserId == userId && s.Id != session.Id).Select(s => s.DeviceLabel).ToListAsync(ct).ConfigureAwait(false);
+        if (earlier.Count == 0 || earlier.Contains(session.DeviceLabel))
+        {
+            return;
+        }
+
+        await notifier.NotifyAsync(
+            new Notification(userId, NotificationKinds.SecurityNewSignIn, new Dictionary<string, string> { ["sessionId"] = session.Id.ToString(), ["device"] = session.DeviceLabel }),
+            ct).ConfigureAwait(false);
+    }
 
     private (AuthSession Session, string Refresh) StartSession(TamaneenDbContext context, Guid userId, string client, string userAgent)
     {

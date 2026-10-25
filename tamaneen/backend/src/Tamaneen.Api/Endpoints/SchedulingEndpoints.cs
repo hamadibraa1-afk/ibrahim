@@ -15,6 +15,8 @@ using Tamaneen.Hosting;
 using Tamaneen.Infrastructure.Auditing;
 using Tamaneen.Infrastructure.Persistence;
 using Tamaneen.SharedKernel;
+using Tamaneen.SharedKernel.Notifications;
+using Tamaneen.Api.Notifications;
 
 namespace Tamaneen.Api.Endpoints;
 
@@ -178,7 +180,7 @@ public static class SchedulingEndpoints
         return TypedResults.NoContent();
     }
 
-    internal static async Task<Ok<AppointmentDetailDto>> ConfirmAsync(Guid holdId, PatientContext p, TherapistDirectory directory, ScopeRunner scopes, IAuditLog audit, IOptions<PlatformOptions> platform, IClock clock, CancellationToken ct)
+    internal static async Task<Ok<AppointmentDetailDto>> ConfirmAsync(Guid holdId, PatientContext p, TherapistDirectory directory, ScopeRunner scopes, IAuditLog audit, INotifier notifier, IOptions<PlatformOptions> platform, IClock clock, CancellationToken ct)
     {
         await EnsureCanBookAsync(p, ct).ConfigureAwait(false);
         var slot = await p.Db.AvailabilitySlots.FirstOrDefaultAsync(s => s.HoldId == holdId, ct).ConfigureAwait(false)
@@ -218,7 +220,21 @@ public static class SchedulingEndpoints
             return true;
         }).ConfigureAwait(false);
 
+        await NotifyBothAsync(notifier, appointment, profile.PseudonymId, NotificationKinds.AppointmentBooked, NotificationKinds.StaffAppointmentBooked, ct).ConfigureAwait(false);
         return TypedResults.Ok(await DetailDtoAsync(p, directory, appointment, platform, clock, ct).ConfigureAwait(false));
+    }
+
+    /// <summary>The patient and the therapist hear about a booking, a move or a cancellation (in-app; the patient may get a neutral copy).</summary>
+    internal static async Task NotifyBothAsync(INotifier notifier, Appointment a, string pseudonymId, string patientKind, string staffKind, CancellationToken ct)
+    {
+        var data = new Dictionary<string, string>
+        {
+            ["appointmentId"] = a.Id.ToString(),
+            ["startsAt"] = a.StartsAtUtc.ToString("O", CultureInfo.InvariantCulture),
+            ["therapistId"] = a.TherapistUserId.ToString(),
+        };
+        await notifier.NotifyAsync(new Notification(a.PatientId, patientKind, data), ct).ConfigureAwait(false);
+        await notifier.NotifyAsync(new Notification(a.TherapistUserId, staffKind, new Dictionary<string, string>(data) { ["pseudonymId"] = pseudonymId }), ct).ConfigureAwait(false);
     }
 
     // ---------- P27, P28, P26 ----------
@@ -268,7 +284,7 @@ public static class SchedulingEndpoints
     }
 
     /// <summary>P28 cancel (PB-45): the patient picks a reason code from <see cref="CancelReasons.Patient"/>.</summary>
-    internal static async Task<Ok<AppointmentDetailDto>> CancelAsync(Guid id, CancelRequest? request, PatientContext p, TherapistDirectory directory, WaitlistNotifier waitlist, IAuditLog audit, IOptions<PlatformOptions> platform, IClock clock, CancellationToken ct)
+    internal static async Task<Ok<AppointmentDetailDto>> CancelAsync(Guid id, CancelRequest? request, PatientContext p, TherapistDirectory directory, WaitlistNotifier waitlist, IAuditLog audit, INotifier notifier, IOptions<PlatformOptions> platform, IClock clock, CancellationToken ct)
     {
         var reason = request?.ReasonCode?.Trim();
         if (string.IsNullOrEmpty(reason) || !CancelReasons.Patient.Contains(reason))
@@ -281,15 +297,17 @@ public static class SchedulingEndpoints
         appointment.CancelByPatient(reason, clock);
         var slot = await p.Db.AvailabilitySlots.FirstAsync(s => s.Id == appointment.SlotId, ct).ConfigureAwait(false);
         slot.Free();
-        audit.Append("appointment.cancelled", "Appointment", appointment.Id.ToString(), (await p.AccountAsync(ct).ConfigureAwait(false)).PseudonymId, $"patient:{reason}");
+        var pseudonym = (await p.AccountAsync(ct).ConfigureAwait(false)).PseudonymId;
+        audit.Append("appointment.cancelled", "Appointment", appointment.Id.ToString(), pseudonym, $"patient:{reason}");
         await SaveOrConflictAsync(p.Db, ct).ConfigureAwait(false);
+        await NotifyBothAsync(notifier, appointment, pseudonym, NotificationKinds.AppointmentCancelled, NotificationKinds.StaffAppointmentCancelled, ct).ConfigureAwait(false);
 
         // P56: the freed time may be what someone on the waitlist is waiting for.
         await waitlist.CheckAsync(ct).ConfigureAwait(false);
         return TypedResults.Ok(await DetailDtoAsync(p, directory, appointment, platform, clock, ct).ConfigureAwait(false));
     }
 
-    internal static async Task<Ok<AppointmentDetailDto>> RescheduleAsync(Guid id, RescheduleRequest request, PatientContext p, TherapistDirectory directory, WaitlistNotifier waitlist, IAuditLog audit, IOptions<PlatformOptions> platform, IClock clock, CancellationToken ct)
+    internal static async Task<Ok<AppointmentDetailDto>> RescheduleAsync(Guid id, RescheduleRequest request, PatientContext p, TherapistDirectory directory, WaitlistNotifier waitlist, IAuditLog audit, INotifier notifier, IOptions<PlatformOptions> platform, IClock clock, CancellationToken ct)
     {
         var appointment = await FindAsync(p, id, ct).ConfigureAwait(false);
         var target = await p.Db.AvailabilitySlots.FirstOrDefaultAsync(s => s.Id == request.SlotId, ct).ConfigureAwait(false)
@@ -298,8 +316,10 @@ public static class SchedulingEndpoints
         target.TakeFor(p.PatientId, clock);
         appointment.MoveTo(target, clock);
         old.Free();
-        audit.Append("appointment.rescheduled", "Appointment", appointment.Id.ToString(), (await p.AccountAsync(ct).ConfigureAwait(false)).PseudonymId);
+        var pseudonym = (await p.AccountAsync(ct).ConfigureAwait(false)).PseudonymId;
+        audit.Append("appointment.rescheduled", "Appointment", appointment.Id.ToString(), pseudonym);
         await SaveOrConflictAsync(p.Db, ct).ConfigureAwait(false);
+        await NotifyBothAsync(notifier, appointment, pseudonym, NotificationKinds.AppointmentRescheduled, NotificationKinds.StaffAppointmentRescheduled, ct).ConfigureAwait(false);
         await waitlist.CheckAsync(ct).ConfigureAwait(false);
         return TypedResults.Ok(await DetailDtoAsync(p, directory, appointment, platform, clock, ct).ConfigureAwait(false));
     }

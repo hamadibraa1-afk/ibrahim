@@ -115,6 +115,9 @@ public sealed class WaitlistTests : IAsyncLifetime
         await Read(await PutSafetyInfoAsync(me, new { shareLocation = false }));
         await Read(await me.PutAsJsonAsync("/v1/me/path", new { path = "direct" }));
         await Read(await me.PostAsJsonAsync("/v1/screening/cssrs", new { answers = new[] { false, false, false, false, false, false } }));
+
+        // No quiet hours, so the waitlist copy goes out whatever the time of day the test runs (P33 holds it otherwise).
+        await Read(await me.PutAsJsonAsync("/v1/me/notifications", new { push = true, sms = false, email = false, neutralText = false, quickExit = false, homeworkReminder = "daily", reminderTime = "21:00", quietFrom = "00:00", quietTo = "00:00" }));
         return (me, email);
     }
 }

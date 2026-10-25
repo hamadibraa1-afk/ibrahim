@@ -5,6 +5,9 @@ using Tamaneen.AiGateway;
 using Tamaneen.Api.Auth;
 using Tamaneen.Api.Clinical;
 using Tamaneen.Api.Gate;
+using Tamaneen.Api.Notifications;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Tamaneen.SharedKernel.Notifications;
 using Tamaneen.Api.Patients;
 using Tamaneen.Api.Endpoints;
 using Tamaneen.Hosting;
@@ -82,6 +85,22 @@ public static class ApiHost
         builder.Services.AddScoped<PatientContext>();
         builder.Services.AddScoped<TherapistDirectory>();
         builder.Services.AddScoped<WaitlistNotifier>();
+
+        // The notification service (P46, S41). Registered before the modules' TryAdd of NullNotifier, so this one wins.
+        builder.Services.AddOptions<NotificationOptions>().Bind(builder.Configuration.GetSection(NotificationOptions.Section))
+            .PostConfigure(o =>
+            {
+                if (builder.Environment.IsEnvironment("Testing") && builder.Configuration[$"{NotificationOptions.Section}:WorkerEnabled"] is null)
+                {
+                    o.WorkerEnabled = false;
+                }
+            });
+        builder.Services.AddScoped<NotificationTexts>();
+        builder.Services.AddSingleton<Notifier>();
+        builder.Services.AddSingleton<INotifier>(sp => sp.GetRequiredService<Notifier>());
+        builder.Services.TryAddSingleton<INotifier, NullNotifier>();
+        builder.Services.AddSingleton<NotificationWorker>();
+        builder.Services.AddHostedService(sp => sp.GetRequiredService<NotificationWorker>());
         builder.Services.AddHttpClient("crisis-console");
         builder.Services.AddScoped<StepUpVerifier>();
         if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing"))
@@ -143,6 +162,11 @@ public static class ApiHost
         app.MapCareEndpoints();
         app.MapStaffEndpoints();
         app.MapStaffAccessEndpoints();
+        app.MapNotificationEndpoints();
+        app.MapAlertsEndpoints();
+        app.MapCrisisFollowUpEndpoints();
+        app.MapStaffProfileEndpoints();
+        app.MapStaffSettingsEndpoints();
         if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))
         {
             // Lets a developer or the end-to-end tests read the code that would have been sent by SMS or e-mail.

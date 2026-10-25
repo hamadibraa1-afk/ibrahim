@@ -106,6 +106,18 @@ public sealed class Credential
         TotpLastStep = step;
     }
 
+    /// <summary>
+    /// Moves the authenticator to another device (S32): the new secret replaces the old one only once a code from
+    /// the new device has been checked, so the old device keeps working until then.
+    /// </summary>
+    public void ReplaceTotp(byte[] secretCipher, long step)
+    {
+        ArgumentNullException.ThrowIfNull(secretCipher);
+        TotpSecretCipher = secretCipher;
+        TotpEnabled = true;
+        TotpLastStep = step;
+    }
+
     public void DisableTotp()
     {
         TotpEnabled = false;

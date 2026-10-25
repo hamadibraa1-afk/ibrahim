@@ -35,5 +35,14 @@ public sealed class StaffProfile
 
     public string DisplayName(string language) => language == "en" ? DisplayNameEn : DisplayNameAr;
 
+    /// <summary>S21: the name patients see, in both languages.</summary>
+    public void Rename(string displayNameAr, string displayNameEn)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(displayNameAr);
+        ArgumentException.ThrowIfNullOrWhiteSpace(displayNameEn);
+        DisplayNameAr = displayNameAr.Trim();
+        DisplayNameEn = displayNameEn.Trim();
+    }
+
     public void SetOnCallTier(byte? tier) => OnCallTier = tier;
 }

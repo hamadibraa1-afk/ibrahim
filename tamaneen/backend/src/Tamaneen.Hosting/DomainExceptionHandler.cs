@@ -71,6 +71,9 @@ public sealed partial class DomainExceptionHandler<TResource> : IExceptionHandle
         [ErrorCodes.IdempotencyInProgress] = StatusCodes.Status409Conflict,
         [ErrorCodes.SettingsVersionRequired] = StatusCodes.Status428PreconditionRequired,
         [ErrorCodes.SettingsVersionChanged] = StatusCodes.Status412PreconditionFailed,
+        [ErrorCodes.CapacityBelowCaseload] = StatusCodes.Status400BadRequest,
+        [ErrorCodes.ProfileContactDetails] = StatusCodes.Status400BadRequest,
+        [ErrorCodes.TotpMoveExpired] = StatusCodes.Status410Gone,
     };
 
     private readonly IProblemDetailsService _problems;
