@@ -94,4 +94,26 @@ describe('CheckInForm', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith('/crisis'));
   });
+
+  it('says plainly when offline that nothing was sent, and keeps the answers', async () => {
+    const onLine = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+    try {
+      renderWithIntl(<CheckInForm initialEntries={[]} nowIso={nowIso} timeZone="Asia/Riyadh" />, 'ar');
+      expect(screen.getByRole('status')).toHaveTextContent('أنت غير متصل بالإنترنت الآن');
+      await userEvent.type(screen.getByRole('textbox', { name: /ملاحظة/ }), 'يوم طويل');
+      await userEvent.click(screen.getByRole('button', { name: 'حفظ' }));
+      expect(mocks.api).not.toHaveBeenCalled();
+      expect(screen.getByRole('alert')).toHaveTextContent('لم نرسل تسجيلك لأنك غير متصل');
+      expect(screen.getByRole('textbox', { name: /ملاحظة/ })).toHaveValue('يوم طويل');
+    } finally {
+      onLine.mockRestore();
+    }
+  });
+
+  it('treats a dropped connection during save the same way (English)', async () => {
+    mocks.api.mockRejectedValue(new TypeError('Failed to fetch'));
+    renderWithIntl(<CheckInForm initialEntries={[]} nowIso={nowIso} timeZone="Asia/Riyadh" />, 'en');
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent("We didn't send your check-in because you're offline.");
+  });
 });

@@ -47,8 +47,8 @@ Login: 5 failures lock the account for 15 minutes.
 | POST | /v1/me/contact-request | → ContactRequestCreated | P04, P22 |
 | GET | /v1/me/security | → SecurityOverview | P32 |
 | PUT | /v1/me/password | ChangePasswordRequest → 204 | P32 |
-| POST | /v1/me/totp/setup · /v1/me/totp/confirm · DELETE /v1/me/totp | → TotpSetup · CodeRequest → 204 · CodeRequest → 204 | P17, P32 |
-| POST | /v1/me/recovery-codes | → RecoveryCodes | P32 |
+| POST | /v1/me/totp/setup · /v1/me/totp/confirm · DELETE /v1/me/totp | → TotpSetup · CodeRequest → 204 · ReauthRequest { password, code } → 204 | P17, P32 |
+| POST | /v1/me/recovery-codes | ReauthRequest { password, code? } → RecoveryCodes (code required while the authenticator is on) | P32 |
 | DELETE | /v1/me/sessions/{id} · POST /v1/me/sessions/revoke-all | → 204 | P32 |
 | GET/PUT | /v1/me/notifications | NotificationPrefs | P33 |
 | GET | /v1/me/access-log | → AccessLogEntry[] | P11 |
@@ -78,8 +78,8 @@ Login: 5 failures lock the account for 15 minutes.
 | DELETE | /v1/bookings/holds/{holdId} | → 204 | P08 |
 | GET | /v1/appointments | → AppointmentList | P27 |
 | GET | /v1/appointments/{id} | → AppointmentDetail | P26, P28 |
-| GET | /v1/appointments/{id}/calendar | → text/calendar | P26 |
-| POST | /v1/appointments/{id}/cancel | → AppointmentDetail (409 within 24 h) | P28 |
+| GET | /v1/appointments/{id}/calendar | → text/calendar `appointment.ics`, neutral title «موعد» / "Appointment" with no platform, therapist or patient name (PB-42) | P26 |
+| POST | /v1/appointments/{id}/cancel | CancelRequest { reasonCode: schedule_conflict, feeling_better, unwell, therapist_fit, other } → AppointmentDetail (400 field error without a known reason; 409 within 24 h) | P28 |
 | POST | /v1/appointments/{id}/reschedule | RescheduleRequest → AppointmentDetail | P28 |
 | GET | /v1/home | → HomeSummary | P09 |
 | POST | /v1/mood | MoodEntryRequest → MoodSaveResponse (note gated) | P09, P30 |
@@ -93,6 +93,8 @@ Booking needs either a passed safety check (direct path) or a reviewed triage (i
 Gated writes that return an object (`PUT /v1/intake/{id}/summary`, `POST /v1/triage/addendum`, `PUT /v1/safety-plan`,
 `POST /v1/mood`, `POST /v1/homework/{id}/checkins`, intake turns) also carry `crisis` and `script`. If the crisis worker
 cannot be reached, the API answers 503 `error.crisis.unavailable` and does not process the content.
+During scheduled maintenance (`Platform:Maintenance` true) every patient endpoint answers 503 `error.maintenance` and the app shows /maintenance (P35);
+`/v1/meta`, `/v1/auth`, `/v1/crisis` and `/v1/staff` keep working.
 
 ## Staff (therapist, supervisor, clinical lead; the TOTP step is mandatory)
 

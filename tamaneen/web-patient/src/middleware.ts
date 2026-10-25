@@ -4,6 +4,7 @@ import { routing } from './i18n/routing';
 import type { TokenPair } from './lib/api/types';
 import { ACCESS_COOKIE, REFRESH_COOKIE, accessCookie, refreshCookie } from './lib/auth/cookies';
 import { resolveLocale, upstreamHeaders, LOCALE_COOKIE } from './lib/bff';
+import { PATH_HEADER } from './lib/pathHeader';
 
 // Picks the language from the URL, then the NEXT_LOCALE cookie, then Accept-Language, then Arabic.
 const intl = createMiddleware(routing);
@@ -42,6 +43,9 @@ export default async function middleware(request: NextRequest) {
     response.cookies.set(REFRESH_COOKIE, tokens.refreshToken, refreshCookie(tokens.refreshExpiresAt));
     return response;
   }
+  // next-intl forwards the request headers to the page: server components read the path from here to send
+  // the patient back after signing in again (P35). Always overwritten, never taken from the client.
+  request.headers.set(PATH_HEADER, `${request.nextUrl.pathname}${request.nextUrl.search}`);
   return intl(request);
 }
 

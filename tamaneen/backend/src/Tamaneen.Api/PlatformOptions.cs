@@ -48,4 +48,10 @@ public sealed class PlatformOptions
     /// <summary>Base address of the video service; the room id is appended ten minutes before a session.</summary>
     [Required]
     public string VideoBaseUrl { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Scheduled maintenance (P35): patient endpoints answer 503 <c>error.maintenance</c> and the patient app shows /maintenance.
+    /// Public config, sign-in, the crisis endpoints and the staff portal keep working, so help is always reachable.
+    /// </summary>
+    public bool Maintenance { get; set; }
 }

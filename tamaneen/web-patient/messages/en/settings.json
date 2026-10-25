@@ -59,7 +59,7 @@
       "codeInvalid": "Enter 6 digits.",
       "confirmCode": "Confirm",
       "totpOn": "Your authenticator app is on.",
-      "disableIntro": "To turn off the authenticator app, enter a current code from it.",
+      "disableIntro": "To turn off the authenticator app, enter your password and a current code from it.",
       "disableTotp": "Turn off",
       "totpOff": "Your authenticator app is off.",
       "recovery": "Recovery codes",
@@ -82,7 +82,17 @@
       "endSession": "End",
       "endSessionLabel": "End the session on {device}",
       "sessionEnded": "That device has been signed out.",
-      "signOutAll": "Sign out of all devices"
+      "signOutAll": "Sign out of all devices",
+      "reauthPassword": "Password",
+      "reauthPasswordRequired": "Enter your password.",
+      "reauthIntro": "To make sure it’s you, enter your password.",
+      "reauthIntroTotp": "To make sure it’s you, enter your password and a current code from your authenticator app.",
+      "endTitle": "End the session on {device}?",
+      "endBody": "That device will need to sign in again.",
+      "endConfirm": "End session",
+      "signOutAllTitle": "Sign out of all devices?",
+      "signOutAllBody": "We’ll end every session, including this one, and you’ll need to sign in again.",
+      "signOutAllConfirm": "Yes, sign out everywhere"
     },
     "notifications": {
       "title": "Notifications",

@@ -1,6 +1,7 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { hoursUntil } from '@/components/intake/triage';
+import { MatchReadyWatcher } from '@/components/intake/MatchReadyWatcher';
 import { WaitingActivities } from '@/components/intake/WaitingActivities';
 import { Link, redirect } from '@/i18n/navigation';
 import { isLocale, routing } from '@/i18n/routing';
@@ -97,6 +98,8 @@ export default async function WaitingPage({ params }: { params: Promise<{ locale
           }
         />
       </ol>
+
+      {triage.suggestionsReady ? null : <MatchReadyWatcher />}
 
       <WaitingActivities />
 

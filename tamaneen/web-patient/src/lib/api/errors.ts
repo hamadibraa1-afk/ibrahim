@@ -1,6 +1,8 @@
 import type { ApiProblem } from './types';
 
 export const CRISIS_LOCKED_CODE = 'error.crisis.locked';
+/** 503 while the API is in scheduled maintenance (PlatformOptions.Maintenance): the app shows /maintenance (P35). */
+export const MAINTENANCE_CODE = 'error.maintenance';
 
 /** A failed API call. `problem` is the API's localized ProblemDetails, safe to show as-is. */
 export class ApiError extends Error {

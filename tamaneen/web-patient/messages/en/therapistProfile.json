@@ -15,6 +15,8 @@
     "sessionValue": "Remote · {minutes} minutes",
     "nextAvailable": "Next available",
     "noSlots": "No times available right now",
-    "choose": "Choose a time"
+    "choose": "Choose a time",
+    "noSlotsNote": "This therapist has no times right now. The waiting list is not available yet, so you can choose another therapist.",
+    "otherTherapists": "See therapists"
   }
 }

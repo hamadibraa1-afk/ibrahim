@@ -162,6 +162,7 @@ internal sealed class AppointmentConfiguration : IEntityTypeConfiguration<Appoin
         b.Property(x => x.Id).ValueGeneratedNever();
         b.Property(x => x.Status).HasConversion<byte>();
         b.Property(x => x.RoomId).HasMaxLength(64).IsUnicode(false).IsRequired();
+        b.Property(x => x.CancelReason).HasMaxLength(CancelReasons.MaxLength).IsUnicode(false);
         b.HasIndex(x => new { x.PatientId, x.StartsAtUtc });
         b.HasIndex(x => new { x.TherapistUserId, x.StartsAtUtc });
         b.HasIndex(x => x.SlotId).IsUnique().HasFilter("[Status] = 0").HasDatabaseName("UX_Appointments_OneConfirmedPerSlot");

@@ -139,7 +139,10 @@ public sealed class PatientJourneyTests : IAsyncLifetime
         var appointmentId = appointment.GetProperty("id").GetGuid();
         var ics = await me.GetAsync($"/v1/appointments/{appointmentId}/calendar");
         ics.Content.Headers.ContentType!.MediaType.Should().Be("text/calendar");
-        (await ics.Content.ReadAsStringAsync()).Should().Contain("BEGIN:VEVENT").And.Contain("جلسة طمأنينة مع أ. سارة م.");
+        ics.Content.Headers.ContentDisposition!.FileName.Should().Be("appointment.ics");
+        var icsText = await ics.Content.ReadAsStringAsync();
+        icsText.Should().Contain("BEGIN:VEVENT").And.Contain("SUMMARY:موعد\r\n").And.Contain($"UID:{appointmentId:N}\r\n");
+        icsText.Should().NotContainAny(["طمأنينة", "Tamaneen", "tamaneen", "سارة"], "the calendar entry is neutral (PB-42)");
         (await Read(await me.GetAsync("/v1/appointments"))).GetProperty("upcoming").GetArrayLength().Should().Be(1);
         (await Read(await me.GetAsync("/v1/triage"))).GetProperty("status").GetString().Should().Be("matched");
 
@@ -353,6 +356,90 @@ public sealed class PatientJourneyTests : IAsyncLifetime
         // A locked chat refuses AI-assisted work with an English explanation.
         var locked = await Problem(await me.PostAsJsonAsync("/v1/bookings/holds", new { slotId = slots[1].GetProperty("slotId").GetGuid() }), 409);
         locked.GetProperty("detail").GetString().Should().StartWith("The chat is paused now.");
+    }
+
+    [Fact]
+    public async Task A_patient_cancels_with_a_reason_and_the_calendar_entry_is_neutral()
+    {
+        var (access, _) = await SignUpAsync("en", $"cancel-{Guid.NewGuid():N}@example.com");
+        using var me = _hosts.ApiClient("en", access);
+        await Read(await me.PutAsJsonAsync("/v1/me/consents", new { items = new[] { "platform", "ai", "share_with_therapist" }.Select(k => new { key = k, granted = true }) }));
+        await Read(await me.PutAsJsonAsync("/v1/me/safety-info", new { shareLocation = false }));
+        await Read(await me.PutAsJsonAsync("/v1/me/path", new { path = "direct" }));
+        await Read(await me.PostAsJsonAsync("/v1/screening/cssrs", new { answers = new bool[6] }));
+
+        // A time well past the 24-hour change deadline, from the end of the list so other tests keep the early ones.
+        var therapistId = (await Read(await me.GetAsync("/v1/therapists")))[0].GetProperty("id").GetGuid();
+        var slots = await Read(await me.GetAsync($"/v1/therapists/{therapistId}/slots?days=14"));
+        var slot = slots.EnumerateArray().Last(s => DateTimeOffset.Parse(s.GetProperty("startsAt").GetString()!, System.Globalization.CultureInfo.InvariantCulture) > DateTimeOffset.UtcNow.AddDays(2));
+        var hold = await Read(await me.PostAsJsonAsync("/v1/bookings/holds", new { slotId = slot.GetProperty("slotId").GetGuid() }));
+        var id = (await Read(await me.PostAsync($"/v1/bookings/holds/{hold.GetProperty("holdId").GetGuid()}/confirm", null))).GetProperty("id").GetGuid();
+
+        // PB-42: the English calendar entry is just "Appointment".
+        var ics = await (await me.GetAsync($"/v1/appointments/{id}/calendar")).Content.ReadAsStringAsync();
+        ics.Should().Contain("SUMMARY:Appointment\r\n").And.NotContain("Tamaneen").And.NotContain("tamaneen");
+
+        // PB-45: a reason is required and must come from the list; the error is a localized field error.
+        var missing = await Problem(await me.PostAsync($"/v1/appointments/{id}/cancel", null), 400);
+        missing.GetProperty("errors").GetProperty("reasonCode")[0].GetString().Should().Be("This field is required.");
+        var unknown = await Problem(await me.PostAsJsonAsync($"/v1/appointments/{id}/cancel", new { reasonCode = "bored" }), 400);
+        unknown.GetProperty("errors").GetProperty("reasonCode")[0].GetString().Should().Be("This value is not valid.");
+        (await Read(await me.GetAsync($"/v1/appointments/{id}"))).GetProperty("status").GetString().Should().Be("confirmed");
+
+        var cancelled = await Read(await me.PostAsJsonAsync($"/v1/appointments/{id}/cancel", new { reasonCode = "schedule_conflict" }));
+        cancelled.GetProperty("status").GetString().Should().Be("cancelled_by_patient");
+    }
+
+    [Fact]
+    public async Task Sensitive_security_changes_need_the_password_and_the_authenticator_code()
+    {
+        var (access, _) = await SignUpAsync("ar", $"reauth-{Guid.NewGuid():N}@example.com");
+        using var me = _hosts.ApiClient("ar", access);
+        const string password = "Quiet-Morning-Walk-77";
+
+        // Steps are handed out in order: each one is accepted once (replay protection), all within ±1 of now.
+        var setup = await Read(await me.PostAsync("/v1/me/totp/setup", null));
+        var secret = FromBase32(setup.GetProperty("secret").GetString()!);
+        var step = Tamaneen.Infrastructure.Auth.Totp.StepAt(DateTimeOffset.UtcNow) - 1;
+        string NextCode() => Tamaneen.Infrastructure.Auth.Totp.Code(secret, step++);
+        (await me.PostAsJsonAsync("/v1/me/totp/confirm", new { code = NextCode() })).StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        // PB-55: new recovery codes need the password, and the code while the authenticator is on.
+        (await Problem(await me.PostAsync("/v1/me/recovery-codes", null), 400)).GetProperty("code").GetString().Should().Be("error.auth.password_mismatch");
+        var noCode = await Problem(await me.PostAsJsonAsync("/v1/me/recovery-codes", new { password }), 400);
+        noCode.GetProperty("code").GetString().Should().Be("error.auth.mfa_failed");
+        noCode.GetProperty("detail").GetString().Should().Be("رمز التحقق غير صحيح.");
+        (await Read(await me.PostAsJsonAsync("/v1/me/recovery-codes", new { password, code = NextCode() }))).GetProperty("recoveryCodes").GetArrayLength().Should().Be(10);
+
+        // Turning the authenticator off needs the password as well as the code.
+        var code = NextCode();
+        var withoutPassword = await me.SendAsync(new HttpRequestMessage(HttpMethod.Delete, "/v1/me/totp") { Content = JsonContent.Create(new { code }) });
+        (await Problem(withoutPassword, 400)).GetProperty("code").GetString().Should().Be("error.auth.password_mismatch");
+        (await Read(await me.GetAsync("/v1/me/security"))).GetProperty("totpEnabled").GetBoolean().Should().BeTrue();
+        var disabled = await me.SendAsync(new HttpRequestMessage(HttpMethod.Delete, "/v1/me/totp") { Content = JsonContent.Create(new { password, code }) });
+        disabled.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        // With the authenticator off, the password alone is enough.
+        (await Read(await me.PostAsJsonAsync("/v1/me/recovery-codes", new { password }))).GetProperty("recoveryCodes").GetArrayLength().Should().Be(10);
+    }
+
+    private static byte[] FromBase32(string text)
+    {
+        const string alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+        var bytes = new List<byte>();
+        int buffer = 0, bits = 0;
+        foreach (var c in text.Replace(" ", string.Empty, StringComparison.Ordinal))
+        {
+            buffer = (buffer << 5) | alphabet.IndexOf(c, StringComparison.Ordinal);
+            bits += 5;
+            if (bits >= 8)
+            {
+                bytes.Add((byte)(buffer >> (bits - 8)));
+                bits -= 8;
+            }
+        }
+
+        return [.. bytes];
     }
 
     private async Task<(string Access, string Refresh)> SignUpAsync(string language, string email)

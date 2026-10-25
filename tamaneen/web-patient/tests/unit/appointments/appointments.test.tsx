@@ -2,12 +2,12 @@ import { act, cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createTranslator } from 'next-intl';
 import type { ReactNode } from 'react';
-import { sessionLabel } from '@/components/appointments/labels';
+import { newBookingHref, sessionLabel } from '@/components/appointments/labels';
 import type { Translator } from '@/components/matching/labels';
 import { ApiError } from '@/lib/api/errors';
 import { formatRelativeDays } from '@/lib/format';
 import { messagesFor, renderWithIntl } from '../intl';
-import { appointment, appointmentDetail, NOW } from '../matching/fixtures';
+import { appointment, appointmentDetail, khaled, NOW } from '../matching/fixtures';
 
 const mocks = vi.hoisted(() => ({ api: vi.fn(), push: vi.fn(), refresh: vi.fn() }));
 vi.mock('@/lib/api/client', () => ({ api: mocks.api }));
@@ -37,6 +37,14 @@ describe('session ordinals', () => {
     const en = createTranslator({ locale: 'en', messages: messagesFor('en'), namespace: 'appointments' }) as unknown as Translator;
     expect([1, 2, 3, 10, 11].map((n) => sessionLabel(ar, n, 'ar'))).toEqual(['الجلسة الأولى', 'الجلسة الثانية', 'الجلسة الثالثة', 'الجلسة العاشرة', 'الجلسة 11']);
     expect([1, 2, 3, 10, 11].map((n) => sessionLabel(en, n, 'en'))).toEqual(['First session', 'Second session', 'Third session', 'Tenth session', 'Session 11']);
+  });
+});
+
+describe('newBookingHref (P27 «حجز موعد جديد»)', () => {
+  it('books with the current therapist, or opens the matches when there is none', () => {
+    expect(newBookingHref({ upcoming: [appointment()], past: [] })).toBe('/therapists/t-sara/book');
+    expect(newBookingHref({ upcoming: [], past: [appointment({ therapist: khaled, status: 'completed' })] })).toBe('/therapists/t-khaled/book');
+    expect(newBookingHref({ upcoming: [], past: [] })).toBe('/matches');
   });
 });
 
@@ -117,10 +125,10 @@ describe('AppointmentActions (P28)', () => {
     expect(dialog).toHaveAttribute('aria-modal', 'true');
     expect(dialog).toHaveAccessibleDescription(/سنلغي موعدك الأربعاء، 21 أكتوبر · .* مع أ. سارة م./);
     expect(within(dialog).getByRole('button', { name: 'تراجع' })).toHaveFocus();
+    expect(within(dialog).getByRole('radiogroup', { name: 'سبب الإلغاء' })).toBeInTheDocument();
+    expect(within(dialog).getAllByRole('radio')).toHaveLength(5);
     await user.tab();
-    expect(within(dialog).getByRole('button', { name: 'نعم، ألغِ الموعد' })).toHaveFocus();
-    await user.tab();
-    expect(within(dialog).getByRole('button', { name: 'تراجع' })).toHaveFocus();
+    expect(within(dialog).getByRole('radio', { name: 'تعارض مع موعد آخر' })).toHaveFocus();
 
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
@@ -134,10 +142,19 @@ describe('AppointmentActions (P28)', () => {
     renderWithIntl(<AppointmentActions appointment={appointmentDetail()} timeZone="Asia/Riyadh" />, 'en');
     await user.click(screen.getByRole('button', { name: 'Cancel appointment' }));
     await user.click(screen.getByRole('button', { name: 'Yes, cancel it' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('Choose a reason for cancelling.');
+    expect(mocks.api).not.toHaveBeenCalled();
 
-    expect(mocks.api).toHaveBeenCalledWith('appointments/a1/cancel', { method: 'POST' });
+    const feelingBetter = screen.getByRole('radio', { name: "I'm feeling better" });
+    await user.click(feelingBetter);
+    expect(feelingBetter).toHaveAttribute('aria-checked', 'true');
+    expect(screen.queryByRole('alert')).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Yes, cancel it' }));
+
+    expect(mocks.api).toHaveBeenCalledWith('appointments/a1/cancel', { method: 'POST', body: { reasonCode: 'feeling_better' } });
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     expect(screen.getByRole('status')).toHaveTextContent('Your appointment is cancelled.');
+    expect(screen.getByRole('link', { name: 'Book a new appointment' })).toHaveAttribute('href', '/therapists/t-sara/book');
     expect(mocks.refresh).toHaveBeenCalled();
   });
 
@@ -148,6 +165,7 @@ describe('AppointmentActions (P28)', () => {
     const user = userEvent.setup();
     renderWithIntl(<AppointmentActions appointment={appointmentDetail()} timeZone="Asia/Riyadh" />);
     await user.click(screen.getByRole('button', { name: 'إلغاء الموعد' }));
+    await user.click(screen.getByRole('radio', { name: 'تعارض مع موعد آخر' }));
     await user.click(screen.getByRole('button', { name: 'نعم، ألغِ الموعد' }));
     expect(await within(screen.getByRole('dialog')).findByRole('alert')).toHaveTextContent('لا يمكن الإلغاء قبل أقل من 24 ساعة');
   });

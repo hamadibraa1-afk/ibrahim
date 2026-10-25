@@ -92,6 +92,8 @@ export interface SecurityOverview { passwordChangedAt: string; totpEnabled: bool
 export interface ChangePasswordRequest { currentPassword: string; newPassword: string }
 export interface TotpSetup { secret: string; otpauthUri: string }
 export interface CodeRequest { code: string }
+/** P32 re-authentication: DELETE me/totp (both required) and POST me/recovery-codes (code while the authenticator is on). */
+export interface ReauthRequest { password: string; code?: string }
 export interface RecoveryCodes { recoveryCodes: string[] }
 
 export type ReminderFrequency = 'daily' | 'every2days' | 'off';
@@ -183,6 +185,9 @@ export interface Appointment {
 export interface AppointmentDetail extends Appointment { canChange: boolean; changeDeadline: string; joinUrl: string | null; joinAvailableAt: string }
 export interface AppointmentList { upcoming: Appointment[]; past: Appointment[] }
 export interface RescheduleRequest { slotId: string }
+/** P28 cancel reasons (PB-45). Codes only; the labels are in messages `appointmentDetail.reasons`. */
+export type CancelReasonCode = 'schedule_conflict' | 'feeling_better' | 'unwell' | 'therapist_fit' | 'other';
+export interface CancelRequest { reasonCode: CancelReasonCode }
 
 // ---------- Home, mood, homework, safety plan ----------
 export interface HomeSummary {

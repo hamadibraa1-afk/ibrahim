@@ -1,6 +1,7 @@
 'use client';
 
-import { ApiError, CRISIS_LOCKED_CODE, toApiError } from './errors';
+import { rememberReturnPath, sessionExpiredUrl } from '@/lib/returnPath';
+import { ApiError, CRISIS_LOCKED_CODE, MAINTENANCE_CODE, toApiError } from './errors';
 
 type Method = 'GET' | 'POST' | 'PUT' | 'DELETE';
 
@@ -45,7 +46,11 @@ export async function api<T>(path: string, options: { method?: Method; body?: un
     const error = await toApiError(response);
     if (typeof window !== 'undefined') {
       if (response.status === 401) {
-        window.location.assign(`/${currentLocale()}/session-expired`);
+        const here = `${window.location.pathname}${window.location.search}`;
+        rememberReturnPath(here);
+        window.location.assign(sessionExpiredUrl(currentLocale(), here));
+      } else if (error.code === MAINTENANCE_CODE) {
+        window.location.assign(`/${currentLocale()}/maintenance`);
       } else if (error.code === CRISIS_LOCKED_CODE) {
         window.location.assign(`/${currentLocale()}/crisis`);
       }

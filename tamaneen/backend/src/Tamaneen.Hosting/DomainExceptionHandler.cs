@@ -50,6 +50,7 @@ public sealed partial class DomainExceptionHandler<TResource> : IExceptionHandle
         [ErrorCodes.IntakeClosed] = StatusCodes.Status409Conflict,
         [ErrorCodes.DeletionBlockedByCrisis] = StatusCodes.Status409Conflict,
         [ErrorCodes.CrisisServiceUnavailable] = StatusCodes.Status503ServiceUnavailable,
+        [ErrorCodes.Maintenance] = StatusCodes.Status503ServiceUnavailable,
     };
 
     private readonly IProblemDetailsService _problems;

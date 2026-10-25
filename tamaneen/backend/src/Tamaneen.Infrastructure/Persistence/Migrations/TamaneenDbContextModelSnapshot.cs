@@ -524,6 +524,11 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("CancelReason")
+                        .HasMaxLength(32)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(32)");
+
                     b.Property<DateTimeOffset?>("CancelledAtUtc")
                         .HasColumnType("datetimeoffset");
 

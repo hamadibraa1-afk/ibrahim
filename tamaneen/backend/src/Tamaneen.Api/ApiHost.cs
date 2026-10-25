@@ -22,6 +22,15 @@ public static class ApiHost
 
     private static readonly string[] ReadyTags = { "ready" };
 
+    /// <summary>During maintenance only the patient's own endpoints pause; config, sign-in, crisis help and the staff portal stay up.</summary>
+    internal static bool MaintenanceBlocks(PathString path, PlatformOptions platform) =>
+        platform.Maintenance
+        && path.StartsWithSegments("/v1", StringComparison.OrdinalIgnoreCase)
+        && !path.StartsWithSegments("/v1/meta", StringComparison.OrdinalIgnoreCase)
+        && !path.StartsWithSegments("/v1/auth", StringComparison.OrdinalIgnoreCase)
+        && !path.StartsWithSegments("/v1/crisis", StringComparison.OrdinalIgnoreCase)
+        && !path.StartsWithSegments("/v1/staff", StringComparison.OrdinalIgnoreCase);
+
     private static void AddMessageSender(WebApplicationBuilder builder)
     {
         var url = builder.Configuration["Messaging:WebhookUrl"];
@@ -108,6 +117,15 @@ public static class ApiHost
         app.UseRequestLocalization();
         app.UseExceptionHandler();
         app.UseStatusCodePages();
+        app.Use(async (context, next) =>
+        {
+            if (MaintenanceBlocks(context.Request.Path, context.RequestServices.GetRequiredService<Microsoft.Extensions.Options.IOptionsMonitor<PlatformOptions>>().CurrentValue))
+            {
+                throw new DomainException(ErrorCodes.Maintenance, "Scheduled maintenance.");
+            }
+
+            await next(context).ConfigureAwait(false);
+        });
         app.UseCors(CorsPolicy);
         app.UseAuthentication();
         app.UseAuthorization();

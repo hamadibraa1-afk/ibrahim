@@ -10,7 +10,7 @@
     "sentAt": "{day} {time}",
     "reviewing": "مختص يراجع ملفك",
     "expected": "المتوقع خلال {hours, plural, one {ساعة واحدة} two {ساعتين} few {# ساعات} other {# ساعة}} تقريبًا",
-    "expectedSoon": "نتوقع أن تنتهي المراجعة قريبًا جدًا",
+    "expectedSoon": "نراجع ملفك، شكرًا لصبرك",
     "reviewed": "راجع مختص ملفك",
     "suggestions": "نقترح عليك ثلاثة أخصائيين",
     "notify": "سنرسل لك إشعارًا",

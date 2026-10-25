@@ -4,11 +4,13 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useId, useState, type FormEvent, type ReactNode } from 'react';
 import { isLocale, routing } from '@/i18n/routing';
 import { api, authApi } from '@/lib/api/client';
-import type { ChangePasswordRequest, RecoveryCodes, SecurityOverview, SessionInfo, TotpSetup } from '@/lib/api/types';
+import { ApiError } from '@/lib/api/errors';
+import type { ChangePasswordRequest, ReauthRequest, RecoveryCodes, SecurityOverview, SessionInfo, TotpSetup } from '@/lib/api/types';
 import { asciiDigits } from '@/lib/format';
 import { Button, buttonClass } from '@/components/ui/Button';
 import { Notice } from '@/components/ui/Notice';
 import { TextField } from '@/components/ui/TextField';
+import { clearLocalCopies } from '@/components/pwa/signOut';
 import { Dialog, DialogCancel } from './Dialog';
 import { fieldProblems, problemMessage } from './problem';
 import { formatAgo } from './time';
@@ -39,9 +41,16 @@ function cleanCode(value: string): string {
   return asciiDigits(value).replace(/\D/g, '').slice(0, 6);
 }
 
+/** Where a failed re-authentication belongs: a wrong password under the password, anything else under the code. */
+function reauthProblem(error: unknown, fallback: string): { password?: string; code?: string } {
+  const message = problemMessage(error, fallback);
+  return error instanceof ApiError && error.code === 'error.auth.password_mismatch' ? { password: message } : { code: message };
+}
+
 /**
  * P32 Security: password, authenticator app, recovery codes and signed-in devices. Passkeys are not part
- * of this release, so their row is left out.
+ * of this release, so their row is left out. Turning the authenticator off and creating recovery codes ask for
+ * the password again (and the code); ending a device's session or every session asks for confirmation first.
  */
 export function SecurityPanel({ overview, nowIso }: { overview: SecurityOverview; nowIso: string }) {
   const t = useTranslations('settings.security');
@@ -66,7 +75,9 @@ export function SecurityPanel({ overview, nowIso }: { overview: SecurityOverview
   const [totpOpen, setTotpOpen] = useState(false);
   const [setup, setSetup] = useState<TotpSetup | null>(null);
   const [code, setCode] = useState('');
+  const [totpPassword, setTotpPassword] = useState('');
   const [totpError, setTotpError] = useState<string | null>(null);
+  const [totpPasswordError, setTotpPasswordError] = useState<string | null>(null);
   const [totpBusy, setTotpBusy] = useState(false);
 
   // Recovery codes
@@ -75,6 +86,9 @@ export function SecurityPanel({ overview, nowIso }: { overview: SecurityOverview
   const [codes, setCodes] = useState<string[] | null>(null);
   const [codesBusy, setCodesBusy] = useState(false);
   const [codesError, setCodesError] = useState<string | null>(null);
+  const [reauthPassword, setReauthPassword] = useState('');
+  const [reauthCode, setReauthCode] = useState('');
+  const [reauthErrors, setReauthErrors] = useState<{ password?: string; code?: string }>({});
   const [copied, setCopied] = useState(false);
 
   // Devices
@@ -82,6 +96,8 @@ export function SecurityPanel({ overview, nowIso }: { overview: SecurityOverview
   const [ending, setEnding] = useState<string | null>(null);
   const [devicesError, setDevicesError] = useState<string | null>(null);
   const [revokingAll, setRevokingAll] = useState(false);
+  const [confirmEnd, setConfirmEnd] = useState<SessionInfo | null>(null);
+  const [confirmAll, setConfirmAll] = useState(false);
 
   async function changePassword(event: FormEvent) {
     event.preventDefault();
@@ -110,7 +126,9 @@ export function SecurityPanel({ overview, nowIso }: { overview: SecurityOverview
   function toggleTotp() {
     setTotpOpen((open) => !open);
     setCode('');
+    setTotpPassword('');
     setTotpError(null);
+    setTotpPasswordError(null);
   }
 
   async function startSetup() {
@@ -127,15 +145,19 @@ export function SecurityPanel({ overview, nowIso }: { overview: SecurityOverview
 
   async function submitCode(event: FormEvent) {
     event.preventDefault();
+    const passwordMissing = totpEnabled && !totpPassword;
+    setTotpPasswordError(passwordMissing ? t('reauthPasswordRequired') : null);
     if (code.length !== 6) {
       setTotpError(t('codeInvalid'));
       return;
     }
-    setTotpBusy(true);
     setTotpError(null);
+    if (passwordMissing) return;
+    setTotpBusy(true);
     try {
       if (totpEnabled) {
-        await api('me/totp', { method: 'DELETE', body: { code } });
+        const body: ReauthRequest = { password: totpPassword, code };
+        await api('me/totp', { method: 'DELETE', body });
         setTotpEnabled(false);
         setNotice(t('totpOff'));
       } else {
@@ -145,26 +167,55 @@ export function SecurityPanel({ overview, nowIso }: { overview: SecurityOverview
       }
       setSetup(null);
       setCode('');
+      setTotpPassword('');
       setTotpOpen(false);
     } catch (e) {
-      setTotpError(problemMessage(e, te('network')));
+      if (totpEnabled) {
+        const problem = reauthProblem(e, te('network'));
+        setTotpPasswordError(problem.password ?? null);
+        setTotpError(problem.code ?? null);
+      } else {
+        setTotpError(problemMessage(e, te('network')));
+      }
     } finally {
       setTotpBusy(false);
     }
   }
 
-  async function generateCodes() {
+  function openCodesDialog() {
+    setReauthPassword('');
+    setReauthCode('');
+    setReauthErrors({});
+    setCodesError(null);
+    setConfirmCodes(true);
+  }
+
+  async function generateCodes(event: FormEvent) {
+    event.preventDefault();
+    const errors: typeof reauthErrors = {};
+    if (!reauthPassword) errors.password = t('reauthPasswordRequired');
+    if (totpEnabled && reauthCode.length !== 6) errors.code = t('codeInvalid');
+    setReauthErrors(errors);
+    if (errors.password || errors.code) return;
     setCodesBusy(true);
     setCodesError(null);
     try {
-      const result = await api<RecoveryCodes>('me/recovery-codes', { method: 'POST' });
+      const body: ReauthRequest = totpEnabled ? { password: reauthPassword, code: reauthCode } : { password: reauthPassword };
+      const result = await api<RecoveryCodes>('me/recovery-codes', { method: 'POST', body });
       setCodes(result.recoveryCodes);
       setRemaining(result.recoveryCodes.length);
       setCopied(false);
       setConfirmCodes(false);
+      setReauthPassword('');
+      setReauthCode('');
     } catch (e) {
-      setCodesError(problemMessage(e, te('network')));
-      setConfirmCodes(false);
+      // A wrong password or code keeps the dialog open with the error under the field.
+      if (e instanceof ApiError && (e.code === 'error.auth.password_mismatch' || e.code === 'error.auth.mfa_failed')) {
+        setReauthErrors(reauthProblem(e, te('network')));
+      } else {
+        setCodesError(problemMessage(e, te('network')));
+        setConfirmCodes(false);
+      }
     } finally {
       setCodesBusy(false);
     }
@@ -193,6 +244,7 @@ export function SecurityPanel({ overview, nowIso }: { overview: SecurityOverview
   }
 
   async function endSession(session: SessionInfo) {
+    setConfirmEnd(null);
     setEnding(session.id);
     setDevicesError(null);
     try {
@@ -207,6 +259,7 @@ export function SecurityPanel({ overview, nowIso }: { overview: SecurityOverview
   }
 
   async function signOutEverywhere() {
+    setConfirmAll(false);
     setRevokingAll(true);
     setDevicesError(null);
     try {
@@ -218,6 +271,7 @@ export function SecurityPanel({ overview, nowIso }: { overview: SecurityOverview
     }
     await clearLocalSafetyData();
     await authApi('logout').catch(() => undefined);
+    await clearLocalCopies();
     window.location.assign(`/${locale}/login`);
   }
 
@@ -294,7 +348,20 @@ export function SecurityPanel({ overview, nowIso }: { overview: SecurityOverview
                       </a>
                     </>
                   ) : (
-                    <p className="text-sm leading-relaxed text-muted">{t('disableIntro')}</p>
+                    <>
+                      <p className="text-sm leading-relaxed text-muted">{t('disableIntro')}</p>
+                      <TextField
+                        label={t('reauthPassword')}
+                        type="password"
+                        autoComplete="current-password"
+                        value={totpPassword}
+                        error={totpPasswordError}
+                        onChange={(e) => {
+                          setTotpPassword(e.target.value);
+                          setTotpPasswordError(null);
+                        }}
+                      />
+                    </>
                   )}
                   <TextField
                     label={t('codeLabel')}
@@ -323,7 +390,7 @@ export function SecurityPanel({ overview, nowIso }: { overview: SecurityOverview
           title={t('recovery')}
           status={t('recoveryLeft', { remaining, total: RECOVERY_TOTAL })}
           action={
-            <button type="button" className={rowButton} aria-label={t('generateLabel')} onClick={() => setConfirmCodes(true)}>
+            <button type="button" className={rowButton} aria-label={t('generateLabel')} onClick={openCodesDialog}>
               {t('generate')}
             </button>
           }
@@ -388,7 +455,7 @@ export function SecurityPanel({ overview, nowIso }: { overview: SecurityOverview
                     compact
                     busy={ending === session.id}
                     aria-label={t('endSessionLabel', { device: session.deviceLabel })}
-                    onClick={() => endSession(session)}
+                    onClick={() => setConfirmEnd(session)}
                     className="rounded-[12px] border-line"
                   >
                     {t('endSession')}
@@ -401,17 +468,67 @@ export function SecurityPanel({ overview, nowIso }: { overview: SecurityOverview
         {devicesError ? <Notice tone="danger">{devicesError}</Notice> : null}
       </section>
 
-      <Button variant="danger-outline" full busy={revokingAll} onClick={signOutEverywhere} className="mt-6 rounded-[16px]">
+      <Button variant="danger-outline" full busy={revokingAll} onClick={() => setConfirmAll(true)} className="mt-6 rounded-[16px]">
         {t('signOutAll')}
       </Button>
 
       <Dialog open={confirmCodes} onClose={() => setConfirmCodes(false)} title={t('generateTitle')}>
         <p className="text-sm leading-relaxed text-muted">{t('generateBody')}</p>
+        <form onSubmit={generateCodes} noValidate className="flex flex-col gap-3">
+          <p className="text-sm leading-relaxed">{totpEnabled ? t('reauthIntroTotp') : t('reauthIntro')}</p>
+          <TextField
+            label={t('reauthPassword')}
+            type="password"
+            autoComplete="current-password"
+            value={reauthPassword}
+            error={reauthErrors.password}
+            onChange={(e) => {
+              setReauthPassword(e.target.value);
+              setReauthErrors((errors) => ({ ...errors, password: undefined }));
+            }}
+          />
+          {totpEnabled ? (
+            <TextField
+              label={t('codeLabel')}
+              dir="ltr"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={6}
+              value={reauthCode}
+              error={reauthErrors.code}
+              onChange={(e) => {
+                setReauthCode(cleanCode(e.target.value));
+                setReauthErrors((errors) => ({ ...errors, code: undefined }));
+              }}
+              className="tracking-[0.3em]"
+            />
+          ) : null}
+          <div className="flex flex-col gap-2">
+            <Button type="submit" full busy={codesBusy}>
+              {t('generateConfirm')}
+            </Button>
+            <DialogCancel onClick={() => setConfirmCodes(false)} />
+          </div>
+        </form>
+      </Dialog>
+
+      <Dialog open={confirmEnd !== null} onClose={() => setConfirmEnd(null)} title={t('endTitle', { device: confirmEnd?.deviceLabel ?? '' })}>
+        <p className="text-sm leading-relaxed text-muted">{t('endBody')}</p>
         <div className="flex flex-col gap-2">
-          <Button full busy={codesBusy} onClick={generateCodes}>
-            {t('generateConfirm')}
+          <Button variant="danger" full onClick={() => confirmEnd && endSession(confirmEnd)}>
+            {t('endConfirm')}
           </Button>
-          <DialogCancel onClick={() => setConfirmCodes(false)} />
+          <DialogCancel onClick={() => setConfirmEnd(null)} />
+        </div>
+      </Dialog>
+
+      <Dialog open={confirmAll} onClose={() => setConfirmAll(false)} title={t('signOutAllTitle')} tone="danger">
+        <p className="text-sm leading-relaxed text-muted">{t('signOutAllBody')}</p>
+        <div className="flex flex-col gap-2">
+          <Button variant="danger" full onClick={signOutEverywhere}>
+            {t('signOutAllConfirm')}
+          </Button>
+          <DialogCancel onClick={() => setConfirmAll(false)} />
         </div>
       </Dialog>
     </div>
