@@ -28,6 +28,7 @@
       "few": "We've paused sign-in to protect your account. Try again in {minutes} minutes.",
       "many": "We've paused sign-in to protect your account. Try again in {minutes} minutes.",
       "other": "We've paused sign-in to protect your account. Try again in {minutes} minutes."
-    }
+    },
+    "contactInvalid": "Enter a valid mobile number or email address."
   }
 }

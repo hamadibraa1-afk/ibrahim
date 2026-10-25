@@ -43,13 +43,17 @@ describe('MatchSuggestions (P07)', () => {
     expect(screen.getByRole('link', { name: 'تصفح جميع الأخصائيين' })).toHaveAttribute('href', '/therapists');
   });
 
-  it('removes a dismissed therapist at once, confirms, and shows the updated list', async () => {
+  it('asks first in a sheet with an optional reason, then removes the therapist and shows the updated list (PB-36)', async () => {
     let resolve!: (v: unknown) => void;
     mocks.api.mockReturnValue(new Promise((r) => (resolve = r)));
     renderWithIntl(<MatchSuggestions initial={items} patientLanguage="ar" timeZone="Asia/Riyadh" />);
 
     await userEvent.click(screen.getByRole('button', { name: 'غير مناسب: أ. خالد ع.' }));
-    expect(mocks.api).toHaveBeenCalledWith('matches/t-khaled/dismiss', { method: 'POST' });
+    const sheet = await screen.findByRole('dialog', { name: 'إزالة أ. خالد ع. من اقتراحاتك؟' });
+    expect(mocks.api).not.toHaveBeenCalled();
+    await userEvent.click(within(sheet).getByRole('radio', { name: 'المواعيد لا تناسبني' }));
+    await userEvent.click(within(sheet).getByRole('button', { name: 'نعم، أزل الاقتراح' }));
+    expect(mocks.api).toHaveBeenCalledWith('matches/t-khaled/dismiss', { method: 'POST', body: { reason: 'schedule' } });
     // Optimistic: gone before the server answers.
     expect(screen.queryByText('أ. خالد ع.')).toBeNull();
     const confirmation = screen.getByText('أزلنا أ. خالد ع. من اقتراحاتك، ولن نقترحه عليك مرة أخرى.');
@@ -69,8 +73,20 @@ describe('MatchSuggestions (P07)', () => {
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('We picked three therapists for you');
 
     await userEvent.click(screen.getByRole('button', { name: 'Not a good fit: أ. سارة م.' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Yes, remove the suggestion' }));
+    expect(mocks.api).toHaveBeenCalledWith('matches/t-sara/dismiss', { method: 'POST', body: {} });
     expect(await screen.findByRole('alert')).toHaveTextContent('Server problem');
     expect(screen.getByText('أ. سارة م.')).toBeInTheDocument();
     expect(screen.getByText('Why we suggested her:')).toBeInTheDocument();
+  });
+
+  it('keeps the suggestion when the sheet is cancelled', async () => {
+    renderWithIntl(<MatchSuggestions initial={items} patientLanguage="en" timeZone="Asia/Riyadh" />, 'en');
+    await userEvent.click(screen.getByRole('button', { name: 'Not a good fit: أ. خالد ع.' }));
+    expect(await screen.findByRole('dialog')).toHaveTextContent('Why? (optional)');
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.getByText('أ. خالد ع.')).toBeInTheDocument();
+    expect(mocks.api).not.toHaveBeenCalled();
   });
 });

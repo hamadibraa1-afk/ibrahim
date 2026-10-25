@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { Notice } from '@/components/ui/Notice';
 import { TextField } from '@/components/ui/TextField';
 import { FLOW_KEYS, clearFlow, writeFlow, type MfaState } from '@/components/onboarding/flowStorage';
-import { LOCK_MINUTES, normalizeContact, pluralKey } from './contact';
+import { LOCK_MINUTES, isValidContact, normalizeContact, pluralKey } from './contact';
 import { fieldErrorsOf, problemText } from './errorText';
 import { signedInPath } from './finishSignIn';
 import { PasswordField } from './PasswordField';
@@ -35,6 +35,7 @@ export function LoginForm({ notice }: { notice?: 'reset' | 'restart' | null }) {
     e.preventDefault();
     const next: Errors = {};
     if (!contact.trim()) next.contact = t('contactRequired');
+    else if (!isValidContact(contact)) next.contact = t('contactInvalid');
     if (!password) next.password = t('passwordRequired');
     setErrors(next);
     if (next.contact || next.password) return;
@@ -84,6 +85,7 @@ export function LoginForm({ notice }: { notice?: 'reset' | 'restart' | null }) {
         label={t('contact')}
         value={contact}
         onChange={(e) => setContact(e.target.value)}
+        onBlur={() => setErrors((prev) => ({ ...prev, contact: contact.trim() && !isValidContact(contact) ? t('contactInvalid') : undefined }))}
         dir="ltr"
         type="text"
         inputMode="email"

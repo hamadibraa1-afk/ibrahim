@@ -63,6 +63,13 @@ public sealed class IntakeSession : Entity
 
     public DateTimeOffset? SubmittedAtUtc { get; private set; }
 
+    /// <summary>
+    /// The patient switched to the form (PB-28) because the assistant was unavailable: the questionnaires are
+    /// asked straight away, the conversation turns are no longer needed to finish, and the patient writes the
+    /// summary sections themselves.
+    /// </summary>
+    public bool FormMode { get; private set; }
+
     public DateTimeOffset? TherapistApprovedAtUtc { get; private set; }
 
     public Guid? TherapistApprovedBy { get; private set; }
@@ -91,6 +98,14 @@ public sealed class IntakeSession : Entity
         LastActivityAtUtc = clock.UtcNow;
     }
 
+    public void SwitchToForm(IClock clock)
+    {
+        EnsureConversationOpen(clock);
+        FormMode = true;
+        Status = IntakeStatus.Active;
+        LastActivityAtUtc = clock.UtcNow;
+    }
+
     public void Pause(IClock clock)
     {
         EnsureConversationOpen(clock);
@@ -101,7 +116,7 @@ public sealed class IntakeSession : Entity
     /// <summary>The next questionnaire item to ask, or null if none is due yet or all are done.</summary>
     public (string Instrument, int Item, int Total)? PendingQuestion()
     {
-        if (Status is not (IntakeStatus.Active or IntakeStatus.Paused) || PatientTurns < TurnsBeforeQuestionnaires)
+        if (Status is not (IntakeStatus.Active or IntakeStatus.Paused) || (PatientTurns < TurnsBeforeQuestionnaires && !FormMode))
         {
             return null;
         }
@@ -161,7 +176,7 @@ public sealed class IntakeSession : Entity
 
     public int AnsweredOrSkipped => (Phq9 + Gad7).Count(c => c != '?');
 
-    public bool CanFinish => Status is IntakeStatus.Active or IntakeStatus.Paused && PatientTurns >= MinTurnsToFinish && !(Phq9 + Gad7).Contains('?', StringComparison.Ordinal);
+    public bool CanFinish => Status is IntakeStatus.Active or IntakeStatus.Paused && (PatientTurns >= MinTurnsToFinish || FormMode) && !(Phq9 + Gad7).Contains('?', StringComparison.Ordinal);
 
     /// <summary>0–100: 40 points for talking (up to six turns), 60 for the questionnaires.</summary>
     public int Progress =>

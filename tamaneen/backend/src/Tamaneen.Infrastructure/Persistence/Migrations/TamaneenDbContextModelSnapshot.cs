@@ -341,6 +341,9 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("ClientMessageId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("datetimeoffset");
 
@@ -363,6 +366,10 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("IntakeId", "ClientMessageId")
+                        .IsUnique()
+                        .HasFilter("[ClientMessageId] IS NOT NULL");
+
                     b.HasIndex("IntakeId", "CreatedAtUtc");
 
                     b.ToTable("IntakeMessages", "clinical");
@@ -372,6 +379,9 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("FormMode")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Gad7")
                         .IsRequired()
@@ -632,6 +642,11 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("DismissReason")
+                        .HasMaxLength(16)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(16)");
 
                     b.Property<bool>("Dismissed")
                         .HasColumnType("bit");

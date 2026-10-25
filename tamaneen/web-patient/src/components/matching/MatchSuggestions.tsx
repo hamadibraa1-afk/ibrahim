@@ -1,10 +1,10 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { Link } from '@/i18n/navigation';
 import { api } from '@/lib/api/client';
-import type { Lang, MatchList, MatchSuggestion } from '@/lib/api/types';
+import type { DismissReason, DismissRequest, Lang, MatchList, MatchSuggestion } from '@/lib/api/types';
 import { formatNumber } from '@/lib/format';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button, ButtonLink } from '@/components/ui/Button';
@@ -13,6 +13,7 @@ import { Tag } from '@/components/ui/Chip';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Notice } from '@/components/ui/Notice';
 import { PageHeading } from '@/components/ui/PageHeading';
+import { Dialog } from '@/components/booking/Dialog';
 import { ProblemNotice } from '@/components/booking/ProblemNotice';
 import { toShownProblem, type ShownProblem } from '@/components/booking/problem';
 import { asLocale, genderKey, specialtyLabels, type Translator } from './labels';
@@ -24,9 +25,14 @@ const FULL_CARDS = 2;
 /** "three therapists" is written out in the design; other counts use the number. */
 const titleKey = (count: number) => (count === 1 ? 'titleOne' : count === 2 ? 'titleTwo' : count === 3 ? 'titleThree' : 'titleMany');
 
+const REASONS: readonly DismissReason[] = ['specialty', 'gender', 'language', 'schedule', 'other'];
+
 type Feedback = { kind: 'dismissed'; text: string } | { kind: 'error'; problem: ShownProblem };
 
-/** P07 ready state: the reviewed suggestions, with "not a good fit" removing one at once. */
+/**
+ * P07 ready state: the reviewed suggestions. "Not a good fit" opens a confirmation sheet with an optional
+ * reason (PB-36), then removes the suggestion with no penalty.
+ */
 export function MatchSuggestions({ initial, patientLanguage, timeZone }: { initial: MatchSuggestion[]; patientLanguage: Lang; timeZone: string }) {
   const t = useTranslations('matching');
   const ts: Translator = useTranslations('specialties');
@@ -35,6 +41,9 @@ export function MatchSuggestions({ initial, patientLanguage, timeZone }: { initi
   const [items, setItems] = useState(() => [...initial].sort((a, b) => a.rank - b.rank));
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState<MatchSuggestion | null>(null);
+  const [reason, setReason] = useState<DismissReason | null>(null);
+  const reasonsId = useId();
   const feedbackRef = useRef<HTMLDivElement>(null);
   const [now] = useState(() => new Date());
 
@@ -43,14 +52,21 @@ export function MatchSuggestions({ initial, patientLanguage, timeZone }: { initi
     if (feedback) feedbackRef.current?.focus();
   }, [feedback]);
 
-  async function dismiss(suggestion: MatchSuggestion) {
+  function ask(suggestion: MatchSuggestion) {
+    setReason(null);
+    setConfirming(suggestion);
+  }
+
+  async function dismiss(suggestion: MatchSuggestion, chosen: DismissReason | null) {
     const { therapist } = suggestion;
     const previous = items;
+    setConfirming(null);
     setBusyId(therapist.id);
     setItems(previous.filter((s) => s.therapist.id !== therapist.id));
     setFeedback({ kind: 'dismissed', text: t(genderKey('dismissed', therapist.gender), { name: therapist.displayName }) });
     try {
-      const next = await api<MatchList>(`matches/${encodeURIComponent(therapist.id)}/dismiss`, { method: 'POST' });
+      const body: DismissRequest = chosen ? { reason: chosen } : {};
+      const next = await api<MatchList>(`matches/${encodeURIComponent(therapist.id)}/dismiss`, { method: 'POST', body });
       setItems([...next.items].sort((a, b) => a.rank - b.rank));
     } catch (error) {
       setItems(previous);
@@ -132,7 +148,7 @@ export function MatchSuggestions({ initial, patientLanguage, timeZone }: { initi
                     </ButtonLink>
                     <Button
                       variant="secondary"
-                      onClick={() => dismiss(suggestion)}
+                      onClick={() => ask(suggestion)}
                       disabled={busyId !== null}
                       aria-label={t('dismissLabel', { name: therapist.displayName })}
                       className="text-ink"
@@ -146,6 +162,31 @@ export function MatchSuggestions({ initial, patientLanguage, timeZone }: { initi
           })}
         </ul>
       )}
+
+      <Dialog
+        open={confirming !== null}
+        onClose={() => setConfirming(null)}
+        title={confirming ? t('dismissTitle', { name: confirming.therapist.displayName }) : ''}
+        description={t('dismissBody')}
+      >
+        <fieldset className="flex flex-col gap-1">
+          <legend className="mb-1 text-sm font-semibold">{t('dismissReasonLegend')}</legend>
+          {REASONS.map((r) => (
+            <label key={r} className="flex min-h-touch cursor-pointer items-center gap-3 text-base">
+              <input type="radio" name={`${reasonsId}-reason`} value={r} checked={reason === r} onChange={() => setReason(r)} className="h-5 w-5 accent-[rgb(var(--primary))]" />
+              {t(`dismissReasons.${r}`)}
+            </label>
+          ))}
+        </fieldset>
+        <div className="flex flex-col gap-2">
+          <Button full onClick={() => confirming && void dismiss(confirming, reason)}>
+            {t('dismissConfirm')}
+          </Button>
+          <Button full variant="secondary" onClick={() => setConfirming(null)}>
+            {t('dismissCancel')}
+          </Button>
+        </div>
+      </Dialog>
 
       <Link href="/therapists" className="mt-4 self-center py-3 text-base font-semibold text-primary underline underline-offset-4">
         {t('browseAll')}

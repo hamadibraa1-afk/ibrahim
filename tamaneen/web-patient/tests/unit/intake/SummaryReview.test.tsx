@@ -64,11 +64,26 @@ describe('SummaryReview (P05)', () => {
     await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/crisis'));
   });
 
-  it('submits to the care team and opens the waiting screen', async () => {
+  it('asks for confirmation with the review time, then submits and opens the waiting screen (PB-33)', async () => {
     routeApi({ 'POST intake/in-1/submit': () => ({ status: 'pending', submittedAt: '2026-10-20T11:10:00Z', expectedBy: null, suggestionsReady: false }) });
     renderWithIntl(<SummaryReview initial={summary} reviewHours={24} />, 'ar');
     await userEvent.click(screen.getByRole('button', { name: 'إرسال إلى فريق الرعاية' }));
+    const dialog = await screen.findByRole('dialog', { name: 'إرسال الملخص إلى فريق الرعاية؟' });
+    expect(dialog).toHaveTextContent('خلال 24 ساعة');
+    expect(api).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', { name: 'أراجع مرة أخرى' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'إرسال إلى فريق الرعاية' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'نعم، أرسل' }));
     await waitFor(() => expect(router.push).toHaveBeenCalledWith('/waiting'));
+  });
+
+  it('limits a section to 2,000 characters, as the server does (English)', async () => {
+    renderWithIntl(<SummaryReview initial={summary} reviewHours={24} />, 'en');
+    await userEvent.click(screen.getAllByRole('button', { name: /^Edit/ })[0]!);
+    const box = screen.getByTestId('edit-concern');
+    expect(box).toHaveAttribute('maxLength', '2000');
+    expect(screen.getByText(/of 2000 characters$/)).toBeInTheDocument();
   });
 
   it('explains how to write the summary when the AI was unavailable (English)', () => {

@@ -45,6 +45,9 @@ public sealed class PlatformOptions
 
     public string TimeZone { get; set; } = "Asia/Riyadh";
 
+    /// <summary>False pauses new sign-ups (EC-26): eligibility and sign-up are refused and the apps show the emergency numbers instead.</summary>
+    public bool SignupsOpen { get; set; } = true;
+
     /// <summary>Base address of the video service; the room id is appended ten minutes before a session.</summary>
     [Required]
     public string VideoBaseUrl { get; set; } = string.Empty;

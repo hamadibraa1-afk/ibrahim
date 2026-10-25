@@ -9,9 +9,6 @@
     "copied": "Codes copied.",
     "downloaded": "File downloaded.",
     "copyFailed": "We couldn't copy them. Select the codes and copy them yourself.",
-    "fileTitle": "Tamaneen · Recovery codes",
-    "fileBody": "Each code works once. Keep this file somewhere safe and don't share it with anyone.",
-    "fileDate": "Created: {date}",
     "extraTitle": "Extra protection (optional)",
     "extraBody": "An authenticator app on your phone",
     "setup": "Set up",
@@ -26,6 +23,7 @@
     "mustConfirm": "Confirm you've saved the codes to continue.",
     "missingTitle": "The codes are no longer shown here",
     "missingBody": "For your safety, recovery codes are shown only once. If you didn't save them, create new ones now; the old codes will stop working.",
-    "regenerate": "Create new codes"
+    "regenerate": "Create new codes",
+    "mustKeep": "Download or copy the codes first, then confirm you saved them to continue."
   }
 }

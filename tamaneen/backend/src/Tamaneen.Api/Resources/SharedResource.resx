@@ -28,6 +28,7 @@
   <data name="error.maintenance" xml:space="preserve"><value>We are doing scheduled maintenance and will be back soon. If you are in danger, call emergency services.</value></data>
   <data name="error.not_found" xml:space="preserve"><value>We couldn't find this item.</value></data>
   <data name="error.ai.message_invalid" xml:space="preserve"><value>The message is empty or longer than {0} characters.</value></data>
+  <data name="error.auth.signups_paused" xml:space="preserve"><value>New sign-ups are paused right now. If you are in danger, call the emergency number.</value></data>
   <data name="error.validation" xml:space="preserve"><value>Some of the information is not valid.</value></data>
   <data name="error.auth.invalid_credentials" xml:space="preserve"><value>The details are not correct.</value></data>
   <data name="error.auth.locked" xml:space="preserve"><value>We paused sign-in to protect you. Try again in {0} minutes.</value></data>
@@ -60,6 +61,7 @@
   <data name="error.intake.not_finished" xml:space="preserve"><value>We need a few more answers before finishing the conversation.</value></data>
   <data name="error.intake.not_in_review" xml:space="preserve"><value>The summary can't be changed now.</value></data>
   <data name="error.intake.closed" xml:space="preserve"><value>This conversation has ended. You can start a new one.</value></data>
+  <data name="error.homework.ended" xml:space="preserve"><value>This exercise has ended, so it can only be read now.</value></data>
   <data name="error.triage.already_reviewed" xml:space="preserve"><value>This file has already been reviewed.</value></data>
   <data name="error.auth.password_mismatch" xml:space="preserve"><value>The current password is not correct.</value></data>
   <data name="error.privacy.deletion_crisis_open" xml:space="preserve"><value>Your account can't be deleted right now because you have an open request for help with our clinical team. You can delete it once a professional has been in touch and the request is closed.</value></data>

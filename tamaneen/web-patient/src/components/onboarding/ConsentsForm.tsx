@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
-import { useRouter } from '@/i18n/navigation';
+import { Link, useRouter } from '@/i18n/navigation';
 import { api } from '@/lib/api/client';
 import type { Consent, ConsentKey, UpdateConsentsRequest } from '@/lib/api/types';
 import { Button } from '@/components/ui/Button';
@@ -20,7 +20,10 @@ export const CONSENT_MESSAGE_KEY: Record<ConsentKey, string> = {
   emergency_location: 'emergencyLocation',
 };
 
-/** P03 Consents, step 3 of 4. Required items must be on; optional ones are the patient's choice. */
+/**
+ * P03 Consents, step 3 of 4. Required items must be on; optional ones are the patient's choice. A required
+ * item can only be ticked once its full text has been opened (PB-15), unless it was already granted.
+ */
 export function ConsentsForm({ consents }: { consents: Consent[] }) {
   const t = useTranslations('consents');
   const te = useTranslations('errors');
@@ -29,6 +32,7 @@ export function ConsentsForm({ consents }: { consents: Consent[] }) {
   const hintId = `${baseId}-hint`;
   const [granted, setGranted] = useState<Record<string, boolean>>(() => Object.fromEntries(consents.map((c) => [c.key, c.granted])));
   const [open, setOpen] = useState<Record<string, boolean>>({});
+  const [read, setRead] = useState<Record<string, boolean>>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,6 +59,8 @@ export function ConsentsForm({ consents }: { consents: Consent[] }) {
         {items.map((c) => {
           const key = CONSENT_MESSAGE_KEY[c.key];
           const panelId = `${baseId}-${key}-full`;
+          const mustReadId = `${baseId}-${key}-must-read`;
+          const locked = c.required && !read[c.key] && !granted[c.key] && !c.granted;
           return (
             <li key={c.key} className="flex flex-col gap-2 p-4" data-testid={`consent-${c.key}`}>
               <CheckboxRow
@@ -63,13 +69,23 @@ export function ConsentsForm({ consents }: { consents: Consent[] }) {
                 label={t(`items.${key}.title`)}
                 trailing={<Tag tone={c.required ? 'teal' : 'muted'}>{c.required ? t('required') : t('optional')}</Tag>}
                 description={t(`items.${key}.body`)}
+                disabled={locked}
+                describedBy={locked ? mustReadId : undefined}
               />
+              {locked ? (
+                <p id={mustReadId} className="ps-9 text-xs text-muted">
+                  {t('readFirst')}
+                </p>
+              ) : null}
               <div className="ps-9">
                 <button
                   type="button"
                   aria-expanded={Boolean(open[c.key])}
                   aria-controls={panelId}
-                  onClick={() => setOpen((o) => ({ ...o, [c.key]: !o[c.key] }))}
+                  onClick={() => {
+                    setOpen((o) => ({ ...o, [c.key]: !o[c.key] }));
+                    setRead((r) => ({ ...r, [c.key]: true }));
+                  }}
                   className="inline-flex min-h-touch items-center text-sm font-semibold text-primary underline underline-offset-4"
                 >
                   {open[c.key] ? t('hideFull') : t('readFull')}
@@ -83,6 +99,21 @@ export function ConsentsForm({ consents }: { consents: Consent[] }) {
           );
         })}
       </ul>
+
+      <p className="text-sm leading-relaxed text-muted">
+        {t.rich('legal', {
+          privacy: (chunks) => (
+            <Link href={{ pathname: '/legal', query: { doc: 'privacy' } }} className="font-semibold text-primary underline underline-offset-4">
+              {chunks}
+            </Link>
+          ),
+          terms: (chunks) => (
+            <Link href={{ pathname: '/legal', query: { doc: 'terms' } }} className="font-semibold text-primary underline underline-offset-4">
+              {chunks}
+            </Link>
+          ),
+        })}
+      </p>
 
       {error ? <Notice tone="danger">{error}</Notice> : null}
 

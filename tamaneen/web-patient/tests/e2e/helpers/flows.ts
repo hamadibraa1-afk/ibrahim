@@ -63,12 +63,16 @@ export async function signUp(page: Page, locale: Locale, email: string, password
   await expectDirection(page, locale);
 }
 
-/** P17 → P03: confirm the codes are saved, continue. */
+/** P17 → P03: download the codes, confirm they are saved, continue (PB-09 needs both). */
 export async function confirmRecoveryCodes(page: Page, locale: Locale): Promise<void> {
   await expect(page.getByTestId('recovery-codes').getByRole('listitem')).toHaveCount(10);
   const next = page.getByRole('button', { name: t(locale, 'ui.continue') });
   await expect(next).toBeDisabled();
   await page.getByLabel(t(locale, 'recoveryCodes.savedCheck')).check();
+  await expect(next).toBeDisabled();
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: t(locale, 'recoveryCodes.download') }).click();
+  await download;
   await next.click();
   await expect(page).toHaveURL(new RegExp(`/${locale}/start/consents$`));
 }
@@ -80,7 +84,11 @@ export async function acceptRequiredConsents(page: Page, locale: Locale): Promis
   const submit = page.getByRole('button', { name: t(locale, 'consents.submit') });
   await expect(submit).toBeDisabled();
   for (const key of ['platform', 'ai', 'share_with_therapist']) {
-    await page.getByTestId(`consent-${key}`).getByRole('checkbox').check();
+    const row = page.getByTestId(`consent-${key}`);
+    // PB-15: a required consent can be ticked only after its full text was opened.
+    await expect(row.getByRole('checkbox')).toBeDisabled();
+    await row.getByRole('button', { name: t(locale, 'consents.readFull') }).click();
+    await row.getByRole('checkbox').check();
   }
   await expect(page.getByTestId('consent-research').getByRole('checkbox')).not.toBeChecked();
   await submit.click();

@@ -6,8 +6,9 @@ import { useRouter } from '@/i18n/navigation';
 import { isLocale, routing } from '@/i18n/routing';
 import { api } from '@/lib/api/client';
 import { ApiError } from '@/lib/api/errors';
-import type { ContactRequestCreated, IntakeState, IntakeSummary, IntakeTurnResponse } from '@/lib/api/types';
-import { formatDate } from '@/lib/format';
+import type { ContactRequestCreated, IntakeState, IntakeSummary, IntakeTurnResponse, SendMessageRequest } from '@/lib/api/types';
+import { formatDate, formatDateTime } from '@/lib/format';
+import { Dialog } from '@/components/booking/Dialog';
 import { clearDraft, loadDraft, saveDraft } from '@/components/pwa/drafts';
 import { apiMessage, isNetworkError } from '@/components/pwa/errors';
 import { useOnline } from '@/components/pwa/hooks';
@@ -22,6 +23,21 @@ import { QuestionCard } from './QuestionCard';
 const DRAFT_KEY = 'intake';
 const RETRY_MS = 15_000;
 
+/** A fresh id for one patient message; every retry of that message reuses it (PB-21). */
+function newClientMessageId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = Math.floor(Math.random() * 16);
+    return (c === 'x' ? r : (r % 4) + 8).toString(16);
+  });
+}
+
+/** The assistant is down when its latest turn was the fixed fallback (EC-10/11/16). */
+function assistantUnavailable(state: IntakeState | null): boolean {
+  const last = [...(state?.messages ?? [])].reverse().find((m) => m.role === 'assistant');
+  return Boolean(last?.fallback);
+}
+
 type Phase = 'loading' | 'ready' | 'paused' | 'expired' | 'error';
 
 /** Where a patient belongs when the intake is already past the chat. */
@@ -34,8 +50,11 @@ function laterStep(status: IntakeState['status']): string | null {
 /**
  * P04 Intake chat with Rafiq. Starts or resumes the intake, sends free text and questionnaire answers
  * through the crisis gate, and goes to the crisis screen the moment a response says `crisis: true`.
+ * Each message carries a client id, so "Retry" can never create a second turn. When the assistant is
+ * down the patient can switch to a form (PB-28); pausing returns home (PB-24); asking for a person is
+ * confirmed first and says when the team will reach out (PB-25).
  */
-export function IntakeChat() {
+export function IntakeChat({ triageWithinHours = 24 }: { triageWithinHours?: number }) {
   const t = useTranslations('intake');
   const tErrors = useTranslations('errors');
   const current = useLocale();
@@ -49,8 +68,9 @@ export function IntakeChat() {
   const [text, setText] = useState('');
   const [waiting, setWaiting] = useState(false);
   const [answering, setAnswering] = useState<number | null>(null);
-  const [busy, setBusy] = useState<'pause' | 'resume' | 'contact' | 'finish' | null>(null);
-  const [contactRequested, setContactRequested] = useState(false);
+  const [busy, setBusy] = useState<'pause' | 'resume' | 'contact' | 'finish' | 'form' | null>(null);
+  const [contactRequested, setContactRequested] = useState<ContactRequestCreated | null>(null);
+  const [confirmContact, setConfirmContact] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const sending = useRef(false);
 
@@ -126,11 +146,12 @@ export function IntakeChat() {
     async (message: DisplayMessage, intakeId: string) => {
       if (sending.current) return;
       sending.current = true;
-      setPending({ ...message, queued: false });
+      setPending({ ...message, queued: false, failed: false });
       setWaiting(true);
       setError(null);
       try {
-        const response = await api<IntakeTurnResponse>(`intake/${intakeId}/messages`, { method: 'POST', body: { text: message.text } });
+        const body: SendMessageRequest = { text: message.text, clientMessageId: message.clientMessageId };
+        const response = await api<IntakeTurnResponse>(`intake/${intakeId}/messages`, { method: 'POST', body });
         if (turn(response)) {
           setPending(null);
           clearDraft(DRAFT_KEY);
@@ -141,6 +162,11 @@ export function IntakeChat() {
           setPending({ ...message, queued: true });
           saveDraft(DRAFT_KEY, message.text);
           setError(t('offline'));
+        } else if (e instanceof ApiError && (e.status >= 500 || e.status === 429)) {
+          // The server may or may not have stored it: keep the bubble so "Retry" resends the same id.
+          setPending({ ...message, failed: true });
+          saveDraft(DRAFT_KEY, message.text);
+          setError(failure(e));
         } else {
           setPending(null);
           setText(message.text);
@@ -174,10 +200,14 @@ export function IntakeChat() {
   function send() {
     const trimmed = text.trim();
     if (!trimmed || !intake || pending) return;
-    const message: DisplayMessage = { id: `local-${Date.now()}`, role: 'patient', text: trimmed, at: new Date().toISOString() };
+    const message: DisplayMessage = { id: `local-${Date.now()}`, role: 'patient', text: trimmed, at: new Date().toISOString(), clientMessageId: newClientMessageId() };
     setText('');
     saveDraft(DRAFT_KEY, trimmed);
     void deliver(message, intake.intakeId);
+  }
+
+  function retry(message: DisplayMessage) {
+    if (intake) void deliver(message, intake.intakeId);
   }
 
   async function answer(value: number | null) {
@@ -201,7 +231,21 @@ export function IntakeChat() {
     setBusy('pause');
     setError(null);
     try {
-      apply(await api<IntakeState>(`intake/${intake.intakeId}/pause`, { method: 'POST' }));
+      await api<IntakeState>(`intake/${intake.intakeId}/pause`, { method: 'POST' });
+      // PB-24: saved; home shows "Continue intake" for the next 14 days.
+      router.push('/home');
+    } catch (e) {
+      setError(failure(e));
+      setBusy(null);
+    }
+  }
+
+  async function switchToForm() {
+    if (!intake) return;
+    setBusy('form');
+    setError(null);
+    try {
+      apply(await api<IntakeState>(`intake/${intake.intakeId}/form-mode`, { method: 'POST' }));
     } catch (e) {
       setError(failure(e));
     } finally {
@@ -219,11 +263,11 @@ export function IntakeChat() {
     setBusy('contact');
     setError(null);
     try {
-      await api<ContactRequestCreated>('me/contact-request', { method: 'POST' });
-      setContactRequested(true);
+      setContactRequested(await api<ContactRequestCreated>('me/contact-request?source=intake', { method: 'POST' }));
     } catch (e) {
       setError(failure(e));
     } finally {
+      setConfirmContact(false);
       setBusy(null);
     }
   }
@@ -271,6 +315,8 @@ export function IntakeChat() {
   const question = phase === 'ready' ? (intake?.pendingQuestion ?? null) : null;
   const paused = phase === 'paused';
   const canFinish = Boolean(intake?.canFinish) && !paused;
+  const formMode = Boolean(intake?.formMode);
+  const offerForm = !paused && !formMode && assistantUnavailable(intake);
 
   return (
     <div className="flex flex-col gap-4 pt-2">
@@ -293,7 +339,7 @@ export function IntakeChat() {
               {t('pause')}
             </Button>
           ) : null}
-          <Button variant="secondary" compact busy={busy === 'contact'} disabled={contactRequested} onClick={() => void requestContact()}>
+          <Button variant="secondary" compact busy={busy === 'contact'} disabled={contactRequested !== null} onClick={() => setConfirmContact(true)}>
             {t('talkToPerson')}
           </Button>
         </div>
@@ -303,10 +349,38 @@ export function IntakeChat() {
             {t('progressValue', { value: Math.round(intake?.progress ?? 0) })}
           </span>
         </div>
-        {contactRequested ? <Notice tone="success">{t('contactRequested')}</Notice> : null}
+        {contactRequested ? (
+          <Notice tone="success">{t('contactRequestedBy', { time: formatDateTime(contactRequested.expectedBy, locale) })}</Notice>
+        ) : null}
+        {offerForm ? (
+          <div data-testid="form-mode-offer" className="flex flex-col gap-2 rounded-[16px] bg-tint-sand px-4 py-3">
+            <p className="text-sm leading-relaxed">{t('formOffer')}</p>
+            <Button variant="secondary" compact busy={busy === 'form'} onClick={() => void switchToForm()}>
+              {t('switchToForm')}
+            </Button>
+          </div>
+        ) : null}
+        {formMode ? <Notice tone="info">{t('formModeOn')}</Notice> : null}
       </header>
 
-      <MessageList messages={messages} typing={waiting} scrollKey={`${messages.length}-${question?.item ?? ''}`} />
+      <Dialog
+        open={confirmContact}
+        onClose={() => setConfirmContact(false)}
+        locked={busy === 'contact'}
+        title={t('contactConfirmTitle')}
+        description={t('contactConfirmBody', { hours: triageWithinHours })}
+      >
+        <div className="flex flex-col gap-2">
+          <Button full busy={busy === 'contact'} onClick={() => void requestContact()}>
+            {t('contactConfirm')}
+          </Button>
+          <Button full variant="secondary" disabled={busy === 'contact'} onClick={() => setConfirmContact(false)}>
+            {t('contactCancel')}
+          </Button>
+        </div>
+      </Dialog>
+
+      <MessageList messages={messages} typing={waiting} scrollKey={`${messages.length}-${question?.item ?? ''}`} onRetry={retry} retrying={waiting} />
 
       {question ? <QuestionCard question={question} selected={answering} disabled={waiting} onAnswer={(v) => void answer(v)} /> : null}
 
@@ -328,7 +402,7 @@ export function IntakeChat() {
               {t('resume')}
             </Button>
           </div>
-        ) : (
+        ) : formMode ? null : (
           <Composer value={text} onChange={changeText} onSend={send} disabled={!intake || pending !== null || busy === 'finish'} />
         )}
 

@@ -85,6 +85,7 @@ test.describe('Arabic patient journey', () => {
     await expect(concern).toContainText('قلق مستمر بسبب العمل، وقلة نوم منذ شهرين.');
     await expect(concern).toContainText('صحّحته أنت');
     await page.getByRole('button', { name: 'إرسال إلى فريق الرعاية' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'نعم، أرسل' }).click();
 
     // P36 waiting for review
     await expect(page).toHaveURL(/\/ar\/waiting$/);

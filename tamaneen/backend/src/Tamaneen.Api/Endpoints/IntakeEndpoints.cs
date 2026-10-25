@@ -21,7 +21,11 @@ namespace Tamaneen.Api.Endpoints;
 /// </summary>
 public static class IntakeEndpoints
 {
-    public const int MaxMessageChars = 4000;
+    /// <summary>Longer messages are refused and the app asks the patient to send them in parts (EC-19).</summary>
+    public const int MaxMessageChars = 2000;
+
+    /// <summary>Patient-edited summary sections (P05); the app uses the same limit.</summary>
+    public const int MaxSectionChars = 2000;
     private static readonly string[] SummarySections = ["concern", "goals", "supports", "priorCare", "extra"];
 
     public sealed record MessageDto(Guid Id, string Role, string Text, DateTimeOffset At, bool Fallback);
@@ -30,9 +34,10 @@ public static class IntakeEndpoints
 
     public sealed record PendingQuestionDto(string Instrument, int Item, int Total, string Text, IReadOnlyList<OptionDto> Options);
 
-    public sealed record IntakeStateDto(Guid IntakeId, string Status, int Progress, IReadOnlyList<MessageDto> Messages, PendingQuestionDto? PendingQuestion, bool CanFinish, DateTimeOffset ExpiresAt, bool Crisis = false, string? Script = null);
+    public sealed record IntakeStateDto(Guid IntakeId, string Status, int Progress, IReadOnlyList<MessageDto> Messages, PendingQuestionDto? PendingQuestion, bool CanFinish, DateTimeOffset ExpiresAt, bool FormMode, bool Crisis = false, string? Script = null);
 
-    public sealed record SendMessageRequest(string? Text);
+    /// <summary>ClientMessageId (PB-21) makes a retry of the same message safe: it is stored and answered once.</summary>
+    public sealed record SendMessageRequest(string? Text, Guid? ClientMessageId);
 
     public sealed record AnswerRequest(string? Instrument, int Item, int? Value);
 
@@ -65,6 +70,7 @@ public static class IntakeEndpoints
         g.MapPost("/intake/{id:guid}/messages", SendAsync).RequireRateLimiting(ApiHost.PatientRateLimitPolicy);
         g.MapPost("/intake/{id:guid}/answers", AnswerAsync);
         g.MapPost("/intake/{id:guid}/pause", PauseAsync);
+        g.MapPost("/intake/{id:guid}/form-mode", FormModeAsync);
         g.MapPost("/intake/{id:guid}/complete", CompleteAsync).RequireRateLimiting(ApiHost.PatientRateLimitPolicy);
         g.MapGet("/intake/{id:guid}/summary", GetSummaryAsync);
         g.MapPut("/intake/{id:guid}/summary", UpdateSummaryAsync);
@@ -154,19 +160,36 @@ public static class IntakeEndpoints
         }
 
         var intake = await FindAsync(p, id, ct).ConfigureAwait(false);
-        intake.RecordPatientTurn(clock);
-        var verdict = await p.GateAsync(text, null, "intake", ct).ConfigureAwait(false);
-        p.Db.IntakeMessages.Add(IntakeMessage.Patient(intake.Id, p.PatientId, await p.EncryptAsync(Fields.IntakeMessage, text, ct).ConfigureAwait(false), clock));
-        if (verdict.Crisis)
+        var clientId = request.ClientMessageId is { } g && g != Guid.Empty ? g : (Guid?)null;
+        if (clientId is not null && await p.Db.IntakeMessages.AnyAsync(m => m.IntakeId == intake.Id && m.ClientMessageId == clientId, ct).ConfigureAwait(false))
         {
-            await p.Db.SaveChangesAsync(ct).ConfigureAwait(false);
-            return TypedResults.Ok(await StateAsync(p, intake, catalog, ct, verdict).ConfigureAwait(false));
+            // A retry of a message that already arrived (PB-27, EC-07): answer with the conversation as it is.
+            return TypedResults.Ok(await StateAsync(p, intake, catalog, ct).ConfigureAwait(false));
         }
 
-        var history = await HistoryAsync(p, intake.Id, ct).ConfigureAwait(false);
-        var (reply, fallback) = await AssistantReplyAsync(p, ai, prompts, "intake", text, history, ct).ConfigureAwait(false);
-        p.Db.IntakeMessages.Add(IntakeMessage.Assistant(intake.Id, p.PatientId, await p.EncryptAsync(Fields.IntakeMessage, reply, ct).ConfigureAwait(false), fallback, new LaterClock(clock)));
-        await p.Db.SaveChangesAsync(ct).ConfigureAwait(false);
+        intake.RecordPatientTurn(clock);
+        var verdict = await p.GateAsync(text, null, "intake", ct).ConfigureAwait(false);
+        p.Db.IntakeMessages.Add(IntakeMessage.Patient(intake.Id, p.PatientId, await p.EncryptAsync(Fields.IntakeMessage, text, ct).ConfigureAwait(false), clock, clientId));
+        try
+        {
+            if (verdict.Crisis)
+            {
+                await p.Db.SaveChangesAsync(ct).ConfigureAwait(false);
+                return TypedResults.Ok(await StateAsync(p, intake, catalog, ct, verdict).ConfigureAwait(false));
+            }
+
+            var history = await HistoryAsync(p, intake.Id, ct).ConfigureAwait(false);
+            var (reply, fallback) = await AssistantReplyAsync(p, ai, prompts, "intake", text, history, ct).ConfigureAwait(false);
+            p.Db.IntakeMessages.Add(IntakeMessage.Assistant(intake.Id, p.PatientId, await p.EncryptAsync(Fields.IntakeMessage, reply, ct).ConfigureAwait(false), fallback, new LaterClock(clock)));
+            await p.Db.SaveChangesAsync(ct).ConfigureAwait(false);
+        }
+        catch (DbUpdateException) when (clientId is not null)
+        {
+            // The same message arrived twice at once and the other request stored it first: drop this copy.
+            p.Db.ChangeTracker.Clear();
+            intake = await FindAsync(p, id, ct).ConfigureAwait(false);
+        }
+
         return TypedResults.Ok(await StateAsync(p, intake, catalog, ct).ConfigureAwait(false));
     }
 
@@ -199,6 +222,21 @@ public static class IntakeEndpoints
         return TypedResults.Ok(await StateAsync(p, intake, catalog, ct).ConfigureAwait(false));
     }
 
+    /// <summary>PB-28: the assistant is unavailable, so the patient continues with the questionnaires as a form.</summary>
+    internal static async Task<Ok<IntakeStateDto>> FormModeAsync(Guid id, PatientContext p, QuestionnaireCatalog catalog, IAuditLog audit, IClock clock, CancellationToken ct)
+    {
+        var intake = await FindAsync(p, id, ct).ConfigureAwait(false);
+        await p.EnsureNotLockedAsync(ct).ConfigureAwait(false);
+        if (!intake.FormMode)
+        {
+            intake.SwitchToForm(clock);
+            audit.Append("intake.form_mode", "IntakeSession", intake.Id.ToString(), (await p.AccountAsync(ct).ConfigureAwait(false)).PseudonymId);
+            await p.Db.SaveChangesAsync(ct).ConfigureAwait(false);
+        }
+
+        return TypedResults.Ok(await StateAsync(p, intake, catalog, ct).ConfigureAwait(false));
+    }
+
     // ---------- P05 summary ----------
 
     internal static async Task<Ok<SummaryDto>> CompleteAsync(Guid id, PatientContext p, IAiGateway ai, IAuditLog audit, IClock clock, CancellationToken ct)
@@ -209,7 +247,8 @@ public static class IntakeEndpoints
         var transcript = string.Join("\n", history.Select(t => (t.Role == ChatRole.User ? "Patient: " : "Assistant: ") + t.Text));
         var sections = SummarySections.ToDictionary(s => s, _ => new SectionDto(string.Empty, false));
         var byAi = false;
-        if (await p.HasConsentAsync(ConsentCatalog.Ai, ct).ConfigureAwait(false) && transcript.Length > 0)
+        // In form mode the assistant was down: the patient writes the sections on P05.
+        if (!intake.FormMode && await p.HasConsentAsync(ConsentCatalog.Ai, ct).ConfigureAwait(false) && transcript.Length > 0)
         {
             var response = await ai.AskAsync(new AiRequest((await p.AccountAsync(ct).ConfigureAwait(false)).PseudonymId, "intake-summary", p.Language, Truncate(transcript, 15000), [], await p.KnownIdentifiersAsync(ct).ConfigureAwait(false)), ct).ConfigureAwait(false);
             var parts = response.IsFallback ? [] : response.Text.Split("\n---", StringSplitOptions.TrimEntries).Select(s => s.Trim('-', ' ', '\n', '\r')).Where(s => s.Length > 0).ToList();
@@ -243,7 +282,7 @@ public static class IntakeEndpoints
         var stored = await p.DecryptJsonAsync<StoredSummary>(Fields.IntakeSummary, intake.SummaryCipher, ct).ConfigureAwait(false)
             ?? throw new DomainException(ErrorCodes.IntakeNotInReview, "No summary yet.");
         var changes = (request.Sections ?? []).Where(kv => SummarySections.Contains(kv.Key)).ToList();
-        if (changes.Any(kv => kv.Value is null || kv.Value.Length > 2000))
+        if (changes.Any(kv => kv.Value is null || kv.Value.Trim().Length > MaxSectionChars))
         {
             throw MeEndpoints.Invalid("sections");
         }
@@ -391,6 +430,7 @@ public static class IntakeEndpoints
             crisis is null ? pending : null,
             intake.CanFinish,
             intake.ExpiresAtUtc,
+            intake.FormMode,
             crisis is not null,
             crisis?.Script);
     }

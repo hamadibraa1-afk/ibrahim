@@ -28,6 +28,7 @@
   <data name="error.maintenance" xml:space="preserve"><value>نجري صيانة مجدولة الآن. نعود قريبًا. إن كنت في خطر فاتصل بالطوارئ.</value></data>
   <data name="error.not_found" xml:space="preserve"><value>لم نجد هذا العنصر.</value></data>
   <data name="error.ai.message_invalid" xml:space="preserve"><value>الرسالة فارغة أو أطول من {0} حرفًا.</value></data>
+  <data name="error.auth.signups_paused" xml:space="preserve"><value>التسجيل الجديد متوقف الآن. إن كنت في خطر فاتصل برقم الطوارئ.</value></data>
   <data name="error.validation" xml:space="preserve"><value>بعض البيانات غير صحيحة.</value></data>
   <data name="error.auth.invalid_credentials" xml:space="preserve"><value>البيانات غير صحيحة.</value></data>
   <data name="error.auth.locked" xml:space="preserve"><value>أوقفنا تسجيل الدخول مؤقتًا لحمايتك. حاول بعد {0} دقيقة.</value></data>
@@ -60,6 +61,7 @@
   <data name="error.intake.not_finished" xml:space="preserve"><value>نحتاج بضع إجابات أخرى قبل إنهاء المحادثة.</value></data>
   <data name="error.intake.not_in_review" xml:space="preserve"><value>لا يمكن تعديل الملخص الآن.</value></data>
   <data name="error.intake.closed" xml:space="preserve"><value>انتهت هذه المحادثة. يمكنك بدء محادثة جديدة.</value></data>
+  <data name="error.homework.ended" xml:space="preserve"><value>انتهى هذا التمرين، ويمكنك قراءته فقط الآن.</value></data>
   <data name="error.triage.already_reviewed" xml:space="preserve"><value>روجع هذا الملف من قبل.</value></data>
   <data name="error.auth.password_mismatch" xml:space="preserve"><value>كلمة المرور الحالية غير صحيحة.</value></data>
   <data name="error.privacy.deletion_crisis_open" xml:space="preserve"><value>لا يمكن حذف حسابك الآن لأن لديك طلب مساعدة مفتوحًا مع فريقنا السريري. سنتمكن من حذفه بعد أن يتواصل معك المختص ويُغلق الطلب.</value></data>

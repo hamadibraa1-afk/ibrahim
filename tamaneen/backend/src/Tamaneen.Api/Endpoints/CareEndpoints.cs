@@ -22,7 +22,7 @@ public static class CareEndpoints
 
     public sealed record PilotCityDto(string Code, string Name);
 
-    public sealed record PublicConfigDto(string EmergencyNumber, string SupportLine, int MatchWithinHours, int TriageWithinHours, int MinAge, string PilotRegion, IReadOnlyList<PilotCityDto> PilotCities, string TimeZone);
+    public sealed record PublicConfigDto(string EmergencyNumber, string SupportLine, int MatchWithinHours, int TriageWithinHours, int MinAge, string PilotRegion, IReadOnlyList<PilotCityDto> PilotCities, string TimeZone, bool SignupsOpen);
 
     public sealed record CrisisStatusDto(bool Locked, bool EventOpen, bool Acknowledged, string? ContactPhoneLast4, string? Script);
 
@@ -97,7 +97,8 @@ public static class CareEndpoints
             o.EmergencyNumber, o.SupportLine, o.MatchWithinHours, o.TriageWithinHours, o.MinAge,
             en ? o.RegionNameEn : o.RegionNameAr,
             o.Cities.Select(c => new PilotCityDto(c.Code, en ? c.NameEn : c.NameAr)).ToList(),
-            o.TimeZone));
+            o.TimeZone,
+            o.SignupsOpen));
     }
 
     // ---------- P06 ----------
@@ -273,6 +274,11 @@ public static class CareEndpoints
         var assignment = await p.Db.HomeworkAssignments.FirstOrDefaultAsync(a => a.Id == id && a.PatientId == p.PatientId, ct).ConfigureAwait(false)
             ?? throw new DomainException(ErrorCodes.NotFound, $"Homework {id} not found.");
         var today = Today(profile.TimeZone, clock);
+        if (assignment.IsCompleted(today))
+        {
+            // P10: an ended exercise is read-only.
+            throw new DomainException(ErrorCodes.HomeworkEnded, $"Homework {id} ended on {assignment.EndsOn}.");
+        }
 
         // A note to the therapist is patient text like any other: it passes the crisis gate first.
         Gate.GateVerdict? verdict = null;

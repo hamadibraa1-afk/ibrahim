@@ -1,12 +1,10 @@
 'use client';
 
-import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useId, useState } from 'react';
+import { useTranslations } from 'next-intl';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useRouter } from '@/i18n/navigation';
-import { isLocale } from '@/i18n/routing';
 import { api } from '@/lib/api/client';
 import type { RecoveryCodes } from '@/lib/api/types';
-import { formatDate } from '@/lib/format';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Notice } from '@/components/ui/Notice';
@@ -21,16 +19,21 @@ export const RECOVERY_FILE_NAME = 'tamaneen-recovery-codes.txt';
 
 type Status = 'copied' | 'copyFailed' | 'downloaded' | null;
 
+/** The downloaded file holds the codes only, one per line: no app name, date or account detail (PB-09). */
+export function recoveryFileText(codes: readonly string[]): string {
+  return `${codes.join('\r\n')}\r\n`;
+}
+
 /**
  * P17: the ten recovery codes, shown once. They arrive from P16 through sessionStorage and are removed
- * when the patient continues. If they are gone (new tab, reload after clearing), the patient can create
- * a new set, which replaces the old one.
+ * from it as soon as they are read, so they live only in memory: a reload does not show them again and
+ * offers a new set instead, which replaces the old one. Leaving before continuing asks for confirmation,
+ * and Continue needs a download or a copy plus the "I saved them" box (PB-09).
  */
 export function RecoveryCodesPanel() {
   const t = useTranslations('recoveryCodes');
   const tu = useTranslations('ui');
   const te = useTranslations('errors');
-  const locale = useLocale();
   const router = useRouter();
   const hintId = useId();
   const [codes, setCodes] = useState<string[] | null | 'missing'>(null);
@@ -38,10 +41,30 @@ export function RecoveryCodesPanel() {
   const [status, setStatus] = useState<Status>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [kept, setKept] = useState(false);
+  const leaving = useRef(false);
 
+  // Read once (React may run effects twice in development) and clear the stored copy straight away.
+  const loaded = useRef(false);
   useEffect(() => {
+    if (loaded.current) return;
+    loaded.current = true;
     setCodes(readFlow(FLOW_KEYS.recoveryCodes, isRecoveryCodes) ?? 'missing');
+    clearFlow(FLOW_KEYS.recoveryCodes);
   }, []);
+
+  // While codes are on screen and not confirmed, closing or reloading the tab asks first.
+  const showing = Array.isArray(codes);
+  useEffect(() => {
+    if (!showing) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (leaving.current) return;
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [showing]);
 
   async function regenerate() {
     setBusy(true);
@@ -49,6 +72,9 @@ export function RecoveryCodesPanel() {
     try {
       const response = await api<RecoveryCodes>('me/recovery-codes', { method: 'POST' });
       setCodes(response.recoveryCodes);
+      setKept(false);
+      setSaved(false);
+      setStatus(null);
     } catch (e) {
       setError(problemText(e, te('network')));
     } finally {
@@ -73,9 +99,7 @@ export function RecoveryCodesPanel() {
   const list = codes;
 
   function download() {
-    const created = formatDate(new Date().toISOString(), isLocale(locale) ? locale : 'ar', undefined, { day: 'numeric', month: 'long', year: 'numeric' });
-    const text = [t('fileTitle'), t('fileBody'), t('fileDate', { date: created }), '', ...list, ''].join('\r\n');
-    const url = URL.createObjectURL(new Blob(['﻿', text], { type: 'text/plain;charset=utf-8' }));
+    const url = URL.createObjectURL(new Blob([recoveryFileText(list)], { type: 'text/plain;charset=utf-8' }));
     const a = document.createElement('a');
     a.href = url;
     a.download = RECOVERY_FILE_NAME;
@@ -84,18 +108,24 @@ export function RecoveryCodesPanel() {
     a.remove();
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
     setStatus('downloaded');
+    setKept(true);
   }
 
   async function copy() {
     try {
       await navigator.clipboard.writeText(list.join('\n'));
       setStatus('copied');
+      setKept(true);
     } catch {
       setStatus('copyFailed');
     }
   }
 
+  const ready = saved && kept;
+
   function finish() {
+    if (!ready) return;
+    leaving.current = true;
     clearFlow(FLOW_KEYS.recoveryCodes, FLOW_KEYS.signup, FLOW_KEYS.eligibility);
     router.replace('/start/consents');
   }
@@ -131,13 +161,13 @@ export function RecoveryCodesPanel() {
       <TotpSetup />
 
       <div className="mt-4 flex flex-col gap-4">
-        <CheckboxRow checked={saved} onChange={setSaved} label={t('savedCheck')} describedBy={saved ? undefined : hintId} />
-        {saved ? null : (
+        <CheckboxRow checked={saved} onChange={setSaved} label={t('savedCheck')} describedBy={ready ? undefined : hintId} />
+        {ready ? null : (
           <p id={hintId} className="-mt-2 text-sm text-muted">
-            {t('mustConfirm')}
+            {kept ? t('mustConfirm') : t('mustKeep')}
           </p>
         )}
-        <Button full disabled={!saved} onClick={finish}>
+        <Button full disabled={!ready} aria-describedby={ready ? undefined : hintId} onClick={finish}>
           {tu('continue')}
         </Button>
       </div>

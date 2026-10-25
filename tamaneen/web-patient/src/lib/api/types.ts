@@ -35,6 +35,8 @@ export interface PublicConfig {
   pilotRegion: string;
   pilotCities: PilotCity[];
   timeZone: string;
+  /** False while new sign-ups are paused (EC-26): P01, P02, P12 and P15 show the emergency numbers instead. */
+  signupsOpen: boolean;
 }
 
 // ---------- Auth ----------
@@ -130,9 +132,12 @@ export interface IntakeState {
   pendingQuestion: PendingQuestion | null;
   canFinish: boolean;
   expiresAt: string;
+  /** The patient switched to the form because the assistant was unavailable (PB-28). */
+  formMode: boolean;
 }
 export interface IntakeTurnResponse extends IntakeState { crisis: boolean; script?: string }
-export interface SendMessageRequest { text: string }
+/** clientMessageId (PB-21) stays the same across retries of one message, so the API stores it once (EC-07). */
+export interface SendMessageRequest { text: string; clientMessageId?: string }
 export interface AnswerRequest { instrument: 'phq9' | 'gad7'; item: number; value: number | null } // null = skipped
 
 export type SummarySection = 'concern' | 'goals' | 'supports' | 'priorCare' | 'extra';
@@ -235,4 +240,6 @@ export interface PlanContact { name: string; phone: string }
 export interface SafetyPlan { sections: Record<SafetyPlanSection, string>; contacts: PlanContact[]; updatedAt: string | null; coAuthor: string | null }
 export interface UpdateSafetyPlanRequest { sections: Record<SafetyPlanSection, string>; contacts: PlanContact[] }
 
-export interface ContactRequestCreated { requestedAt: string }
+export interface ContactRequestCreated { requestedAt: string; expectedBy: string; withinHours: number }
+export type DismissReason = 'specialty' | 'gender' | 'language' | 'schedule' | 'other';
+export interface DismissRequest { reason?: DismissReason }

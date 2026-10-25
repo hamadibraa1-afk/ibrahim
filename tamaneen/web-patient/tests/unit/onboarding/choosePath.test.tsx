@@ -34,11 +34,28 @@ describe('P22 Choose path', () => {
     await waitFor(() => expect(router.push).toHaveBeenCalledWith('/start/safety-check'));
   });
 
-  it('asks the team to get in touch and confirms', async () => {
-    apiMock.mockResolvedValueOnce({ requestedAt: '2026-10-20T09:00:00Z' });
-    renderWithIntl(<ChoosePath current={null} />, 'en');
+  it('asks the team to get in touch only after a confirmation sheet with the expected wait', async () => {
+    apiMock.mockResolvedValueOnce({ requestedAt: '2026-10-20T09:00:00Z', expectedBy: '2026-10-21T09:00:00Z', withinHours: 24 });
+    renderWithIntl(<ChoosePath current={null} triageWithinHours={24} />, 'en');
     await userEvent.click(screen.getByRole('button', { name: 'Ask the team to contact you' }));
-    expect(await screen.findByRole('status')).toHaveTextContent("We've received your request.");
-    expect(apiMock).toHaveBeenCalledWith('me/contact-request', { method: 'POST' });
+    const sheet = await screen.findByRole('dialog', { name: 'Ask the team to contact you?' });
+    expect(sheet).toHaveTextContent('within 24 hours at most');
+    expect(apiMock).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', { name: 'Yes, ask them to contact me' }));
+    expect(apiMock).toHaveBeenCalledWith('me/contact-request?source=choose_path', { method: 'POST' });
+    expect(await screen.findByRole('status')).toHaveTextContent('We got your request. Someone from the team will contact you before');
+  });
+
+  it('cancelling the sheet sends nothing (Arabic)', async () => {
+    renderWithIntl(<ChoosePath current={null} />, 'ar');
+    await userEvent.click(screen.getByRole('button', { name: 'اطلب التواصل مع الفريق' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'ليس الآن' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(apiMock).not.toHaveBeenCalled();
+  });
+
+  it('says "continue" on the intake card while an intake is open', () => {
+    renderWithIntl(<ChoosePath current="intake" intakeStatus="paused" />, 'ar');
+    expect(screen.getByTestId('path-intake')).toHaveTextContent('متابعة محادثة التعارف');
   });
 });

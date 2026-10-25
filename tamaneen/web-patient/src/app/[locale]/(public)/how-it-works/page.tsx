@@ -4,6 +4,13 @@ import { BackLink } from '@/components/ui/BackLink';
 import { ButtonLink } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { PageHeading } from '@/components/ui/PageHeading';
+import { SignupsPaused } from '@/components/public/SignupsPaused';
+import { publicGet } from '@/lib/api/server';
+import type { PublicConfig } from '@/lib/api/types';
+import { safetyNumbers } from '@/lib/platform-config';
+
+// Rendered per request: the start button gives way to the pause message while sign-ups are paused (EC-26).
+export const dynamic = 'force-dynamic';
 
 const STEPS = ['talk', 'review', 'specialist', 'choose'] as const;
 const DOES = ['listens', 'organizes', 'reminds'] as const;
@@ -15,11 +22,13 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   return { title: t('metaTitle') };
 }
 
-/** P12 How it works (public, static): the four steps and what the AI does and doesn't do. */
+/** P12 How it works (public): the four steps and what the AI does and doesn't do. */
 export default async function HowItWorksPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = await getTranslations('howItWorks');
+  const [t, config] = await Promise.all([getTranslations('howItWorks'), publicGet<PublicConfig>('meta/config')]);
+  const paused = config?.signupsOpen === false;
+  const { emergencyNumber, supportLine } = safetyNumbers(config);
 
   return (
     <div className="flex flex-col gap-5 pt-2">
@@ -66,9 +75,15 @@ export default async function HowItWorksPage({ params }: { params: Promise<{ loc
         </div>
       </section>
 
-      <ButtonLink href="/start/eligibility" full className="mt-6">
-        {t('cta')}
-      </ButtonLink>
+      {paused ? (
+        <div className="mt-6">
+          <SignupsPaused emergencyNumber={emergencyNumber} supportLine={supportLine} />
+        </div>
+      ) : (
+        <ButtonLink href="/start/eligibility" full className="mt-6">
+          {t('cta')}
+        </ButtonLink>
+      )}
     </div>
   );
 }

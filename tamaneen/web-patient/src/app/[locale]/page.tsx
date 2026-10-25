@@ -1,17 +1,22 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
-import { hasSession } from '@/lib/api/server';
-import { publicPlatformConfig } from '@/lib/platform-config';
+import { SignupsPaused } from '@/components/public/SignupsPaused';
+import { SiteFooter } from '@/components/public/SiteFooter';
+import { hasSession, publicGet } from '@/lib/api/server';
+import type { PublicConfig } from '@/lib/api/types';
+import { publicPlatformConfig, safetyNumbers } from '@/lib/platform-config';
 
-// Rendered per request: the emergency number and matching window are runtime configuration.
+// Rendered per request: the emergency number, matching window and sign-up pause are runtime configuration.
 export const dynamic = 'force-dynamic';
 
 /** P01 Welcome: the first screen a visitor sees. With a session, the main action continues to the app. */
 export default async function WelcomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const [t, signedIn] = await Promise.all([getTranslations('welcome'), hasSession()]);
-  const { emergencyNumber, matchWithinHours } = publicPlatformConfig();
+  const [t, signedIn, config] = await Promise.all([getTranslations('welcome'), hasSession(), publicGet<PublicConfig>('meta/config')]);
+  const { emergencyNumber, supportLine } = safetyNumbers(config);
+  const matchWithinHours = config?.matchWithinHours || publicPlatformConfig().matchWithinHours;
+  const paused = config?.signupsOpen === false;
 
   return (
     <div className="flex flex-col gap-5 pt-4">
@@ -48,6 +53,8 @@ export default async function WelcomePage({ params }: { params: Promise<{ locale
           <Link href="/home" data-testid="cta-continue" className="flex min-h-cta items-center justify-center rounded-full bg-primary px-6 text-base font-semibold text-surface">
             {t('continue')}
           </Link>
+        ) : paused ? (
+          <SignupsPaused emergencyNumber={emergencyNumber} supportLine={supportLine} />
         ) : (
           <Link href="/start/eligibility" data-testid="cta-start" className="flex min-h-cta items-center justify-center rounded-full bg-primary px-6 text-base font-semibold text-surface">
             {t('start')}
@@ -67,6 +74,8 @@ export default async function WelcomePage({ params }: { params: Promise<{ locale
           {t('emergencyResources')}
         </Link>
       )}
+
+      <SiteFooter />
     </div>
   );
 }

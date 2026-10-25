@@ -49,6 +49,7 @@ public static class ErrorCodes
     public const string ResendTooSoon = "error.auth.resend_too_soon";
     public const string WeakPassword = "error.auth.weak_password";
     public const string NotEligible = "error.auth.not_eligible";
+    public const string SignupsPaused = "error.auth.signups_paused";
     public const string SessionRevoked = "error.auth.session_revoked";
     public const string MfaFailed = "error.auth.mfa_failed";
     public const string StepUpRequired = "error.auth.step_up_required";
@@ -74,6 +75,7 @@ public static class ErrorCodes
     public const string IntakeNotInReview = "error.intake.not_in_review";
     public const string IntakeClosed = "error.intake.closed";
     public const string TriageAlreadyReviewed = "error.triage.already_reviewed";
+    public const string HomeworkEnded = "error.homework.ended";
     public const string PasswordMismatch = "error.auth.password_mismatch";
     public const string DeletionBlockedByCrisis = "error.privacy.deletion_crisis_open";
 }

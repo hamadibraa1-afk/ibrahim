@@ -6,7 +6,8 @@
     "intake": {
       "title": "An introductory chat",
       "body": "20 to 30 minutes. It helps us suggest the best-fitting therapist, and you won't have to tell your story again from the start.",
-      "note": "You can pause and come back within 14 days"
+      "note": "You can pause and come back within 14 days",
+      "continueTitle": "Continue the intake conversation"
     },
     "direct": {
       "title": "I know what I want, I'll book directly",
@@ -14,6 +15,11 @@
     },
     "talkPrompt": "Would you rather talk to a person from the start?",
     "talkLink": "Ask the team to contact you",
-    "contactSent": "We've received your request. Someone from the team will contact you soon using the contact details you registered."
+    "contactSent": "We've received your request. Someone from the team will contact you soon using the contact details you registered.",
+    "contactConfirmTitle": "Ask the team to contact you?",
+    "contactConfirmBody": "Someone from the team will contact you within {hours} hours at most, using the contact details you registered.",
+    "contactConfirm": "Yes, ask them to contact me",
+    "contactCancel": "Not now",
+    "contactSentBy": "We got your request. Someone from the team will contact you before {time}, using the contact details you registered."
   }
 }

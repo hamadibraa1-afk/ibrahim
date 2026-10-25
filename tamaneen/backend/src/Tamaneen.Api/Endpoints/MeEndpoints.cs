@@ -3,6 +3,7 @@ using System.Globalization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Options;
 using Tamaneen.Api.Auth;
 using Tamaneen.Api.Patients;
 using Tamaneen.Clinical.Care;
@@ -72,7 +73,9 @@ public static class MeEndpoints
     /// <summary>P11 export asks for the password again (PB-58).</summary>
     public sealed record DataExportRequest(string? Password);
 
-    public sealed record ContactRequestCreated(DateTimeOffset RequestedAt);
+
+    /// <summary>ExpectedBy: when the team will have reached out at the latest, from the triage SLA (PB-25).</summary>
+    public sealed record ContactRequestCreated(DateTimeOffset RequestedAt, DateTimeOffset ExpectedBy, int WithinHours);
 
     public static IEndpointRouteBuilder MapMeEndpoints(this IEndpointRouteBuilder app)
     {
@@ -205,14 +208,15 @@ public static class MeEndpoints
         return TypedResults.Ok(await BuildMeAsync(p, clock, ct).ConfigureAwait(false));
     }
 
-    internal static async Task<Ok<ContactRequestCreated>> ContactRequestAsync(HttpContext http, PatientContext p, IAuditLog audit, IClock clock, CancellationToken ct)
+    internal static async Task<Ok<ContactRequestCreated>> ContactRequestAsync(HttpContext http, PatientContext p, IAuditLog audit, IOptions<PlatformOptions> platform, IClock clock, CancellationToken ct)
     {
         var source = http.Request.Query["source"].ToString() is { Length: > 0 and <= 32 } s ? s : "app";
         var request = CareRequest.Create(p.PatientId, source, clock);
         p.Db.CareRequests.Add(request);
         audit.Append("care.contact_requested", "CareRequest", request.Id.ToString(), (await p.AccountAsync(ct).ConfigureAwait(false)).PseudonymId);
         await p.Db.SaveChangesAsync(ct).ConfigureAwait(false);
-        return TypedResults.Ok(new ContactRequestCreated(request.RequestedAtUtc));
+        var hours = platform.Value.TriageWithinHours;
+        return TypedResults.Ok(new ContactRequestCreated(request.RequestedAtUtc, request.RequestedAtUtc.AddHours(hours), hours));
     }
 
     // ---------- Consents (P03, P11) ----------

@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({ api: vi.fn() }));
 vi.mock('@/lib/api/client', () => ({ api: mocks.api }));
 
 import { signedInPath } from '@/components/auth/finishSignIn';
+import { rememberRoute } from '@/components/auth/returnTo';
 
 const me = (onboarding: Record<string, unknown> = {}) => ({
   pseudonymId: 'P-1',
@@ -47,10 +48,17 @@ describe('return after signing in again (P35)', () => {
     expect(takeReturnPath(1001 + 30 * 60 * 1000)).toBeNull();
   });
 
-  it('sends a finished patient back to the remembered page', async () => {
+  it('sends a finished patient back to the page remembered for that same patient', async () => {
+    mocks.api.mockResolvedValue(me());
+    rememberRoute('/ar/appointments/a1', me().pseudonymId);
+    expect(await signedInPath()).toBe('/appointments/a1');
+  });
+
+  it('never uses a remembered page that is not tied to the patient, and consumes it', async () => {
     mocks.api.mockResolvedValue(me());
     rememberReturnPath('/ar/appointments/a1');
-    expect(await signedInPath()).toBe('/appointments/a1');
+    expect(await signedInPath()).toBe('/home');
+    expect(takeReturnPath()).toBeNull();
   });
 
   it('lets unfinished onboarding win over the remembered page', async () => {

@@ -55,6 +55,7 @@ public sealed partial class AuthService(
 
     public string? IssueEligibility(bool isAdult, string cityCode, out string? reason)
     {
+        EnsureSignupsOpen();
         reason = null;
         if (!isAdult)
         {
@@ -75,8 +76,18 @@ public sealed partial class AuthService(
 
     // ---------------- Sign-up (P02, P16, P17) ----------------
 
+    /// <summary>EC-26: while sign-ups are paused no eligibility token is issued and no account is created.</summary>
+    private void EnsureSignupsOpen()
+    {
+        if (!platform.Value.SignupsOpen)
+        {
+            throw new DomainException(ErrorCodes.SignupsPaused, "New sign-ups are paused.");
+        }
+    }
+
     public async Task<ChallengeResult> StartSignupAsync(string eligibilityToken, string nickname, string contactType, string contact, string password, string language, CancellationToken ct)
     {
+        EnsureSignupsOpen();
         var eligibility = ReadEligibility(eligibilityToken);
         if (!Nicknames.IsAcceptable(nickname))
         {
