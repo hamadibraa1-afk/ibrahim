@@ -65,6 +65,14 @@ export function HomeView({
           </span>
           <Chevron />
         </Link>
+      ) : triage.status === 'closed' || triage.status === 'escalated' ? (
+        <Link href="/waiting" className={`flex items-center gap-3 rounded-card p-4 text-ink ${triage.status === 'escalated' ? 'border-[1.5px] border-help bg-surface' : 'bg-tint-sand'}`}>
+          <span className="flex flex-1 flex-col gap-1">
+            <span className="font-bold">{triage.status === 'closed' ? t('triageClosed') : t('triageEscalated')}</span>
+            <span className="text-sm">{triage.status === 'closed' ? t('triageClosedBody') : t('triageEscalatedBody')}</span>
+          </span>
+          <Chevron />
+        </Link>
       ) : triage.status === 'pending' ? (
         <Link href="/waiting" className="flex items-center gap-3 rounded-card bg-tint-sand p-4 text-ink">
           <span className="flex flex-1 flex-col gap-1">

@@ -1,8 +1,8 @@
 import { act, render } from '@testing-library/react';
 
-const mocks = vi.hoisted(() => ({ api: vi.fn(), replace: vi.fn() }));
+const mocks = vi.hoisted(() => ({ api: vi.fn(), replace: vi.fn(), refresh: vi.fn() }));
 vi.mock('@/lib/api/client', () => ({ api: mocks.api }));
-vi.mock('@/i18n/navigation', () => ({ useRouter: () => ({ replace: mocks.replace, push: vi.fn(), refresh: vi.fn() }) }));
+vi.mock('@/i18n/navigation', () => ({ useRouter: () => ({ replace: mocks.replace, push: vi.fn(), refresh: mocks.refresh }) }));
 
 import { MatchReadyWatcher } from '@/components/intake/MatchReadyWatcher';
 
@@ -50,5 +50,16 @@ describe('MatchReadyWatcher (P36)', () => {
     } finally {
       visibility.mockRestore();
     }
+  });
+
+  it.each(['closed', 'escalated'])('refreshes the page once the case is %s, then stops polling', async (status) => {
+    mocks.refresh.mockReset();
+    mocks.api.mockResolvedValue({ ...pending, status });
+    render(<MatchReadyWatcher intervalMs={1000} />);
+    await act(() => vi.advanceTimersByTimeAsync(1000));
+    expect(mocks.refresh).toHaveBeenCalledTimes(1);
+    expect(mocks.replace).not.toHaveBeenCalled();
+    await act(() => vi.advanceTimersByTimeAsync(3000));
+    expect(mocks.api).toHaveBeenCalledTimes(1);
   });
 });

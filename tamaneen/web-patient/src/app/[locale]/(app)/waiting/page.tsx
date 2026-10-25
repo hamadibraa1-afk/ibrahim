@@ -2,12 +2,14 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { hoursUntil } from '@/components/intake/triage';
 import { MatchReadyWatcher } from '@/components/intake/MatchReadyWatcher';
+import { TriageClosed, TriageEscalated } from '@/components/intake/TriageOutcome';
 import { WaitingActivities } from '@/components/intake/WaitingActivities';
 import { Link, redirect } from '@/i18n/navigation';
 import { isLocale, routing } from '@/i18n/routing';
 import { getMe, serverGet } from '@/lib/api/server';
 import type { TriageState } from '@/lib/api/types';
 import { formatRelativeDays, formatTime } from '@/lib/format';
+import { loadSafetyNumbers } from '@/lib/platform-config';
 
 type StepState = 'done' | 'current' | 'pending';
 
@@ -41,6 +43,9 @@ export default async function WaitingPage({ params }: { params: Promise<{ locale
   setRequestLocale(locale);
   const [t, me, triage] = await Promise.all([getTranslations('waitingTriage'), getMe(), serverGet<TriageState>('triage')]);
   if (triage.status === 'none') return redirect({ href: '/intake/summary', locale });
+  // S03 closed the case with referrals, or escalated it to the crisis team: no timeline, no matches.
+  if (triage.status === 'closed') return <TriageClosed referrals={triage.referrals} numbers={await loadSafetyNumbers()} />;
+  if (triage.status === 'escalated') return <TriageEscalated numbers={await loadSafetyNumbers()} />;
 
   const reviewed = triage.status === 'reviewed' || triage.status === 'matched';
   const hours = triage.expectedBy ? hoursUntil(triage.expectedBy) : 0;
