@@ -68,6 +68,19 @@
     "deletePassword": "Password to confirm",
     "deletePasswordRequired": "Enter your password.",
     "deleteConfirm": "Delete my account for good",
-    "back": "Settings"
+    "back": "Settings",
+    "aiDialogDelete": "I would rather delete my account",
+    "locationDialogTitle": "Stop sharing your location in an emergency?",
+    "locationDialogBody": "If you are in danger and we can't reach you, the on-call clinician won't know where to send help. You can turn it back on at any time.",
+    "locationDialogConfirm": "Stop sharing my location",
+    "exportDialogTitle": "Download a copy of your data",
+    "exportDialogBody": "To protect your data, enter your password again. Your copy will be ready within 7 days, and the download link works for 72 hours.",
+    "exportConfirm": "Request my copy",
+    "deleteWord": "DELETE",
+    "deleteWordLabel": "Type “{word}” to confirm",
+    "deleteWordRequired": "Type “{word}” exactly to confirm.",
+    "deleteBlockedTitle": "Your account can't be deleted right now",
+    "deleteBlockedBody": "You have an open request for help with our clinical team. We need your details to reach you; you can delete the account once the request is closed.",
+    "deleteBlockedLink": "Open the crisis screen"
   }
 }

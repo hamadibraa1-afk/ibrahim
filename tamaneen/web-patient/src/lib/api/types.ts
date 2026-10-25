@@ -105,6 +105,8 @@ export interface NotificationPrefs {
 export interface AccessLogEntry { actor: 'therapist' | 'supervisor' | 'clinical_lead' | 'system' | 'crisis_service' | 'patient'; action: string; atUtc: string }
 export interface DataRequestStatus { exportRequestedAt: string | null; exportReadyBy: string | null; exportReady: boolean }
 export interface DeleteAccountRequest { password: string }
+/** POST /v1/me/data-export asks for the password again (PB-58). */
+export interface DataExportRequest { password: string }
 
 // ---------- Screening (P23) ----------
 export interface ScreeningQuestion { index: number; text: string }

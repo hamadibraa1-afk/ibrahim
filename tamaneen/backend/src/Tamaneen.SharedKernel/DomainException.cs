@@ -74,4 +74,5 @@ public static class ErrorCodes
     public const string IntakeClosed = "error.intake.closed";
     public const string TriageAlreadyReviewed = "error.triage.already_reviewed";
     public const string PasswordMismatch = "error.auth.password_mismatch";
+    public const string DeletionBlockedByCrisis = "error.privacy.deletion_crisis_open";
 }

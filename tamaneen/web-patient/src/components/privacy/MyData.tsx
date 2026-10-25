@@ -1,10 +1,12 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
+import { Link } from '@/i18n/navigation';
 import { isLocale, routing } from '@/i18n/routing';
 import { api, authApi } from '@/lib/api/client';
-import type { DataRequestStatus, DeleteAccountRequest } from '@/lib/api/types';
+import type { DataExportRequest, DataRequestStatus, DeleteAccountRequest } from '@/lib/api/types';
+import { ApiError } from '@/lib/api/errors';
 import { formatDate } from '@/lib/format';
 import { Button } from '@/components/ui/Button';
 import { Notice } from '@/components/ui/Notice';
@@ -12,6 +14,9 @@ import { TextField } from '@/components/ui/TextField';
 import { Dialog, DialogCancel } from '@/components/settings/Dialog';
 import { problemMessage } from '@/components/settings/problem';
 import { clearLocalSafetyData } from '@/components/safety/clearOnSignOut';
+import { OPEN_DELETE_EVENT } from './ConsentsSection';
+
+export const DELETION_CRISIS_CODE = 'error.privacy.deletion_crisis_open';
 
 function Chevron() {
   return (
@@ -21,7 +26,10 @@ function Chevron() {
   );
 }
 
-/** "My data" (P11): request a copy (ready within 7 days) or delete the account after re-entering the password. */
+/**
+ * "My data" (P11). Both actions ask for the password again (PB-58, PB-59). Deleting also needs the confirmation
+ * word typed in, and is refused while a crisis event is open (EC-55), with a way to the crisis screen.
+ */
 export function MyData({ initialExport, timeZone }: { initialExport: DataRequestStatus; timeZone: string }) {
   const t = useTranslations('privacy');
   const te = useTranslations('errors');
@@ -32,11 +40,24 @@ export function MyData({ initialExport, timeZone }: { initialExport: DataRequest
   const [exportBusy, setExportBusy] = useState(false);
   const [exportNotice, setExportNotice] = useState<string | null>(null);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exportPassword, setExportPassword] = useState('');
+  const [exportPasswordError, setExportPasswordError] = useState<string | null>(null);
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [password, setPassword] = useState('');
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [confirmWord, setConfirmWord] = useState('');
+  const [confirmError, setConfirmError] = useState<string | null>(null);
+  const [blockedByCrisis, setBlockedByCrisis] = useState(false);
+
+  // "Delete my account instead" in the AI consent dialog.
+  useEffect(() => {
+    const open = () => setDeleteOpen(true);
+    window.addEventListener(OPEN_DELETE_EVENT, open);
+    return () => window.removeEventListener(OPEN_DELETE_EVENT, open);
+  }, []);
 
   const requested = exportStatus.exportRequestedAt !== null && !exportStatus.exportReady;
   const short = (iso: string) => formatDate(iso, locale, timeZone, { day: 'numeric', month: 'long' });
@@ -48,14 +69,28 @@ export function MyData({ initialExport, timeZone }: { initialExport: DataRequest
         : t('exportStarted')
       : t('exportHint');
 
-  async function requestExport() {
+  function closeExport() {
+    setExportOpen(false);
+    setExportPassword('');
+    setExportPasswordError(null);
+  }
+
+  async function requestExport(event: FormEvent) {
+    event.preventDefault();
+    if (!exportPassword) {
+      setExportPasswordError(t('deletePasswordRequired'));
+      return;
+    }
     setExportBusy(true);
     setExportError(null);
+    setExportPasswordError(null);
     try {
-      setExportStatus(await api<DataRequestStatus>('me/data-export', { method: 'POST' }));
+      const body: DataExportRequest = { password: exportPassword };
+      setExportStatus(await api<DataRequestStatus>('me/data-export', { method: 'POST', body }));
       setExportNotice(t('exportStarted'));
+      closeExport();
     } catch (e) {
-      setExportError(problemMessage(e, te('network')));
+      setExportPasswordError(problemMessage(e, te('network')));
     } finally {
       setExportBusy(false);
     }
@@ -65,21 +100,25 @@ export function MyData({ initialExport, timeZone }: { initialExport: DataRequest
     setDeleteOpen(false);
     setPassword('');
     setPasswordError(null);
+    setConfirmWord('');
+    setConfirmError(null);
+    setBlockedByCrisis(false);
   }
 
   async function deleteAccount(event: FormEvent) {
     event.preventDefault();
-    if (!password) {
-      setPasswordError(t('deletePasswordRequired'));
-      return;
-    }
+    const wordOk = confirmWord.trim().toLocaleLowerCase(locale) === t('deleteWord').toLocaleLowerCase(locale);
+    setPasswordError(password ? null : t('deletePasswordRequired'));
+    setConfirmError(wordOk ? null : t('deleteWordRequired', { word: t('deleteWord') }));
+    if (!password || !wordOk) return;
     setDeleting(true);
-    setPasswordError(null);
+    setBlockedByCrisis(false);
     try {
       const body: DeleteAccountRequest = { password };
       await api('me/delete-account', { method: 'POST', body });
     } catch (e) {
-      setPasswordError(problemMessage(e, te('network')));
+      if (e instanceof ApiError && e.code === DELETION_CRISIS_CODE) setBlockedByCrisis(true);
+      else setPasswordError(problemMessage(e, te('network')));
       setDeleting(false);
       return;
     }
@@ -97,7 +136,7 @@ export function MyData({ initialExport, timeZone }: { initialExport: DataRequest
         <li>
           <button
             type="button"
-            onClick={requestExport}
+            onClick={() => setExportOpen(true)}
             disabled={exportBusy || requested || exportStatus.exportReady}
             aria-busy={exportBusy || undefined}
             className="flex min-h-[64px] w-full items-center justify-between gap-3 px-4 py-3 text-start disabled:cursor-default"
@@ -124,10 +163,33 @@ export function MyData({ initialExport, timeZone }: { initialExport: DataRequest
       </div>
       {exportError ? <Notice tone="danger">{exportError}</Notice> : null}
 
+      <Dialog open={exportOpen} onClose={closeExport} title={t('exportDialogTitle')}>
+        <form onSubmit={requestExport} noValidate className="flex flex-col gap-4">
+          <p className="text-sm leading-relaxed text-muted">{t('exportDialogBody')}</p>
+          <TextField label={t('deletePassword')} type="password" autoComplete="current-password" value={exportPassword} error={exportPasswordError} onChange={(e) => setExportPassword(e.target.value)} />
+          <div className="flex flex-col gap-2">
+            <Button type="submit" full busy={exportBusy}>
+              {t('exportConfirm')}
+            </Button>
+            <DialogCancel onClick={closeExport} />
+          </div>
+        </form>
+      </Dialog>
+
       <Dialog open={deleteOpen} onClose={closeDelete} title={t('deleteDialogTitle')} tone="danger">
         <form onSubmit={deleteAccount} noValidate className="flex flex-col gap-4">
           <p className="text-sm leading-relaxed text-muted">{t('deleteDialogBody')}</p>
+          {blockedByCrisis ? (
+            <div role="alert" data-testid="delete-blocked" className="flex flex-col gap-2 rounded-[16px] bg-help/10 px-4 py-3 text-sm leading-relaxed text-help">
+              <p className="font-bold">{t('deleteBlockedTitle')}</p>
+              <p>{t('deleteBlockedBody')}</p>
+              <Link href="/crisis" className="font-bold underline underline-offset-4">
+                {t('deleteBlockedLink')}
+              </Link>
+            </div>
+          ) : null}
           <TextField label={t('deletePassword')} type="password" autoComplete="current-password" value={password} error={passwordError} onChange={(e) => setPassword(e.target.value)} />
+          <TextField label={t('deleteWordLabel', { word: t('deleteWord') })} autoComplete="off" value={confirmWord} error={confirmError} dir="auto" onChange={(e) => setConfirmWord(e.target.value)} />
           <div className="flex flex-col gap-2">
             <Button type="submit" variant="danger" full busy={deleting}>
               {t('deleteConfirm')}

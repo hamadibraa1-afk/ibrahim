@@ -41,7 +41,7 @@ Login: 5 failures lock the account for 15 minutes.
 | PUT | /v1/me/profile | UpdateProfileRequest → Me | P31 |
 | PUT | /v1/me/language | { language } | toggle, P31 |
 | GET/PUT | /v1/me/consents | → Consent[] / UpdateConsentsRequest → Consent[] | P03, P11 |
-| GET/PUT | /v1/me/safety-info | SafetyInfo / UpdateSafetyInfoRequest | P21, P34 |
+| GET/PUT | /v1/me/safety-info | SafetyInfo / UpdateSafetyInfoRequest (trustedName ≤ 100 and trustedPhone go together: one without the other is a 400 field error) | P21, P34 |
 | DELETE | /v1/me/safety-info/trusted-contact | → 204 | P34 |
 | PUT | /v1/me/path | { path } → Me | P22 |
 | POST | /v1/me/contact-request | → ContactRequestCreated | P04, P22 |
@@ -52,8 +52,8 @@ Login: 5 failures lock the account for 15 minutes.
 | DELETE | /v1/me/sessions/{id} · POST /v1/me/sessions/revoke-all | → 204 | P32 |
 | GET/PUT | /v1/me/notifications | NotificationPrefs | P33 |
 | GET | /v1/me/access-log | → AccessLogEntry[] | P11 |
-| GET/POST | /v1/me/data-export | → DataRequestStatus | P11 |
-| POST | /v1/me/delete-account | DeleteAccountRequest → 202 | P11 |
+| GET/POST | /v1/me/data-export | → DataRequestStatus / DataExportRequest { password } → DataRequestStatus (400 error.auth.password_mismatch) | P11 |
+| POST | /v1/me/delete-account | DeleteAccountRequest → 202 (409 error.privacy.deletion_crisis_open while a crisis event is open, EC-55) | P11 |
 | GET | /v1/screening/cssrs | → ScreeningForm | P23 |
 | POST | /v1/screening/cssrs | ScreeningSubmit { answers: the answers given so far, 1–6 } → GateOutcome (gate). P23 sends it after every answer, so a «yes» escalates at once; only the complete set of 6 is stored | P23 |
 | POST | /v1/intake | → IntakeState (starts or resumes) | P04 |

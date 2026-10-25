@@ -107,6 +107,39 @@ public sealed class PatientSafetyTests : IAsyncLifetime
         plan.GetProperty("sections").GetProperty("reasonToLive").GetString().Should().Be("My niece.");
     }
 
+    [Fact]
+    public async Task Export_asks_for_the_password_and_deletion_waits_for_an_open_crisis_event()
+    {
+        using var me = await OnboardedPatientAsync("ar");
+
+        // P11 export (PB-58): the password again.
+        (await Problem(await me.PostAsJsonAsync("/v1/me/data-export", new { password = "not-my-password" }), 400)).GetProperty("code").GetString().Should().Be("error.auth.password_mismatch");
+        (await Read(await me.PostAsJsonAsync("/v1/me/data-export", new { password = Password }))).GetProperty("exportRequestedAt").ValueKind.Should().NotBe(JsonValueKind.Null);
+
+        // EC-55: no deletion while a crisis event is open, explained in the patient's language.
+        await Read(await me.PostAsJsonAsync("/v1/crisis/help", new { requestId = Guid.NewGuid() }));
+        var blocked = await Problem(await me.PostAsJsonAsync("/v1/me/delete-account", new { password = Password }), 409);
+        blocked.GetProperty("code").GetString().Should().Be("error.privacy.deletion_crisis_open");
+        blocked.GetProperty("detail").GetString().Should().Contain("طلب مساعدة مفتوحًا");
+        me.DefaultRequestHeaders.AcceptLanguage.Clear();
+        me.DefaultRequestHeaders.AcceptLanguage.ParseAdd("en");
+        (await Problem(await me.PostAsJsonAsync("/v1/me/delete-account", new { password = Password }), 409)).GetProperty("detail").GetString().Should().Contain("open request for help");
+        (await Read(await me.GetAsync("/v1/me"))).GetProperty("pseudonymId").GetString().Should().NotBeNullOrEmpty("the account is still there");
+    }
+
+    [Fact]
+    public async Task A_trusted_name_needs_a_number_and_a_number_needs_a_name()
+    {
+        using var me = await OnboardedPatientAsync("en");
+        (await Problem(await me.PutAsJsonAsync("/v1/me/safety-info", new { trustedName = "My sister", shareLocation = false }), 400))
+            .GetProperty("errors").TryGetProperty("trustedPhone", out _).Should().BeTrue();
+        (await Problem(await me.PutAsJsonAsync("/v1/me/safety-info", new { trustedPhone = "0559876543", shareLocation = false }), 400))
+            .GetProperty("errors").TryGetProperty("trustedName", out _).Should().BeTrue();
+        await Problem(await me.PutAsJsonAsync("/v1/me/safety-info", new { trustedName = new string('a', 101), trustedPhone = "0559876543", shareLocation = false }), 400);
+        var ok = await Read(await me.PutAsJsonAsync("/v1/me/safety-info", new { trustedName = new string('a', 100), trustedPhone = "0559876543", shareLocation = false }));
+        ok.GetProperty("trustedPhone").GetString().Should().Be("0559876543");
+    }
+
     private async Task<HttpClient> OnboardedPatientAsync(string language, string path = "direct")
     {
         var email = $"safety-{Guid.NewGuid():N}@example.com";

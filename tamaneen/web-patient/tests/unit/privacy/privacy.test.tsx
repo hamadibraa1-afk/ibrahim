@@ -25,7 +25,7 @@ beforeEach(() => {
 });
 
 const consent = (key: Consent['key'], over: Partial<Consent> = {}): Consent => ({ key, required: false, granted: true, version: '1', updatedAt: null, withdrawable: true, ...over });
-const consents = [consent('platform', { required: true, withdrawable: false }), consent('ai'), consent('research', { granted: false }), consent('emergency_location')];
+const consents = [consent('platform', { required: true, withdrawable: false }), consent('ai', { required: true }), consent('research', { granted: false }), consent('emergency_location')];
 
 describe('ConsentsSection', () => {
   it('shows required consents as on, locked and labelled required', () => {
@@ -34,7 +34,7 @@ describe('ConsentsSection', () => {
     expect(platform).toHaveAttribute('aria-checked', 'true');
     expect(platform).toBeDisabled();
     expect(within(screen.getByTestId('consent-platform')).getByText('مطلوبة')).toBeInTheDocument();
-    expect(screen.getByRole('switch', { name: 'المساعدة بالذكاء الاصطناعي' })).toBeEnabled();
+    expect(screen.getByRole('switch', { name: /المساعدة بالذكاء الاصطناعي/ })).toBeEnabled();
     expect(screen.getByRole('switch', { name: 'تحسين الخدمة (بيانات مجهولة)' })).toHaveAttribute('aria-checked', 'false');
   });
 
@@ -49,19 +49,40 @@ describe('ConsentsSection', () => {
   it('explains what stops before withdrawing AI assistance', async () => {
     mocks.api.mockResolvedValue([consents[0], consent('ai', { granted: false }), consents[2], consents[3]]);
     renderWithIntl(<ConsentsSection initial={consents} />, 'ar');
-    await userEvent.click(screen.getByRole('switch', { name: 'المساعدة بالذكاء الاصطناعي' }));
+    await userEvent.click(screen.getByRole('switch', { name: /المساعدة بالذكاء الاصطناعي/ }));
     const dialog = screen.getByRole('dialog', { name: 'إيقاف المساعدة بالذكاء الاصطناعي؟' });
     expect(dialog).toHaveTextContent('ستتوقف الميزات المدعومة بالذكاء الاصطناعي');
     expect(mocks.api).not.toHaveBeenCalled();
 
     await userEvent.click(within(dialog).getByRole('button', { name: 'إلغاء' }));
     expect(screen.queryByRole('dialog')).toBeNull();
-    expect(screen.getByRole('switch', { name: 'المساعدة بالذكاء الاصطناعي' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('switch', { name: /المساعدة بالذكاء الاصطناعي/ })).toHaveAttribute('aria-checked', 'true');
 
-    await userEvent.click(screen.getByRole('switch', { name: 'المساعدة بالذكاء الاصطناعي' }));
+    await userEvent.click(screen.getByRole('switch', { name: /المساعدة بالذكاء الاصطناعي/ }));
     await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'إيقاف المساعدة' }));
     expect(mocks.api).toHaveBeenCalledWith('me/consents', { method: 'PUT', body: { items: [{ key: 'ai', granted: false }] } });
-    await waitFor(() => expect(screen.getByRole('switch', { name: 'المساعدة بالذكاء الاصطناعي' })).toHaveAttribute('aria-checked', 'false'));
+    await waitFor(() => expect(screen.getByRole('switch', { name: /المساعدة بالذكاء الاصطناعي/ })).toHaveAttribute('aria-checked', 'false'));
+  });
+
+  it('offers the delete path from the AI dialog (PB-56)', async () => {
+    const opened = vi.fn();
+    window.addEventListener('tamaneen:open-delete-account', opened);
+    renderWithIntl(<ConsentsSection initial={consents} />, 'en');
+    await userEvent.click(screen.getByRole('switch', { name: /AI assistance/ }));
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'I would rather delete my account' }));
+    expect(opened).toHaveBeenCalled();
+    expect(mocks.api).not.toHaveBeenCalled();
+    window.removeEventListener('tamaneen:open-delete-account', opened);
+  });
+
+  it('asks before withdrawing the emergency location consent', async () => {
+    mocks.api.mockResolvedValue([consents[0], consents[1], consents[2], consent('emergency_location', { granted: false })]);
+    renderWithIntl(<ConsentsSection initial={consents} />, 'ar');
+    await userEvent.click(screen.getByRole('switch', { name: 'موقعي عند الطوارئ' }));
+    const dialog = screen.getByRole('dialog', { name: 'إيقاف مشاركة موقعك عند الطوارئ؟' });
+    expect(mocks.api).not.toHaveBeenCalled();
+    await userEvent.click(within(dialog).getByRole('button', { name: 'إيقاف مشاركة الموقع' }));
+    expect(mocks.api).toHaveBeenCalledWith('me/consents', { method: 'PUT', body: { items: [{ key: 'emergency_location', granted: false }] } });
   });
 });
 
@@ -114,22 +135,31 @@ describe('MyData', () => {
     renderWithIntl(<MyData initialExport={none} timeZone="Asia/Riyadh" />, 'ar');
     expect(screen.getByText('جاهزة خلال 7 أيام')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: /تنزيل نسخة من بياناتي/ }));
-    expect(mocks.api).toHaveBeenCalledWith('me/data-export', { method: 'POST' });
+    const dialog = screen.getByRole('dialog', { name: 'تنزيل نسخة من بياناتك' });
+    await userEvent.click(within(dialog).getByRole('button', { name: 'اطلب النسخة' }));
+    expect(mocks.api).not.toHaveBeenCalled();
+    await userEvent.type(within(dialog).getByLabelText('كلمة المرور للتأكيد'), 'my-secret-password');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'اطلب النسخة' }));
+    expect(mocks.api).toHaveBeenCalledWith('me/data-export', { method: 'POST', body: { password: 'my-secret-password' } });
     expect(await screen.findByText('طلبتها في 20 أكتوبر · جاهزة بحلول 27 أكتوبر')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /تنزيل نسخة من بياناتي/ })).toBeDisabled();
   });
 
-  it('deletes the account only with the password, then signs out', async () => {
+  it('deletes the account only with the password and the typed confirmation, then signs out', async () => {
     mocks.api.mockResolvedValue(undefined);
     renderWithIntl(<MyData initialExport={none} timeZone="Asia/Riyadh" />, 'ar');
     expect(screen.getByText('نحتفظ فقط بما يلزمه القانون')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: /حذف حسابي/ }));
     const dialog = screen.getByRole('dialog', { name: 'حذف حسابك؟' });
     await userEvent.click(within(dialog).getByRole('button', { name: 'حذف حسابي نهائيًا' }));
-    expect(within(dialog).getByRole('alert')).toHaveTextContent('أدخل كلمة المرور.');
+    expect(within(dialog).getAllByRole('alert')[0]).toHaveTextContent('أدخل كلمة المرور.');
     expect(mocks.api).not.toHaveBeenCalled();
 
     await userEvent.type(within(dialog).getByLabelText('كلمة المرور للتأكيد'), 'my-secret-password');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'حذف حسابي نهائيًا' }));
+    expect(within(dialog).getByRole('alert')).toHaveTextContent('اكتب «حذف» كما هي للتأكيد.');
+    expect(mocks.api).not.toHaveBeenCalled();
+    await userEvent.type(within(dialog).getByLabelText('اكتب «حذف» للتأكيد'), 'حذف');
     await userEvent.click(within(dialog).getByRole('button', { name: 'حذف حسابي نهائيًا' }));
     expect(mocks.api).toHaveBeenCalledWith('me/delete-account', { method: 'POST', body: { password: 'my-secret-password' } });
     await waitFor(() => expect(mocks.assign).toHaveBeenCalledWith('/ar?deleted=1'));
@@ -142,9 +172,24 @@ describe('MyData', () => {
     await userEvent.click(screen.getByRole('button', { name: /Delete my account/ }));
     const dialog = screen.getByRole('dialog', { name: 'Delete your account?' });
     await userEvent.type(within(dialog).getByLabelText('Password to confirm'), 'wrong');
+    await userEvent.type(within(dialog).getByLabelText('Type “DELETE” to confirm'), 'delete');
     await userEvent.click(within(dialog).getByRole('button', { name: 'Delete my account for good' }));
     expect(await within(dialog).findByRole('alert')).toHaveTextContent('The password is incorrect.');
     expect(mocks.authApi).not.toHaveBeenCalled();
     expect(mocks.assign).not.toHaveBeenCalled();
+  });
+
+  it('explains that deletion waits while a crisis event is open (EC-55)', async () => {
+    mocks.api.mockRejectedValue(new ApiError(409, { title: 'Conflict', status: 409, code: 'error.privacy.deletion_crisis_open', detail: 'open request' }));
+    renderWithIntl(<MyData initialExport={none} timeZone="Asia/Riyadh" />, 'ar');
+    await userEvent.click(screen.getByRole('button', { name: /حذف حسابي/ }));
+    const dialog = screen.getByRole('dialog', { name: 'حذف حسابك؟' });
+    await userEvent.type(within(dialog).getByLabelText('كلمة المرور للتأكيد'), 'my-secret-password');
+    await userEvent.type(within(dialog).getByLabelText('اكتب «حذف» للتأكيد'), 'حذف');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'حذف حسابي نهائيًا' }));
+    const blocked = await within(dialog).findByTestId('delete-blocked');
+    expect(blocked).toHaveTextContent('لا يمكن حذف الحساب الآن');
+    expect(within(blocked).getByText('افتح شاشة الطوارئ')).toHaveAttribute('href', '/crisis');
+    expect(mocks.authApi).not.toHaveBeenCalled();
   });
 });

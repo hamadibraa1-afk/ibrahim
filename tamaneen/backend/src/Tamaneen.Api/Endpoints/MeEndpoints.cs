@@ -7,6 +7,7 @@ using Tamaneen.Api.Auth;
 using Tamaneen.Api.Patients;
 using Tamaneen.Clinical.Care;
 using Tamaneen.Clinical.Intake;
+using Tamaneen.Crisis;
 using Tamaneen.Hosting;
 using Tamaneen.Identity;
 using Tamaneen.Infrastructure.Auditing;
@@ -63,6 +64,9 @@ public static class MeEndpoints
     public sealed record DataRequestStatusDto(DateTimeOffset? ExportRequestedAt, DateTimeOffset? ExportReadyBy, bool ExportReady);
 
     public sealed record DeleteAccountRequest(string? Password);
+
+    /// <summary>P11 export asks for the password again (PB-58).</summary>
+    public sealed record DataExportRequest(string? Password);
 
     public sealed record ContactRequestCreated(DateTimeOffset RequestedAt);
 
@@ -276,7 +280,18 @@ public static class MeEndpoints
         var contact = CleanPhone(request.ContactPhone, "contactPhone");
         var trustedPhone = CleanPhone(request.TrustedPhone, "trustedPhone");
         var trustedName = string.IsNullOrWhiteSpace(request.TrustedName) ? null : request.TrustedName.Trim();
-        if (trustedName is { Length: > 80 })
+        if (trustedName is { Length: > 100 })
+        {
+            throw Invalid("trustedName");
+        }
+
+        // The trusted person's name and number go together (P21, P34): one without the other cannot be used.
+        if (trustedName is not null && trustedPhone is null)
+        {
+            throw Invalid("trustedPhone");
+        }
+
+        if (trustedPhone is not null && trustedName is null)
         {
             throw Invalid("trustedName");
         }
@@ -492,30 +507,41 @@ public static class MeEndpoints
         return new DataRequestStatusDto(latest?.RequestedAtUtc, latest?.DueAtUtc, latest?.CompletedAtUtc is not null);
     }
 
-    internal static async Task<Ok<DataRequestStatusDto>> RequestDataExportAsync(PatientContext p, IAuditLog audit, IClock clock, CancellationToken ct)
+    internal static async Task<Ok<DataRequestStatusDto>> RequestDataExportAsync(DataExportRequest? request, PatientContext p, PasswordService passwords, IAuditLog audit, IClock clock, CancellationToken ct)
     {
+        await VerifyPasswordAsync(p, passwords, request?.Password, ct).ConfigureAwait(false);
         var open = await p.Db.DataRequests.AnyAsync(r => r.PatientId == p.PatientId && r.Kind == DataRequestKind.Export && r.CompletedAtUtc == null, ct).ConfigureAwait(false);
         if (!open)
         {
-            var request = DataRequest.Create(p.PatientId, DataRequestKind.Export, clock);
-            p.Db.DataRequests.Add(request);
-            audit.Append("data.export_requested", "DataRequest", request.Id.ToString(), (await p.AccountAsync(ct).ConfigureAwait(false)).PseudonymId);
+            var export = DataRequest.Create(p.PatientId, DataRequestKind.Export, clock);
+            p.Db.DataRequests.Add(export);
+            audit.Append("data.export_requested", "DataRequest", export.Id.ToString(), (await p.AccountAsync(ct).ConfigureAwait(false)).PseudonymId);
             await p.Db.SaveChangesAsync(ct).ConfigureAwait(false);
         }
 
         return TypedResults.Ok(await ExportStatusAsync(p, ct).ConfigureAwait(false));
     }
 
+    private static async Task VerifyPasswordAsync(PatientContext p, PasswordService passwords, string? password, CancellationToken ct)
+    {
+        var credential = await p.Db.Credentials.AsNoTracking().FirstAsync(c => c.UserId == p.PatientId, ct).ConfigureAwait(false);
+        if (passwords.Verify(credential.PasswordHash, password ?? string.Empty) == PasswordCheck.Failed)
+        {
+            throw new DomainException(ErrorCodes.PasswordMismatch, "Password wrong.");
+        }
+    }
+
     /// <summary>
     /// Closes the account, signs out everywhere and crypto-shreds the patient's data key, which makes every
     /// encrypted field unreadable, backups included. Content-free audit rows stay, as the law requires.
+    /// Refused while a crisis event is open (EC-55): the responder still needs the contact data and the key.
     /// </summary>
     internal static async Task<Accepted> DeleteAccountAsync(DeleteAccountRequest request, PatientContext p, PasswordService passwords, AuthService auth, ScopeRunner scopes, IAuditLog audit, IClock clock, CancellationToken ct)
     {
-        var credential = await p.Db.Credentials.FirstAsync(c => c.UserId == p.PatientId, ct).ConfigureAwait(false);
-        if (passwords.Verify(credential.PasswordHash, request.Password ?? string.Empty) == PasswordCheck.Failed)
+        await VerifyPasswordAsync(p, passwords, request.Password, ct).ConfigureAwait(false);
+        if (await p.Db.CrisisEvents.AnyAsync(e => e.PatientId == p.PatientId && e.Status != CrisisEventStatus.Closed, ct).ConfigureAwait(false))
         {
-            throw new DomainException(ErrorCodes.PasswordMismatch, "Password wrong.");
+            throw new DomainException(ErrorCodes.DeletionBlockedByCrisis, "A crisis event is open.");
         }
 
         var account = await p.AccountAsync(ct).ConfigureAwait(false);
