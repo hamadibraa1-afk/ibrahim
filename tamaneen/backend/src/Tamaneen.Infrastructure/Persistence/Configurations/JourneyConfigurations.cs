@@ -179,6 +179,7 @@ internal sealed class MatchSuggestionConfiguration : IEntityTypeConfiguration<Ma
         b.HasKey(x => x.Id);
         b.Property(x => x.Id).ValueGeneratedNever();
         b.Property(x => x.SharedSpecialties).HasMaxLength(256).IsUnicode(false).IsRequired();
+        b.Property(x => x.DismissReason).HasMaxLength(16).IsUnicode(false);
         b.HasIndex(x => new { x.PatientId, x.TherapistUserId }).IsUnique();
         b.HasOne<UserAccount>().WithMany().HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<TherapistProfile>().WithMany().HasForeignKey(x => x.TherapistUserId).OnDelete(DeleteBehavior.Restrict);
@@ -214,6 +215,7 @@ internal sealed class IntakeMessageConfiguration : IEntityTypeConfiguration<Inta
         b.Property(x => x.Id).ValueGeneratedNever();
         b.Property(x => x.TextCipher).HasMaxLength(20000).IsRequired();
         b.HasIndex(x => new { x.IntakeId, x.CreatedAtUtc });
+        b.HasIndex(x => new { x.IntakeId, x.ClientMessageId }).IsUnique().HasFilter("[ClientMessageId] IS NOT NULL");
         b.HasOne<IntakeSession>().WithMany().HasForeignKey(x => x.IntakeId).OnDelete(DeleteBehavior.Cascade);
     }
 }

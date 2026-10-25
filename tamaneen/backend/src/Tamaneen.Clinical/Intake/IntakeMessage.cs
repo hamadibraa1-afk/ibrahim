@@ -35,7 +35,11 @@ public sealed class IntakeMessage : Entity
 
     public DateTimeOffset CreatedAtUtc { get; private set; }
 
-    public static IntakeMessage Patient(Guid intakeId, Guid patientId, byte[] cipher, IClock clock) => new(Guid.NewGuid(), intakeId, patientId, true, cipher, false, clock.UtcNow);
+    /// <summary>Id the app gave the patient's message (PB-21); a retry with the same id is not stored twice (EC-07).</summary>
+    public Guid? ClientMessageId { get; private set; }
+
+    public static IntakeMessage Patient(Guid intakeId, Guid patientId, byte[] cipher, IClock clock, Guid? clientMessageId = null) =>
+        new(Guid.NewGuid(), intakeId, patientId, true, cipher, false, clock.UtcNow) { ClientMessageId = clientMessageId };
 
     public static IntakeMessage Assistant(Guid intakeId, Guid patientId, byte[] cipher, bool isFallback, IClock clock) => new(Guid.NewGuid(), intakeId, patientId, false, cipher, isFallback, clock.UtcNow);
 }

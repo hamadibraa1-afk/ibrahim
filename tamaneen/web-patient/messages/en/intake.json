@@ -30,6 +30,17 @@
     "expiredBody": "More than 14 days passed without a reply, so the conversation was closed. You can start again whenever you like.",
     "restart": "Start a new conversation",
     "queued": "We'll send it when you're back online",
-    "offline": "You're offline right now. Your message is saved and we'll send it automatically when the connection returns."
+    "offline": "You're offline right now. Your message is saved and we'll send it automatically when the connection returns.",
+    "tooLong": "Your message is longer than {max} characters. Please send it in parts, one message at a time.",
+    "notSent": "Not sent yet",
+    "retrySend": "Retry",
+    "contactConfirmTitle": "Connect you with a person from our team?",
+    "contactConfirmBody": "We will send your request to our team, and a professional will contact you within {hours} hours at most. You can keep chatting while you wait.",
+    "contactConfirm": "Yes, ask them to contact me",
+    "contactCancel": "Not now",
+    "contactRequestedBy": "We got your request. Someone from our team will contact you before {time}, and you can keep chatting if you like.",
+    "formOffer": "The assistant is not available right now. You can continue with the question form; what you have done so far is saved.",
+    "switchToForm": "Switch to form",
+    "formModeOn": "Form mode: answer the questions one at a time, then write your own summary in the next step."
   }
 }

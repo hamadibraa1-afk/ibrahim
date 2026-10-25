@@ -46,7 +46,7 @@ and P01, P02, P12 and P15 show the emergency numbers instead of the start button
 | GET/PUT | /v1/me/safety-info | SafetyInfo / UpdateSafetyInfoRequest | P21, P34 |
 | DELETE | /v1/me/safety-info/trusted-contact | → 204 | P34 |
 | PUT | /v1/me/path | { path } → Me | P22 |
-| POST | /v1/me/contact-request | → ContactRequestCreated | P04, P22 |
+| POST | /v1/me/contact-request?source= | → ContactRequestCreated (`expectedBy`, `withinHours` from the triage SLA) | P04, P22 |
 | GET | /v1/me/security | → SecurityOverview | P32 |
 | PUT | /v1/me/password | ChangePasswordRequest → 204 | P32 |
 | POST | /v1/me/totp/setup · /v1/me/totp/confirm · DELETE /v1/me/totp | → TotpSetup · CodeRequest → 204 · CodeRequest → 204 | P17, P32 |
@@ -60,18 +60,19 @@ and P01, P02, P12 and P15 show the emergency numbers instead of the start button
 | POST | /v1/screening/cssrs | ScreeningSubmit → GateOutcome (gate) | P23 |
 | POST | /v1/intake | → IntakeState (starts or resumes) | P04 |
 | GET | /v1/intake/current | → IntakeState (404 if none) | P04, P22 |
-| POST | /v1/intake/{id}/messages | SendMessageRequest → IntakeTurnResponse (gate, then AI) | P04 |
+| POST | /v1/intake/{id}/messages | SendMessageRequest → IntakeTurnResponse (gate, then AI; at most 2,000 characters; a repeated `clientMessageId` is answered with the current state and stored once) | P04 |
 | POST | /v1/intake/{id}/answers | AnswerRequest → IntakeTurnResponse (gate) | P04 |
 | POST | /v1/intake/{id}/pause | → IntakeState | P04 |
+| POST | /v1/intake/{id}/form-mode | → IntakeState (`formMode: true`: questionnaires at once, finish without more turns, no AI summary) | P04 |
 | POST | /v1/intake/{id}/complete | → IntakeSummary (AI writes the sections; fallback: empty sections) | P04 → P05 |
-| GET/PUT | /v1/intake/{id}/summary | IntakeSummary / UpdateSummaryRequest → IntakeSummary (gate) | P05 |
+| GET/PUT | /v1/intake/{id}/summary | IntakeSummary / UpdateSummaryRequest → IntakeSummary (gate; each section at most 2,000 characters) | P05 |
 | POST | /v1/intake/{id}/submit | → TriageState | P05 → P36 |
 | GET | /v1/triage | → TriageState | P36 |
 | POST | /v1/triage/addendum | AddToSummaryRequest → TriageState (gate) | P36 |
 | GET | /v1/crisis/status | → CrisisStatus | P06 |
 | POST | /v1/crisis/help | → HelpResponse (gate source help_now: always opens a level 4 event) | help button |
 | GET | /v1/matches | → MatchList | P07 |
-| POST | /v1/matches/{therapistId}/dismiss | → MatchList | P07 |
+| POST | /v1/matches/{therapistId}/dismiss | DismissRequest? `{ reason?: specialty, gender, language, schedule, other }` → MatchList | P07 |
 | GET | /v1/therapists?q&specialty&language&gender&evening | → TherapistSummary[] | P24 |
 | GET | /v1/therapists/{id} | → TherapistProfile | P25 |
 | GET | /v1/therapists/{id}/slots?days=14 | → Slot[] | P08 |

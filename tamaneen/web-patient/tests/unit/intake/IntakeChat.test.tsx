@@ -18,6 +18,7 @@ const base: IntakeState = {
   pendingQuestion: null,
   canFinish: false,
   expiresAt: '2026-11-03T10:00:00Z',
+  formMode: false,
 };
 
 const phq: IntakeState['pendingQuestion'] = {
@@ -76,7 +77,7 @@ describe('IntakeChat (P04)', () => {
     const box = await screen.findByRole('textbox', { name: 'رسالتك' });
     await userEvent.type(box, 'أشعر بضغط كبير{Enter}');
 
-    expect(api).toHaveBeenCalledWith('intake/in-1/messages', { method: 'POST', body: { text: 'أشعر بضغط كبير' } });
+    expect(api).toHaveBeenCalledWith('intake/in-1/messages', { method: 'POST', body: { text: 'أشعر بضغط كبير', clientMessageId: expect.stringMatching(/^[0-9a-f-]{36}$/) } });
     const bubble = screen.getByText('أشعر بضغط كبير');
     expect(bubble.closest('[data-role]')).toHaveAttribute('data-role', 'patient');
     expect(screen.getByTestId('typing')).toHaveTextContent('رفيق يكتب…');
@@ -115,12 +116,12 @@ describe('IntakeChat (P04)', () => {
     await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/crisis'));
   });
 
-  it('puts the text back when sending fails with an API error', async () => {
+  it('puts the text back when the API refuses the message', async () => {
     routeApi({
       'GET intake/current': notFound,
       'POST intake': () => base,
       'POST intake/in-1/messages': () => {
-        throw new ApiError(500, { title: 'تعذّر الإرسال', status: 500 });
+        throw new ApiError(400, { title: 'تعذّر الإرسال', status: 400 });
       },
     });
     renderWithIntl(<IntakeChat />, 'ar');
@@ -128,6 +129,44 @@ describe('IntakeChat (P04)', () => {
     await userEvent.type(box, 'مرحبًا{Enter}');
     expect(await screen.findByRole('alert')).toHaveTextContent('تعذّر الإرسال');
     expect(box).toHaveValue('مرحبًا');
+  });
+
+  it('keeps a failed message with a retry button that resends the same client id (PB-27)', async () => {
+    const bodies: { text: string; clientMessageId: string }[] = [];
+    routeApi({
+      'GET intake/current': notFound,
+      'POST intake': () => base,
+      'POST intake/in-1/messages': (body) => {
+        bodies.push(body as never);
+        if (bodies.length === 1) throw new ApiError(503, { title: 'الخدمة غير متاحة', status: 503 });
+        return turn({ messages: [...base.messages, { id: 'm2', role: 'patient', text: 'مرحبًا', at: '' }] });
+      },
+    });
+    renderWithIntl(<IntakeChat />, 'ar');
+    await userEvent.type(await screen.findByRole('textbox', { name: 'رسالتك' }), 'مرحبًا{Enter}');
+    expect(await screen.findByText('لم تُرسل بعد')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'إعادة المحاولة' }));
+    await waitFor(() => expect(bodies).toHaveLength(2));
+    expect(bodies[1]!.clientMessageId).toBe(bodies[0]!.clientMessageId);
+    await waitFor(() => expect(screen.queryByText('لم تُرسل بعد')).not.toBeInTheDocument());
+    expect(screen.getAllByText('مرحبًا')).toHaveLength(1);
+  });
+
+  it('offers the form when the assistant is down and hides the composer in form mode (PB-28)', async () => {
+    const down: IntakeState = { ...base, messages: [...base.messages, { id: 'm2', role: 'assistant', text: 'رد ثابت', at: '', fallback: true }] };
+    routeApi({
+      'GET intake/current': () => down,
+      'POST intake': () => down,
+      'POST intake/in-1/form-mode': () => ({ ...down, formMode: true, pendingQuestion: phq }),
+    });
+    renderWithIntl(<IntakeChat />, 'en');
+    expect(await screen.findByTestId('form-mode-offer')).toHaveTextContent('The assistant is not available right now.');
+    await userEvent.click(screen.getByRole('button', { name: 'Switch to form' }));
+    expect(api).toHaveBeenCalledWith('intake/in-1/form-mode', { method: 'POST' });
+    expect(await screen.findByText(/^Form mode:/)).toBeInTheDocument();
+    expect(screen.queryByTestId('form-mode-offer')).not.toBeInTheDocument();
+    expect(screen.queryByRole('textbox', { name: 'Your message' })).not.toBeInTheDocument();
+    expect(screen.getByRole('radiogroup')).toBeInTheDocument();
   });
 
   it('answers the questionnaire with the chosen score and can skip a question', async () => {
@@ -174,14 +213,21 @@ describe('IntakeChat (P04)', () => {
     await waitFor(() => expect(router.push).toHaveBeenCalledWith('/intake/summary'));
   });
 
-  it('pauses and says the conversation is saved for 14 days with the expiry date', async () => {
+  it('pauses and goes back home (PB-24)', async () => {
     routeApi({
       'GET intake/current': notFound,
       'POST intake': () => base,
-      'POST intake/in-1/pause': () => ({ ...base, status: 'paused', expiresAt: '2026-11-03T10:00:00Z' }),
+      'POST intake/in-1/pause': () => ({ ...base, status: 'paused' }),
     });
     renderWithIntl(<IntakeChat />, 'ar');
     await userEvent.click(await screen.findByRole('button', { name: 'إيقاف مؤقت' }));
+    expect(api).toHaveBeenCalledWith('intake/in-1/pause', { method: 'POST' });
+    await waitFor(() => expect(router.push).toHaveBeenCalledWith('/home'));
+  });
+
+  it('shows a paused intake as saved for 14 days with the expiry date', async () => {
+    routeApi({ 'GET intake/current': () => ({ ...base, status: 'paused', expiresAt: '2026-11-03T10:00:00Z' }), 'POST intake': () => ({ ...base, status: 'paused', expiresAt: '2026-11-03T10:00:00Z' }) });
+    renderWithIntl(<IntakeChat />, 'ar');
     const notice = await screen.findByTestId('paused-notice');
     expect(notice).toHaveTextContent('حفظنا المحادثة');
     expect(notice).toHaveTextContent('يمكنك العودة خلال 14 يومًا، حتى');
@@ -190,11 +236,20 @@ describe('IntakeChat (P04)', () => {
     expect(screen.getByRole('button', { name: 'متابعة المحادثة' })).toBeInTheDocument();
   });
 
-  it('asks for a person and confirms the request', async () => {
-    routeApi({ 'GET intake/current': notFound, 'POST intake': () => base, 'POST me/contact-request': () => ({ requestedAt: '2026-10-20T10:00:00Z' }) });
-    renderWithIntl(<IntakeChat />, 'ar');
+  it('asks for a person only after confirming, with the expected wait (PB-25)', async () => {
+    routeApi({
+      'GET intake/current': notFound,
+      'POST intake': () => base,
+      'POST me/contact-request?source=intake': () => ({ requestedAt: '2026-10-20T10:00:00Z', expectedBy: '2026-10-21T10:00:00Z', withinHours: 24 }),
+    });
+    renderWithIntl(<IntakeChat triageWithinHours={24} />, 'ar');
     await userEvent.click(await screen.findByRole('button', { name: 'أريد التحدث مع شخص' }));
-    expect(await screen.findByText(/وصل طلبك/)).toBeInTheDocument();
+    const dialog = await screen.findByRole('dialog', { name: 'نوصلك بشخص من فريقنا؟' });
+    expect(dialog).toHaveTextContent('خلال 24 ساعة');
+    expect(api).not.toHaveBeenCalledWith('me/contact-request?source=intake', expect.anything());
+    await userEvent.click(screen.getByRole('button', { name: 'نعم، اطلب التواصل' }));
+    expect(await screen.findByText(/استلمنا طلبك. سيتواصل معك أحد أفراد فريقنا قبل/)).toHaveTextContent('21');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
   it('offers a restart for an expired intake', async () => {
@@ -207,14 +262,17 @@ describe('IntakeChat (P04)', () => {
     expect(api).toHaveBeenCalledWith('intake', { method: 'POST' });
   });
 
-  it('shows a counter near the 4000-character limit', async () => {
+  it('counts toward 2,000 characters and asks to send longer text in parts (EC-19)', async () => {
     routeApi({ 'GET intake/current': notFound, 'POST intake': () => base });
     renderWithIntl(<IntakeChat />, 'en');
     const box = await screen.findByRole('textbox', { name: 'Your message' });
-    expect(box).toHaveAttribute('maxLength', '4000');
-    expect(screen.queryByText(/of 4000 characters/)).not.toBeInTheDocument();
-    fireEvent.change(box, { target: { value: 'a'.repeat(3700) } });
-    expect(screen.getByText('3700 of 4000 characters')).toBeInTheDocument();
+    expect(screen.queryByText(/of 2000 characters/)).not.toBeInTheDocument();
+    fireEvent.change(box, { target: { value: 'a'.repeat(1900) } });
+    expect(screen.getByText('1900 of 2000 characters')).toBeInTheDocument();
+    fireEvent.change(box, { target: { value: 'a'.repeat(2500) } });
+    expect(box).toHaveValue('a'.repeat(2500));
+    expect(screen.getByRole('alert')).toHaveTextContent('Please send it in parts');
+    expect(screen.getByRole('button', { name: 'Send' })).toBeDisabled();
   });
 
   it('sends the user on to the summary when the intake is already being summarized', async () => {

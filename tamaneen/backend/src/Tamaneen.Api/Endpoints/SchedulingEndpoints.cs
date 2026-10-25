@@ -44,6 +44,8 @@ public static class SchedulingEndpoints
 
     public sealed record RescheduleRequest(Guid SlotId);
 
+    public sealed record DismissRequest(string? Reason);
+
     public static IEndpointRouteBuilder MapSchedulingEndpoints(this IEndpointRouteBuilder app)
     {
         var g = app.MapGroup("/v1").RequireAuthorization(AuthSetup.PatientPolicy);
@@ -87,12 +89,14 @@ public static class SchedulingEndpoints
         }).ToList());
     }
 
-    internal static async Task<Ok<MatchListDto>> DismissAsync(Guid therapistId, PatientContext p, TherapistDirectory directory, IAuditLog audit, CancellationToken ct)
+    /// <summary>PB-36: removes the suggestion with no penalty; the optional reason is one of MatchSuggestion.DismissReasons.</summary>
+    internal static async Task<Ok<MatchListDto>> DismissAsync(Guid therapistId, DismissRequest? request, PatientContext p, TherapistDirectory directory, IAuditLog audit, CancellationToken ct)
     {
         var suggestion = await p.Db.MatchSuggestions.FirstOrDefaultAsync(m => m.PatientId == p.PatientId && m.TherapistUserId == therapistId, ct).ConfigureAwait(false)
             ?? throw new DomainException(ErrorCodes.NotFound, "Suggestion not found.");
-        suggestion.Dismiss();
-        audit.Append("match.dismissed", "MatchSuggestion", suggestion.Id.ToString(), (await p.AccountAsync(ct).ConfigureAwait(false)).PseudonymId);
+        var reason = string.IsNullOrWhiteSpace(request?.Reason) ? null : request.Reason.Trim();
+        suggestion.Dismiss(reason);
+        audit.Append("match.dismissed", "MatchSuggestion", suggestion.Id.ToString(), (await p.AccountAsync(ct).ConfigureAwait(false)).PseudonymId, reason is null ? null : $"reason={reason}");
         await p.Db.SaveChangesAsync(ct).ConfigureAwait(false);
         return TypedResults.Ok(await BuildMatchesAsync(p, directory, ct).ConfigureAwait(false));
     }
