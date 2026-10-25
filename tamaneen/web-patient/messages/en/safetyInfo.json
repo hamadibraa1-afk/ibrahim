@@ -12,6 +12,8 @@
     "save": "Save and continue",
     "skip": "Skip for now",
     "phoneInvalid": "Enter a valid mobile number starting with 05 or the country code.",
-    "trustedNameRequired": "Add the name of the person you trust, or remove their number."
+    "trustedNameRequired": "Add the name of the person you trust, or remove their number.",
+    "trustedPhoneRequired": "Add the mobile number of the person you trust, or remove their name.",
+    "skipWhy": "Why this helps: if you're in danger and we can't reach you, these details are what let our team get help to you. You can add them later in Settings."
   }
 }

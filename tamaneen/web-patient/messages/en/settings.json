@@ -127,7 +127,12 @@
       "deleteTitle": "Delete your emergency contact?",
       "deleteBody": "We won't be able to reach the person you trust if you are in danger and we can't reach you. You can add them again at any time.",
       "deleteConfirm": "Delete",
-      "deleted": "Your emergency contact is deleted."
+      "deleted": "Your emergency contact is deleted.",
+      "trustedNameRequired": "Add the name of the person you trust, or remove their number.",
+      "trustedPhoneRequired": "Add the mobile number of the person you trust, or remove their name.",
+      "locationTitle": "Stop sharing your location in an emergency?",
+      "locationBody": "If you are in danger and we can't reach you, the on-call clinician won't know where to send help. The change applies when you tap “Save”.",
+      "locationConfirm": "Stop sharing"
     },
     "dialog": {
       "cancel": "Cancel"
