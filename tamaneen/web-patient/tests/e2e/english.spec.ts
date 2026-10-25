@@ -116,6 +116,8 @@ test.describe('English patient', () => {
 
     // Give the time back so repeated runs keep finding free slots.
     await cancel.click();
+    // P28 asks why before cancelling.
+    await dialog.getByText('It clashes with something else').click();
     await dialog.getByRole('button', { name: 'Yes, cancel it' }).click();
     await expect(page.getByText('Your appointment is cancelled.', { exact: false })).toBeVisible();
   });

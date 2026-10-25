@@ -49,27 +49,24 @@ test('Sara signs in with password and authenticator code and sees her dashboard 
   await expect(row.getByTestId('risk-tag')).toHaveText('1 · روتيني');
 });
 
-test('Sara opens the file, sees the scores and sections, and approves it', async () => {
+test('Sara opens the file page (S02), sees the scores, and approves it', async () => {
   const row = page.getByTestId('pending-table').getByRole('row').filter({ hasText: pseudonymId });
   await row.getByTestId('review-file').click();
-  const dialog = page.getByRole('dialog');
-  await expect(dialog.getByRole('heading', { name: `ملف ${pseudonymId}` })).toBeVisible();
-  await expect(dialog.getByTestId('intake-scores')).toContainText('PHQ-9');
-  await expect(dialog.getByTestId('intake-scores')).toContainText('GAD-7');
-  await expect(dialog.getByTestId('intake-scores').getByTestId('risk-tag')).toHaveText('1 · روتيني');
-  await expect(dialog.getByTestId('cssrs')).toHaveText('سلبي');
-  for (const section of ['المشكلة الرئيسية', 'الأهداف', 'الدعم من حوله', 'رعاية سابقة', 'أي شيء آخر']) {
-    await expect(dialog.getByRole('heading', { name: section })).toBeVisible();
-  }
-  await dialog.getByTestId('approve').click();
-  await expect(dialog).toBeHidden();
-  await expect(page.getByText('تم اعتماد الملف.')).toBeVisible();
-  await expect(page.getByTestId('pending-table').getByRole('row').filter({ hasText: pseudonymId })).toHaveCount(0);
+  await expect(page).toHaveURL(new RegExp(`/patients/${pseudonymId}$`));
+  await expect(page.getByTestId('file-pseudonym')).toHaveText(pseudonymId);
+  // Direct booking: the safety check stands in for the intake, so there are no questionnaire scores.
+  await expect(page.getByText('حجز مباشر: فحص السلامة بدل الاستقبال.')).toBeVisible();
+  await expect(page.getByTestId('score-PHQ-9')).toHaveCount(0);
+  await expect(page.getByTestId('score-cssrs')).toContainText('سلبي');
+  await page.getByTestId('approve').click();
+  await expect(page.getByTestId('approved')).toBeVisible();
 
-  // The approval is stored: still gone after a reload.
+  // The approval is stored: back on the dashboard the file is no longer pending, also after a reload.
+  await page.goto('/dashboard');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   await page.reload();
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-  await expect(page.getByText(pseudonymId)).toHaveCount(0);
+  await expect(page.getByTestId('pending-table').getByRole('row').filter({ hasText: pseudonymId })).toHaveCount(0);
 });
 
 test('the patient’s mood note opens a crisis and the high-risk banner appears on the dashboard', async ({ request }) => {

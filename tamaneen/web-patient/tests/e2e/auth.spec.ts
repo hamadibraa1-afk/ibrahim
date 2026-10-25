@@ -44,7 +44,7 @@ test.describe('sign-in, session and sign-out', () => {
 
     await context.clearCookies();
     await page.reload();
-    await expect(page).toHaveURL(/\/ar\/session-expired$/);
+    await expect(page).toHaveURL(/\/ar\/session-expired(\?next=[^&]+)?$/);
     await expectDirection(page, 'ar');
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('انتهت الجلسة لحمايتك');
     await page.getByRole('link', { name: 'تسجيل الدخول' }).click();
@@ -65,6 +65,6 @@ test.describe('sign-in, session and sign-out', () => {
 
     // The session is really gone.
     await page.goto('/ar/settings');
-    await expect(page).toHaveURL(/\/ar\/session-expired$/);
+    await expect(page).toHaveURL(/\/ar\/session-expired(\?next=[^&]+)?$/);
   });
 });

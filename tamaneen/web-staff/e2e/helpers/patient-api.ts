@@ -101,3 +101,45 @@ export async function moodCrisis(request: APIRequestContext, patient: TestPatien
   expect(r.ok(), `mood: ${r.status()} ${text}`).toBeTruthy();
   expect(JSON.parse(text).crisis, `mood response ${text}`).toBe(true);
 }
+
+/**
+ * The intake path by API: consents, safety info, path "intake", then the form (no assistant turns): every
+ * PHQ-9 / GAD-7 item answered 1 except PHQ-9 item 9 (any thought of self-harm opens a crisis instead), a written summary, and submit. The case lands in the S03 queue as pending.
+ */
+export async function completeIntakeByForm(request: APIRequestContext, patient: TestPatient): Promise<void> {
+  const headers = auth(patient);
+  const send = async <T>(method: 'post' | 'put', path: string, data: unknown): Promise<T> => {
+    const r = await request[method](`${API}${path}`, { headers, data });
+    expect(r.ok(), `${path}: ${r.status()} ${await r.text()}`).toBeTruthy();
+    const text = await r.text();
+    return (text ? JSON.parse(text) : undefined) as T;
+  };
+  await send('put', '/v1/me/consents', { items: [{ key: 'platform', granted: true }, { key: 'ai', granted: true }, { key: 'share_with_therapist', granted: true }] });
+  await send('put', '/v1/me/safety-info', { contactPhone: PATIENT_PHONE, trustedName: 'أختي نورة', trustedPhone: '0559876543', shareLocation: true });
+  await send('put', '/v1/me/path', { path: 'intake' });
+
+  type State = { intakeId: string; pendingQuestion: { instrument: string; item: number } | null; canFinish: boolean };
+  let state = await send<State>('post', '/v1/intake', {});
+  state = await send<State>('post', `/v1/intake/${state.intakeId}/form-mode`, {});
+  for (let i = 0; i < 20 && state.pendingQuestion; i++) {
+    const q = state.pendingQuestion;
+    state = await send<State>('post', `/v1/intake/${state.intakeId}/answers`, { instrument: q.instrument, item: q.item, value: q.instrument === 'phq9' && q.item === 9 ? 0 : 1 });
+  }
+  expect(state.pendingQuestion, 'all questionnaire items answered').toBeNull();
+  await send('post', `/v1/intake/${state.intakeId}/complete`, {});
+  await send('put', `/v1/intake/${state.intakeId}/summary`, {
+    sections: {
+      concern: 'أشعر بقلق وضغط في العمل منذ شهرين، ويصعب علي النوم.',
+      goals: 'أن أتعلم طرقًا للتهدئة قبل النوم.',
+      supports: 'أختي والمشي في المساء.',
+      priorCare: 'لم أراجع مختصًا من قبل.',
+    },
+  });
+  const triage = await send<{ status: string }>('post', `/v1/intake/${state.intakeId}/submit`, {});
+  expect(triage.status).toBe('pending');
+}
+
+/** The patient's own view of the triage (P36): status and whether suggestions are ready. */
+export async function triageState(request: APIRequestContext, patient: TestPatient): Promise<{ status: string; suggestionsReady: boolean }> {
+  return json(await request.get(`${API}/v1/triage`, { headers: auth(patient) }), 'triage');
+}

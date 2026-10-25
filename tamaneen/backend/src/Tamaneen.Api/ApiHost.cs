@@ -105,9 +105,9 @@ public static class ApiHost
         var origins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? Array.Empty<string>();
         builder.Services.AddCors(o => o.AddPolicy(CorsPolicy, p => p
             .WithOrigins(origins)
-            .WithHeaders("Authorization", "Content-Type", "Accept-Language", "X-Request-Id")
+            .WithHeaders("Authorization", "Content-Type", "Accept-Language", "X-Request-Id", "If-Match")
             .WithMethods("GET", "POST", "PUT", "PATCH", "DELETE")
-            .WithExposedHeaders("Content-Language", "Retry-After")
+            .WithExposedHeaders("Content-Language", "Retry-After", "ETag")
             // The staff portal's refresh token is an HttpOnly cookie on /v1/auth.
             .AllowCredentials()));
 
