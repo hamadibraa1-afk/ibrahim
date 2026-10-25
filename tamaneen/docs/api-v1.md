@@ -152,7 +152,7 @@ suggestions), `override_risk` (`riskLevel`), `reassign` (`therapistIds`), `escal
 `crisisEventId`), `close` (`referrals`: crisis_line, primary_care, psychiatry, community_support, emergency_services; the
 patient's `GET /v1/triage` shows status `closed` with `referrals`) or `cosign` (clinical lead, `approve: true|false`). The
 level never goes below an open or recent (30 days) crisis event (422 `error.triage.below_crisis_floor`). Lowering from 3 or 4
-by a supervisor waits for the clinical lead's co-sign (`coSignRequested: true`); approve and close are refused meanwhile.
+by a supervisor waits for the clinical lead's co-sign (`coSignRequested: true`); approve and close are refused meanwhile. When the clinical lead lowers the level, that decision is their own co-sign (approved by the product owner).
 Review deadlines follow the level: 24 h for 1, 4 h for 2, 1 h for 3 and 4. Every decision is audited with its reason.
 
 Alerts and the open-events list carry `number` (CE-1001), `source`, `sourceLabel` and `acknowledgedBy`. Status is Open, Acknowledged, InContact or Closed. CrisisEventDetail adds `canAct`, `isOwner`, `pendingHandover`, `pendingClose`, `canCoSign`, `emergencyNumber`, `emergencyScript` (rule-pack responder script, with or without a known location), `recentCallAttempts`, `callAdvice` (local_emergency or unreachable after 3 calls in 15 minutes to a Critical patient, EC-33) and `reviewDueAtUtc`. The timeline ends with the next scheduled escalation while nobody owns the event. Supervisors, the
