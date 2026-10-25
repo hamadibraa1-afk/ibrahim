@@ -9,6 +9,7 @@ using Tamaneen.Clinical.Care;
 using Tamaneen.Clinical.Intake;
 using Tamaneen.Hosting;
 using Tamaneen.Identity;
+using Tamaneen.Identity.Auth;
 using Tamaneen.Infrastructure.Auditing;
 using Tamaneen.Infrastructure.Persistence;
 using Tamaneen.Infrastructure.Security;
@@ -53,6 +54,9 @@ public static class MeEndpoints
     public sealed record TotpSetupDto(string Secret, string OtpauthUri);
 
     public sealed record CodeRequest(string? Code);
+
+    /// <summary>Re-authentication for sensitive security changes (P32): the password, plus the authenticator code when it is on.</summary>
+    public sealed record ReauthRequest(string? Password, string? Code);
 
     public sealed record RecoveryCodesDto(IReadOnlyList<string> RecoveryCodes);
 
@@ -377,23 +381,21 @@ public static class MeEndpoints
         return TypedResults.NoContent();
     }
 
-    internal static async Task<NoContent> TotpDisableAsync(HttpContext http, PatientContext p, AuthService auth, IAuditLog audit, CancellationToken ct)
+    /// <summary>Turning the authenticator off needs the password and a current code.</summary>
+    internal static async Task<NoContent> TotpDisableAsync(HttpContext http, PatientContext p, PasswordService passwords, AuthService auth, IAuditLog audit, CancellationToken ct)
     {
-        var body = await http.Request.ReadFromJsonAsync<CodeRequest>(ct).ConfigureAwait(false);
-        var credential = await p.Db.Credentials.FirstAsync(c => c.UserId == p.PatientId, ct).ConfigureAwait(false);
-        if (!auth.VerifyTotp(credential, body?.Code))
-        {
-            throw new DomainException(ErrorCodes.MfaFailed, "Authenticator code rejected.");
-        }
-
+        var body = http.Request.HasJsonContentType() ? await http.Request.ReadFromJsonAsync<ReauthRequest>(ct).ConfigureAwait(false) : null;
+        var credential = await ReauthenticateAsync(p, passwords, auth, body, requireCode: true, ct).ConfigureAwait(false);
         credential.DisableTotp();
         audit.Append("auth.totp_disabled", "UserAccount", p.PatientId.ToString(), (await p.AccountAsync(ct).ConfigureAwait(false)).PseudonymId);
         await p.Db.SaveChangesAsync(ct).ConfigureAwait(false);
         return TypedResults.NoContent();
     }
 
-    internal static async Task<Ok<RecoveryCodesDto>> NewRecoveryCodesAsync(PatientContext p, AuthService auth, IAuditLog audit, CancellationToken ct)
+    /// <summary>New recovery codes replace the old ones, so this needs the password and, when it is on, an authenticator code (PB-55).</summary>
+    internal static async Task<Ok<RecoveryCodesDto>> NewRecoveryCodesAsync(ReauthRequest? request, PatientContext p, PasswordService passwords, AuthService auth, IAuditLog audit, CancellationToken ct)
     {
+        await ReauthenticateAsync(p, passwords, auth, request, requireCode: false, ct).ConfigureAwait(false);
         var codes = auth.NewRecoveryCodes(p.Db, p.PatientId);
         audit.Append("auth.recovery_codes_regenerated", "UserAccount", p.PatientId.ToString(), (await p.AccountAsync(ct).ConfigureAwait(false)).PseudonymId);
         await p.Db.SaveChangesAsync(ct).ConfigureAwait(false);
@@ -555,6 +557,26 @@ public static class MeEndpoints
         }
 
         return value.TrimStart().StartsWith('+') ? "+" + normalized : normalized;
+    }
+
+    /// <summary>
+    /// Checks the password, then the authenticator code when <paramref name="requireCode"/> is set or the authenticator is on.
+    /// A wrong password answers password_mismatch, a wrong or missing code mfa_failed (both localized).
+    /// </summary>
+    internal static async Task<Credential> ReauthenticateAsync(PatientContext p, PasswordService passwords, AuthService auth, ReauthRequest? request, bool requireCode, CancellationToken ct)
+    {
+        var credential = await p.Db.Credentials.FirstAsync(c => c.UserId == p.PatientId, ct).ConfigureAwait(false);
+        if (passwords.Verify(credential.PasswordHash, request?.Password ?? string.Empty) == PasswordCheck.Failed)
+        {
+            throw new DomainException(ErrorCodes.PasswordMismatch, "Re-authentication: password wrong.");
+        }
+
+        if ((requireCode || credential.TotpEnabled) && !auth.VerifyTotp(credential, request?.Code))
+        {
+            throw new DomainException(ErrorCodes.MfaFailed, "Re-authentication: authenticator code rejected.");
+        }
+
+        return credential;
     }
 
     internal static DomainException Invalid(string field) =>

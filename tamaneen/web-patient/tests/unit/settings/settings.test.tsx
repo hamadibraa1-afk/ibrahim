@@ -1,6 +1,7 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { AnchorHTMLAttributes, ReactNode } from 'react';
+import { ApiError } from '@/lib/api/errors';
 import type { Me, NotificationPrefs, SafetyInfo, SecurityOverview } from '@/lib/api/types';
 import { renderWithIntl } from '../intl';
 
@@ -162,13 +163,25 @@ describe('SecurityPanel', () => {
     expect(screen.getByText('فعّلنا تطبيق المصادقة.')).toBeInTheDocument();
   });
 
-  it('turns the authenticator off with a current code', async () => {
-    mocks.api.mockResolvedValue(undefined);
+  it('turns the authenticator off only with the password and a current code', async () => {
+    mocks.api.mockRejectedValueOnce(new ApiError(400, { title: 'Bad', status: 400, detail: 'The current password is not correct.', code: 'error.auth.password_mismatch' }));
     renderWithIntl(<SecurityPanel overview={{ ...overview, totpEnabled: true }} nowIso={nowIso} />, 'en');
     await userEvent.click(screen.getByRole('button', { name: 'Manage authenticator app' }));
     await userEvent.type(screen.getByRole('textbox', { name: '6-digit code' }), '654321');
     await userEvent.click(screen.getByRole('button', { name: 'Turn off' }));
-    expect(mocks.api).toHaveBeenCalledWith('me/totp', { method: 'DELETE', body: { code: '654321' } });
+    expect(screen.getByRole('alert')).toHaveTextContent('Enter your password.');
+    expect(mocks.api).not.toHaveBeenCalled();
+
+    await userEvent.type(screen.getByLabelText('Password'), 'wrong-password');
+    await userEvent.click(screen.getByRole('button', { name: 'Turn off' }));
+    expect(mocks.api).toHaveBeenCalledWith('me/totp', { method: 'DELETE', body: { password: 'wrong-password', code: '654321' } });
+    expect(await screen.findByText('The current password is not correct.')).toBeInTheDocument();
+
+    mocks.api.mockResolvedValue(undefined);
+    await userEvent.clear(screen.getByLabelText('Password'));
+    await userEvent.type(screen.getByLabelText('Password'), 'right-password');
+    await userEvent.click(screen.getByRole('button', { name: 'Turn off' }));
+    expect(mocks.api).toHaveBeenLastCalledWith('me/totp', { method: 'DELETE', body: { password: 'right-password', code: '654321' } });
     expect(await screen.findByText('Off')).toBeInTheDocument();
   });
 
@@ -176,6 +189,10 @@ describe('SecurityPanel', () => {
     mocks.api.mockResolvedValue(undefined);
     renderWithIntl(<SecurityPanel overview={overview} nowIso={nowIso} />, 'ar');
     await userEvent.click(screen.getByRole('button', { name: 'إنهاء الجلسة على متصفح كمبيوتر' }));
+    const dialog = screen.getByRole('dialog', { name: 'إنهاء الجلسة على متصفح كمبيوتر؟' });
+    expect(within(dialog).getByRole('button', { name: 'إلغاء' })).toHaveFocus();
+    expect(mocks.api).not.toHaveBeenCalled();
+    await userEvent.click(within(dialog).getByRole('button', { name: 'إنهاء الجلسة' }));
     expect(mocks.api).toHaveBeenCalledWith('me/sessions/s2', { method: 'DELETE' });
     await waitFor(() => expect(screen.queryByText('متصفح كمبيوتر')).toBeNull());
     expect(screen.getByText('هذا الجهاز')).toBeInTheDocument();
@@ -185,6 +202,12 @@ describe('SecurityPanel', () => {
     mocks.api.mockResolvedValue(undefined);
     renderWithIntl(<SecurityPanel overview={overview} nowIso={nowIso} />, 'ar');
     await userEvent.click(screen.getByRole('button', { name: 'تسجيل الخروج من كل الأجهزة' }));
+    const dialog = screen.getByRole('dialog', { name: 'تسجيل الخروج من كل الأجهزة؟' });
+    await userEvent.click(within(dialog).getByRole('button', { name: 'إلغاء' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(mocks.api).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', { name: 'تسجيل الخروج من كل الأجهزة' }));
+    await userEvent.click(screen.getByRole('button', { name: 'نعم، سجّل الخروج من الكل' }));
     expect(mocks.api).toHaveBeenCalledWith('me/sessions/revoke-all', { method: 'POST' });
     await waitFor(() => expect(mocks.assign).toHaveBeenCalledWith('/ar/login'));
     expect(mocks.authApi).toHaveBeenCalledWith('logout');
@@ -198,11 +221,28 @@ describe('SecurityPanel', () => {
     const dialog = screen.getByRole('dialog', { name: 'إنشاء رموز جديدة؟' });
     expect(within(dialog).getByRole('button', { name: 'إلغاء' })).toHaveFocus();
     await userEvent.click(within(dialog).getByRole('button', { name: 'إنشاء الرموز' }));
-    expect(mocks.api).toHaveBeenCalledWith('me/recovery-codes', { method: 'POST' });
+    expect(within(dialog).getByRole('alert')).toHaveTextContent('أدخل كلمة المرور.');
+    expect(mocks.api).not.toHaveBeenCalled();
+    await userEvent.type(within(dialog).getByLabelText('كلمة المرور'), 'my-password-1');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'إنشاء الرموز' }));
+    expect(mocks.api).toHaveBeenCalledWith('me/recovery-codes', { method: 'POST', body: { password: 'my-password-1' } });
     expect(await screen.findByTestId('recovery-codes')).toHaveTextContent('AAAA-0009');
     expect(screen.getByText('10 من 10 متبقية')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'حفظتها' }));
     expect(screen.queryByTestId('recovery-codes')).toBeNull();
+  });
+
+  it('asks for the authenticator code too when it is on, and keeps the dialog open on a wrong code', async () => {
+    mocks.api.mockRejectedValueOnce(new ApiError(400, { title: 'Bad', status: 400, detail: 'The verification code is not correct.', code: 'error.auth.mfa_failed' }));
+    renderWithIntl(<SecurityPanel overview={{ ...overview, totpEnabled: true }} nowIso={nowIso} />, 'en');
+    await userEvent.click(screen.getByRole('button', { name: 'Create new recovery codes' }));
+    const dialog = screen.getByRole('dialog', { name: 'Create new codes?' });
+    await userEvent.type(within(dialog).getByLabelText('Password'), 'my-password-1');
+    await userEvent.type(within(dialog).getByRole('textbox', { name: '6-digit code' }), '111222');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Create codes' }));
+    expect(mocks.api).toHaveBeenCalledWith('me/recovery-codes', { method: 'POST', body: { password: 'my-password-1', code: '111222' } });
+    expect(await within(dialog).findByText('The verification code is not correct.')).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Create new codes?' })).toBeInTheDocument();
   });
 
   it('validates the new password length before calling the API', async () => {

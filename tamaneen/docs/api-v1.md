@@ -47,8 +47,8 @@ Login: 5 failures lock the account for 15 minutes.
 | POST | /v1/me/contact-request | → ContactRequestCreated | P04, P22 |
 | GET | /v1/me/security | → SecurityOverview | P32 |
 | PUT | /v1/me/password | ChangePasswordRequest → 204 | P32 |
-| POST | /v1/me/totp/setup · /v1/me/totp/confirm · DELETE /v1/me/totp | → TotpSetup · CodeRequest → 204 · CodeRequest → 204 | P17, P32 |
-| POST | /v1/me/recovery-codes | → RecoveryCodes | P32 |
+| POST | /v1/me/totp/setup · /v1/me/totp/confirm · DELETE /v1/me/totp | → TotpSetup · CodeRequest → 204 · ReauthRequest { password, code } → 204 | P17, P32 |
+| POST | /v1/me/recovery-codes | ReauthRequest { password, code? } → RecoveryCodes (code required while the authenticator is on) | P32 |
 | DELETE | /v1/me/sessions/{id} · POST /v1/me/sessions/revoke-all | → 204 | P32 |
 | GET/PUT | /v1/me/notifications | NotificationPrefs | P33 |
 | GET | /v1/me/access-log | → AccessLogEntry[] | P11 |

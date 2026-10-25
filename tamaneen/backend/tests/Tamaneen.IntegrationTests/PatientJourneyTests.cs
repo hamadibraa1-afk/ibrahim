@@ -390,6 +390,58 @@ public sealed class PatientJourneyTests : IAsyncLifetime
         cancelled.GetProperty("status").GetString().Should().Be("cancelled_by_patient");
     }
 
+    [Fact]
+    public async Task Sensitive_security_changes_need_the_password_and_the_authenticator_code()
+    {
+        var (access, _) = await SignUpAsync("ar", $"reauth-{Guid.NewGuid():N}@example.com");
+        using var me = _hosts.ApiClient("ar", access);
+        const string password = "Quiet-Morning-Walk-77";
+
+        // Steps are handed out in order: each one is accepted once (replay protection), all within ±1 of now.
+        var setup = await Read(await me.PostAsync("/v1/me/totp/setup", null));
+        var secret = FromBase32(setup.GetProperty("secret").GetString()!);
+        var step = Tamaneen.Infrastructure.Auth.Totp.StepAt(DateTimeOffset.UtcNow) - 1;
+        string NextCode() => Tamaneen.Infrastructure.Auth.Totp.Code(secret, step++);
+        (await me.PostAsJsonAsync("/v1/me/totp/confirm", new { code = NextCode() })).StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        // PB-55: new recovery codes need the password, and the code while the authenticator is on.
+        (await Problem(await me.PostAsync("/v1/me/recovery-codes", null), 400)).GetProperty("code").GetString().Should().Be("error.auth.password_mismatch");
+        var noCode = await Problem(await me.PostAsJsonAsync("/v1/me/recovery-codes", new { password }), 400);
+        noCode.GetProperty("code").GetString().Should().Be("error.auth.mfa_failed");
+        noCode.GetProperty("detail").GetString().Should().Be("رمز التحقق غير صحيح.");
+        (await Read(await me.PostAsJsonAsync("/v1/me/recovery-codes", new { password, code = NextCode() }))).GetProperty("recoveryCodes").GetArrayLength().Should().Be(10);
+
+        // Turning the authenticator off needs the password as well as the code.
+        var code = NextCode();
+        var withoutPassword = await me.SendAsync(new HttpRequestMessage(HttpMethod.Delete, "/v1/me/totp") { Content = JsonContent.Create(new { code }) });
+        (await Problem(withoutPassword, 400)).GetProperty("code").GetString().Should().Be("error.auth.password_mismatch");
+        (await Read(await me.GetAsync("/v1/me/security"))).GetProperty("totpEnabled").GetBoolean().Should().BeTrue();
+        var disabled = await me.SendAsync(new HttpRequestMessage(HttpMethod.Delete, "/v1/me/totp") { Content = JsonContent.Create(new { password, code }) });
+        disabled.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        // With the authenticator off, the password alone is enough.
+        (await Read(await me.PostAsJsonAsync("/v1/me/recovery-codes", new { password }))).GetProperty("recoveryCodes").GetArrayLength().Should().Be(10);
+    }
+
+    private static byte[] FromBase32(string text)
+    {
+        const string alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+        var bytes = new List<byte>();
+        int buffer = 0, bits = 0;
+        foreach (var c in text.Replace(" ", string.Empty, StringComparison.Ordinal))
+        {
+            buffer = (buffer << 5) | alphabet.IndexOf(c, StringComparison.Ordinal);
+            bits += 5;
+            if (bits >= 8)
+            {
+                bytes.Add((byte)(buffer >> (bits - 8)));
+                bits -= 8;
+            }
+        }
+
+        return [.. bytes];
+    }
+
     private async Task<(string Access, string Refresh)> SignUpAsync(string language, string email)
     {
         using var anon = _hosts.ApiClient(language);
