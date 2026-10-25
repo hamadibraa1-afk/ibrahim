@@ -10,6 +10,7 @@ import { api, authApi } from '@/lib/api/client';
 import type { Me } from '@/lib/api/types';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { FLOW_KEYS } from '@/components/onboarding/flowStorage';
+import { rememberRoute, safeRoute } from '@/components/auth/returnTo';
 
 const apiMock = vi.mocked(api);
 const authMock = vi.mocked(authApi);
@@ -89,5 +90,42 @@ describe('P18 Login', () => {
     expect(screen.getByText('اكتب رقم جوالك أو بريدك.')).toBeInTheDocument();
     expect(screen.getByText('اكتب كلمة المرور.')).toBeInTheDocument();
     expect(authMock).not.toHaveBeenCalled();
+  });
+
+  it('checks the contact format before calling the API', async () => {
+    renderWithIntl(<LoginForm />, 'ar');
+    await fill('12ab', 'secret-password', 'تسجيل الدخول', 'رقم الجوال أو البريد', 'كلمة المرور');
+    expect(screen.getByText('اكتب رقم جوال أو بريدًا إلكترونيًا صحيحًا.')).toBeInTheDocument();
+    expect(authMock).not.toHaveBeenCalled();
+  });
+
+  describe('return to the last route', () => {
+    const done: Me = { ...me, onboarding: { ...me.onboarding, safetyInfoDone: true, path: 'direct', screeningDone: true } };
+
+    it('goes back to the screen this patient was on before the session ended', async () => {
+      rememberRoute('/ar/appointments/a1', 'P-1');
+      authMock.mockResolvedValueOnce({ status: 'ok' });
+      apiMock.mockResolvedValueOnce(done);
+      renderWithIntl(<LoginForm />, 'en');
+      await fill('0551234521', 'secret-password', 'Sign in', 'Mobile number or email', 'Password');
+      await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/appointments/a1'));
+    });
+
+    it('ignores a route left by another patient and lands home', async () => {
+      rememberRoute('/appointments/a1', 'P-2');
+      authMock.mockResolvedValueOnce({ status: 'ok' });
+      apiMock.mockResolvedValueOnce(done);
+      renderWithIntl(<LoginForm />, 'en');
+      await fill('0551234521', 'secret-password', 'Sign in', 'Mobile number or email', 'Password');
+      await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/home'));
+    });
+
+    it('accepts only paths of this app', () => {
+      expect(safeRoute('/en/homework/h1?tab=1')).toBe('/homework/h1?tab=1');
+      expect(safeRoute('//evil.example/x')).toBeNull();
+      expect(safeRoute('https://evil.example')).toBeNull();
+      expect(safeRoute('/ar/login')).toBeNull();
+      expect(safeRoute('/ar')).toBeNull();
+    });
   });
 });

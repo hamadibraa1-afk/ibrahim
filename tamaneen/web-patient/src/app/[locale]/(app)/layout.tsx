@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { RouteMemory } from '@/components/auth/RouteMemory';
 import { CrisisLockGuard } from '@/components/crisis/CrisisLockGuard';
 import { QuickExit } from '@/components/settings/QuickExit';
 import { getMe } from '@/lib/api/server';
@@ -12,6 +13,7 @@ export default async function SignedInLayout({ children }: { children: ReactNode
   return (
     <>
       <CrisisLockGuard locked={me.chatLocked} />
+      <RouteMemory pseudonymId={me.pseudonymId} />
       {children}
       <QuickExit />
     </>
