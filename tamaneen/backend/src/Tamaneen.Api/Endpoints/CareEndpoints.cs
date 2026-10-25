@@ -220,6 +220,11 @@ public static class CareEndpoints
         var assignment = await p.Db.HomeworkAssignments.FirstOrDefaultAsync(a => a.Id == id && a.PatientId == p.PatientId, ct).ConfigureAwait(false)
             ?? throw new DomainException(ErrorCodes.NotFound, $"Homework {id} not found.");
         var today = Today(profile.TimeZone, clock);
+        if (assignment.IsCompleted(today))
+        {
+            // P10: an ended exercise is read-only.
+            throw new DomainException(ErrorCodes.HomeworkEnded, $"Homework {id} ended on {assignment.EndsOn}.");
+        }
 
         // A note to the therapist is patient text like any other: it passes the crisis gate first.
         Gate.GateVerdict? verdict = null;

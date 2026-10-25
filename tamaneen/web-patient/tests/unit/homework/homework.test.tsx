@@ -88,6 +88,19 @@ describe('HomeworkDetailView', () => {
     mocks.replace.mockReset();
   });
 
+  it('shows an ended exercise read-only, without the check-in form', () => {
+    renderWithIntl(<HomeworkDetailView homework={detail({ completed: true, endsOn: '2026-10-14T12:00:00Z' })} locale="ar" timeZone="Asia/Riyadh" />, 'ar');
+    expect(screen.getByTestId('homework-read-only')).toHaveTextContent('انتهى هذا التمرين في 14 أكتوبر');
+    expect(screen.getByText('أحسنت في الاستمرار ثلاثة أيام.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'حفظ المتابعة' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+  });
+
+  it('says so in English too', () => {
+    renderWithIntl(<HomeworkDetailView homework={detail({ completed: true, endsOn: '2026-10-14T12:00:00Z' })} locale="en" timeZone="Asia/Riyadh" />, 'en');
+    expect(screen.getByTestId('homework-read-only')).toHaveTextContent('This exercise ended on 14 October.');
+  });
+
   it('shows the title, source, numbered instructions and the latest feedback', () => {
     renderWithIntl(<HomeworkDetailView homework={detail()} locale="ar" timeZone="Asia/Riyadh" />, 'ar');
     expect(screen.getByRole('heading', { level: 1, name: 'تمرين التنفس قبل النوم' })).toBeInTheDocument();

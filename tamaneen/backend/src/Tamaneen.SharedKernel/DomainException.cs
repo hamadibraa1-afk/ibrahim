@@ -74,5 +74,6 @@ public static class ErrorCodes
     public const string IntakeNotInReview = "error.intake.not_in_review";
     public const string IntakeClosed = "error.intake.closed";
     public const string TriageAlreadyReviewed = "error.triage.already_reviewed";
+    public const string HomeworkEnded = "error.homework.ended";
     public const string PasswordMismatch = "error.auth.password_mismatch";
 }

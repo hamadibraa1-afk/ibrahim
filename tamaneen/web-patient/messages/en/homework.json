@@ -39,6 +39,7 @@
     "feedbackLabel": "Your specialist's reply",
     "save": "Save check-in",
     "saved": "Today's check-in is saved. Your specialist will see it.",
-    "back": "My homework"
+    "back": "My homework",
+    "readOnly": "This exercise ended on {date}. You can read it, but new check-ins are no longer recorded."
   }
 }
