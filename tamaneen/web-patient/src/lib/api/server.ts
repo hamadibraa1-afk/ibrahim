@@ -5,7 +5,9 @@ import { cache } from 'react';
 import { getLocale } from 'next-intl/server';
 import { isLocale, routing, type Locale } from '@/i18n/routing';
 import { ACCESS_COOKIE } from '@/lib/auth/cookies';
-import { ApiError, CRISIS_LOCKED_CODE, toApiError } from './errors';
+import { PATH_HEADER } from '@/lib/pathHeader';
+import { sessionExpiredUrl } from '@/lib/returnPath';
+import { ApiError, CRISIS_LOCKED_CODE, MAINTENANCE_CODE, toApiError } from './errors';
 import type { Me } from './types';
 import { callApi } from './upstream';
 
@@ -21,13 +23,17 @@ async function requestLocale(): Promise<Locale> {
 export async function serverGet<T>(path: string): Promise<T> {
   const locale = await requestLocale();
   const jar = await cookies();
+  const requestHeaders = await headers();
+  // The middleware passes the page path along, so the patient can come back to it after signing in (P35).
+  const expired = sessionExpiredUrl(locale, requestHeaders.get(PATH_HEADER));
   const token = jar.get(ACCESS_COOKIE)?.value;
-  if (!token) redirect(`/${locale}/session-expired`);
-  const response = await callApi(`v1/${path.replace(/^\/+/, '')}`, { locale, accessToken: token, requestId: (await headers()).get('x-request-id') });
-  if (response.status === 401) redirect(`/${locale}/session-expired`);
+  if (!token) redirect(expired);
+  const response = await callApi(`v1/${path.replace(/^\/+/, '')}`, { locale, accessToken: token, requestId: requestHeaders.get('x-request-id') });
+  if (response.status === 401) redirect(expired);
   if (!response.ok) {
     const error = await toApiError(response);
     if (error.code === CRISIS_LOCKED_CODE) redirect(`/${locale}/crisis`);
+    if (error.code === MAINTENANCE_CODE) redirect(`/${locale}/maintenance`);
     throw error;
   }
   return (await response.json()) as T;

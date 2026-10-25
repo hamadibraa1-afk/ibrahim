@@ -25,6 +25,7 @@
   <data name="error.crisis.closed" xml:space="preserve"><value>حدث الطوارئ هذا مغلق من قبل.</value></data>
   <data name="error.crisis.close_not_allowed" xml:space="preserve"><value>لا يغلق حدث الطوارئ إلا المشرف أو المسؤول السريري.</value></data>
   <data name="error.reason.required" xml:space="preserve"><value>يرجى كتابة السبب.</value></data>
+  <data name="error.maintenance" xml:space="preserve"><value>نجري صيانة مجدولة الآن. نعود قريبًا. إن كنت في خطر فاتصل بالطوارئ.</value></data>
   <data name="error.not_found" xml:space="preserve"><value>لم نجد هذا العنصر.</value></data>
   <data name="error.ai.message_invalid" xml:space="preserve"><value>الرسالة فارغة أو أطول من {0} حرفًا.</value></data>
   <data name="error.validation" xml:space="preserve"><value>بعض البيانات غير صحيحة.</value></data>

@@ -49,6 +49,7 @@ public sealed partial class DomainExceptionHandler<TResource> : IExceptionHandle
         [ErrorCodes.TotpAlreadyEnabled] = StatusCodes.Status409Conflict,
         [ErrorCodes.IntakeClosed] = StatusCodes.Status409Conflict,
         [ErrorCodes.CrisisServiceUnavailable] = StatusCodes.Status503ServiceUnavailable,
+        [ErrorCodes.Maintenance] = StatusCodes.Status503ServiceUnavailable,
     };
 
     private readonly IProblemDetailsService _problems;

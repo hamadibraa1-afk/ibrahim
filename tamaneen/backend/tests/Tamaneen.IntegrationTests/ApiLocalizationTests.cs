@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Xml.Linq;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Tamaneen.SharedKernel;
 
 namespace Tamaneen.IntegrationTests;
@@ -22,6 +23,25 @@ public sealed class ApiLocalizationTests : IAsyncLifetime
     }
 
     public async Task DisposeAsync() => await _api.DisposeAsync();
+
+    [Fact]
+    public async Task Maintenance_pauses_patient_endpoints_with_a_localized_503_but_keeps_config_sign_in_and_crisis_up()
+    {
+        using var client = _api.CreateClient();
+        _api.Services.GetRequiredService<Microsoft.Extensions.Options.IOptionsMonitor<Tamaneen.Api.PlatformOptions>>().CurrentValue.Maintenance = true;
+
+        using var me = new HttpRequestMessage(HttpMethod.Get, "/v1/me");
+        me.Headers.TryAddWithoutValidation("Accept-Language", "en");
+        using var paused = await client.SendAsync(me);
+        paused.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        var problem = await paused.Content.ReadFromJsonAsync<JsonElement>();
+        problem.GetProperty("code").GetString().Should().Be(ErrorCodes.Maintenance);
+        problem.GetProperty("detail").GetString().Should().StartWith("We are doing scheduled maintenance");
+
+        (await client.GetAsync("/v1/meta/config")).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await client.GetAsync("/v1/crisis/status")).StatusCode.Should().Be(HttpStatusCode.Unauthorized, "crisis endpoints are not paused, only signed in");
+        (await client.PostAsJsonAsync("/v1/auth/eligibility", new { isAdult = true, cityCode = "RUH" })).StatusCode.Should().Be(HttpStatusCode.OK);
+    }
 
     [Theory]
     [InlineData("ar", "ar", "rtl", "مرحبًا بك في طمأنينة.")]

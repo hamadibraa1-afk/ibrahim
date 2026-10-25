@@ -25,6 +25,7 @@
   <data name="error.crisis.closed" xml:space="preserve"><value>This crisis event is already closed.</value></data>
   <data name="error.crisis.close_not_allowed" xml:space="preserve"><value>Only a supervisor or the clinical lead can close a crisis event.</value></data>
   <data name="error.reason.required" xml:space="preserve"><value>Please write a reason.</value></data>
+  <data name="error.maintenance" xml:space="preserve"><value>We are doing scheduled maintenance and will be back soon. If you are in danger, call emergency services.</value></data>
   <data name="error.not_found" xml:space="preserve"><value>We couldn't find this item.</value></data>
   <data name="error.ai.message_invalid" xml:space="preserve"><value>The message is empty or longer than {0} characters.</value></data>
   <data name="error.validation" xml:space="preserve"><value>Some of the information is not valid.</value></data>

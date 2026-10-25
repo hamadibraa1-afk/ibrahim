@@ -93,6 +93,8 @@ Booking needs either a passed safety check (direct path) or a reviewed triage (i
 Gated writes that return an object (`PUT /v1/intake/{id}/summary`, `POST /v1/triage/addendum`, `PUT /v1/safety-plan`,
 `POST /v1/mood`, `POST /v1/homework/{id}/checkins`, intake turns) also carry `crisis` and `script`. If the crisis worker
 cannot be reached, the API answers 503 `error.crisis.unavailable` and does not process the content.
+During scheduled maintenance (`Platform:Maintenance` true) every patient endpoint answers 503 `error.maintenance` and the app shows /maintenance (P35);
+`/v1/meta`, `/v1/auth`, `/v1/crisis` and `/v1/staff` keep working.
 
 ## Staff (therapist, supervisor, clinical lead; the TOTP step is mandatory)
 
