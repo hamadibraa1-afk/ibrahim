@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, NgZone, computed, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
@@ -17,9 +17,13 @@ import { CrisisHubService } from '../../core/realtime/crisis-hub.service';
 import { LocalDatePipe } from '../../shared/local-date.pipe';
 import { ProblemMessageComponent } from '../../shared/problem-message.component';
 import { RiskTagComponent } from '../../shared/risk-tag.component';
+import { NoteDialogComponent, type NoteDialogData } from '../crisis/crisis-dialogs';
 import { IntakeDialogComponent, type IntakeDialogData, type IntakeDialogResult } from './intake-dialog.component';
 
 export const OUTCOMES: readonly SessionOutcome[] = ['attended', 'no_show', 'cancelled'];
+
+/** While the live connection is down, open alerts are fetched this often (EC-03). */
+export const ALERT_POLL_MS = 5_000;
 
 /** "morning" before 12:00, "afternoon" before 17:00, then "evening" (local time). */
 export function partOfDay(date: Date): 'morning' | 'afternoon' | 'evening' {
@@ -56,18 +60,61 @@ export class DashboardComponent {
   protected readonly outcomes = OUTCOMES;
   protected readonly pendingColumns = ['pseudonym', 'risk', 'phq9', 'gad7', 'firstSession', 'action'];
   protected readonly greetingKey = computed(() => `dashboard.greeting.${partOfDay(new Date())}`);
-  protected readonly alerts = computed(() => this.data()?.alerts ?? []);
+  /**
+   * Alerts live apart from the rest of the page (S01: never hidden, never waiting for it): loaded from the crisis
+   * worker on their own, kept when the dashboard fails to load, and updated by every push.
+   */
+  protected readonly alerts = signal<OpenCrisisEvent[]>([]);
+  protected readonly alertsError = signal<ShownError | null>(null);
+  protected readonly hub = inject(CrisisHubService);
 
   constructor() {
-    const hub = inject(CrisisHubService);
-    hub.acquire(this.destroyRef);
-    hub.alerts.pipe(takeUntilDestroyed()).subscribe((event) => this.applyAlert(event));
-    hub.reconnected.pipe(takeUntilDestroyed()).subscribe(() => this.load());
+    this.hub.acquire(this.destroyRef);
+    this.hub.alerts.pipe(takeUntilDestroyed()).subscribe((event) => this.applyAlert(event));
+    this.hub.reconnected.pipe(takeUntilDestroyed()).subscribe(() => {
+      this.load();
+      this.loadAlerts();
+    });
     // Reload in the new language so server-localized titles and labels switch too.
     effect(() => {
       this.language.language();
-      untracked(() => this.load());
+      untracked(() => {
+        this.load();
+        this.loadAlerts();
+      });
     });
+
+    // Live connection down: poll the open alerts every 5 seconds until it is back (EC-03).
+    const zone = inject(NgZone);
+    let poll: ReturnType<typeof setInterval> | undefined;
+    const stopPolling = () => {
+      clearInterval(poll);
+      poll = undefined;
+    };
+    effect(() => {
+      const live = this.hub.status() === 'connected';
+      untracked(() => {
+        if (live) {
+          stopPolling();
+        } else if (poll === undefined) {
+          poll = zone.runOutsideAngular(() => setInterval(() => zone.run(() => this.loadAlerts()), ALERT_POLL_MS));
+        }
+      });
+    });
+    this.destroyRef.onDestroy(stopPolling);
+  }
+
+  protected loadAlerts(): void {
+    this.crisis
+      .openEvents()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (events) => {
+          this.alerts.set(events.filter((e) => e.status !== 'Closed'));
+          this.alertsError.set(null);
+        },
+        error: (error: unknown) => this.alertsError.set(shownError(error, 'dashboard.alerts.loadError')),
+      });
   }
 
   protected load(): void {
@@ -78,6 +125,10 @@ export class DashboardComponent {
       .subscribe({
         next: (data) => {
           this.data.set(data);
+          // The dashboard carries the alerts too: whichever answer comes first, nothing is missed.
+          for (const alert of data.alerts) {
+            this.applyAlert(alert);
+          }
           this.loadError.set(null);
           this.loading.set(false);
         },
@@ -92,8 +143,20 @@ export class DashboardComponent {
     this.runAlert(alert.eventId, this.crisis.acknowledge(alert.eventId), 'dashboard.alerts.acknowledgedDone');
   }
 
+  /** SB-11: leaves the case with the on-call with a short note, without taking it. Works before anyone acknowledged. */
   protected refer(alert: OpenCrisisEvent): void {
-    this.runAlert(alert.eventId, this.crisis.action(alert.eventId, { kind: 'handover' }), 'dashboard.alerts.referred');
+    const data: NoteDialogData = {
+      titleKey: 'dashboard.alerts.referDialog.title',
+      bodyKey: 'dashboard.alerts.referDialog.body',
+      labelKey: 'dashboard.alerts.referDialog.label',
+      confirmKey: 'dashboard.alerts.referDialog.confirm',
+      required: true,
+      danger: false,
+    };
+    this.dialog
+      .open<NoteDialogComponent, NoteDialogData, string>(NoteDialogComponent, { data, direction: this.language.direction(), width: '520px', maxWidth: '95vw', restoreFocus: true })
+      .afterClosed()
+      .subscribe((text) => text && this.runAlert(alert.eventId, this.crisis.action(alert.eventId, { kind: 'refer', text }), 'dashboard.alerts.referred'));
   }
 
   protected recordOutcome(session: TodaySession, outcome: SessionOutcome): void {
@@ -138,7 +201,7 @@ export class DashboardComponent {
   }
 
   private applyAlert(event: OpenCrisisEvent): void {
-    this.data.update((d) => d && { ...d, alerts: upsertEvent(d.alerts, event) });
+    this.alerts.update((alerts) => upsertEvent(alerts, event));
   }
 
   private runAlert(id: string, request: ReturnType<CrisisApiService['acknowledge']>, doneKey: string): void {

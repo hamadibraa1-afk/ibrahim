@@ -14,9 +14,11 @@
       <form [formGroup]="credentials" (ngSubmit)="submitCredentials()" novalidate>
         <mat-form-field appearance="outline" class="tm-full">
           <mat-label>{{ 'auth.contact' | translate }}</mat-label>
-          <input #contactInput matInput type="email" formControlName="contact" autocomplete="username" dir="ltr" data-testid="contact" />
+          <input #contactInput matInput type="email" formControlName="contact" autocomplete="username" dir="ltr" maxlength="254" data-testid="contact" />
           @if (credentials.controls.contact.hasError('required')) {
             <mat-error>{{ 'common.required' | translate }}</mat-error>
+          } @else if (credentials.controls.contact.hasError('maxlength')) {
+            <mat-error>{{ 'auth.contactTooLong' | translate }}</mat-error>
           } @else if (credentials.controls.contact.hasError('email')) {
             <mat-error>{{ 'auth.contactInvalid' | translate }}</mat-error>
           }
@@ -31,6 +33,9 @@
         <ng-container [ngTemplateOutlet]="errorBlock" />
         <button mat-flat-button type="submit" class="tm-full submit" [disabled]="busy()" data-testid="continue">{{ 'auth.continue' | translate }}</button>
       </form>
+      <div class="links">
+        <a mat-button routerLink="/recover" data-testid="forgot-password">{{ 'auth.forgot' | translate }}</a>
+      </div>
     } @else {
       <h1 #heading tabindex="-1">{{ 'auth.mfaTitle' | translate }}</h1>
       <p class="tm-muted">{{ (method() === 'totp' ? 'auth.mfaHint' : 'auth.recoveryHint') | translate }}</p>

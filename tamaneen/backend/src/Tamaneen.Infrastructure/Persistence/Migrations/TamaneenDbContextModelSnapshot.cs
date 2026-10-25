@@ -785,6 +785,11 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("CrisisEventId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("Detail")
+                        .HasMaxLength(32)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(32)");
+
                     b.Property<string>("Kind")
                         .IsRequired()
                         .HasMaxLength(32)
@@ -795,6 +800,9 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("TargetUserId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<byte[]>("TextCipher")
@@ -837,6 +845,9 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("ClosedByUserId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("CoSignedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTimeOffset?>("ContactDeadlineUtc")
                         .HasColumnType("datetimeoffset");
 
@@ -846,6 +857,15 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                     b.Property<byte[]>("ExcerptCipher")
                         .HasMaxLength(8100)
                         .HasColumnType("varbinary(max)");
+
+                    b.Property<Guid?>("HandoverFromUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("HandoverRequestedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("HandoverToUserId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Language")
                         .IsRequired()
@@ -867,11 +887,29 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("PatientId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<DateTimeOffset?>("PendingCloseAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("PendingCloseByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PendingCloseOutcome")
+                        .HasMaxLength(32)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(32)");
+
+                    b.Property<string>("PendingCloseReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
                     b.Property<string>("PseudonymId")
                         .IsRequired()
                         .HasMaxLength(11)
                         .IsUnicode(false)
                         .HasColumnType("varchar(11)");
+
+                    b.Property<DateTimeOffset?>("ReviewDueAtUtc")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()

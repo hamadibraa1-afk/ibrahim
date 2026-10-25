@@ -43,4 +43,7 @@ public enum CrisisUpdateKind
 
     /// <summary>The responder handed the case back to the on-call queue.</summary>
     HandedOver = 4,
+
+    /// <summary>Anything else that changes what the console shows: in contact, a handover offer or acceptance, a close waiting for co-sign.</summary>
+    Updated = 5,
 }

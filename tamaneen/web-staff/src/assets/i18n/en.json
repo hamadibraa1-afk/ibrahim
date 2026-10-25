@@ -125,7 +125,9 @@
     "verify": "Confirm",
     "startOver": "Sign in with a different account",
     "remainingAttempts": "Attempts left before the account is locked: {{count}}.",
-    "locked": "The account is locked for safety. Try again in {{minutes}} minutes."
+    "locked": "The account is locked for safety. Try again in {{minutes}} minutes.",
+    "contactTooLong": "The email is longer than 254 characters",
+    "forgot": "Forgot your password?"
   },
   "dashboard": {
     "greeting": {
@@ -140,8 +142,16 @@
       "refer": "Refer to on-call",
       "acknowledged": "Acknowledged",
       "acknowledgedDone": "Alert acknowledged. You are now handling this case.",
-      "referred": "Referred to the on-call team.",
-      "openConsole": "Open in crisis console"
+      "referred": "Left with the on-call, with your note.",
+      "openConsole": "Open in crisis console",
+      "loadError": "Risk alerts can’t be loaded right now. We keep trying, and alerts still arrive by phone and SMS.",
+      "reconnecting": "Reconnecting to live updates… checking for alerts every 5 seconds.",
+      "referDialog": {
+        "title": "Refer to the on-call",
+        "body": "The case stays with the on-call without you taking it. Write what will help them.",
+        "label": "Note for the on-call",
+        "confirm": "Refer"
+      }
     },
     "stats": {
       "region": "Today at a glance",
@@ -240,7 +250,9 @@
       "notAcknowledged": "Not acknowledged",
       "acknowledged": "Acknowledged",
       "acknowledgedBy": "Acknowledged by {{name}}",
-      "minuteLeft": "{{event}}: one minute left to acknowledge."
+      "minuteLeft": "{{event}}: one minute left to acknowledge.",
+      "inContact": "In contact",
+      "inContactBy": "In contact with {{name}}"
     },
     "meta": {
       "rules": "Rules {{rules}}",
@@ -282,10 +294,16 @@
     },
     "done": {
       "acknowledged": "You took the case.",
-      "contacted": "Marked as contacted.",
+      "contacted": "Contact recorded; the case is now in contact.",
       "local_emergency": "Local emergency procedure recorded.",
       "note": "Note added.",
-      "handover": "Handed over to the on-call team."
+      "handover": "Handed over to the on-call team.",
+      "call_attempt": "Call attempt recorded.",
+      "call_outcome": "Call outcome recorded.",
+      "handover_requested": "Handover offered. The case stays with you until your colleague accepts.",
+      "handover_accepted": "You accepted the handover and now own the case.",
+      "handover_declined": "Handover offer cancelled.",
+      "refer": "Left with the on-call, with your note."
     },
     "timeline": {
       "title": "Timeline",
@@ -303,20 +321,28 @@
     },
     "emergencyDialog": {
       "title": "Start the local emergency procedure?",
-      "body": "This records that you started the local emergency procedure for this patient.",
-      "label": "What did you do?",
-      "confirm": "Record procedure"
+      "body": "Follow the script below, then record what you did.",
+      "label": "What did you do? (report number and who answered)",
+      "confirm": "Record procedure",
+      "noLocation": "No location is on file for this patient. Ask for it during the call; nothing is sent automatically.",
+      "noLocationLabel": "Why there is no location, and what you did",
+      "number": "Emergency number:"
     },
     "noteDialog": {
       "title": "Add a note",
       "label": "Note",
-      "confirm": "Add note"
+      "confirm": "Add note",
+      "tooLong": "At most {{max}} characters"
     },
     "handoverDialog": {
-      "title": "Hand over to another on-call?",
-      "body": "The case goes back to the on-call queue and the next person on the rota is called.",
+      "title": "Hand over to another on-call",
+      "body": "Choose an available colleague. The case stays with you until they accept.",
       "label": "Handover note (optional)",
-      "confirm": "Hand over"
+      "confirm": "Offer handover",
+      "to": "To",
+      "onCall": "on call now",
+      "nobody": "No colleague is available for a handover right now.",
+      "toRequired": "Choose a colleague"
     },
     "closeDialog": {
       "title": "Close the event",
@@ -330,7 +356,69 @@
       "outcomeRequired": "Choose an outcome",
       "reason": "Reason",
       "confirm": "Close event",
-      "closed": "Event closed."
+      "closed": "Event closed.",
+      "unreachableCoSign": "Closing as unreachable needs the clinical lead's co-sign, and a follow-up review is set for 72 hours later.",
+      "unreachableLead": "Your signature is enough for this close; a follow-up review is set for 72 hours later.",
+      "waitingForLead": "The close was sent to the clinical lead to co-sign."
+    },
+    "readOnly": "Already acknowledged by {{name}}. You can read this case; actions are for the owner, a supervisor or the clinical lead.",
+    "handover": {
+      "offeredToYou": "{{name}} offered you this case. It stays with them until you accept.",
+      "accept": "Accept handover",
+      "decline": "Decline",
+      "waiting": "Waiting for {{name}} to accept the handover. The case stays with you until then.",
+      "withdraw": "Withdraw offer"
+    },
+    "coSign": {
+      "waiting": "{{name}} asked to close as unreachable ({{reason}}). Waiting for the clinical lead's co-sign.",
+      "confirm": "Co-sign and close"
+    },
+    "callAdvice": {
+      "local_emergency": "{{count}} calls in 15 minutes without an answer, and the location is known: start the local emergency procedure.",
+      "unreachable": "{{count}} calls in 15 minutes without an answer, and no location on file: close as unreachable with the clinical lead's co-sign."
+    },
+    "callDialog": {
+      "title": "How did the call go?",
+      "body": "The call attempt was recorded. Choose the outcome.",
+      "outcomes": {
+        "answered": "Patient answered",
+        "no_answer": "No answer",
+        "voicemail": "Voicemail",
+        "wrong_number": "Wrong number"
+      },
+      "required": "Choose how the call went",
+      "confirm": "Record outcome"
+    },
+    "contactedDialog": {
+      "title": "Contact made with the patient",
+      "body": "The case moves to “in contact” and stays with you until it is closed with an outcome.",
+      "label": "Short note about the contact",
+      "confirm": "Record contact"
     }
+  },
+  "recover": {
+    "title": "Recover your account",
+    "intro": "Enter your work email and we will send it a code to reset your password.",
+    "send": "Send reset code",
+    "codeTitle": "Enter the code and a new password",
+    "sent": "If an account uses this email, we sent a code to {{contact}}. It works for 10 minutes.",
+    "code": "Code sent to your email",
+    "codeInvalid": "Enter the 6 digits from the message",
+    "newPassword": "New password",
+    "passwordHint": "At least {{min}} characters",
+    "reset": "Save new password",
+    "otherEmail": "Use a different email",
+    "doneTitle": "Password changed",
+    "done": "You are signed out on every device. Sign in with the new password, then your authenticator code as usual.",
+    "toLogin": "Back to sign-in",
+    "mfaNote": "Recovery does not change two-step verification. If you lost your authenticator, resetting it needs the approval of two admins; contact the platform admin.",
+    "remainingAttempts": "Attempts left for this code: {{count}}."
+  },
+  "forbidden": {
+    "title": "You don't have access to this page",
+    "body": "This page is not part of what your current role can open.",
+    "logged": "This attempt was recorded in the audit log.",
+    "logFailed": "The attempt could not be recorded right now; the page stays blocked.",
+    "back": "Back to my dashboard"
   }
 }

@@ -1,7 +1,7 @@
 import { provideRouter } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { TestBed } from '@angular/core/testing';
+import { TestBed, discardPeriodicTasks, fakeAsync, flush, flushMicrotasks, tick } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { API_BASE_URL, CRISIS_BASE_URL } from '../../core/api';
 import { LanguageService } from '../../core/i18n/language.service';
@@ -9,13 +9,14 @@ import { CrisisHubService } from '../../core/realtime/crisis-hub.service';
 import { FakeCrisisHub } from '../../testing/fake-crisis-hub';
 import { API, CRISIS, dashboard, eventDetail, openEvent, settle } from '../../testing/fixtures';
 import { provideTestTranslations } from '../../testing/translate-testing';
-import { DashboardComponent, partOfDay } from './dashboard.component';
+import type { OpenCrisisEvent, TherapistDashboard } from '../../core/api/types';
+import { ALERT_POLL_MS, DashboardComponent, partOfDay } from './dashboard.component';
 
 describe('DashboardComponent', () => {
   let backend: HttpTestingController;
   let hub: FakeCrisisHub;
 
-  async function render(language: 'ar' | 'en' = 'en') {
+  function configure() {
     TestBed.configureTestingModule({
       imports: [DashboardComponent],
       providers: [
@@ -29,6 +30,10 @@ describe('DashboardComponent', () => {
         { provide: CrisisHubService, useClass: FakeCrisisHub },
       ],
     });
+  }
+
+  async function render(language: 'ar' | 'en' = 'en', open: OpenCrisisEvent[] = [openEvent()]) {
+    configure();
     const lang = TestBed.inject(LanguageService);
     await lang.use(language);
     backend = TestBed.inject(HttpTestingController);
@@ -36,6 +41,7 @@ describe('DashboardComponent', () => {
     const fixture = TestBed.createComponent(DashboardComponent);
     fixture.detectChanges();
     backend.expectOne(`${API}/v1/staff/dashboard`).flush(dashboard());
+    backend.expectOne(`${CRISIS}/v1/crisis/events/open`).flush(open);
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
     const overlay = () => document.querySelector('.cdk-overlay-container') as HTMLElement;
@@ -91,21 +97,92 @@ describe('DashboardComponent', () => {
     expect(problem.textContent).toContain('Dr Fahad R. took this case.');
   });
 
-  it('acknowledges and refers alerts to the on-call team', async () => {
+  it('acknowledges an alert, and links to that event on the console', async () => {
     const { el, update } = await render('en');
+    expect(el.querySelector('[data-testid="open-console"]')!.getAttribute('href')).toBe('/crisis/ev-1');
     (el.querySelector('[data-testid="acknowledge"]') as HTMLButtonElement).click();
     backend.expectOne(`${CRISIS}/v1/crisis/events/ev-1/acknowledge`).flush(openEvent({ status: 'Acknowledged', kind: 'acknowledged' }));
     await update();
     expect(el.querySelector('[data-testid="acknowledge"]')).toBeNull();
     expect(el.querySelector('[data-testid="crisis-alert"]')!.textContent).toContain('Acknowledged');
+  });
 
+  it('refers an unacknowledged alert to the on-call with a note, without taking it', async () => {
+    const { el, overlay, update } = await render('en');
     (el.querySelector('[data-testid="refer"]') as HTMLButtonElement).click();
+    await update();
+    const dialog = () => overlay().querySelector('mat-dialog-container') as HTMLElement;
+    expect(dialog().textContent).toContain('Refer to the on-call');
+    (dialog().querySelector('[data-testid="note-submit"]') as HTMLButtonElement).click();
+    await update();
+    backend.expectNone(`${CRISIS}/v1/crisis/events/ev-1/actions`);
+    const text = dialog().querySelector('[data-testid="note-text"]') as HTMLTextAreaElement;
+    text.value = 'She answers the landline in the evening';
+    text.dispatchEvent(new Event('input'));
+    (dialog().querySelector('[data-testid="note-submit"]') as HTMLButtonElement).click();
+    await update();
     const refer = backend.expectOne(`${CRISIS}/v1/crisis/events/ev-1/actions`);
-    expect(refer.request.body).toEqual({ kind: 'handover' });
+    expect(refer.request.body).toEqual({ kind: 'refer', text: 'She answers the landline in the evening' });
     refer.flush(eventDetail({ status: 'Open' }));
     await update();
     expect(el.querySelector('[data-testid="acknowledge"]')).not.toBeNull();
   });
+
+  it('keeps showing alerts, including live pushes, when the rest of the dashboard fails to load', fakeAsync(() => {
+    configure();
+    void TestBed.inject(LanguageService).use('en');
+    flushMicrotasks();
+    backend = TestBed.inject(HttpTestingController);
+    hub = TestBed.inject(CrisisHubService) as unknown as FakeCrisisHub;
+    const fixture = TestBed.createComponent(DashboardComponent);
+    fixture.detectChanges();
+    backend.expectOne(`${API}/v1/staff/dashboard`).flush({ title: 'Server error', status: 500 }, { status: 500, statusText: 'Error' });
+    backend.expectOne(`${CRISIS}/v1/crisis/events/open`).flush([openEvent()]);
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('[data-testid="problem"]')!.textContent).toContain('Server error');
+    expect(el.querySelectorAll('[data-testid="crisis-alert"]').length).toBe(1);
+
+    hub.alertsSubject.next(openEvent({ eventId: 'ev-2', title: 'New alert for P-6WQ1-33BC' }));
+    fixture.detectChanges();
+    expect(el.querySelectorAll('[data-testid="crisis-alert"]').length).toBe(2);
+    fixture.destroy();
+    flush();
+  }));
+
+  it('shows a reconnecting strip and polls open alerts every 5 seconds while the live connection is down', fakeAsync(() => {
+    configure();
+    void TestBed.inject(LanguageService).use('en');
+    flushMicrotasks();
+    backend = TestBed.inject(HttpTestingController);
+    hub = TestBed.inject(CrisisHubService) as unknown as FakeCrisisHub;
+    const fixture = TestBed.createComponent(DashboardComponent);
+    fixture.detectChanges();
+    backend.expectOne(`${API}/v1/staff/dashboard`).flush(dashboard({ alerts: [] } as Partial<TherapistDashboard>));
+    backend.expectOne(`${CRISIS}/v1/crisis/events/open`).flush([]);
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('[data-testid="reconnecting"]')).toBeNull();
+
+    hub.status.set('reconnecting');
+    fixture.detectChanges();
+    expect(el.querySelector('[data-testid="reconnecting"]')!.textContent).toContain('checking for alerts every 5 seconds');
+    tick(ALERT_POLL_MS);
+    backend.expectOne(`${CRISIS}/v1/crisis/events/open`).flush([openEvent()]);
+    fixture.detectChanges();
+    expect(el.querySelectorAll('[data-testid="crisis-alert"]').length).toBe(1);
+    tick(ALERT_POLL_MS);
+    backend.expectOne(`${CRISIS}/v1/crisis/events/open`).flush([openEvent()]);
+
+    hub.status.set('connected');
+    fixture.detectChanges();
+    tick(ALERT_POLL_MS * 2);
+    backend.expectNone(`${CRISIS}/v1/crisis/events/open`);
+    expect(el.querySelector('[data-testid="reconnecting"]')).toBeNull();
+    fixture.destroy();
+    discardPeriodicTasks();
+    flush();
+  }));
 
   it('adds, updates and removes alerts pushed live by the hub', async () => {
     const { el, update } = await render('en');
@@ -181,8 +258,8 @@ describe('DashboardComponent', () => {
     const { lang, fixture, el } = await render('ar');
     await lang.use('en');
     fixture.detectChanges();
-    const again = backend.expectOne(`${API}/v1/staff/dashboard`);
-    again.flush(dashboard({ alerts: [openEvent({ title: 'English title' })] }));
+    backend.expectOne(`${API}/v1/staff/dashboard`).flush(dashboard({ alerts: [] }));
+    backend.expectOne(`${CRISIS}/v1/crisis/events/open`).flush([openEvent({ title: 'English title' })]);
     fixture.detectChanges();
     expect(el.querySelector('[data-testid="crisis-alert"]')!.textContent).toContain('English title');
   });

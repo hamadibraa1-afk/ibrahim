@@ -34,13 +34,13 @@
     <ul class="events">
       @for (e of sortedEvents(); track e.eventId) {
         <li>
-          <button type="button" class="event" [class.selected]="e.eventId === selectedId()" [class.urgent]="urgent(e)" [attr.aria-current]="e.eventId === selectedId() ? 'true' : null" (click)="select(e.eventId)" data-testid="event">
+          <button type="button" class="event" [class.selected]="e.eventId === selectedId()" [class.urgent]="urgent(e)" [attr.aria-current]="e.eventId === selectedId() ? 'true' : null" (click)="open(e.eventId)" data-testid="event">
             <span class="event-line">
               <strong>{{ e.number }} · {{ e.levelLabel }}</strong>
               @if (e.status === 'Open') {
                 <span class="countdown" [class.red]="urgent(e)" role="timer" [attr.aria-label]="'crisis.ack.deadline' | translate" data-testid="event-countdown">{{ countdown(e) }}</span>
               } @else {
-                <span class="state">{{ 'crisis.ack.acknowledged' | translate }}</span>
+                <span class="state">{{ (e.status === 'InContact' ? 'crisis.ack.inContact' : 'crisis.ack.acknowledged') | translate }}</span>
               }
             </span>
             <span class="event-line small tm-muted">
@@ -78,11 +78,44 @@
             <span class="sla-value countdown" [class.red]="urgent(d)" role="timer" aria-labelledby="sla-label" data-testid="sla">{{ countdown(d) }}</span>
           </div>
         } @else if (d.acknowledgedBy) {
-          <span class="tm-tag tm-risk-1">{{ 'crisis.ack.acknowledgedBy' | translate: { name: d.acknowledgedBy } }}</span>
+          <span class="tm-tag tm-risk-1" data-testid="owner-tag">
+            {{ (d.status === 'InContact' ? 'crisis.ack.inContactBy' : 'crisis.ack.acknowledgedBy') | translate: { name: d.acknowledgedBy } }}
+          </span>
         }
       </div>
 
       <tm-problem-message [error]="actionError()" />
+
+      @if (!d.canAct) {
+        <p class="notice" role="status" data-testid="read-only">{{ 'crisis.readOnly' | translate: { name: d.acknowledgedBy ?? '' } }}</p>
+      }
+      @if (d.pendingHandover; as h) {
+        <div class="notice" role="status" data-testid="pending-handover">
+          @if (h.forMe) {
+            <span>{{ 'crisis.handover.offeredToYou' | translate: { name: h.fromName ?? '' } }}</span>
+            <span class="notice-actions">
+              <button mat-flat-button type="button" (click)="answerHandover(true)" [disabled]="busy()" data-testid="accept-handover">{{ 'crisis.handover.accept' | translate }}</button>
+              <button mat-stroked-button type="button" (click)="answerHandover(false)" [disabled]="busy()" data-testid="decline-handover">{{ 'crisis.handover.decline' | translate }}</button>
+            </span>
+          } @else {
+            <span>{{ 'crisis.handover.waiting' | translate: { name: h.toName ?? '' } }}</span>
+            @if (d.canAct) {
+              <button mat-stroked-button type="button" (click)="answerHandover(false)" [disabled]="busy()" data-testid="withdraw-handover">{{ 'crisis.handover.withdraw' | translate }}</button>
+            }
+          }
+        </div>
+      }
+      @if (d.pendingClose; as c) {
+        <div class="notice" role="status" data-testid="pending-close">
+          <span>{{ 'crisis.coSign.waiting' | translate: { name: c.byName ?? '', reason: c.reason } }}</span>
+          @if (d.canCoSign) {
+            <button mat-flat-button type="button" (click)="coSign()" [disabled]="busy()" data-testid="cosign">{{ 'crisis.coSign.confirm' | translate }}</button>
+          }
+        </div>
+      }
+      @if (d.callAdvice; as advice) {
+        <p class="notice danger" role="alert" data-testid="call-advice">{{ 'crisis.callAdvice.' + advice | translate: { count: d.recentCallAttempts } }}</p>
+      }
 
       @if (d.status === 'Open') {
         <button mat-flat-button type="button" class="tm-danger-button take" (click)="acknowledge()" [disabled]="busy()" data-testid="take">{{ 'crisis.acknowledgeTake' | translate }}</button>
@@ -128,15 +161,19 @@
 
           <div class="actions">
             @if (visibleContact()?.contactPhone; as phone) {
-              <a mat-stroked-button [attr.href]="telHref(phone)" data-testid="call">{{ 'crisis.actions.call' | translate }}</a>
+              @if (d.canAct) {
+                <a mat-stroked-button [attr.href]="telHref(phone)" (click)="call($event, phone)" data-testid="call">{{ 'crisis.actions.call' | translate }}</a>
+              } @else {
+                <button mat-stroked-button type="button" disabled data-testid="call">{{ 'crisis.actions.call' | translate }}</button>
+              }
             } @else {
               <button mat-stroked-button type="button" disabled [attr.aria-describedby]="'call-hint'" data-testid="call">{{ 'crisis.actions.call' | translate }}</button>
               <span id="call-hint" class="tm-visually-hidden">{{ 'crisis.actions.callHint' | translate }}</span>
             }
-            <button mat-stroked-button type="button" (click)="markContacted()" [disabled]="busy()" data-testid="contacted">{{ 'crisis.actions.contacted' | translate }}</button>
-            <button mat-stroked-button type="button" class="tm-danger-outline" (click)="localEmergency()" [disabled]="busy()" data-testid="local-emergency">{{ 'crisis.actions.localEmergency' | translate }}</button>
-            <button mat-stroked-button type="button" (click)="addNote()" [disabled]="busy()" data-testid="add-note">{{ 'crisis.actions.note' | translate }}</button>
-            <button mat-stroked-button type="button" (click)="handover()" [disabled]="busy()" data-testid="handover">{{ 'crisis.actions.handover' | translate }}</button>
+            <button mat-stroked-button type="button" (click)="markContacted()" [disabled]="busy() || !d.canAct || d.status !== 'Acknowledged'" data-testid="contacted">{{ 'crisis.actions.contacted' | translate }}</button>
+            <button mat-stroked-button type="button" class="tm-danger-outline" (click)="localEmergency()" [disabled]="busy() || !d.canAct" data-testid="local-emergency">{{ 'crisis.actions.localEmergency' | translate }}</button>
+            <button mat-stroked-button type="button" (click)="addNote()" [disabled]="busy() || !d.canAct" data-testid="add-note">{{ 'crisis.actions.note' | translate }}</button>
+            <button mat-stroked-button type="button" (click)="handover()" [disabled]="busy() || !d.canAct || d.status === 'Open' || !!d.pendingHandover" data-testid="handover">{{ 'crisis.actions.handover' | translate }}</button>
             @if (d.canClose) {
               <button mat-stroked-button type="button" (click)="closeCase()" [disabled]="busy()" data-testid="close-case">{{ 'crisis.actions.close' | translate }}</button>
             }

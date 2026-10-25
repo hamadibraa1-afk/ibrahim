@@ -3,7 +3,7 @@ import { Injectable, NgZone, OnDestroy, computed, inject, signal } from '@angula
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { API_BASE_URL } from '../api';
-import type { StaffLoginRequest, StaffLoginResponse, StaffMe, StaffMfaRequest, StaffMfaResponse, StaffSession } from '../api/types';
+import type { ChallengeResponse, RecoverCompleteRequest, RecoverStartRequest, StaffLoginRequest, StaffLoginResponse, StaffMe, StaffMfaRequest, StaffMfaResponse, StaffSession } from '../api/types';
 import { SessionService } from '../session/session.service';
 
 /** Marks requests the auth interceptor must not retry after refreshing (the auth calls themselves). */
@@ -63,6 +63,18 @@ export class AuthService implements OnDestroy {
     const { tokens } = await firstValueFrom(this.http.post<StaffMfaResponse>(`${this.apiBase}/v1/auth/login/mfa`, body, this.authOptions()));
     this.acceptSession(tokens);
     return this.loadProfile();
+  }
+
+  /** Forgotten password (S06 /recover): sends a code to the work email. The answer looks the same for unknown accounts. */
+  startRecovery(contact: string): Promise<ChallengeResponse> {
+    const body: RecoverStartRequest = { contact };
+    return firstValueFrom(this.http.post<ChallengeResponse>(`${this.apiBase}/v1/auth/recover`, body, this.authOptions()));
+  }
+
+  /** Sets the new password with the emailed code. Two-step verification stays as it was; every session is signed out. */
+  completeRecovery(challengeId: string, code: string, newPassword: string): Promise<void> {
+    const body: RecoverCompleteRequest = { challengeId, code: code.trim(), newPassword };
+    return firstValueFrom(this.http.post<void>(`${this.apiBase}/v1/auth/recover/complete`, body, this.authOptions()));
   }
 
   /** On app start: a silent refresh from the cookie. Resolves true when a session was restored. */

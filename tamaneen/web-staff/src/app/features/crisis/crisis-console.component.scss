@@ -41,3 +41,6 @@
 .timeline { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
 .timeline li { display: grid; grid-template-columns: 76px 1fr; gap: 12px; }
 .at { font-weight: 700; font-variant-numeric: tabular-nums; }
+.notice { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; background: var(--tm-tint); color: var(--tm-ink); border: 1px solid var(--tm-line); border-radius: 10px; padding: 10px 14px; margin-block: 8px; }
+.notice.danger { background: var(--tm-danger-tint); color: var(--tm-danger-ink); border-color: var(--tm-danger-line); }
+.notice-actions { display: flex; gap: 8px; flex-wrap: wrap; }

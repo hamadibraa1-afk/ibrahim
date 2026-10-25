@@ -11,35 +11,39 @@
 
 <tm-problem-message [error]="loadError()" />
 
-@if (data(); as d) {
-  <section [attr.aria-label]="'dashboard.alerts.region' | translate" aria-live="polite" class="alerts">
-    @for (alert of alerts(); track alert.eventId) {
-      <article class="alert" data-testid="crisis-alert" [attr.dir]="alert.dir" [attr.aria-labelledby]="'alert-title-' + alert.eventId">
-        <svg class="icon" aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /><path d="M12 9v4M12 17h.01" />
-        </svg>
-        <div class="alert-text">
-          <h2 class="alert-title" [id]="'alert-title-' + alert.eventId">{{ alert.title }}</h2>
-          <p class="alert-body">{{ alert.body }}</p>
-          <tm-problem-message [error]="alertErrors()[alert.eventId]" />
-        </div>
-        <div class="alert-actions" [attr.dir]="language.direction()">
-          @if (alert.status === 'Open') {
-            <button mat-flat-button class="tm-danger-button" type="button" (click)="acknowledge(alert)" [disabled]="busyAlerts().has(alert.eventId)" data-testid="acknowledge">
-              {{ 'dashboard.alerts.acknowledge' | translate }}
-            </button>
-          } @else {
-            <span class="tm-tag tm-risk-1">{{ 'dashboard.alerts.acknowledged' | translate }}</span>
-          }
-          <button mat-stroked-button type="button" (click)="refer(alert)" [disabled]="busyAlerts().has(alert.eventId)" data-testid="refer">
-            {{ 'dashboard.alerts.refer' | translate }}
+@if (hub.status() !== 'connected') {
+  <p class="reconnecting" role="status" data-testid="reconnecting">{{ 'dashboard.alerts.reconnecting' | translate }}</p>
+}
+<tm-problem-message [error]="alertsError()" />
+<section [attr.aria-label]="'dashboard.alerts.region' | translate" aria-live="polite" class="alerts">
+  @for (alert of alerts(); track alert.eventId) {
+    <article class="alert" data-testid="crisis-alert" [attr.dir]="alert.dir" [attr.aria-labelledby]="'alert-title-' + alert.eventId">
+      <svg class="icon" aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /><path d="M12 9v4M12 17h.01" />
+      </svg>
+      <div class="alert-text">
+        <h2 class="alert-title" [id]="'alert-title-' + alert.eventId">{{ alert.title }}</h2>
+        <p class="alert-body">{{ alert.body }}</p>
+        <tm-problem-message [error]="alertErrors()[alert.eventId]" />
+      </div>
+      <div class="alert-actions" [attr.dir]="language.direction()">
+        @if (alert.status === 'Open') {
+          <button mat-flat-button class="tm-danger-button" type="button" (click)="acknowledge(alert)" [disabled]="busyAlerts().has(alert.eventId)" data-testid="acknowledge">
+            {{ 'dashboard.alerts.acknowledge' | translate }}
           </button>
-          <a mat-button routerLink="/crisis" data-testid="open-console">{{ 'dashboard.alerts.openConsole' | translate }}</a>
-        </div>
-      </article>
-    }
-  </section>
+        } @else {
+          <span class="tm-tag tm-risk-1">{{ 'dashboard.alerts.acknowledged' | translate }}</span>
+        }
+        <button mat-stroked-button type="button" (click)="refer(alert)" [disabled]="busyAlerts().has(alert.eventId)" data-testid="refer">
+          {{ 'dashboard.alerts.refer' | translate }}
+        </button>
+        <a mat-button [routerLink]="['/crisis', alert.eventId]" data-testid="open-console">{{ 'dashboard.alerts.openConsole' | translate }}</a>
+      </div>
+    </article>
+  }
+</section>
 
+@if (data(); as d) {
   <section class="stats" [attr.aria-label]="'dashboard.stats.region' | translate">
     <div class="tm-card stat" data-testid="stat-today">
       <span class="stat-label">{{ 'dashboard.stats.todaySessions' | translate }}</span>

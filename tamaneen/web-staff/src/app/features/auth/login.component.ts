@@ -6,7 +6,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { toProblem } from '../../core/api/problem';
 import { AuthService } from '../../core/auth/auth.service';
@@ -15,6 +15,9 @@ import { SessionService } from '../../core/session/session.service';
 import { LanguageToggleComponent } from '../../shared/language-toggle.component';
 
 type Step = 'credentials' | 'mfa';
+
+/** RFC 5321 limit for an email address; the design caps the work email field at 254 characters. */
+export const CONTACT_MAX_LENGTH = 254;
 type Method = 'totp' | 'recovery';
 
 /** What went wrong, ready to render: the server's localized problem plus attempts/lock hints. */
@@ -43,7 +46,7 @@ export function loginError(error: unknown): LoginError {
 /** S06 staff sign-in: work email and password, then the authenticator code (or a recovery code). */
 @Component({
   selector: 'tm-login',
-  imports: [BidiModule, NgTemplateOutlet, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatProgressBarModule, TranslateModule, LanguageToggleComponent],
+  imports: [BidiModule, NgTemplateOutlet, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatProgressBarModule, RouterLink, TranslateModule, LanguageToggleComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',
@@ -69,7 +72,7 @@ export class LoginComponent {
   private readonly heading = viewChild<ElementRef<HTMLElement>>('heading');
 
   protected readonly credentials = this.fb.group({
-    contact: ['', [Validators.required, Validators.email]],
+    contact: ['', [Validators.required, Validators.email, Validators.maxLength(CONTACT_MAX_LENGTH)]],
     password: ['', Validators.required],
   });
   protected readonly mfa = this.fb.group({ code: ['', [Validators.required, Validators.pattern(/^\d{6}$/)]] });

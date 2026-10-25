@@ -24,8 +24,8 @@ Every response is localized by `Accept-Language` (`ar` default, `en`). Errors ar
 | POST | /v1/auth/login | LoginRequest → LoginResponse (401 + remainingAttempts, 423 + retryAfterSeconds) | P18 |
 | POST | /v1/auth/login/mfa | MfaRequest → MfaResponse | P19 |
 | POST | /v1/auth/login/mfa/sms | { mfaToken } → 204 | P19 |
-| POST | /v1/auth/recover | RecoverStartRequest → 202 ChallengeResponse (the same response whether or not the account exists) | P20 |
-| POST | /v1/auth/recover/complete | RecoverCompleteRequest → 204 | P20 |
+| POST | /v1/auth/recover | RecoverStartRequest → 202 ChallengeResponse (the same response whether or not the account exists; patients and staff, a staff code goes to the work email and two-step verification is not reset) | P20, S06 |
+| POST | /v1/auth/recover/complete | RecoverCompleteRequest → 204 | P20, S06 |
 | POST | /v1/auth/recover/code | RecoverWithCodeRequest → 204 | P20 |
 | POST | /v1/auth/refresh | { refreshToken } → TokenPair | BFF |
 | POST | /v1/auth/logout | { refreshToken } → 204 | P31 |
@@ -104,6 +104,7 @@ During scheduled maintenance (`Platform:Maintenance` true) every patient endpoin
 | Method | Path | Body → Response | Screen |
 |---|---|---|---|
 | GET | /v1/staff/me | → StaffMe | shell |
+| POST | /v1/staff/access-denied | { path } → 204 (audit `staff.access_denied`, the refused portal path as the reason) | S06 /forbidden |
 | GET | /v1/staff/dashboard | → TherapistDashboard | S01 |
 | GET | /v1/staff/patients/{pseudonymId}/intake | → StaffIntakeView (audited) | S01 |
 | POST | /v1/staff/patients/{pseudonymId}/intake/approve | → 204 | S01 |
@@ -117,11 +118,16 @@ During scheduled maintenance (`Platform:Maintenance` true) every patient endpoin
 | (worker) POST | /v1/crisis/events/{id}/acknowledge | → OpenCrisisEvent | S01, S04 |
 | (worker) POST | /v1/crisis/events/{id}/excerpt | { totpCode, reason? } → { excerpt, hideAt } (audited) | S04 |
 | (worker) POST | /v1/crisis/events/{id}/reveal-contact | { totpCode, reason } → RevealedContact (audited, shown for 10 minutes) | S04 |
-| (worker) POST | /v1/crisis/events/{id}/actions | { kind: contacted, local_emergency, note, handover; text } → CrisisEventDetail | S04 |
-| (worker) POST | /v1/crisis/events/{id}/close | { outcome, reason } → 204 | S04 |
+| (worker) POST | /v1/crisis/events/{id}/actions | { kind, text?, outcome? } → CrisisEventDetail. Kinds: call_attempt; call_outcome (outcome: answered, no_answer, voicemail, wrong_number); contacted (text required, moves the event to InContact); local_emergency, note (text required); refer (text required, S01: leaves the case with the on-call, allowed to anyone who sees the event); handover (back to the queue). Once someone owns the event, only the owner, a supervisor or the clinical lead may act (403 `error.crisis.not_owner`) | S01, S04 |
+| (worker) GET | /v1/crisis/responders | → Responder[] (supervisors, the clinical lead and on-call clinicians, without the caller) | S04 |
+| (worker) POST | /v1/crisis/events/{id}/handover | { toUserId, note? } → CrisisEventDetail (offer; the owner keeps the case) | S04 |
+| (worker) POST | /v1/crisis/events/{id}/handover/accept | → CrisisEventDetail (the colleague asked becomes the owner; otherwise 409 `error.crisis.nothing_pending`) | S04 |
+| (worker) POST | /v1/crisis/events/{id}/handover/decline | → CrisisEventDetail (the colleague declines or the owner withdraws) | S04 |
+| (worker) POST | /v1/crisis/events/{id}/close | { outcome, reason } → OpenCrisisEvent. `unreachable_referred` from a supervisor is held (status stays open, `pendingClose` on the detail) until the clinical lead co-signs | S04 |
+| (worker) POST | /v1/crisis/events/{id}/close/cosign | → OpenCrisisEvent (clinical lead only; closes and sets a review 72 hours later, shown on the timeline) | S04 |
 | (worker) GET | /v1/crisis/health | → CrisisHealth | S04 |
 | (worker) hub | /hubs/crisis?lang= | crisisAlert (kind: opened, raised, escalated, acknowledged, updated, closed) | S01, S04 |
 
-Alerts and the open-events list carry `number` (CE-1001), `source`, `sourceLabel` and `acknowledgedBy`. Supervisors, the
+Alerts and the open-events list carry `number` (CE-1001), `source`, `sourceLabel` and `acknowledgedBy`. Status is Open, Acknowledged, InContact or Closed. CrisisEventDetail adds `canAct`, `isOwner`, `pendingHandover`, `pendingClose`, `canCoSign`, `emergencyNumber`, `emergencyScript` (rule-pack responder script, with or without a known location), `recentCallAttempts`, `callAdvice` (local_emergency or unreachable after 3 calls in 15 minutes to a Critical patient, EC-33) and `reviewDueAtUtc`. The timeline ends with the next scheduled escalation while nobody owns the event. Supervisors, the
 clinical lead and on-call staff receive every alert; other therapists only receive alerts for their own patients. The console endpoints follow the same rule through RLS: on-call therapists see every crisis event, and contact data and excerpts only while the event is open.
 Staff refresh and sign-out send `{}`; the refresh token is the HttpOnly cookie `tamaneen_staff_rt` on `/v1/auth`.

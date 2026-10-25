@@ -1,0 +1,92 @@
+<div class="page" [dir]="language.direction()" data-testid="recover">
+  <header class="top">
+    <span class="brand">{{ 'app.name' | translate }} <small>{{ 'app.portalShort' | translate }}</small></span>
+    <tm-language-toggle />
+  </header>
+
+  <main class="tm-card card">
+    @if (busy()) {
+      <mat-progress-bar mode="indeterminate" class="progress" [attr.aria-label]="'common.loading' | translate" />
+    }
+
+    @switch (step()) {
+      @case ('email') {
+        <h1 #heading tabindex="-1">{{ 'recover.title' | translate }}</h1>
+        <p class="tm-muted">{{ 'recover.intro' | translate }}</p>
+        <form [formGroup]="emailForm" (ngSubmit)="sendCode()" novalidate>
+          <mat-form-field appearance="outline" class="tm-full">
+            <mat-label>{{ 'auth.contact' | translate }}</mat-label>
+            <input matInput type="email" formControlName="contact" autocomplete="username" dir="ltr" maxlength="254" data-testid="recover-contact" />
+            @if (emailForm.controls.contact.hasError('required')) {
+              <mat-error>{{ 'common.required' | translate }}</mat-error>
+            } @else if (emailForm.controls.contact.hasError('maxlength')) {
+              <mat-error>{{ 'auth.contactTooLong' | translate }}</mat-error>
+            } @else if (emailForm.controls.contact.hasError('email')) {
+              <mat-error>{{ 'auth.contactInvalid' | translate }}</mat-error>
+            }
+          </mat-form-field>
+          <ng-container *ngTemplateOutlet="errorBlock" />
+          <button mat-flat-button type="submit" class="tm-full submit" [disabled]="busy()" data-testid="send-code">{{ 'recover.send' | translate }}</button>
+        </form>
+      }
+      @case ('code') {
+        <h1 #heading tabindex="-1">{{ 'recover.codeTitle' | translate }}</h1>
+        <p class="tm-muted" data-testid="recover-sent">{{ 'recover.sent' | translate: { contact: maskedContact() } }}</p>
+        <form [formGroup]="resetForm" (ngSubmit)="reset()" novalidate>
+          <mat-form-field appearance="outline" class="tm-full">
+            <mat-label>{{ 'recover.code' | translate }}</mat-label>
+            <input matInput class="code" formControlName="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" dir="ltr" placeholder="000000" data-testid="recover-code" />
+            @if (resetForm.controls.code.hasError('required')) {
+              <mat-error>{{ 'common.required' | translate }}</mat-error>
+            } @else if (resetForm.controls.code.invalid) {
+              <mat-error>{{ 'recover.codeInvalid' | translate }}</mat-error>
+            }
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="tm-full">
+            <mat-label>{{ 'recover.newPassword' | translate }}</mat-label>
+            <input matInput type="password" formControlName="newPassword" autocomplete="new-password" data-testid="recover-password" />
+            <mat-hint>{{ 'recover.passwordHint' | translate: { min: passwordMin } }}</mat-hint>
+            @if (resetForm.controls.newPassword.hasError('required')) {
+              <mat-error>{{ 'common.required' | translate }}</mat-error>
+            } @else if (resetForm.controls.newPassword.invalid) {
+              <mat-error>{{ 'recover.passwordHint' | translate: { min: passwordMin } }}</mat-error>
+            }
+          </mat-form-field>
+          <ng-container *ngTemplateOutlet="errorBlock" />
+          <button mat-flat-button type="submit" class="tm-full submit" [disabled]="busy()" data-testid="reset-password">{{ 'recover.reset' | translate }}</button>
+        </form>
+        <div class="links">
+          <button mat-button type="button" (click)="startOver()">{{ 'recover.otherEmail' | translate }}</button>
+        </div>
+      }
+      @case ('done') {
+        <h1 #heading tabindex="-1">{{ 'recover.doneTitle' | translate }}</h1>
+        <p data-testid="recover-done">{{ 'recover.done' | translate }}</p>
+        <a mat-flat-button class="tm-full submit" routerLink="/login" data-testid="back-to-login">{{ 'recover.toLogin' | translate }}</a>
+      }
+    }
+
+    <p class="tm-muted small note" data-testid="mfa-note">{{ 'recover.mfaNote' | translate }}</p>
+    @if (step() !== 'done') {
+      <div class="links">
+        <a mat-button routerLink="/login" data-testid="back-to-login">{{ 'recover.toLogin' | translate }}</a>
+      </div>
+    }
+  </main>
+</div>
+
+<ng-template #errorBlock>
+  @if (error(); as e) {
+    <div class="tm-problem" role="alert" data-testid="recover-error">
+      @if (e.title) {
+        <strong>{{ e.title }}</strong>
+        @if (e.detail) { <span> {{ e.detail }}</span> }
+      } @else if (e.fallbackKey) {
+        <span>{{ e.fallbackKey | translate }}</span>
+      }
+      @if (e.remainingAttempts !== null) {
+        <p class="hint">{{ 'recover.remainingAttempts' | translate: { count: e.remainingAttempts } }}</p>
+      }
+    </div>
+  }
+</ng-template>
