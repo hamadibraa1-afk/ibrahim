@@ -3,7 +3,8 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { SafetyInfoForm } from '@/components/onboarding/SafetyInfoForm';
 import { PageHeading } from '@/components/ui/PageHeading';
 import { StepIndicator } from '@/components/ui/StepIndicator';
-import { serverGetOptional } from '@/lib/api/server';
+import { ApiError } from '@/lib/api/errors';
+import { serverGetVersioned } from '@/lib/api/server';
 import type { SafetyInfo } from '@/lib/api/types';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
@@ -16,12 +17,18 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export default async function SafetyInfoPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const [t, initial] = await Promise.all([getTranslations('safetyInfo'), serverGetOptional<SafetyInfo>('me/safety-info')]);
+  const [t, initial] = await Promise.all([
+    getTranslations('safetyInfo'),
+    serverGetVersioned<SafetyInfo>('me/safety-info').catch((e: unknown) => {
+      if (e instanceof ApiError && e.status === 404) return { data: null, etag: null };
+      throw e;
+    }),
+  ]);
   return (
     <div className="flex flex-col gap-4 pt-2">
       <StepIndicator step={4} total={4} optional />
       <PageHeading title={t('title')} subtitle={t('subtitle')} />
-      <SafetyInfoForm initial={initial} />
+      <SafetyInfoForm initial={initial.data} version={initial.etag} />
     </div>
   );
 }

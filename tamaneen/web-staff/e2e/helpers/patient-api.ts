@@ -51,7 +51,17 @@ function auth(patient: TestPatient) {
   return { Authorization: `Bearer ${patient.accessToken}` };
 }
 
-export const SARA = { displayName: 'أ. سارة م.', specialty: 'sleep' };
+/** PUT /v1/me/safety-info with the ETag of the GET in If-Match, as the patient app does (412/428 otherwise). */
+export async function putSafetyInfo(request: APIRequestContext, headers: Record<string, string>, data: unknown): Promise<void> {
+  const current = await request.get(`${API}/v1/me/safety-info`, { headers });
+  expect(current.ok(), `GET safety-info: ${current.status()}`).toBeTruthy();
+  const etag = current.headers()['etag'];
+  expect(etag, 'safety-info ETag').toBeTruthy();
+  const r = await request.put(`${API}/v1/me/safety-info`, { headers: { ...headers, 'If-Match': etag! }, data });
+  expect(r.ok(), `PUT safety-info: ${r.status()} ${await r.text()}`).toBeTruthy();
+}
+
+export const SARA ={ displayName: 'أ. سارة م.', specialty: 'sleep' };
 export const KHALID = { displayName: 'أ. خالد ع.', specialty: 'anxiety' };
 
 /** Consents, safety info, direct path, a negative C-SSRS and a confirmed booking with Sara: the patient becomes hers. */
@@ -74,7 +84,7 @@ export async function onboardAndBook(request: APIRequestContext, patient: TestPa
     return (text ? JSON.parse(text) : undefined) as T;
   };
   await put('/v1/me/consents', { items: [{ key: 'platform', granted: true }, { key: 'ai', granted: true }, { key: 'share_with_therapist', granted: true }] });
-  await put('/v1/me/safety-info', { contactPhone: PATIENT_PHONE, trustedName: 'أختي نورة', trustedPhone: '0559876543', shareLocation: true });
+  await putSafetyInfo(request, headers, { contactPhone: PATIENT_PHONE, trustedName: 'أختي نورة', trustedPhone: '0559876543', shareLocation: true });
   await put('/v1/me/path', { path: 'direct' });
   await post('/v1/screening/cssrs', { answers: [false, false, false, false, false, false] });
 
@@ -115,7 +125,7 @@ export async function completeIntakeByForm(request: APIRequestContext, patient: 
     return (text ? JSON.parse(text) : undefined) as T;
   };
   await send('put', '/v1/me/consents', { items: [{ key: 'platform', granted: true }, { key: 'ai', granted: true }, { key: 'share_with_therapist', granted: true }] });
-  await send('put', '/v1/me/safety-info', { contactPhone: PATIENT_PHONE, trustedName: 'أختي نورة', trustedPhone: '0559876543', shareLocation: true });
+  await putSafetyInfo(request, headers, { contactPhone: PATIENT_PHONE, trustedName: 'أختي نورة', trustedPhone: '0559876543', shareLocation: true });
   await send('put', '/v1/me/path', { path: 'intake' });
 
   type State = { intakeId: string; pendingQuestion: { instrument: string; item: number } | null; canFinish: boolean };

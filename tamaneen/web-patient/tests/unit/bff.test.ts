@@ -19,6 +19,12 @@ describe('BFF language negotiation', () => {
     expect(h.get('cookie')).toBeNull();
   });
 
+  it('passes If-Match up and the ETag down (PB-52)', () => {
+    expect(upstreamHeaders({ locale: 'ar', ifMatch: '"abc"' }).get('if-match')).toBe('"abc"');
+    expect(upstreamHeaders({ locale: 'ar' }).get('if-match')).toBeNull();
+    expect(downstreamHeaders(new Headers({ etag: '"abc"' })).get('etag')).toBe('"abc"');
+  });
+
   it('forwards only safe response headers', () => {
     const upstream = new Headers({ 'content-type': 'application/problem+json', 'content-language': 'ar', 'set-cookie': 'x=1', server: 'kestrel' });
     const h = downstreamHeaders(upstream);

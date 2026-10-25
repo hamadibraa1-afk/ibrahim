@@ -92,4 +92,6 @@ public static class ErrorCodes
     public const string FileVersionChanged = "error.file.version_changed";
     public const string FileApproved = "error.file.approved";
     public const string RiskNotHigher = "error.risk.not_higher";
+    public const string SettingsVersionRequired = "error.settings.version_required";
+    public const string SettingsVersionChanged = "error.settings.version_changed";
 }

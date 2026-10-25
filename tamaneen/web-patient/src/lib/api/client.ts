@@ -22,17 +22,22 @@ function currentLocale(): string {
   return typeof document !== 'undefined' ? document.documentElement.lang || 'ar' : 'ar';
 }
 
+type ApiOptions = { method?: Method; body?: unknown; signal?: AbortSignal; ifMatch?: string | null };
+
 /**
  * Calls the API through the BFF (/api/v1/...). The session cookie is attached server-side; this code never
  * sees a token. A 401 triggers one silent refresh. If the session is gone the user lands on the
  * session-expired page, and if the chat is locked by a crisis event, on the crisis screen.
  */
-export async function api<T>(path: string, options: { method?: Method; body?: unknown; signal?: AbortSignal } = {}): Promise<T> {
+async function send(path: string, options: ApiOptions): Promise<Response> {
   const url = `/api/v1/${path.replace(/^\/+/, '')}`;
+  const headers: Record<string, string> = { Accept: 'application/json' };
+  if (options.body !== undefined) headers['Content-Type'] = 'application/json';
+  if (options.ifMatch) headers['If-Match'] = options.ifMatch;
   const init: RequestInit = {
     method: options.method ?? 'GET',
     credentials: 'same-origin',
-    headers: options.body === undefined ? { Accept: 'application/json' } : { Accept: 'application/json', 'Content-Type': 'application/json' },
+    headers,
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
     signal: options.signal,
   };
@@ -57,11 +62,32 @@ export async function api<T>(path: string, options: { method?: Method; body?: un
     }
     throw error;
   }
+  return response;
+}
 
+async function bodyOf<T>(response: Response): Promise<T> {
   if (response.status === 204 || response.headers.get('content-length') === '0') {
     return undefined as T;
   }
   return (await response.json()) as T;
+}
+
+export async function api<T>(path: string, options: ApiOptions = {}): Promise<T> {
+  return bodyOf<T>(await send(path, options));
+}
+
+/**
+ * Like api(), and also returns the response's ETag. The settings screens (P21, P31, P34) send it back as
+ * `ifMatch` when saving; a 412 (isVersionConflict) means another device saved first.
+ */
+export async function apiVersioned<T>(path: string, options: ApiOptions = {}): Promise<{ data: T; etag: string | null }> {
+  const response = await send(path, options);
+  return { data: await bodyOf<T>(response), etag: response.headers.get('etag') };
+}
+
+/** 412: the values changed since this screen read them. */
+export function isVersionConflict(e: unknown): boolean {
+  return e instanceof ApiError && e.status === 412;
 }
 
 /** Calls one of the BFF auth routes (/api/auth/...), which keep tokens in HttpOnly cookies. */

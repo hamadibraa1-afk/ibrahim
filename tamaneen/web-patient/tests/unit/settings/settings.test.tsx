@@ -6,7 +6,10 @@ import type { Me, NotificationPrefs, SafetyInfo, SecurityOverview } from '@/lib/
 import { renderWithIntl } from '../intl';
 
 const mocks = vi.hoisted(() => ({ api: vi.fn(), authApi: vi.fn(), replace: vi.fn(), refresh: vi.fn(), assign: vi.fn(), locationReplace: vi.fn() }));
-vi.mock('@/lib/api/client', () => ({ api: mocks.api, authApi: mocks.authApi }));
+vi.mock('@/lib/api/client', async () => {
+  const h = await import('../onboarding/helpers');
+  return { api: mocks.api, authApi: mocks.authApi, apiVersioned: h.versionedVia(mocks.api), isVersionConflict: h.isVersionConflict };
+});
 vi.mock('@/i18n/navigation', () => ({
   Link: ({ href, children, ...rest }: AnchorHTMLAttributes<HTMLAnchorElement> & { href: string; children: ReactNode }) => (
     <a href={href} {...rest}>
@@ -64,7 +67,7 @@ describe('SettingsMenu', () => {
 describe('ProfileForm', () => {
   it('switches to English: stores the language, then reloads the page under the other locale', async () => {
     mocks.api.mockResolvedValue(undefined);
-    renderWithIntl(<ProfileForm me={me} />, 'ar');
+    renderWithIntl(<ProfileForm me={me} version='"v1"' />, 'ar');
     expect(screen.getByRole('radio', { name: 'العربية' })).toHaveAttribute('aria-checked', 'true');
     await userEvent.click(screen.getByRole('radio', { name: 'English' }));
     expect(mocks.api).toHaveBeenCalledWith('me/language', { method: 'PUT', body: { language: 'en' } });
@@ -73,7 +76,7 @@ describe('ProfileForm', () => {
 
   it('switches back to Arabic from English', async () => {
     mocks.api.mockResolvedValue(undefined);
-    renderWithIntl(<ProfileForm me={{ ...me, language: 'en' }} />, 'en');
+    renderWithIntl(<ProfileForm me={{ ...me, language: 'en' }} version='"v1"' />, 'en');
     await userEvent.click(screen.getByRole('radio', { name: 'العربية' }));
     expect(mocks.api).toHaveBeenCalledWith('me/language', { method: 'PUT', body: { language: 'ar' } });
     await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith('/settings', { locale: 'ar' }));
@@ -82,7 +85,7 @@ describe('ProfileForm', () => {
   it('does not reload when the language call fails', async () => {
     const { ApiError } = await import('@/lib/api/errors');
     mocks.api.mockRejectedValue(new ApiError(500, { title: 'تعذّر الحفظ', status: 500 }));
-    renderWithIntl(<ProfileForm me={me} />, 'ar');
+    renderWithIntl(<ProfileForm me={me} version='"v1"' />, 'ar');
     await userEvent.click(screen.getByRole('radio', { name: 'English' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('تعذّر الحفظ');
     expect(mocks.replace).not.toHaveBeenCalled();
@@ -90,7 +93,7 @@ describe('ProfileForm', () => {
 
   it('saves the nickname and time zone', async () => {
     mocks.api.mockResolvedValue({ ...me, nickname: 'غيمة', timeZone: 'Asia/Dubai' });
-    renderWithIntl(<ProfileForm me={me} />, 'ar');
+    renderWithIntl(<ProfileForm me={me} version='"v1"' />, 'ar');
     const nickname = screen.getByRole('textbox', { name: 'الاسم المستعار' });
     await userEvent.clear(nickname);
     await userEvent.type(nickname, 'غيمة');
@@ -100,8 +103,26 @@ describe('ProfileForm', () => {
     expect(await screen.findByText('حفظنا ملفك الشخصي.')).toBeInTheDocument();
   });
 
+  it('sends If-Match, and on 412 shows the values saved from the other device (English)', async () => {
+    const { ifMatchSent } = await import('../onboarding/helpers');
+    ifMatchSent.mockReset();
+    mocks.api
+      .mockRejectedValueOnce(new ApiError(412, { title: 'Conflict', detail: 'These details were changed from another device.', status: 412, code: 'error.settings.version_changed' }))
+      .mockResolvedValueOnce({ ...me, nickname: 'Other device name', timeZone: 'Asia/Kuwait' });
+    renderWithIntl(<ProfileForm me={me} version='"v1"' />, 'en');
+    const nickname = screen.getByRole('textbox', { name: 'Nickname' });
+    await userEvent.clear(nickname);
+    await userEvent.type(nickname, 'Mine');
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(ifMatchSent).toHaveBeenCalledWith('me/profile', '"v1"');
+    expect(await screen.findByRole('alert')).toHaveTextContent('changed from another device');
+    expect(nickname).toHaveValue('Other device name');
+    expect(screen.getByRole('combobox', { name: 'Time zone' })).toHaveValue('Asia/Kuwait');
+    expect(mocks.api).toHaveBeenLastCalledWith('me');
+  });
+
   it('labels the time zones in English and requires a nickname', async () => {
-    renderWithIntl(<ProfileForm me={me} />, 'en');
+    renderWithIntl(<ProfileForm me={me} version='"v1"' />, 'en');
     expect(screen.getByRole('option', { name: 'Riyadh (pilot region time)' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Muscat' })).toBeInTheDocument();
     await userEvent.clear(screen.getByRole('textbox', { name: 'Nickname' }));
@@ -111,7 +132,7 @@ describe('ProfileForm', () => {
   });
 
   it('signs out through the BFF and returns to the welcome page', async () => {
-    renderWithIntl(<ProfileForm me={me} />, 'ar');
+    renderWithIntl(<ProfileForm me={me} version='"v1"' />, 'ar');
     await userEvent.click(screen.getByRole('button', { name: 'تسجيل الخروج' }));
     expect(mocks.authApi).toHaveBeenCalledWith('logout');
     await waitFor(() => expect(mocks.assign).toHaveBeenCalledWith('/ar'));
@@ -327,7 +348,7 @@ const safety: SafetyInfo = { contactPhone: '0500004521', trustedName: 'أختي'
 describe('SafetyForm', () => {
   it('shows the fields, sharing date, and saves with ASCII digits', async () => {
     mocks.api.mockImplementation(async (_p: string, { body }: { body: SafetyInfo }) => ({ ...body, shareLocationSince: safety.shareLocationSince }));
-    renderWithIntl(<SafetyForm initial={safety} timeZone="Asia/Riyadh" />, 'ar');
+    renderWithIntl(<SafetyForm initial={safety} version='"v1"' timeZone="Asia/Riyadh" />, 'ar');
     expect(screen.getByText('مفعّلة منذ 19 أكتوبر')).toBeInTheDocument();
     const phone = screen.getByRole('textbox', { name: 'رقم جواله' });
     expect(phone).toHaveAttribute('dir', 'ltr');
@@ -340,7 +361,7 @@ describe('SafetyForm', () => {
 
   it('asks before deleting the trusted contact', async () => {
     mocks.api.mockResolvedValue(undefined);
-    renderWithIntl(<SafetyForm initial={safety} timeZone="Asia/Riyadh" />, 'en');
+    renderWithIntl(<SafetyForm initial={safety} version='"v1"' timeZone="Asia/Riyadh" />, 'en');
     await userEvent.click(screen.getByRole('button', { name: 'Delete emergency contact' }));
     const dialog = screen.getByRole('dialog', { name: 'Delete your emergency contact?' });
     expect(mocks.api).not.toHaveBeenCalled();
@@ -350,8 +371,21 @@ describe('SafetyForm', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
+  it('on 412 reloads the stored values and says so (Arabic)', async () => {
+    const { ifMatchSent } = await import('../onboarding/helpers');
+    ifMatchSent.mockReset();
+    mocks.api
+      .mockRejectedValueOnce(new ApiError(412, { title: 'تعارض', detail: 'تغيّرت هذه البيانات من جهاز آخر.', status: 412, code: 'error.settings.version_changed' }))
+      .mockResolvedValueOnce({ ...safety, contactPhone: '0533333333' });
+    renderWithIntl(<SafetyForm initial={safety} version='"v1"' timeZone="Asia/Riyadh" />, 'ar');
+    await userEvent.click(screen.getByRole('button', { name: 'حفظ' }));
+    expect(ifMatchSent).toHaveBeenCalledWith('me/safety-info', '"v1"');
+    expect(await screen.findByRole('alert')).toHaveTextContent('جهاز آخر');
+    expect(screen.getByRole('textbox', { name: 'رقم جوالك' })).toHaveValue('0533333333');
+  });
+
   it('keeps the trusted name and number together', async () => {
-    renderWithIntl(<SafetyForm initial={safety} timeZone="Asia/Riyadh" />, 'en');
+    renderWithIntl(<SafetyForm initial={safety} version='"v1"' timeZone="Asia/Riyadh" />, 'en');
     await userEvent.clear(screen.getByRole('textbox', { name: 'Their mobile number' }));
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
     expect(screen.getByText('Add the mobile number of the person you trust, or remove their name.')).toBeInTheDocument();
@@ -360,7 +394,7 @@ describe('SafetyForm', () => {
 
   it('asks before turning location sharing off (Arabic)', async () => {
     mocks.api.mockImplementation(async (_p: string, { body }: { body: SafetyInfo }) => ({ ...body, shareLocationSince: null }));
-    renderWithIntl(<SafetyForm initial={safety} timeZone="Asia/Riyadh" />, 'ar');
+    renderWithIntl(<SafetyForm initial={safety} version='"v1"' timeZone="Asia/Riyadh" />, 'ar');
     const sw = screen.getByRole('switch', { name: /مشاركة موقعي عند الطوارئ/ });
     await userEvent.click(sw);
     const dialog = screen.getByRole('dialog', { name: 'إيقاف مشاركة موقعك عند الطوارئ؟' });
@@ -372,7 +406,7 @@ describe('SafetyForm', () => {
   });
 
   it('closes a dialog with Escape', async () => {
-    renderWithIntl(<SafetyForm initial={safety} timeZone="Asia/Riyadh" />, 'en');
+    renderWithIntl(<SafetyForm initial={safety} version='"v1"' timeZone="Asia/Riyadh" />, 'en');
     await userEvent.click(screen.getByRole('button', { name: 'Delete emergency contact' }));
     act(() => {
       fireEvent.keyDown(document, { key: 'Escape' });

@@ -110,6 +110,22 @@ public sealed partial class JourneyHosts : IAsyncDisposable
         return body.Length == 0 ? default : JsonDocument.Parse(body).RootElement.Clone();
     }
 
+    /// <summary>PUT /v1/me/safety-info the way the app does it: read the current ETag first and send it in If-Match.</summary>
+    public static Task<HttpResponseMessage> PutSafetyInfoAsync(HttpClient me, object body) => PutWithVersionAsync(me, "/v1/me/safety-info", "/v1/me/safety-info", body);
+
+    /// <summary>PUT /v1/me/profile with the ETag of GET /v1/me in If-Match.</summary>
+    public static Task<HttpResponseMessage> PutProfileAsync(HttpClient me, object body) => PutWithVersionAsync(me, "/v1/me", "/v1/me/profile", body);
+
+    public static async Task<HttpResponseMessage> PutWithVersionAsync(HttpClient client, string getPath, string putPath, object body)
+    {
+        using var current = await client.GetAsync(getPath);
+        current.IsSuccessStatusCode.Should().BeTrue(getPath);
+        current.Headers.ETag.Should().NotBeNull($"GET {getPath} returns an ETag");
+        using var request = new HttpRequestMessage(HttpMethod.Put, putPath) { Content = JsonContent.Create(body) };
+        request.Headers.IfMatch.Add(current.Headers.ETag!);
+        return await client.SendAsync(request);
+    }
+
     public static async Task<JsonElement> Problem(HttpResponseMessage response, int status)
     {
         var body = await response.Content.ReadAsStringAsync();

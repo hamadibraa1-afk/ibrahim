@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useState, type FormEvent } from 'react';
 import { useRouter } from '@/i18n/navigation';
-import { api } from '@/lib/api/client';
+import { apiVersioned, isVersionConflict } from '@/lib/api/client';
 import type { SafetyInfo, UpdateSafetyInfoRequest } from '@/lib/api/types';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -19,9 +19,11 @@ const EMPTY: UpdateSafetyInfoRequest = { contactPhone: null, trustedName: null, 
 
 /**
  * P21 Safety info, step 4 of 4 (optional). Saving or skipping both mark the step done. Skipping never erases
- * details saved earlier: when there are some, it just moves on (the step is already done).
+ * details saved earlier: when there are some, it just moves on (the step is already done). The save sends the
+ * version that was read (If-Match); on a 412 «تبقى البيانات مع الخطأ»: what the patient typed stays, the
+ * version is refreshed, and pressing save again stores it.
  */
-export function SafetyInfoForm({ initial }: { initial: SafetyInfo | null }) {
+export function SafetyInfoForm({ initial, version: initialVersion }: { initial: SafetyInfo | null; version: string | null }) {
   const t = useTranslations('safetyInfo');
   const te = useTranslations('errors');
   const router = useRouter();
@@ -31,6 +33,7 @@ export function SafetyInfoForm({ initial }: { initial: SafetyInfo | null }) {
   const [shareLocation, setShareLocation] = useState(initial?.shareLocation ?? false);
   const [errors, setErrors] = useState<Errors>({});
   const [busy, setBusy] = useState<'save' | 'skip' | null>(null);
+  const [version, setVersion] = useState(initialVersion);
   const hasSaved = Boolean(initial && (initial.contactPhone || initial.trustedName || initial.trustedPhone || initial.shareLocation));
 
   function skip() {
@@ -41,9 +44,19 @@ export function SafetyInfoForm({ initial }: { initial: SafetyInfo | null }) {
   async function put(body: UpdateSafetyInfoRequest, mode: 'save' | 'skip') {
     setBusy(mode);
     try {
-      await api<SafetyInfo>('me/safety-info', { method: 'PUT', body });
+      await apiVersioned<SafetyInfo>('me/safety-info', { method: 'PUT', body, ifMatch: version });
       router.push('/start/path');
     } catch (e) {
+      if (isVersionConflict(e)) {
+        try {
+          setVersion((await apiVersioned<SafetyInfo>('me/safety-info')).etag);
+        } catch {
+          // The next save answers 412 again and retries.
+        }
+        setErrors({ form: t('conflict') });
+        setBusy(null);
+        return;
+      }
       const fields = fieldErrorsOf(e);
       const mapped: Errors = { contactPhone: fields.contactPhone, trustedName: fields.trustedName, trustedPhone: fields.trustedPhone };
       setErrors({ ...mapped, form: mapped.contactPhone || mapped.trustedName || mapped.trustedPhone ? undefined : problemText(e, te('network')) });

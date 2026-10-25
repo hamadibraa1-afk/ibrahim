@@ -39,12 +39,12 @@ and P01, P02, P12 and P15 show the emergency numbers instead of the start button
 
 | Method | Path | Body → Response | Screen |
 |---|---|---|---|
-| GET | /v1/me | → Me | all (routing) |
-| PUT | /v1/me/profile | UpdateProfileRequest → Me | P31 |
+| GET | /v1/me | → Me + `ETag` (profile version) | all (routing) |
+| PUT | /v1/me/profile | `If-Match` + UpdateProfileRequest → Me + `ETag` (428 `error.settings.version_required` without If-Match, 412 `error.settings.version_changed` when another device saved first) | P31 |
 | PUT | /v1/me/language | { language } | toggle, P31 |
 | GET/PUT | /v1/me/consents | → Consent[] / UpdateConsentsRequest → Consent[] | P03, P11 |
-| GET/PUT | /v1/me/safety-info | SafetyInfo / UpdateSafetyInfoRequest (trustedName ≤ 100 and trustedPhone go together: one without the other is a 400 field error) | P21, P34 |
-| DELETE | /v1/me/safety-info/trusted-contact | → 204 | P34 |
+| GET/PUT | /v1/me/safety-info | SafetyInfo + `ETag` / `If-Match` + UpdateSafetyInfoRequest → SafetyInfo + `ETag` (trustedName ≤ 100 and trustedPhone go together: one without the other is a 400 field error; 428 without If-Match, 412 on a stale version) | P21, P34 |
+| DELETE | /v1/me/safety-info/trusted-contact | → 204 + `ETag` (the new safety-info version) | P34 |
 | PUT | /v1/me/path | { path } → Me | P22 |
 | POST | /v1/me/contact-request?source= | → ContactRequestCreated (`expectedBy`, `withinHours` from the triage SLA) | P04, P22 |
 | GET | /v1/me/security | → SecurityOverview | P32 |

@@ -68,7 +68,7 @@ public sealed class PatientJourneyTests : IAsyncLifetime
         await Read(await me.PutAsJsonAsync("/v1/me/consents", new { items = new[] { "platform", "ai", "share_with_therapist" }.Select(k => new { key = k, granted = true }) }));
 
         // P21, P22.
-        await Read(await me.PutAsJsonAsync("/v1/me/safety-info", new { contactPhone = "0551234521", trustedName = "أختي نورة", trustedPhone = "0559876543", shareLocation = true }));
+        await Read(await PutSafetyInfoAsync(me, new { contactPhone = "0551234521", trustedName = "أختي نورة", trustedPhone = "0559876543", shareLocation = true }));
         await Read(await me.PutAsJsonAsync("/v1/me/path", new { path = "intake" }));
 
         // P04: greeting, two turns, then PHQ-9 one item at a time; everything in Arabic.
@@ -313,7 +313,7 @@ public sealed class PatientJourneyTests : IAsyncLifetime
         var (access, _) = await SignUpAsync("en", $"direct-{Guid.NewGuid():N}@example.com");
         using var me = _hosts.ApiClient("en", access);
         await Read(await me.PutAsJsonAsync("/v1/me/consents", new { items = new[] { "platform", "ai", "share_with_therapist", "research" }.Select(k => new { key = k, granted = true }) }));
-        await Read(await me.PutAsJsonAsync("/v1/me/safety-info", new { shareLocation = false }));
+        await Read(await PutSafetyInfoAsync(me, new { shareLocation = false }));
         await Read(await me.PutAsJsonAsync("/v1/me/path", new { path = "direct" }));
 
         // P23: questions arrive in English; a clear result unlocks booking.
@@ -364,7 +364,7 @@ public sealed class PatientJourneyTests : IAsyncLifetime
         var (access, _) = await SignUpAsync("en", $"cancel-{Guid.NewGuid():N}@example.com");
         using var me = _hosts.ApiClient("en", access);
         await Read(await me.PutAsJsonAsync("/v1/me/consents", new { items = new[] { "platform", "ai", "share_with_therapist" }.Select(k => new { key = k, granted = true }) }));
-        await Read(await me.PutAsJsonAsync("/v1/me/safety-info", new { shareLocation = false }));
+        await Read(await PutSafetyInfoAsync(me, new { shareLocation = false }));
         await Read(await me.PutAsJsonAsync("/v1/me/path", new { path = "direct" }));
         await Read(await me.PostAsJsonAsync("/v1/screening/cssrs", new { answers = new bool[6] }));
 

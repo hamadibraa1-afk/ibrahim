@@ -24,7 +24,31 @@ export function navigationMock() {
 
 /** '@/lib/api/client' with api/authApi as spies and the real ApiError (so instanceof works). */
 export function clientMock() {
-  return { api: vi.fn(), authApi: vi.fn(), ApiError };
+  const api = vi.fn();
+  return { api, authApi: vi.fn(), ApiError, apiVersioned: versionedVia(api), isVersionConflict };
+}
+
+/** Every If-Match the forms sent, as (path, value). */
+export const ifMatchSent = vi.fn();
+
+/** The ETag the mocked apiVersioned answers with. */
+export const VERSION = '"v2"';
+
+/**
+ * apiVersioned on top of an api spy: the spy sees the same (path, { method, body }) as before, the If-Match
+ * goes to ifMatchSent, and every response carries VERSION as its ETag.
+ */
+export function versionedVia(api: (...args: unknown[]) => unknown) {
+  return async (path: string, options?: { ifMatch?: string | null; [key: string]: unknown }) => {
+    const { ifMatch, ...rest } = options ?? {};
+    ifMatchSent(path, ifMatch ?? null);
+    const data = await (options ? api(path, rest) : api(path));
+    return { data, etag: VERSION };
+  };
+}
+
+export function isVersionConflict(e: unknown): boolean {
+  return e instanceof ApiError && e.status === 412;
 }
 
 export function apiError(status: number, extra: Partial<ApiProblem> = {}): ApiError {
@@ -33,5 +57,6 @@ export function apiError(status: number, extra: Partial<ApiProblem> = {}): ApiEr
 
 export function resetAll() {
   for (const fn of Object.values(router)) fn.mockReset();
+  ifMatchSent.mockReset();
   window.sessionStorage.clear();
 }

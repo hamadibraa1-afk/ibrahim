@@ -66,6 +66,8 @@ public sealed partial class DomainExceptionHandler<TResource> : IExceptionHandle
         [ErrorCodes.FileVersionChanged] = StatusCodes.Status412PreconditionFailed,
         [ErrorCodes.FileApproved] = StatusCodes.Status409Conflict,
         [ErrorCodes.RiskNotHigher] = StatusCodes.Status400BadRequest,
+        [ErrorCodes.SettingsVersionRequired] = StatusCodes.Status428PreconditionRequired,
+        [ErrorCodes.SettingsVersionChanged] = StatusCodes.Status412PreconditionFailed,
     };
 
     private readonly IProblemDetailsService _problems;
