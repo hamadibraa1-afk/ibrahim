@@ -25,6 +25,13 @@
     "loading": "Loading your plan…",
     "offlineNotice": "You're offline. This is the last copy saved on your device, from {date}.",
     "editOffline": "You can edit the plan when you're back online.",
-    "unavailable": "We couldn't load your plan, and there's no copy saved on this device yet. Emergency numbers are always available below."
+    "unavailable": "We couldn't load your plan, and there's no copy saved on this device yet. Emergency numbers are always available below.",
+    "contacts": {
+      "legend": "People to call for help (up to 5)",
+      "name": "Contact {n} name",
+      "phone": "Contact {n} mobile number",
+      "add": "Add a contact",
+      "remove": "Remove contact {n}"
+    }
   }
 }

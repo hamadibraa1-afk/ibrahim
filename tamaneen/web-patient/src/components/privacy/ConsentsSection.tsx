@@ -11,9 +11,13 @@ import { Switch } from '@/components/ui/Switch';
 import { Dialog, DialogCancel } from '@/components/settings/Dialog';
 import { problemMessage } from '@/components/settings/problem';
 
+/** MyData listens for this to open its delete dialog: the AI dialog offers deletion instead (PB-56). */
+export const OPEN_DELETE_EVENT = 'tamaneen:open-delete-account';
+
 /**
- * "My consents" (P11). Required consents show as on and locked. Each change is saved at once; withdrawing
- * AI assistance first explains which features stop.
+ * "My consents" (P11). Consents that cannot be withdrawn (platform, sharing) show as on and locked; the rest are
+ * switches saved at once. Withdrawing AI assistance (required but withdrawable) first explains which features stop
+ * and offers the delete path; withdrawing the emergency location asks for confirmation.
  */
 export function ConsentsSection({ initial }: { initial: Consent[] }) {
   const t = useTranslations('privacy');
@@ -21,6 +25,7 @@ export function ConsentsSection({ initial }: { initial: Consent[] }) {
   const [consents, setConsents] = useState(initial);
   const [pending, setPending] = useState<ConsentKey | null>(null);
   const [confirmAi, setConfirmAi] = useState(false);
+  const [confirmLocation, setConfirmLocation] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
@@ -38,12 +43,17 @@ export function ConsentsSection({ initial }: { initial: Consent[] }) {
     } finally {
       setPending(null);
       setConfirmAi(false);
+      setConfirmLocation(false);
     }
   }
 
   function change(consent: Consent, granted: boolean) {
     if (consent.key === 'ai' && !granted) {
       setConfirmAi(true);
+      return;
+    }
+    if (consent.key === 'emergency_location' && !granted) {
+      setConfirmLocation(true);
       return;
     }
     void save(consent.key, granted);
@@ -56,7 +66,7 @@ export function ConsentsSection({ initial }: { initial: Consent[] }) {
       </h2>
       <ul className="divide-y divide-line rounded-card border border-line bg-surface px-4 py-1">
         {consents.map((consent) => {
-          const locked = consent.required || (consent.granted && !consent.withdrawable);
+          const locked = consent.granted && !consent.withdrawable;
           return (
             <li key={consent.key} data-testid={`consent-${consent.key}`}>
               <Switch
@@ -67,7 +77,7 @@ export function ConsentsSection({ initial }: { initial: Consent[] }) {
                   </span>
                 }
                 description={consent.required ? t('requiredHint') : undefined}
-                checked={consent.required ? true : consent.granted}
+                checked={consent.granted}
                 disabled={locked || pending !== null}
                 onChange={(next) => change(consent, next)}
               />
@@ -87,6 +97,26 @@ export function ConsentsSection({ initial }: { initial: Consent[] }) {
             {t('aiDialogConfirm')}
           </Button>
           <DialogCancel onClick={() => setConfirmAi(false)} />
+          <Button
+            variant="ghost"
+            full
+            onClick={() => {
+              setConfirmAi(false);
+              window.dispatchEvent(new Event(OPEN_DELETE_EVENT));
+            }}
+          >
+            {t('aiDialogDelete')}
+          </Button>
+        </div>
+      </Dialog>
+
+      <Dialog open={confirmLocation} onClose={() => setConfirmLocation(false)} title={t('locationDialogTitle')}>
+        <p className="text-sm leading-relaxed text-muted">{t('locationDialogBody')}</p>
+        <div className="flex flex-col gap-2">
+          <Button variant="danger" full busy={pending === 'emergency_location'} onClick={() => save('emergency_location', false)}>
+            {t('locationDialogConfirm')}
+          </Button>
+          <DialogCancel onClick={() => setConfirmLocation(false)} />
         </div>
       </Dialog>
     </section>

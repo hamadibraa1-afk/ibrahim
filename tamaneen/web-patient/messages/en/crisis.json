@@ -21,6 +21,13 @@
     "updateNumber": "Has my number changed? Update the contact number",
     "noEventTitle": "Would you like a professional to call you?",
     "noEventBody": "Press the button and a member of our clinical team will call you within minutes.",
-    "requestCall": "Ask a professional to call me now"
+    "requestCall": "Ask a professional to call me now",
+    "abroad": "Outside the pilot region? Call the international emergency number <first></first> or <second></second>, or the emergency number of the country you are in.",
+    "helpNow": {
+      "sending": "Sending your request to the clinical team now…",
+      "queued": "There is no connection right now. We will send your request when the connection returns; the emergency numbers on this screen work now.",
+      "failed": "We could not send the request. Call the emergency numbers on this screen now.",
+      "close": "Close"
+    }
   }
 }

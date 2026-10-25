@@ -48,6 +48,7 @@ public sealed partial class DomainExceptionHandler<TResource> : IExceptionHandle
         [ErrorCodes.TriageAlreadyReviewed] = StatusCodes.Status409Conflict,
         [ErrorCodes.TotpAlreadyEnabled] = StatusCodes.Status409Conflict,
         [ErrorCodes.IntakeClosed] = StatusCodes.Status409Conflict,
+        [ErrorCodes.DeletionBlockedByCrisis] = StatusCodes.Status409Conflict,
         [ErrorCodes.CrisisServiceUnavailable] = StatusCodes.Status503ServiceUnavailable,
     };
 

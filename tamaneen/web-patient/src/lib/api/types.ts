@@ -105,10 +105,13 @@ export interface NotificationPrefs {
 export interface AccessLogEntry { actor: 'therapist' | 'supervisor' | 'clinical_lead' | 'system' | 'crisis_service' | 'patient'; action: string; atUtc: string }
 export interface DataRequestStatus { exportRequestedAt: string | null; exportReadyBy: string | null; exportReady: boolean }
 export interface DeleteAccountRequest { password: string }
+/** POST /v1/me/data-export asks for the password again (PB-58). */
+export interface DataExportRequest { password: string }
 
 // ---------- Screening (P23) ----------
 export interface ScreeningQuestion { index: number; text: string }
 export interface ScreeningForm { instrument: 'cssrs'; version: string; questions: ScreeningQuestion[]; note: string }
+/** The answers given so far, in order (1 to 6). Sent after every answer; only a complete set is stored. */
 export interface ScreeningSubmit { answers: boolean[] }
 export interface GateOutcome { crisis: boolean; level: number; script?: string }
 
@@ -143,6 +146,8 @@ export interface AddToSummaryRequest { text: string }
 // ---------- Crisis (P06, P14) ----------
 export interface CrisisStatus { locked: boolean; eventOpen: boolean; acknowledged: boolean; contactPhoneLast4: string | null; script: string | null }
 export interface HelpResponse extends GateOutcome { eventOpen: boolean }
+/** Body of POST /v1/crisis/help. requestId is the device-generated idempotency key, reused on every retry. */
+export interface HelpRequest { requestId?: string }
 
 // ---------- Therapists, matching, booking ----------
 export type Gender = 'female' | 'male';
@@ -220,7 +225,9 @@ export interface CheckinRequest { status: CheckinStatus; feeling: number | null;
 export interface CheckinResponse extends GateOutcome { homework: HomeworkDetail }
 
 export type SafetyPlanSection = 'warningSigns' | 'copingAlone' | 'distractions' | 'peopleToAsk' | 'professionals' | 'safeEnvironment' | 'reasonToLive';
-export interface SafetyPlan { sections: Record<SafetyPlanSection, string>; updatedAt: string | null; coAuthor: string | null }
-export interface UpdateSafetyPlanRequest { sections: Record<SafetyPlanSection, string> }
+/** A personal help contact in section 4 (P37), shown as a tel: button. Name up to 100 characters; at most 5. */
+export interface PlanContact { name: string; phone: string }
+export interface SafetyPlan { sections: Record<SafetyPlanSection, string>; contacts: PlanContact[]; updatedAt: string | null; coAuthor: string | null }
+export interface UpdateSafetyPlanRequest { sections: Record<SafetyPlanSection, string>; contacts: PlanContact[] }
 
 export interface ContactRequestCreated { requestedAt: string }

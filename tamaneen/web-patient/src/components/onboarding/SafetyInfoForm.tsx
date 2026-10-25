@@ -17,7 +17,10 @@ type Errors = Partial<Record<'contactPhone' | 'trustedName' | 'trustedPhone' | '
 
 const EMPTY: UpdateSafetyInfoRequest = { contactPhone: null, trustedName: null, trustedPhone: null, shareLocation: false };
 
-/** P21 Safety info, step 4 of 4 (optional). Saving or skipping both mark the step done. */
+/**
+ * P21 Safety info, step 4 of 4 (optional). Saving or skipping both mark the step done. Skipping never erases
+ * details saved earlier: when there are some, it just moves on (the step is already done).
+ */
 export function SafetyInfoForm({ initial }: { initial: SafetyInfo | null }) {
   const t = useTranslations('safetyInfo');
   const te = useTranslations('errors');
@@ -28,6 +31,12 @@ export function SafetyInfoForm({ initial }: { initial: SafetyInfo | null }) {
   const [shareLocation, setShareLocation] = useState(initial?.shareLocation ?? false);
   const [errors, setErrors] = useState<Errors>({});
   const [busy, setBusy] = useState<'save' | 'skip' | null>(null);
+  const hasSaved = Boolean(initial && (initial.contactPhone || initial.trustedName || initial.trustedPhone || initial.shareLocation));
+
+  function skip() {
+    if (hasSaved) router.push('/start/path');
+    else void put(EMPTY, 'skip');
+  }
 
   async function put(body: UpdateSafetyInfoRequest, mode: 'save' | 'skip') {
     setBusy(mode);
@@ -48,6 +57,7 @@ export function SafetyInfoForm({ initial }: { initial: SafetyInfo | null }) {
     if (contactPhone.trim() && !isValidPhone(contactPhone)) next.contactPhone = t('phoneInvalid');
     if (trustedPhone.trim() && !isValidPhone(trustedPhone)) next.trustedPhone = t('phoneInvalid');
     if (trustedPhone.trim() && !trustedName.trim()) next.trustedName = t('trustedNameRequired');
+    if (trustedName.trim() && !trustedPhone.trim()) next.trustedPhone = t('trustedPhoneRequired');
     setErrors(next);
     if (Object.keys(next).length > 0) return;
     void put(
@@ -61,12 +71,12 @@ export function SafetyInfoForm({ initial }: { initial: SafetyInfo | null }) {
     );
   }
 
-  const phoneProps = { dir: 'ltr' as const, type: 'tel', inputMode: 'tel' as const, placeholder: '05X XXX XXXX', className: 'text-start' };
+  const phoneProps = { dir: 'ltr' as const, type: 'tel', inputMode: 'tel' as const, placeholder: '05X XXX XXXX', className: 'text-start', maxLength: 32 };
 
   return (
     <form onSubmit={save} noValidate className="flex flex-col gap-5">
       <TextField label={t('contactPhone')} value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} autoComplete="tel" error={errors.contactPhone} {...phoneProps} />
-      <TextField label={t('trustedName')} value={trustedName} onChange={(e) => setTrustedName(e.target.value)} autoComplete="off" placeholder={t('trustedNamePlaceholder')} maxLength={60} error={errors.trustedName} />
+      <TextField label={t('trustedName')} value={trustedName} onChange={(e) => setTrustedName(e.target.value)} autoComplete="off" placeholder={t('trustedNamePlaceholder')} maxLength={100} error={errors.trustedName} />
       <TextField label={t('trustedPhone')} value={trustedPhone} onChange={(e) => setTrustedPhone(e.target.value)} autoComplete="off" error={errors.trustedPhone} {...phoneProps} />
       <Card className="border border-line">
         <Switch checked={shareLocation} onChange={setShareLocation} label={t('shareLocation')} description={t('shareLocationHint')} />
@@ -78,9 +88,10 @@ export function SafetyInfoForm({ initial }: { initial: SafetyInfo | null }) {
         <Button type="submit" full busy={busy === 'save'} disabled={busy !== null}>
           {t('save')}
         </Button>
-        <Button variant="secondary" full busy={busy === 'skip'} disabled={busy !== null} onClick={() => void put(EMPTY, 'skip')}>
+        <Button variant="secondary" full busy={busy === 'skip'} disabled={busy !== null} onClick={skip}>
           {t('skip')}
         </Button>
+        <p className="text-center text-sm leading-relaxed text-muted">{t('skipWhy')}</p>
       </div>
     </form>
   );

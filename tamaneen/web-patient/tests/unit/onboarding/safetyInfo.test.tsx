@@ -44,4 +44,20 @@ describe('P21 Safety info', () => {
       body: { contactPhone: '0551234521', trustedName: 'My sister', trustedPhone: '0551112222', shareLocation: true },
     });
   });
+
+  it('skips without erasing details saved earlier', async () => {
+    renderWithIntl(<SafetyInfoForm initial={{ contactPhone: '0551234521', trustedName: null, trustedPhone: null, shareLocation: false, shareLocationSince: null }} />, 'en');
+    expect(screen.getByText(/Why this helps/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Skip for now' }));
+    expect(router.push).toHaveBeenCalledWith('/start/path');
+    expect(apiMock).not.toHaveBeenCalled();
+  });
+
+  it('asks for the number when only a trusted name is given', async () => {
+    renderWithIntl(<SafetyInfoForm initial={null} />, 'ar');
+    await userEvent.type(screen.getByLabelText('اسم شخص تثق به'), 'أختي');
+    await userEvent.click(screen.getByRole('button', { name: 'حفظ والمتابعة' }));
+    expect(screen.getByText('أضف رقم جوال الشخص الذي تثق به، أو احذف اسمه.')).toBeInTheDocument();
+    expect(apiMock).not.toHaveBeenCalled();
+  });
 });

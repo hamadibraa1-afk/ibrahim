@@ -80,6 +80,19 @@ internal sealed class ChatLockConfiguration : IEntityTypeConfiguration<ChatLock>
     }
 }
 
+internal sealed class HelpRequestConfiguration : IEntityTypeConfiguration<HelpRequest>
+{
+    public void Configure(EntityTypeBuilder<HelpRequest> b)
+    {
+        b.ToTable("HelpRequests", Schemas.Crisis);
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).ValueGeneratedNever();
+        b.HasIndex(x => new { x.PatientId, x.RequestKey }).IsUnique().HasDatabaseName("UX_HelpRequests_PatientKey");
+        b.HasOne<CrisisEvent>().WithMany().HasForeignKey(x => x.CrisisEventId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<UserAccount>().WithMany().HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
 internal sealed class PageRequestConfiguration : IEntityTypeConfiguration<PageRequest>
 {
     public void Configure(EntityTypeBuilder<PageRequest> b)

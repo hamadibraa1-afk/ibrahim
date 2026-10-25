@@ -38,6 +38,8 @@ public sealed class TamaneenDbContext : DbContext
 
     public DbSet<PageRequest> PageRequests => Set<PageRequest>();
 
+    public DbSet<HelpRequest> HelpRequests => Set<HelpRequest>();
+
     public DbSet<AiCallRecord> AiCallRecords => Set<AiCallRecord>();
 
     public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();

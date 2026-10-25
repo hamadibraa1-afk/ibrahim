@@ -310,6 +310,27 @@ describe('SafetyForm', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
+  it('keeps the trusted name and number together', async () => {
+    renderWithIntl(<SafetyForm initial={safety} timeZone="Asia/Riyadh" />, 'en');
+    await userEvent.clear(screen.getByRole('textbox', { name: 'Their mobile number' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(screen.getByText('Add the mobile number of the person you trust, or remove their name.')).toBeInTheDocument();
+    expect(mocks.api).not.toHaveBeenCalled();
+  });
+
+  it('asks before turning location sharing off (Arabic)', async () => {
+    mocks.api.mockImplementation(async (_p: string, { body }: { body: SafetyInfo }) => ({ ...body, shareLocationSince: null }));
+    renderWithIntl(<SafetyForm initial={safety} timeZone="Asia/Riyadh" />, 'ar');
+    const sw = screen.getByRole('switch', { name: /مشاركة موقعي عند الطوارئ/ });
+    await userEvent.click(sw);
+    const dialog = screen.getByRole('dialog', { name: 'إيقاف مشاركة موقعك عند الطوارئ؟' });
+    expect(sw).toHaveAttribute('aria-checked', 'true');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'إيقاف المشاركة' }));
+    expect(sw).toHaveAttribute('aria-checked', 'false');
+    await userEvent.click(screen.getByRole('button', { name: 'حفظ' }));
+    expect(mocks.api).toHaveBeenCalledWith('me/safety-info', { method: 'PUT', body: { contactPhone: '0500004521', trustedName: 'أختي', trustedPhone: '0511111111', shareLocation: false } });
+  });
+
   it('closes a dialog with Escape', async () => {
     renderWithIntl(<SafetyForm initial={safety} timeZone="Asia/Riyadh" />, 'en');
     await userEvent.click(screen.getByRole('button', { name: 'Delete emergency contact' }));

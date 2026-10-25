@@ -68,6 +68,19 @@
     "deletePassword": "كلمة المرور للتأكيد",
     "deletePasswordRequired": "أدخل كلمة المرور.",
     "deleteConfirm": "حذف حسابي نهائيًا",
-    "back": "الإعدادات"
+    "back": "الإعدادات",
+    "aiDialogDelete": "أفضّل حذف حسابي",
+    "locationDialogTitle": "إيقاف مشاركة موقعك عند الطوارئ؟",
+    "locationDialogBody": "إذا كنت في خطر ولم نتمكن من الوصول إليك، لن يعرف المناوب السريري مكانك لإرسال المساعدة. يمكنك تفعيلها مرة أخرى متى شئت.",
+    "locationDialogConfirm": "إيقاف مشاركة الموقع",
+    "exportDialogTitle": "تنزيل نسخة من بياناتك",
+    "exportDialogBody": "لحماية بياناتك، أدخل كلمة المرور مرة أخرى. ستكون النسخة جاهزة خلال 7 أيام، ويبقى رابط التنزيل صالحًا 72 ساعة.",
+    "exportConfirm": "اطلب النسخة",
+    "deleteWord": "حذف",
+    "deleteWordLabel": "اكتب «{word}» للتأكيد",
+    "deleteWordRequired": "اكتب «{word}» كما هي للتأكيد.",
+    "deleteBlockedTitle": "لا يمكن حذف الحساب الآن",
+    "deleteBlockedBody": "لديك طلب مساعدة مفتوح مع فريقنا السريري. نحتاج بياناتك للتواصل معك، وسنتمكن من حذف الحساب بعد إغلاق الطلب.",
+    "deleteBlockedLink": "افتح شاشة الطوارئ"
   }
 }

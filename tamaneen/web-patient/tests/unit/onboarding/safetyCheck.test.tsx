@@ -18,19 +18,14 @@ const form: ScreeningForm = {
   note: 'الترجمة العربية المعتمدة للمقياس.',
 };
 
-async function answerAll(yesAt: number[], yes: string, no: string) {
-  for (let i = 0; i < 6; i++) {
-    await userEvent.click(screen.getByRole('radio', { name: yesAt.includes(i) ? yes : no }));
-  }
-}
-
 describe('P23 Safety check', () => {
   beforeEach(() => {
     resetAll();
     apiMock.mockReset();
   });
 
-  it('asks one question at a time with a counter, back navigation, the note and the help line (Arabic)', async () => {
+  it('asks one question at a time with a counter, the note and the help line, and no way back (Arabic)', async () => {
+    apiMock.mockResolvedValue({ crisis: false, level: 0 });
     renderWithIntl(<SafetyCheck form={form} emergencyNumber="997" />, 'ar');
     expect(screen.getByTestId('question-count')).toHaveTextContent('1 من 6');
     expect(screen.getByRole('heading', { level: 2, name: 'سؤال 1' })).toBeInTheDocument();
@@ -38,27 +33,43 @@ describe('P23 Safety check', () => {
     expect(screen.getByRole('link', { name: '997' })).toHaveAttribute('href', 'tel:997');
 
     await userEvent.click(screen.getByRole('radio', { name: 'لا' }));
-    expect(screen.getByRole('heading', { level: 2, name: 'سؤال 2' })).toHaveFocus();
+    expect(await screen.findByRole('heading', { level: 2, name: 'سؤال 2' })).toHaveFocus();
     expect(screen.getByTestId('question-count')).toHaveTextContent('2 من 6');
-    await userEvent.click(screen.getByRole('button', { name: 'السؤال السابق' }));
-    expect(screen.getByRole('radio', { name: 'لا' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.queryByRole('button', { name: 'السؤال السابق' })).toBeNull();
+    expect(apiMock).toHaveBeenCalledWith('screening/cssrs', { method: 'POST', body: { answers: [false] } });
   });
 
-  it('opens the crisis screen at once when the gate says crisis', async () => {
-    apiMock.mockResolvedValueOnce({ crisis: true, level: 4 });
+  it('sends each answer to the gate as it is given and opens the crisis screen at the first «yes» that triggers it', async () => {
+    apiMock.mockResolvedValueOnce({ crisis: false, level: 0 }).mockResolvedValueOnce({ crisis: true, level: 3 });
     renderWithIntl(<SafetyCheck form={form} emergencyNumber="997" />, 'en');
-    await answerAll([1], 'Yes', 'No');
+    await userEvent.click(screen.getByRole('radio', { name: 'No' }));
+    await screen.findByRole('heading', { level: 2, name: 'سؤال 2' });
+    await userEvent.click(screen.getByRole('radio', { name: 'Yes' }));
     await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/crisis'));
-    expect(apiMock).toHaveBeenCalledWith('screening/cssrs', { method: 'POST', body: { answers: [false, true, false, false, false, false] } });
+    expect(apiMock).toHaveBeenLastCalledWith('screening/cssrs', { method: 'POST', body: { answers: [false, true] } });
+    expect(apiMock).toHaveBeenCalledTimes(2);
     expect(router.push).not.toHaveBeenCalled();
   });
 
-  it('continues to the therapist directory otherwise', async () => {
-    apiMock.mockResolvedValueOnce({ crisis: false, level: 0 });
+  it('keeps the answer and offers a retry when sending fails', async () => {
+    apiMock.mockRejectedValueOnce(new TypeError('Failed to fetch')).mockResolvedValueOnce({ crisis: true, level: 4 });
+    renderWithIntl(<SafetyCheck form={form} emergencyNumber="997" />, 'en');
+    await userEvent.click(screen.getByRole('radio', { name: 'Yes' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Send again' }));
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/crisis'));
+    expect(apiMock).toHaveBeenLastCalledWith('screening/cssrs', { method: 'POST', body: { answers: [true] } });
+  });
+
+  it('continues to the therapist directory after the last answer', async () => {
+    apiMock.mockResolvedValue({ crisis: false, level: 0 });
     renderWithIntl(<SafetyCheck form={form} emergencyNumber={null} />, 'en');
     expect(screen.getByRole('link', { name: 'open emergency resources' })).toHaveAttribute('href', '/crisis-resources');
-    await answerAll([], 'Yes', 'No');
+    for (let i = 0; i < 6; i++) {
+      await screen.findByRole('heading', { level: 2, name: `سؤال ${i + 1}` });
+      await userEvent.click(screen.getByRole('radio', { name: 'No' }));
+    }
     await waitFor(() => expect(router.push).toHaveBeenCalledWith('/therapists'));
+    expect(apiMock).toHaveBeenLastCalledWith('screening/cssrs', { method: 'POST', body: { answers: [false, false, false, false, false, false] } });
     expect(router.replace).not.toHaveBeenCalled();
   });
 });

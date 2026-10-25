@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Globalization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
@@ -27,6 +28,9 @@ public static class CareEndpoints
 
     public sealed record HelpResponseDto(bool Crisis, int Level, string? Script, bool EventOpen);
 
+    /// <summary>Optional body of POST /v1/crisis/help: the id the device generated for this press (idempotency key).</summary>
+    public sealed record HelpRequestBody(Guid? RequestId);
+
     public sealed record HomeworkTodayDto(Guid Id, string Title, int? Minutes, int DoneDays, int TotalDays);
 
     public sealed record FeedbackDto(string TherapistName, string Initials, string Text, DateTimeOffset At);
@@ -54,9 +58,18 @@ public static class CareEndpoints
 
     public sealed record CheckinResponse(bool Crisis, int Level, string? Script, HomeworkDetailDto Homework);
 
-    public sealed record SafetyPlanDto(IReadOnlyDictionary<string, string> Sections, DateTimeOffset? UpdatedAt, string? CoAuthor, bool Crisis = false, string? Script = null);
+    /// <summary>A personal help contact in section 4 of the safety plan (P37), shown as a tel: button.</summary>
+    public sealed record PlanContactDto(string Name, string Phone);
 
-    public sealed record UpdateSafetyPlanRequest(Dictionary<string, string>? Sections);
+    public sealed record SafetyPlanDto(IReadOnlyDictionary<string, string> Sections, IReadOnlyList<PlanContactDto> Contacts, DateTimeOffset? UpdatedAt, string? CoAuthor, bool Crisis = false, string? Script = null);
+
+    public sealed record UpdateSafetyPlanRequest(Dictionary<string, string>? Sections, List<PlanContactDto>? Contacts);
+
+    /// <summary>The encrypted plan. Older plans were stored as the bare section dictionary; both shapes are read.</summary>
+    public sealed record StoredSafetyPlan(Dictionary<string, string> Sections, List<PlanContactDto>? Contacts);
+
+    public const int MaxPlanContacts = 5;
+    public const int MaxPlanContactName = 100;
 
     public static IEndpointRouteBuilder MapCareEndpoints(this IEndpointRouteBuilder app)
     {
@@ -106,11 +119,52 @@ public static class CareEndpoints
         return TypedResults.Ok(new CrisisStatusDto(locked, open is not null, open?.Status == CrisisEventStatus.Acknowledged, digits is { Length: >= 4 } ? digits[^4..] : null, script));
     }
 
-    /// <summary>"Ask a professional to call me now": always a Critical event, paged at once.</summary>
-    internal static async Task<Ok<HelpResponseDto>> HelpAsync(PatientContext p, CancellationToken ct)
+    /// <summary>
+    /// "Help now" / "Ask a professional to call me now": always a Critical event, paged at once. With a request id
+    /// the call is idempotent: a double tap or a queued resend (EC-04) gets the first answer back and never reaches
+    /// the gate again, so it cannot open a second event after the first one was closed.
+    /// </summary>
+    internal static async Task<Ok<HelpResponseDto>> HelpAsync(HelpRequestBody? request, PatientContext p, IOptions<PlatformOptions> platform, IClock clock, CancellationToken ct)
     {
+        var key = request?.RequestId is { } id && id != Guid.Empty ? id : (Guid?)null;
+        if (key is not null && await ReplayHelpAsync(p, key.Value, platform.Value, ct).ConfigureAwait(false) is { } replay)
+        {
+            return TypedResults.Ok(replay);
+        }
+
         var verdict = await p.GateAsync(null, null, "help_now", ct).ConfigureAwait(false);
+        if (key is not null)
+        {
+            var row = HelpRequest.Record(p.PatientId, key.Value, verdict.CrisisEventId, clock);
+            p.Db.HelpRequests.Add(row);
+            try
+            {
+                await p.Db.SaveChangesAsync(ct).ConfigureAwait(false);
+            }
+            catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("UX_HelpRequests_PatientKey", StringComparison.Ordinal) == true)
+            {
+                // The same press arrived twice at once. The gate keeps one open event per patient, so both share it.
+                p.Db.Entry(row).State = EntityState.Detached;
+            }
+        }
+
         return TypedResults.Ok(new HelpResponseDto(verdict.Crisis, (int)verdict.Level, verdict.Script, verdict.CrisisEventId is not null));
+    }
+
+    private static async Task<HelpResponseDto?> ReplayHelpAsync(PatientContext p, Guid key, PlatformOptions platform, CancellationToken ct)
+    {
+        var seen = await p.Db.HelpRequests.AsNoTracking().Where(h => h.PatientId == p.PatientId && h.RequestKey == key).FirstOrDefaultAsync(ct).ConfigureAwait(false);
+        if (seen is null)
+        {
+            return null;
+        }
+
+        var crisisEvent = seen.CrisisEventId is { } eventId
+            ? await p.Db.CrisisEvents.AsNoTracking().FirstOrDefaultAsync(e => e.Id == eventId, ct).ConfigureAwait(false)
+            : null;
+        var level = crisisEvent?.Level ?? RiskLevel.Critical;
+        var script = Scripts.Value.Render(CrisisScripts.KindFor(level), p.Language, platform.EmergencyNumber, platform.SupportLine);
+        return new HelpResponseDto(true, (int)level, script, crisisEvent is { Status: not CrisisEventStatus.Closed });
     }
 
     // ---------- P09 ----------
@@ -331,11 +385,11 @@ public static class CareEndpoints
         var sections = SafetyPlan.Sections.ToDictionary(s => s, _ => string.Empty);
         if (plan is null)
         {
-            return new SafetyPlanDto(sections, null, null);
+            return new SafetyPlanDto(sections, [], null, null);
         }
 
-        var stored = await p.DecryptJsonAsync<Dictionary<string, string>>(Fields.SafetyPlan, plan.SectionsCipher, ct).ConfigureAwait(false) ?? [];
-        foreach (var (k, v) in stored.Where(kv => sections.ContainsKey(kv.Key)))
+        var stored = ReadStoredPlan(await p.DecryptAsync(Fields.SafetyPlan, plan.SectionsCipher, ct).ConfigureAwait(false));
+        foreach (var (k, v) in stored.Sections.Where(kv => sections.ContainsKey(kv.Key)))
         {
             sections[k] = v;
         }
@@ -346,7 +400,19 @@ public static class CareEndpoints
             coAuthor = await p.Db.StaffProfiles.AsNoTracking().Where(s => s.UserId == therapist).Select(s => p.Language == "en" ? s.DisplayNameEn : s.DisplayNameAr).FirstOrDefaultAsync(ct).ConfigureAwait(false);
         }
 
-        return new SafetyPlanDto(sections, plan.UpdatedAtUtc, coAuthor);
+        return new SafetyPlanDto(sections, stored.Contacts ?? [], plan.UpdatedAtUtc, coAuthor);
+    }
+
+    internal static StoredSafetyPlan ReadStoredPlan(string json)
+    {
+        using var doc = JsonDocument.Parse(json);
+        if (doc.RootElement.ValueKind == JsonValueKind.Object && doc.RootElement.TryGetProperty("sections", out var nested) && nested.ValueKind == JsonValueKind.Object)
+        {
+            var plan = doc.RootElement.Deserialize<StoredSafetyPlan>(PatientContext.Json);
+            return new StoredSafetyPlan(plan?.Sections ?? [], plan?.Contacts ?? []);
+        }
+
+        return new StoredSafetyPlan(doc.RootElement.Deserialize<Dictionary<string, string>>(PatientContext.Json) ?? [], []);
     }
 
     internal static async Task<Ok<SafetyPlanDto>> UpdateSafetyPlanAsync(UpdateSafetyPlanRequest request, PatientContext p, ICurrentUser user, IAuditLog audit, IClock clock, CancellationToken ct)
@@ -357,7 +423,8 @@ public static class CareEndpoints
             throw MeEndpoints.Invalid("sections");
         }
 
-        var all = string.Join("\n", sections.Values.Where(v => v.Length > 0));
+        var contacts = CleanContacts(request.Contacts);
+        var all = string.Join("\n", sections.Values.Concat(contacts.Select(c => c.Name)).Where(v => v.Length > 0));
         Gate.GateVerdict? verdict = null;
         if (all.Length > 0)
         {
@@ -371,10 +438,32 @@ public static class CareEndpoints
             p.Db.SafetyPlans.Add(plan);
         }
 
-        plan.Update(await p.EncryptJsonAsync(Fields.SafetyPlan, sections, ct).ConfigureAwait(false), user.UserId!.Value, user.Role!, clock);
+        plan.Update(await p.EncryptJsonAsync(Fields.SafetyPlan, new StoredSafetyPlan(sections, contacts), ct).ConfigureAwait(false), user.UserId!.Value, user.Role!, clock);
         audit.Append("safety_plan.updated", "SafetyPlan", null, (await p.AccountAsync(ct).ConfigureAwait(false)).PseudonymId);
         await p.Db.SaveChangesAsync(ct).ConfigureAwait(false);
         return TypedResults.Ok(await PlanAsync(p, ct).ConfigureAwait(false) with { Crisis = verdict?.Crisis ?? false, Script = verdict is { Crisis: true } ? verdict.Script : null });
+    }
+
+    /// <summary>Each contact needs a name (up to 100 characters) and a valid phone number; at most five.</summary>
+    private static List<PlanContactDto> CleanContacts(List<PlanContactDto>? contacts)
+    {
+        var list = contacts ?? [];
+        if (list.Count > MaxPlanContacts)
+        {
+            throw MeEndpoints.Invalid("contacts");
+        }
+
+        return list.Select((c, i) =>
+        {
+            var name = c?.Name?.Trim();
+            if (string.IsNullOrEmpty(name) || name.Length > MaxPlanContactName)
+            {
+                throw MeEndpoints.Invalid($"contacts[{i}].name");
+            }
+
+            var phone = MeEndpoints.CleanPhone(c!.Phone, $"contacts[{i}].phone") ?? throw MeEndpoints.Invalid($"contacts[{i}].phone");
+            return new PlanContactDto(name, phone);
+        }).ToList();
     }
 
     // ---------- time helpers ----------

@@ -1,17 +1,10 @@
-import { getTranslations } from 'next-intl/server';
-import { Link } from '@/i18n/navigation';
+import { HelpNow } from '@/components/crisis/HelpNowButton';
 
-/** Always visible. Leads to emergency resources (P14), which are cached by the service worker for offline use. */
-export async function HelpNowLink() {
-  const t = await getTranslations('common');
-  return (
-    <Link
-      href="/crisis-resources"
-      aria-label={t('helpNowLabel')}
-      data-testid="help-now"
-      className="inline-flex min-h-touch items-center rounded-full border-[1.5px] border-help bg-surface px-4 text-sm font-semibold text-help"
-    >
-      {t('helpNow')}
-    </Link>
-  );
+/**
+ * Always visible. Signed in, it is the Help now button (PB-26): numbers first, then a Critical event and the
+ * crisis screen (P06), queued while offline (EC-04). Without a session, and before the page is interactive,
+ * it leads to the public emergency resources (P14), which the service worker keeps for offline use.
+ */
+export function HelpNowLink() {
+  return <HelpNow />;
 }
