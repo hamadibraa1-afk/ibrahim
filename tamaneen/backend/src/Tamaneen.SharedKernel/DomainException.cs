@@ -106,4 +106,7 @@ public static class ErrorCodes
     public const string SlotOverlap = "error.slot.overlap";
     public const string SlotTooSoon = "error.slot.too_soon";
     public const string AppointmentNotLateable = "error.appointment.not_lateable";
+    public const string CapacityBelowCaseload = "error.profile.capacity_below_caseload";
+    public const string ProfileContactDetails = "error.profile.contact_details";
+    public const string TotpMoveExpired = "error.totp.move_expired";
 }

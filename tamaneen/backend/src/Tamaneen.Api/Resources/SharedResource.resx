@@ -112,4 +112,62 @@
   <data name="error.appointment.not_lateable" xml:space="preserve"><value>You can only say you're running late from 10 minutes before a session until it ends.</value></data>
   <data name="validation.overlap" xml:space="preserve"><value>These periods overlap.</value></data>
   <data name="validation.end_before_start" xml:space="preserve"><value>The end must be after the start.</value></data>
+  <data name="notify.generic" xml:space="preserve"><value>You have a new notification.</value></data>
+  <data name="notify.appointment.booked" xml:space="preserve"><value>Your appointment with {therapist} is booked for {time}.</value></data>
+  <data name="notify.appointment.booked.plain" xml:space="preserve"><value>Your appointment is booked.</value></data>
+  <data name="notify.appointment.rescheduled" xml:space="preserve"><value>Your appointment with {therapist} moved to {time}.</value></data>
+  <data name="notify.appointment.rescheduled.plain" xml:space="preserve"><value>Your appointment time changed.</value></data>
+  <data name="notify.appointment.cancelled" xml:space="preserve"><value>You cancelled your appointment on {time}. You can book another time whenever you like.</value></data>
+  <data name="notify.appointment.cancelled.plain" xml:space="preserve"><value>You cancelled your appointment. You can book another time whenever you like.</value></data>
+  <data name="notify.appointment.cancelled_by_therapist" xml:space="preserve"><value>{therapist} had to cancel the appointment on {time}. Choose another time that suits you.</value></data>
+  <data name="notify.appointment.cancelled_by_therapist.plain" xml:space="preserve"><value>Your therapist had to cancel an appointment. Choose another time that suits you.</value></data>
+  <data name="notify.appointment.running_late" xml:space="preserve"><value>{therapist} is running about {minutes} minutes late for your appointment.</value></data>
+  <data name="notify.appointment.running_late.plain" xml:space="preserve"><value>Your therapist is running a little late for your appointment.</value></data>
+  <data name="notify.appointment.missed" xml:space="preserve"><value>You missed your appointment on {time}. That's okay, you can book a new one.</value></data>
+  <data name="notify.appointment.missed.plain" xml:space="preserve"><value>You missed an appointment. That's okay, you can book a new one.</value></data>
+  <data name="notify.appointment.reminder_24h" xml:space="preserve"><value>Your session with {therapist} is tomorrow, {time}.</value></data>
+  <data name="notify.appointment.reminder_24h.plain" xml:space="preserve"><value>Your session is tomorrow.</value></data>
+  <data name="notify.appointment.reminder_1h" xml:space="preserve"><value>Your session starts in an hour ({time}). The join link opens ten minutes before.</value></data>
+  <data name="notify.appointment.reminder_1h.plain" xml:space="preserve"><value>Your session starts in an hour.</value></data>
+  <data name="notify.session.therapist_joined" xml:space="preserve"><value>{therapist} has joined the session and is waiting for you.</value></data>
+  <data name="notify.session.therapist_joined.plain" xml:space="preserve"><value>Your therapist has joined the session and is waiting for you.</value></data>
+  <data name="notify.waitlist.slot_open" xml:space="preserve"><value>A time that fits your preferences is free. Book it before someone else does.</value></data>
+  <data name="notify.triage.matches_ready" xml:space="preserve"><value>Your therapist suggestions are ready.</value></data>
+  <data name="notify.homework.assigned" xml:space="preserve"><value>A new exercise in your homework.</value></data>
+  <data name="notify.homework.feedback" xml:space="preserve"><value>{therapist} replied to your homework check-in.</value></data>
+  <data name="notify.homework.feedback.plain" xml:space="preserve"><value>Your therapist replied to your homework check-in.</value></data>
+  <data name="notify.care.ended" xml:space="preserve"><value>Your care with {therapist} is complete. Your summary and next steps are ready.</value></data>
+  <data name="notify.care.ended.plain" xml:space="preserve"><value>Your care is complete. Your summary and next steps are ready.</value></data>
+  <data name="notify.safety_plan.updated" xml:space="preserve"><value>Your safety plan was updated.</value></data>
+  <data name="notify.crisis.follow_up" xml:space="preserve"><value>We're still with you. See what was agreed and your plan for the next few days.</value></data>
+  <data name="notify.security.new_sign_in" xml:space="preserve"><value>New sign-in from {device}. Not you? End the session.</value></data>
+  <data name="notify.security.new_sign_in.plain" xml:space="preserve"><value>New sign-in to your account. Not you? End the session.</value></data>
+  <data name="notify.care.change_requested" xml:space="preserve"><value>{patient} asked to change therapist.</value></data>
+  <data name="notify.care.change_requested.plain" xml:space="preserve"><value>A patient asked to change therapist.</value></data>
+  <data name="notify.staff.appointment.booked" xml:space="preserve"><value>New booking: {patient} {time} · the file awaits your approval</value></data>
+  <data name="notify.staff.appointment.booked.plain" xml:space="preserve"><value>A new booking in your schedule.</value></data>
+  <data name="notify.staff.appointment.rescheduled" xml:space="preserve"><value>{patient} moved their appointment to {time}.</value></data>
+  <data name="notify.staff.appointment.rescheduled.plain" xml:space="preserve"><value>An appointment in your schedule moved.</value></data>
+  <data name="notify.staff.appointment.cancelled" xml:space="preserve"><value>{patient} cancelled the appointment on {time}.</value></data>
+  <data name="notify.staff.appointment.cancelled.plain" xml:space="preserve"><value>An appointment in your schedule was cancelled.</value></data>
+  <data name="notify.crisis.closed" xml:space="preserve"><value>Crisis event {number} for {patient} was closed. Review the follow-up and bring the next session forward if needed.</value></data>
+  <data name="notify.crisis.closed.plain" xml:space="preserve"><value>A crisis event for one of your patients was closed.</value></data>
+  <data name="notify.crisis.alert" xml:space="preserve"><value>{0} risk alert · {1} · not acknowledged yet</value></data>
+  <data name="notify.level.1" xml:space="preserve"><value>Routine</value></data>
+  <data name="notify.level.2" xml:space="preserve"><value>Moderate</value></data>
+  <data name="notify.level.3" xml:space="preserve"><value>High</value></data>
+  <data name="notify.level.4" xml:space="preserve"><value>Critical</value></data>
+  <data name="notify.sms.default" xml:space="preserve"><value>You have a new update in your account. Open the app to see it.</value></data>
+  <data name="notify.sms.neutral" xml:space="preserve"><value>You have a reminder.</value></data>
+  <data name="notify.sms.appointment.reminder_24h" xml:space="preserve"><value>Reminder: you have an appointment tomorrow, {time}.</value></data>
+  <data name="notify.sms.appointment.reminder_1h" xml:space="preserve"><value>Reminder: your appointment starts in an hour ({time}).</value></data>
+  <data name="notify.sms.appointment.booked" xml:space="preserve"><value>Your appointment on {time} is confirmed.</value></data>
+  <data name="notify.sms.appointment.rescheduled" xml:space="preserve"><value>Your appointment moved to {time}.</value></data>
+  <data name="notify.sms.appointment.cancelled_by_therapist" xml:space="preserve"><value>One of your appointments changed. Open the app to choose another time.</value></data>
+  <data name="notify.sms.appointment.running_late" xml:space="preserve"><value>Your appointment will start a little late. Open the app for details.</value></data>
+  <data name="notify.sms.waitlist.slot_open" xml:space="preserve"><value>A time that fits your preferences is now free. Open the app to book it before someone else does.</value></data>
+  <data name="notify.sms.crisis.follow_up" xml:space="preserve"><value>Checking in on you. Open the app; help is there whenever you need it.</value></data>
+  <data name="error.profile.capacity_below_caseload" xml:space="preserve"><value>Capacity can't be lower than your current number of patients ({0}).</value></data>
+  <data name="error.profile.contact_details" xml:space="preserve"><value>Remove phone numbers, e-mail addresses and links from the text. Patients don't see contact details outside the platform.</value></data>
+  <data name="error.totp.move_expired" xml:space="preserve"><value>The authenticator move timed out. Start again; your current device still works.</value></data>
 </root>

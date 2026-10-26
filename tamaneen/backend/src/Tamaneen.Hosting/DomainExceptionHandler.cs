@@ -80,6 +80,9 @@ public sealed partial class DomainExceptionHandler<TResource> : IExceptionHandle
         [ErrorCodes.SlotOverlap] = StatusCodes.Status409Conflict,
         [ErrorCodes.SlotTooSoon] = StatusCodes.Status400BadRequest,
         [ErrorCodes.AppointmentNotLateable] = StatusCodes.Status409Conflict,
+        [ErrorCodes.CapacityBelowCaseload] = StatusCodes.Status400BadRequest,
+        [ErrorCodes.ProfileContactDetails] = StatusCodes.Status400BadRequest,
+        [ErrorCodes.TotpMoveExpired] = StatusCodes.Status410Gone,
     };
 
     private readonly IProblemDetailsService _problems;

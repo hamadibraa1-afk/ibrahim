@@ -15,6 +15,8 @@ export const namespaces = [
   'matching', 'therapists', 'therapistProfile', 'booking', 'bookConfirmed', 'appointments', 'appointmentDetail', 'session',
   // home and settings
   'home', 'homework', 'checkin', 'privacy', 'settings',
+  // notifications and after crisis
+  'notifications', 'afterCrisis',
 ] as const;
 
 export type Namespace = (typeof namespaces)[number];

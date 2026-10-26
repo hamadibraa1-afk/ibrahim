@@ -324,3 +324,36 @@ export interface UpdateSafetyPlanRequest { sections: Record<SafetyPlanSection, s
 export interface ContactRequestCreated { requestedAt: string; expectedBy: string; withinHours: number }
 export type DismissReason = 'specialty' | 'gender' | 'language' | 'schedule' | 'other';
 export interface DismissRequest { reason?: DismissReason }
+
+/** P46 notification centre (GET /v1/me/inbox). `text` is already in the user's language; `link` is an app path without the locale. */
+export type NotificationCategory = 'risk' | 'appointments' | 'messages' | 'homework' | 'care' | 'security' | 'system';
+export interface InboxItem {
+  id: string;
+  kind: string;
+  category: NotificationCategory;
+  text: string;
+  link: string | null;
+  createdAt: string;
+  read: boolean;
+  pinned: boolean;
+  /** Ids and times only (e.g. sessionId for a new sign-in). */
+  data: Record<string, string>;
+}
+export interface Inbox { items: InboxItem[]; unreadCount: number; nextCursor: string | null; counts: Record<string, number> }
+export interface UnreadCount { unreadCount: number }
+
+/** P38 after crisis (GET /v1/crisis/follow-up). Structured data only: never the conversation, the level or a diagnosis. */
+export interface CrisisFollowUp {
+  state: 'none' | 'open' | 'closed';
+  eventId: string | null;
+  closedAt: string | null;
+  responder: string | null;
+  /** The responder reached the patient (closed as safe_contacted). */
+  talked: boolean;
+  therapistInformed: boolean;
+  therapistName: string | null;
+  nextAppointmentId: string | null;
+  nextAppointmentAt: string | null;
+  /** Not seen yet: home opens P38. */
+  unread: boolean;
+}

@@ -20,6 +20,9 @@ public enum MessagePurpose
 
     /// <summary>A time that fits the patient's waitlist preferences opened (P56). Neutral text, no names.</summary>
     WaitlistSlotOpen = 4,
+
+    /// <summary>The SMS or e-mail copy of an in-app notification (Notifier). Neutral text.</summary>
+    Notification = 5,
 }
 
 public sealed record OutgoingMessage(string Channel, string To, string Language, MessagePurpose Purpose, string Text);

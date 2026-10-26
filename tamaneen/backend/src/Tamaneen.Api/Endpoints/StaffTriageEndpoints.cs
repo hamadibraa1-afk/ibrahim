@@ -11,6 +11,8 @@ using Tamaneen.Infrastructure.Auditing;
 using Tamaneen.Infrastructure.Persistence;
 using Tamaneen.Infrastructure.Security;
 using Tamaneen.SharedKernel;
+using Tamaneen.SharedKernel.Notifications;
+using Tamaneen.Api.Notifications;
 
 namespace Tamaneen.Api.Endpoints;
 
@@ -165,7 +167,7 @@ public static class StaffTriageEndpoints
     }
 
     /// <summary>SVC-37: one decision on a claimed case. The reason is required for everything but Approve and goes to the audit log.</summary>
-    internal static async Task<Ok<DecisionResult>> DecideAsync(Guid id, DecisionRequest request, ICurrentUser user, TamaneenDbContext db, TherapistDirectory directory, CrisisGateClient gate, IPatientDataProtector protector, IAuditLog audit, IClock clock, CancellationToken ct)
+    internal static async Task<Ok<DecisionResult>> DecideAsync(Guid id, DecisionRequest request, ICurrentUser user, TamaneenDbContext db, TherapistDirectory directory, CrisisGateClient gate, IPatientDataProtector protector, IAuditLog audit, INotifier notifier, IClock clock, CancellationToken ct)
     {
         var triage = await FindAsync(db, id, ct).ConfigureAwait(false);
         var me = user.UserId!.Value;
@@ -261,6 +263,12 @@ public static class StaffTriageEndpoints
         catch (DbUpdateConcurrencyException)
         {
             throw new DomainException(ErrorCodes.TriageClaimRequired, $"Triage {id} changed concurrently.");
+        }
+
+        if (kind == "approve")
+        {
+            // SB-32: the patient is told the suggestions are ready (P07).
+            await notifier.NotifyAsync(new Notification(triage.PatientId, NotificationKinds.TriageMatchesReady, new Dictionary<string, string> { ["triageId"] = triage.Id.ToString() }), ct).ConfigureAwait(false);
         }
 
         return TypedResults.Ok(new DecisionResult(kind, MeEndpoints.TriageStatusCode(triage.Status), (int)triage.RiskLevel, coSignRequested, eventId));

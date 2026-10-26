@@ -15,6 +15,8 @@ using Tamaneen.Infrastructure.Auditing;
 using Tamaneen.Infrastructure.Persistence;
 using Tamaneen.Infrastructure.Security;
 using Tamaneen.SharedKernel;
+using Tamaneen.SharedKernel.Notifications;
+using Tamaneen.Api.Notifications;
 
 namespace Tamaneen.Api.Endpoints;
 
@@ -312,7 +314,7 @@ public static class StaffEndpoints
     /// The supervisor confirms (or raises) the risk level and the focus areas; the platform proposes three therapists.
     /// It cannot lower the level: that needs a decision with a reason, and a co-sign from High or Critical (S03).
     /// </summary>
-    internal static async Task<Ok<TriageItemDto>> ReviewAsync(Guid id, ReviewRequest request, ICurrentUser user, TamaneenDbContext db, TherapistDirectory directory, IAuditLog audit, IClock clock, CancellationToken ct)
+    internal static async Task<Ok<TriageItemDto>> ReviewAsync(Guid id, ReviewRequest request, ICurrentUser user, TamaneenDbContext db, TherapistDirectory directory, IAuditLog audit, INotifier notifier, IClock clock, CancellationToken ct)
     {
         if (request.RiskLevel is < 1 or > 4 || request.Focus is not { Count: > 0 } || request.Focus.Any(f => !TherapistProfile.SpecialtyCodes.Contains(f)))
         {
@@ -335,6 +337,7 @@ public static class StaffEndpoints
 
         audit.Append("triage.reviewed", "TriageCase", triage.Id.ToString(), patient.PseudonymId, $"risk={request.RiskLevel};suggestions={suggestions.Count}");
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        await notifier.NotifyAsync(new Notification(triage.PatientId, NotificationKinds.TriageMatchesReady, new Dictionary<string, string> { ["triageId"] = triage.Id.ToString() }), ct).ConfigureAwait(false);
         return TypedResults.Ok(new TriageItemDto(triage.Id, patient.PseudonymId, triage.Path, (int)triage.RiskLevel, triage.Phq9, triage.Gad7, triage.CssrsPositive, triage.SubmittedAtUtc, triage.DueAtUtc));
     }
 

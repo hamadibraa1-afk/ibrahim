@@ -5,6 +5,7 @@
     @if (session.displayName(); as name) {
       <span class="who" data-testid="display-name">{{ name }}</span>
     }
+    <tm-notification-bell />
     <tm-language-toggle />
     <button mat-stroked-button type="button" class="sign-out" (click)="signOut()" [disabled]="signingOut()" data-testid="sign-out">{{ 'shell.signOut' | translate }}</button>
   </mat-toolbar>
@@ -36,6 +37,9 @@
           </mat-nav-list>
         }
       </nav>
+      <mat-nav-list class="bottom">
+        <a mat-list-item routerLink="/settings" routerLinkActive="active" ariaCurrentWhenActive="page" data-testid="nav-settings">{{ 'shell.settings' | translate }}</a>
+      </mat-nav-list>
     </mat-sidenav>
 
     <mat-sidenav-content>

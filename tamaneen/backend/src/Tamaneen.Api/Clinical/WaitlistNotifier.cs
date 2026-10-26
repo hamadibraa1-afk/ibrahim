@@ -8,17 +8,19 @@ using Tamaneen.Infrastructure.Auditing;
 using Tamaneen.Infrastructure.Persistence;
 using Tamaneen.Infrastructure.Security;
 using Tamaneen.SharedKernel;
+using Tamaneen.SharedKernel.Notifications;
+using Tamaneen.Api.Notifications;
 
 namespace Tamaneen.Api.Clinical;
 
 /// <summary>
 /// P56 «تم التوفر»: when bookable times appear (a cancellation, a move, a released hold, a patient joining), the
 /// waiting patients are matched against them, risk first and then by time waited, one patient per free time.
-/// The match runs as the scheduling service, which row-level security lets read the queue; the message is
-/// composed and sent as the patient, the only identity allowed to decrypt their contact. A failed send is
-/// logged and never fails the request that freed the time: the app shows the notice on P56 either way.
+/// The match runs as the scheduling service, which row-level security lets read the queue; the notice goes through
+/// the notification service (in-app, plus the neutral SMS or e-mail it decides on). A failed send is logged and
+/// never fails the request that freed the time: the app shows the notice on P56 either way.
 /// </summary>
-public sealed partial class WaitlistNotifier(ScopeRunner scopes, IMessageSender sender, MessageComposer composer, IClock clock, ILogger<WaitlistNotifier> log)
+public sealed partial class WaitlistNotifier(ScopeRunner scopes, INotifier notifier, IClock clock, ILogger<WaitlistNotifier> log)
 {
     /// <summary>How far ahead free times count: the booking screen shows two weeks.</summary>
     public static readonly TimeSpan Horizon = TimeSpan.FromDays(14);
@@ -36,9 +38,12 @@ public sealed partial class WaitlistNotifier(ScopeRunner scopes, IMessageSender 
             return 0;
         }
 
+        // The notification service stores the in-app notice and sends the neutral SMS or e-mail (P33 rules apply).
         foreach (var entry in notified)
         {
-            await SendAsync(entry.PatientId, ct).ConfigureAwait(false);
+            await notifier.NotifyAsync(
+                new Notification(entry.PatientId, NotificationKinds.WaitlistSlotOpen, new Dictionary<string, string> { ["slotId"] = entry.NotifiedSlotId?.ToString() ?? string.Empty }),
+                ct).ConfigureAwait(false);
         }
 
         return notified.Count;
@@ -94,37 +99,7 @@ public sealed partial class WaitlistNotifier(ScopeRunner scopes, IMessageSender 
         return notified;
     }
 
-    private async Task SendAsync(Guid patientId, CancellationToken ct)
-    {
-        try
-        {
-            var message = await scopes.AsUserAsync<OutgoingMessage?>(patientId, AppRoles.Patient, SupportedLanguages.Default, async sp =>
-            {
-                var db = sp.GetRequiredService<TamaneenDbContext>();
-                var profile = await db.PatientProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.PatientId == patientId, ct).ConfigureAwait(false);
-                if (profile?.ContactCipher is null)
-                {
-                    return null;
-                }
-
-                var language = await db.UserAccounts.Where(a => a.Id == patientId).Select(a => a.PreferredLanguage).FirstOrDefaultAsync(ct).ConfigureAwait(false) ?? SupportedLanguages.Default;
-                var contact = await sp.GetRequiredService<IPatientDataProtector>().DecryptAsync(patientId, Fields.Contact, profile.ContactCipher, ct).ConfigureAwait(false);
-                return composer.Compose(profile.ContactType, contact, language, MessagePurpose.WaitlistSlotOpen, null);
-            }).ConfigureAwait(false);
-            if (message is not null)
-            {
-                await sender.SendAsync(message, ct).ConfigureAwait(false);
-            }
-        }
-        catch (Exception ex) when (ex is not OperationCanceledException)
-        {
-            LogSendFailed(log, ex.GetType().Name);
-        }
-    }
-
     [LoggerMessage(EventId = 4301, Level = LogLevel.Warning, Message = "The waitlist check failed ({Error}).")]
     private static partial void LogCheckFailed(ILogger logger, string error);
 
-    [LoggerMessage(EventId = 4302, Level = LogLevel.Warning, Message = "Sending a waitlist notice failed ({Error}).")]
-    private static partial void LogSendFailed(ILogger logger, string error);
 }

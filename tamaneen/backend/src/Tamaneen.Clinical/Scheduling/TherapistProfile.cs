@@ -96,6 +96,25 @@ public sealed class TherapistProfile
     public void SetSessionMinutes(int minutes) =>
         SessionMinutes = SessionLengths.Contains(minutes) ? minutes : throw new ArgumentOutOfRangeException(nameof(minutes));
 
+    /// <summary>S21: capacity may not go below the patients the therapist already cares for (SB-29).</summary>
+    public void SetCapacity(int capacity, int currentPatients)
+    {
+        if (capacity is <= 0 or > 200)
+        {
+            throw new ArgumentOutOfRangeException(nameof(capacity));
+        }
+
+        if (capacity < currentPatients)
+        {
+            throw new DomainException(ErrorCodes.CapacityBelowCaseload, $"Capacity {capacity} is below the current {currentPatients} patients.", currentPatients);
+        }
+
+        Capacity = capacity;
+    }
+
+    /// <summary>Off: the therapist leaves new match suggestions and the directory; current patients are not affected.</summary>
+    public void SetAcceptingNewPatients(bool accepting) => AcceptingNewPatients = accepting;
+
     public string Title(string language) => language == "en" ? TitleEn : TitleAr;
 
     public string Bio(string language) => language == "en" ? BioEn : BioAr;
