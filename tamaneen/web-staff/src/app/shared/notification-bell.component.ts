@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, NgZone, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
@@ -37,6 +37,8 @@ export class NotificationBellComponent {
     const destroyRef = inject(DestroyRef);
     this.unread.refresh();
     inject(Router).events.pipe(filter((e) => e instanceof NavigationEnd), takeUntilDestroyed(destroyRef)).subscribe(() => this.unread.refresh());
-    interval(BELL_POLL_MS).pipe(takeUntilDestroyed(destroyRef)).subscribe(() => this.unread.refresh());
+    // Outside Angular's zone, so a waiting timer never keeps the page "busy" (tests, whenStable).
+    const zone = inject(NgZone);
+    zone.runOutsideAngular(() => interval(BELL_POLL_MS).pipe(takeUntilDestroyed(destroyRef)).subscribe(() => zone.run(() => this.unread.refresh())));
   }
 }

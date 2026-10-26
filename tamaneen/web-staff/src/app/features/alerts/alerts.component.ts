@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, NgZone, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
@@ -129,7 +129,8 @@ export class AlertsComponent {
 
   constructor() {
     this.load();
-    interval(ALERTS_POLL_MS).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.load(true));
+    const zone = inject(NgZone);
+    zone.runOutsideAngular(() => interval(ALERTS_POLL_MS).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => zone.run(() => this.load(true))));
   }
 
   load(quiet = false): void {
