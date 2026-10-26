@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { CareEndedCard } from '@/components/care/CareEndedCard';
 import { HomeView } from '@/components/home/HomeView';
 import { BottomNav, BottomNavSpacer } from '@/components/ui/BottomNav';
 import { isLocale, routing } from '@/i18n/routing';
@@ -26,6 +27,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const join = next && Date.parse(next.startsAt) - now.getTime() <= JOIN_LOOKAHEAD_MS ? await serverGetOptional<AppointmentDetail>(`appointments/${next.id}`).catch(() => null) : null;
   return (
     <>
+      {me.careClosedAt ? <CareEndedCard /> : null}
       <HomeView
         home={home}
         locale={isLocale(locale) ? locale : routing.defaultLocale}

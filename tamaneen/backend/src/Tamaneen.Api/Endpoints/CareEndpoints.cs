@@ -22,7 +22,7 @@ public static class CareEndpoints
 
     public sealed record PilotCityDto(string Code, string Name);
 
-    public sealed record PublicConfigDto(string EmergencyNumber, string SupportLine, int MatchWithinHours, int TriageWithinHours, int MinAge, string PilotRegion, IReadOnlyList<PilotCityDto> PilotCities, string TimeZone, bool SignupsOpen);
+    public sealed record PublicConfigDto(string EmergencyNumber, string SupportLine, int MatchWithinHours, int TriageWithinHours, int MinAge, string PilotRegion, IReadOnlyList<PilotCityDto> PilotCities, string TimeZone, bool SignupsOpen, int ChangeTherapistWithinHours = 24);
 
     public sealed record CrisisStatusDto(bool Locked, bool EventOpen, bool Acknowledged, string? ContactPhoneLast4, string? Script);
 
@@ -99,7 +99,8 @@ public static class CareEndpoints
             en ? o.RegionNameEn : o.RegionNameAr,
             o.Cities.Select(c => new PilotCityDto(c.Code, en ? c.NameEn : c.NameAr)).ToList(),
             o.TimeZone,
-            o.SignupsOpen));
+            o.SignupsOpen,
+            o.ChangeTherapistWithinHours));
     }
 
     // ---------- P06 ----------

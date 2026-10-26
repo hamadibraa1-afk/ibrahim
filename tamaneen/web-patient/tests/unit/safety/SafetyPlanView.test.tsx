@@ -149,6 +149,23 @@ describe('SafetyPlanView (P37)', () => {
     expect(screen.getByText('My niece.')).toBeInTheDocument();
   });
 
+  it('saves with the version it read (If-Match) and, when the therapist saved first, shows the newer plan', async () => {
+    const versioned = { ...plan, version: 2 };
+    const newer = { ...plan, version: 3, sections: { ...plan.sections, copingAlone: 'A short walk.' } };
+    let reads = 0;
+    api.mockImplementation(async (path: string, options?: { method?: string; ifMatch?: string }) => {
+      if ((options?.method ?? 'GET') === 'GET') return reads++ === 0 ? versioned : newer;
+      expect(options?.ifMatch).toBe('"2"');
+      const { ApiError } = await import('@/lib/api/errors');
+      throw new ApiError(412, { title: 'Changed', detail: 'Someone saved a newer version.', status: 412 });
+    });
+    renderWithIntl(<SafetyPlanView numbers={numbers} />, 'en');
+    await userEvent.click(await screen.findByRole('button', { name: 'Edit plan' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Save plan' }));
+    expect(await screen.findByText('Someone saved a newer version.')).toBeInTheDocument();
+    await waitFor(() => expect(reads).toBe(2));
+  });
+
   it('opens the crisis screen when the plan edit is gated', async () => {
     routeApi({ 'GET safety-plan': () => plan, 'PUT safety-plan': () => ({ ...plan, crisis: true }) });
     renderWithIntl(<SafetyPlanView numbers={numbers} />, 'ar');

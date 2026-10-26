@@ -9,7 +9,7 @@ Every response is localized by `Accept-Language` (`ar` default, `en`). Errors ar
 
 | Method | Path | Body → Response | Screen |
 |---|---|---|---|
-| GET | /v1/meta/config | → PublicConfig (includes `signupsOpen`) | P01, P02, P12, P14, P15, P35 |
+| GET | /v1/meta/config | → PublicConfig (includes `signupsOpen` and `changeTherapistWithinHours`) | P01, P02, P12, P14, P15, P35 |
 | GET | /v1/meta/locale | → LocaleResponse | all |
 
 ## Auth (anonymous; the patient BFF stores tokens in HttpOnly cookies)

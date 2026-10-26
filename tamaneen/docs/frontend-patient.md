@@ -13,7 +13,7 @@ Signed in, under the `(app)` route group, whose layout already requires a sessio
 `/matches` P07 · `/waitlist` P56 · `/therapists` P24 · `/therapists/[id]` P25 · `/therapists/[id]/book` P08 · `/appointments` P27 ·
 `/appointments/[id]` P28 · `/appointments/[id]/confirmed` P26 · `/home` P09 · `/homework` P29 · `/homework/[id]` P10 ·
 `/check-in` P30 · `/safety-plan` P37 · `/settings` P31 · `/settings/security` P32 · `/settings/notifications` P33 ·
-`/settings/safety` P34 · `/privacy` P11 · `/outbox` P66.
+`/settings/safety` P34 · `/privacy` P11 · `/outbox` P66 · `/care/change-therapist` P44 · `/care/complete` P53.
 
 Put a page at `src/app/[locale]/(app)/<route>/page.tsx` (signed in) or `src/app/[locale]/(public)/<route>/page.tsx`.
 Route groups don't appear in the URL.

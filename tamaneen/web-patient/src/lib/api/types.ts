@@ -30,6 +30,8 @@ export interface PublicConfig {
   emergencyNumber: string;
   supportLine: string;
   matchWithinHours: number;
+  /** P44: the supervisor suggests new therapists within this many hours. */
+  changeTherapistWithinHours?: number;
   triageWithinHours: number;
   minAge: number;
   pilotRegion: string;
