@@ -72,7 +72,8 @@ describe('ShellComponent', () => {
   it('lists only screens that exist: no links to pages without a screen', async () => {
     const { el } = await render(['therapist']);
     const links = Array.from(el.querySelectorAll('nav a')).map((a) => a.getAttribute('href'));
-    expect(links).toEqual(['/dashboard', '/patients']);
+    expect(links).toEqual(['/dashboard', '/patients', '/alerts', '/notifications', '/profile']);
+    expect(el.querySelector('[data-testid="nav-settings"]')!.getAttribute('href')).toBe('/settings');
     expect(el.textContent).not.toContain('المحادثات');
   });
 

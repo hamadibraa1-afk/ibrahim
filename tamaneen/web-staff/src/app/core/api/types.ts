@@ -197,3 +197,69 @@ export type TriageDecisionKind = 'approve' | 'override_risk' | 'reassign' | 'esc
 export type ReferralCode = 'crisis_line' | 'primary_care' | 'psychiatry' | 'community_support' | 'emergency_services';
 export interface TriageDecisionRequest { kind: TriageDecisionKind; reason?: string; riskLevel?: RiskLevel; therapistIds?: string[]; focus?: string[]; referrals?: ReferralCode[]; approve?: boolean }
 export interface TriageDecisionResult { kind: TriageDecisionKind; status: TriageCaseDetail['status']; riskLevel: RiskLevel; coSignRequested: boolean; crisisEventId: string | null }
+
+// ---------- Phase 5: notifications, alerts, profile, account (S41, S20, S21, S32) ----------
+
+export type NotificationCategory = 'risk' | 'appointments' | 'messages' | 'homework' | 'care' | 'security' | 'system';
+/** S41 filter buttons; "system" is every category but risk, appointments and messages. */
+export type InboxFilter = 'all' | 'risk' | 'appointments' | 'messages' | 'system';
+/** `pinned`: a live, unacknowledged risk alert (id is the crisis event id); it is never "read", only acknowledged. */
+export interface InboxItem { id: string; kind: string; category: NotificationCategory; text: string; link: string | null; createdAt: string; read: boolean; pinned: boolean; data: Record<string, string> }
+export interface Inbox { items: InboxItem[]; unreadCount: number; nextCursor: string | null; counts: Record<InboxFilter, number> }
+export interface UnreadCount { unreadCount: number }
+
+export type AlertStatusFilter = 'open' | 'handled' | 'all';
+export interface Alert {
+  eventId: string;
+  number: string;
+  pseudonymId: string;
+  level: RiskLevel;
+  status: CrisisStatus;
+  source: string;
+  ruleIds: string[];
+  openedAt: string;
+  ackDeadline: string;
+  acknowledgedBy: string | null;
+  acknowledgedAt: string | null;
+  closedAt: string | null;
+  closeOutcome: string | null;
+}
+export interface Alerts { items: Alert[]; openCount: number; handledCount: number }
+
+export interface StaffProfile {
+  displayNameAr: string;
+  displayNameEn: string;
+  titleAr: string;
+  titleEn: string;
+  bioAr: string;
+  bioEn: string;
+  specialties: string[];
+  languages: Lang[];
+  gender: 'female' | 'male';
+  sessionType: 'remote';
+  sessionMinutes: number;
+  capacity: number;
+  currentPatients: number;
+  acceptingNewPatients: boolean;
+  licenseVerified: boolean;
+  specialtyCatalog: string[];
+}
+export interface UpdateStaffProfileRequest {
+  displayNameAr: string;
+  displayNameEn: string;
+  titleAr: string;
+  titleEn: string;
+  bioAr: string;
+  bioEn: string;
+  specialties: string[];
+  languages: Lang[];
+  capacity: number;
+  acceptingNewPatients: boolean;
+}
+
+export interface ActiveSession { id: string; deviceLabel: string; current: boolean; lastActiveAt: string }
+export interface StaffSecurity { passwordChangedAt: string; totpEnabled: boolean; recoveryCodesRemaining: number; idleTimeoutMinutes: number; sessions: ActiveSession[] }
+export interface StepUpRequest { password: string; code: string }
+export interface StaffPasswordRequest { currentPassword: string; newPassword: string; code: string }
+export interface TotpMove { secret: string; otpauthUri: string; moveToken: string; expiresAt: string }
+export interface StaffNotificationPrefs { riskAlerts: true; bookings: boolean; weeklyReport: boolean; dailyDigest: boolean }

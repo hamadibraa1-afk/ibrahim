@@ -8,7 +8,7 @@ describe('SessionService', () => {
     session.setRoles(['therapist', 'supervisor', 'therapist']);
     expect(session.roles()).toEqual(['therapist', 'supervisor']);
     expect(session.role()).toBe('therapist');
-    expect(session.navigation()[0].items.map((i) => i.key)).toEqual(['dashboard', 'patients']);
+    expect(session.navigation()[0].items.map((i) => i.key)).toEqual(['dashboard', 'patients', 'alerts', 'notifications', 'profile']);
     expect(session.home()).toBe('/dashboard');
   });
 
@@ -28,7 +28,7 @@ describe('SessionService', () => {
     expect(session.crisisAccess()).toBeFalse();
     session.setProfile({ displayName: 'Sara', onCall: true });
     expect(session.crisisAccess()).toBeTrue();
-    expect(session.navigation().flatMap((g) => g.items.map((i) => i.key))).toEqual(['dashboard', 'patients', 'crisis']);
+    expect(session.navigation().flatMap((g) => g.items.map((i) => i.key))).toEqual(['dashboard', 'patients', 'alerts', 'notifications', 'profile', 'crisis']);
   });
 
   it('gives admins no clinical pages and no links to screens that do not exist', () => {

@@ -13,6 +13,7 @@ import { LanguageService } from '../core/i18n/language.service';
 import { SessionService } from '../core/session/session.service';
 import type { StaffRole } from '../core/session/staff-role';
 import { LanguageToggleComponent } from '../shared/language-toggle.component';
+import { NotificationBellComponent } from '../shared/notification-bell.component';
 
 /**
  * Portal frame: toolbar with brand, the signed-in name, the language switch and sign-out; side menu for the active role.
@@ -21,7 +22,7 @@ import { LanguageToggleComponent } from '../shared/language-toggle.component';
  */
 @Component({
     selector: 'tm-shell',
-    imports: [BidiModule, MatButtonModule, MatSidenavModule, MatToolbarModule, MatListModule, MatFormFieldModule, MatSelectModule, RouterOutlet, RouterLink, RouterLinkActive, TranslateModule, LanguageToggleComponent],
+    imports: [BidiModule, MatButtonModule, MatSidenavModule, MatToolbarModule, MatListModule, MatFormFieldModule, MatSelectModule, RouterOutlet, RouterLink, RouterLinkActive, TranslateModule, LanguageToggleComponent, NotificationBellComponent],
     changeDetection: ChangeDetectionStrategy.OnPush,
     templateUrl: './shell.component.html',
     styleUrl: './shell.component.scss'
