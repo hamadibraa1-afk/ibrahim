@@ -76,6 +76,10 @@ public sealed partial class DomainExceptionHandler<TResource> : IExceptionHandle
         [ErrorCodes.SessionFeedbackExists] = StatusCodes.Status409Conflict,
         [ErrorCodes.SessionFeedbackNotYet] = StatusCodes.Status409Conflict,
         [ErrorCodes.SessionNoteClosed] = StatusCodes.Status409Conflict,
+        [ErrorCodes.SlotTaken] = StatusCodes.Status409Conflict,
+        [ErrorCodes.SlotOverlap] = StatusCodes.Status409Conflict,
+        [ErrorCodes.SlotTooSoon] = StatusCodes.Status400BadRequest,
+        [ErrorCodes.AppointmentNotLateable] = StatusCodes.Status409Conflict,
     };
 
     private readonly IProblemDetailsService _problems;

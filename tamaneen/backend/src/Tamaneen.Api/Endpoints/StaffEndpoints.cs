@@ -218,7 +218,7 @@ public static class StaffEndpoints
         return TypedResults.NoContent();
     }
 
-    internal static async Task<NoContent> OutcomeAsync(Guid id, OutcomeRequest request, ICurrentUser user, TamaneenDbContext db, Clinical.WaitlistNotifier waitlist, IAuditLog audit, IClock clock, CancellationToken ct)
+    internal static async Task<NoContent> OutcomeAsync(Guid id, OutcomeRequest request, ICurrentUser user, TamaneenDbContext db, Clinical.WaitlistNotifier waitlist, AppointmentNotices notices, IAuditLog audit, IClock clock, CancellationToken ct)
     {
         var outcome = request.Outcome switch
         {
@@ -240,9 +240,21 @@ public static class StaffEndpoints
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
         if (outcome == AppointmentStatus.CancelledByTherapist)
         {
-            // P56: the freed time goes to the waitlist.
+            // P67 for the patient; P56: the freed time goes to the waitlist.
+            await notices.CancelledAsync(appointment, pseudonym, ct).ConfigureAwait(false);
             await waitlist.CheckAsync(ct).ConfigureAwait(false);
         }
+        else if (outcome == AppointmentStatus.NoShow)
+        {
+            // P63 for the patient. Supervisors follow up a second missed session in a row (EC-53) or one at risk 3–4 (§11.1).
+            var previous = await db.Appointments.AsNoTracking()
+                .Where(a => a.PatientId == appointment.PatientId && a.Id != appointment.Id && a.StartsAtUtc < appointment.StartsAtUtc
+                            && (a.Status == AppointmentStatus.Completed || a.Status == AppointmentStatus.NoShow))
+                .OrderByDescending(a => a.StartsAtUtc).Select(a => (AppointmentStatus?)a.Status).FirstOrDefaultAsync(ct).ConfigureAwait(false);
+            var risk = (await StaffScheduleEndpoints.RiskAsync(db, [appointment.PatientId], clock, ct).ConfigureAwait(false))[appointment.PatientId];
+            await notices.MissedAsync(appointment, pseudonym, previous == AppointmentStatus.NoShow || risk >= 3, ct).ConfigureAwait(false);
+        }
+
         return TypedResults.NoContent();
     }
 

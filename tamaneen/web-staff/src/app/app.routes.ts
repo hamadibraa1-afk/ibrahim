@@ -36,6 +36,8 @@ export const routes: Routes = [
       { path: 'sessions/:appointmentId', canMatch: [therapistGuard], loadComponent: () => import('./features/session/session.component').then((m) => m.SessionComponent), title: 'Tamaneen' },
       { path: 'triage', canMatch: [triageGuard], loadComponent: () => import('./features/triage/triage-review.component').then((m) => m.TriageReviewComponent), title: 'Tamaneen' },
       { path: 'triage/:id', canMatch: [triageGuard], loadComponent: () => import('./features/triage/triage-review.component').then((m) => m.TriageReviewComponent), title: 'Tamaneen' },
+      { path: 'schedule', canMatch: [therapistGuard], loadComponent: () => import('./features/schedule/schedule.component').then((m) => m.ScheduleComponent), title: 'Tamaneen' },
+      { path: 'availability', canMatch: [therapistGuard], loadComponent: () => import('./features/availability/availability.component').then((m) => m.AvailabilityComponent), title: 'Tamaneen' },
       { path: 'home', loadComponent: () => import('./features/home/home.component').then((m) => m.HomeComponent), title: 'Tamaneen' },
       { path: '**', redirectTo: '' },
     ],

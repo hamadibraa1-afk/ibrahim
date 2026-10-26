@@ -16,4 +16,17 @@ public static class CancelReasons
         "therapist_fit",
         "other",
     };
+
+    /// <summary>
+    /// Reasons a therapist picks on S18 (SB-26). The patient never sees which one (P67 only says «لظرف طارئ»);
+    /// supervisors and the audit log do.
+    /// </summary>
+    public static readonly IReadOnlySet<string> Therapist = new HashSet<string>(StringComparer.Ordinal)
+    {
+        "emergency",
+        "illness",
+        "schedule_conflict",
+        "technical",
+        "other",
+    };
 }

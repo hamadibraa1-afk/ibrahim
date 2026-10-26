@@ -240,3 +240,52 @@ export interface TherapistSessionPage {
   preSessionNote: string | null;
   preSessionNoteAt: string | null;
 }
+// ---------- S18 schedule, S19 availability (scheduling) ----------
+
+export type AppointmentStatus = 'confirmed' | 'cancelled_by_patient' | 'cancelled_by_therapist' | 'completed' | 'no_show';
+/** SB-26 reasons a therapist picks; labels in i18n `schedule.reasons`. The patient never sees which one. */
+export type TherapistCancelReason = 'emergency' | 'illness' | 'schedule_conflict' | 'technical' | 'other';
+export interface StaffAppointment {
+  id: string;
+  pseudonymId: string;
+  startsAt: string;
+  durationMinutes: number;
+  sequenceNumber: number;
+  status: AppointmentStatus;
+  riskLevel: RiskLevel;
+  filePending: boolean;
+  outcomeRecorded: boolean;
+  canRecordOutcome: boolean;
+  canCancel: boolean;
+  canReportLate: boolean;
+  therapistLateMinutes: number | null;
+  cancelledBy: 'patient' | 'therapist' | null;
+  cancelReasonCode: string | null;
+  missed: boolean;
+}
+export interface Schedule { from: string; to: string; timeZone: string; items: StaffAppointment[] }
+
+export type SlotStatus = 'open' | 'held' | 'booked' | 'blocked';
+export interface AvailabilitySlot { slotId: string; startsAt: string; endsAt: string; status: SlotStatus; source: 'template' | 'manual' }
+/** day: 0 Sunday … 6 Saturday; start and end "HH:mm" in the therapist's time zone. */
+export interface WeeklyPeriod { day: number; start: string; end: string }
+export interface AvailabilityBreak { id?: string | null; kind: 'leave' | 'absence'; startsAt: string; endsAt: string }
+export interface Availability {
+  therapistId: string;
+  timeZone: string;
+  sessionMinutes: number;
+  sessionLengths: number[];
+  bufferMinutes: number;
+  bufferOptions: number[];
+  weekly: WeeklyPeriod[];
+  exceptions: AvailabilityBreak[];
+  horizonDays: number;
+  licenseVerified: boolean;
+  updatedAt: string | null;
+  slots: AvailabilitySlot[];
+  /** Booked or held times the saved pattern no longer covers; never cancelled automatically (SB-28). */
+  affected: AvailabilitySlot[];
+}
+export interface SaveAvailabilityRequest { sessionMinutes: number; bufferMinutes: number; weekly: WeeklyPeriod[]; exceptions: AvailabilityBreak[] }
+export interface AvailabilityPreview { added: number; removed: number; affected: AvailabilitySlot[] }
+export interface SaveAvailabilityResult extends AvailabilityPreview { availability: Availability }

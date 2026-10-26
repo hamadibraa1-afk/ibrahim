@@ -49,6 +49,10 @@ export function appointment(overrides: Partial<Appointment> = {}): Appointment {
     sequenceNumber: 1,
     status: 'confirmed',
     rescheduled: false,
+    therapistLateMinutes: null,
+    cancelledBy: null,
+    cancelReasonCode: null,
+    missed: false,
     ...overrides,
   };
 }

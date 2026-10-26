@@ -123,6 +123,7 @@ public static class Fields
     public const string IdempotentResponse = "clinical.idempotent_response";
     public const string PreSessionNote = "clinical.pre_session_note";
     public const string SessionFeedbackComment = "clinical.session_feedback_comment";
+    public const string TherapistCancelNote = "clinical.therapist_cancel_note";
 }
 
 public sealed record SafetyInfoData(string? ContactPhone, string? TrustedName, string? TrustedPhone);

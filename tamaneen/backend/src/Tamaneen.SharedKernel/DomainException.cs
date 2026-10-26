@@ -102,4 +102,8 @@ public static class ErrorCodes
     public const string SessionFeedbackExists = "error.session.feedback_exists";
     public const string SessionFeedbackNotYet = "error.session.feedback_not_yet";
     public const string SessionNoteClosed = "error.session.note_closed";
+    public const string SlotTaken = "error.slot.taken";
+    public const string SlotOverlap = "error.slot.overlap";
+    public const string SlotTooSoon = "error.slot.too_soon";
+    public const string AppointmentNotLateable = "error.appointment.not_lateable";
 }

@@ -106,4 +106,10 @@
   <data name="error.session.feedback_exists" xml:space="preserve"><value>قيّمت هذه الجلسة من قبل. شكرًا لك.</value></data>
   <data name="error.session.feedback_not_yet" xml:space="preserve"><value>يمكنك تقييم الجلسة بعد أن تبدأ.</value></data>
   <data name="error.session.note_closed" xml:space="preserve"><value>انتهت هذه الجلسة، فلا يمكن تعديل الملاحظة بعد الآن.</value></data>
+  <data name="error.slot.taken" xml:space="preserve"><value>هذا الوقت محجوز أو يحجزه مريض الآن، فلا يمكن حذفه أو نقله.</value></data>
+  <data name="error.slot.overlap" xml:space="preserve"><value>هذا الوقت يتداخل مع وقت آخر من أوقاتك.</value></data>
+  <data name="error.slot.too_soon" xml:space="preserve"><value>الأوقات الجديدة تبدأ بعد ساعتين على الأقل من الآن.</value></data>
+  <data name="error.appointment.not_lateable" xml:space="preserve"><value>يمكنك الإبلاغ عن التأخر من قبل الجلسة بعشر دقائق حتى نهايتها فقط.</value></data>
+  <data name="validation.overlap" xml:space="preserve"><value>هذه الفترات متداخلة.</value></data>
+  <data name="validation.end_before_start" xml:space="preserve"><value>يجب أن يكون الانتهاء بعد البدء.</value></data>
 </root>

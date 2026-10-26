@@ -106,4 +106,10 @@
   <data name="error.session.feedback_exists" xml:space="preserve"><value>You have already rated this session. Thank you.</value></data>
   <data name="error.session.feedback_not_yet" xml:space="preserve"><value>You can rate the session once it has started.</value></data>
   <data name="error.session.note_closed" xml:space="preserve"><value>This session has ended, so the note can no longer be changed.</value></data>
+  <data name="error.slot.taken" xml:space="preserve"><value>This time is booked or being booked by a patient. It can't be removed or moved.</value></data>
+  <data name="error.slot.overlap" xml:space="preserve"><value>This time overlaps another of your times.</value></data>
+  <data name="error.slot.too_soon" xml:space="preserve"><value>New times must start at least 2 hours from now.</value></data>
+  <data name="error.appointment.not_lateable" xml:space="preserve"><value>You can only say you're running late from 10 minutes before a session until it ends.</value></data>
+  <data name="validation.overlap" xml:space="preserve"><value>These periods overlap.</value></data>
+  <data name="validation.end_before_start" xml:space="preserve"><value>The end must be after the start.</value></data>
 </root>

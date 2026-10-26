@@ -89,6 +89,13 @@ public sealed class TherapistProfile
         Languages = string.Join(',', langs);
     }
 
+    /// <summary>Session lengths S19 offers.</summary>
+    public static readonly IReadOnlyList<int> SessionLengths = [30, 45, 50, 60, 90];
+
+    /// <summary>S19: the length of every new bookable time. Booked sessions keep the length they were booked with.</summary>
+    public void SetSessionMinutes(int minutes) =>
+        SessionMinutes = SessionLengths.Contains(minutes) ? minutes : throw new ArgumentOutOfRangeException(nameof(minutes));
+
     public string Title(string language) => language == "en" ? TitleEn : TitleAr;
 
     public string Bio(string language) => language == "en" ? BioEn : BioAr;

@@ -65,6 +65,27 @@ public sealed class Appointment : Entity
 
     public DateTimeOffset? OutcomeRecordedAtUtc { get; private set; }
 
+    /// <summary>"Running late" from the therapist (S18): how many minutes, for the patient's lobby (P54).</summary>
+    public int? TherapistLateMinutes { get; private set; }
+
+    public DateTimeOffset? TherapistLateAtUtc { get; private set; }
+
+    /// <summary>The therapist's optional note on a cancellation, encrypted with the patient's key; never shown to the patient.</summary>
+    public byte[]? TherapistCancelNoteCipher { get; private set; }
+
+    public static readonly int MaxLateMinutes = 60;
+
+    /// <summary>"patient", "therapist" or null.</summary>
+    public string? CancelledBy => Status switch
+    {
+        AppointmentStatus.CancelledByPatient => "patient",
+        AppointmentStatus.CancelledByTherapist => "therapist",
+        _ => null,
+    };
+
+    /// <summary>The therapist recorded that the patient did not come (P63).</summary>
+    public bool Missed => Status == AppointmentStatus.NoShow;
+
     public static Appointment Book(Guid patientId, AvailabilitySlot slot, int sequenceNumber, string roomId, IClock clock) =>
         new(Guid.NewGuid(), patientId, slot.TherapistUserId, slot.Id, slot.StartsAtUtc, slot.DurationMinutes, sequenceNumber, roomId, clock.UtcNow);
 
@@ -88,15 +109,43 @@ public sealed class Appointment : Entity
         CancelReason = reasonCode;
     }
 
-    public void CancelByTherapist(IClock clock)
+    /// <summary>S18 cancel (SB-26): a reason from <see cref="CancelReasons.Therapist"/>, until the session's end.</summary>
+    public void CancelByTherapist(string reasonCode, byte[]? noteCipher, IClock clock)
     {
-        if (Status != AppointmentStatus.Confirmed)
+        if (!CancelReasons.Therapist.Contains(reasonCode))
         {
-            throw new DomainException(ErrorCodes.AppointmentNotChangeable, $"Appointment {Id} is not confirmed.");
+            throw new ArgumentOutOfRangeException(nameof(reasonCode));
+        }
+
+        if (Status != AppointmentStatus.Confirmed || clock.UtcNow >= StartsAtUtc.AddMinutes(DurationMinutes))
+        {
+            throw new DomainException(ErrorCodes.AppointmentNotChangeable, $"Appointment {Id} is not confirmed or already over.");
         }
 
         Status = AppointmentStatus.CancelledByTherapist;
         CancelledAtUtc = clock.UtcNow;
+        CancelReason = reasonCode;
+        TherapistCancelNoteCipher = noteCipher;
+    }
+
+    /// <summary>
+    /// S18 "running late": from the moment the lobby opens until the session's planned end. A new value replaces
+    /// the old one, so the therapist can correct it.
+    /// </summary>
+    public void ReportLate(int minutes, IClock clock)
+    {
+        if (minutes < 1 || minutes > MaxLateMinutes)
+        {
+            throw new ArgumentOutOfRangeException(nameof(minutes));
+        }
+
+        if (Status != AppointmentStatus.Confirmed || clock.UtcNow < StartsAtUtc - JoinOpensBefore || clock.UtcNow >= StartsAtUtc.AddMinutes(DurationMinutes))
+        {
+            throw new DomainException(ErrorCodes.AppointmentNotLateable, $"Appointment {Id} is not about to start.");
+        }
+
+        TherapistLateMinutes = minutes;
+        TherapistLateAtUtc = clock.UtcNow;
     }
 
     public void MoveTo(AvailabilitySlot slot, IClock clock)

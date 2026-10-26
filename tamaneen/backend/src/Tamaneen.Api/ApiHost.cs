@@ -88,6 +88,7 @@ public static class ApiHost
         // The notification service registers the real INotifier; until then calls are no-ops.
         builder.Services.TryAddSingleton<INotifier, NullNotifier>();
         builder.AddTamaneenVideo();
+        builder.Services.AddScoped<AppointmentNotices>();
         builder.Services.AddHttpClient("crisis-console");
         builder.Services.AddScoped<StepUpVerifier>();
         if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing"))
@@ -148,6 +149,8 @@ public static class ApiHost
         app.MapWaitlistEndpoints();
         app.MapCareEndpoints();
         app.MapStaffEndpoints();
+        app.MapStaffScheduleEndpoints();
+        app.MapAvailabilityEndpoints();
         app.MapStaffAccessEndpoints();
         app.MapSessionEndpoints();
         if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))

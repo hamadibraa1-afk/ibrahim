@@ -210,6 +210,13 @@ export interface Appointment {
   sequenceNumber: number;
   status: AppointmentStatus;
   rescheduled: boolean;
+  /** S18 "running late": minutes the therapist said they will be late (P54), or null. */
+  therapistLateMinutes: number | null;
+  cancelledBy: 'patient' | 'therapist' | null;
+  /** The patient's own reason when they cancelled; always null when the therapist cancelled (P67 never shows it). */
+  cancelReasonCode: string | null;
+  /** The therapist recorded a no-show (P63). */
+  missed: boolean;
 }
 export interface AppointmentDetail extends Appointment {
   canChange: boolean;
@@ -275,6 +282,8 @@ export interface HomeSummary {
   moodToday: number | null;
   hasSafetyPlan: boolean;
   triage: TriageState;
+  /** A session the therapist cancelled (P67) or marked missed (P63) in the last 7 days, until the patient books again. */
+  appointmentNotice: { appointmentId: string; kind: 'cancelled' | 'missed' } | null;
 }
 export type MoodTag = 'tired' | 'anxious' | 'slept_well' | 'work_stress' | 'calm';
 export interface MoodEntryRequest { score: number; tags: MoodTag[]; note?: string }

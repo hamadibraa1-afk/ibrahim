@@ -648,6 +648,16 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                     b.Property<byte>("Status")
                         .HasColumnType("tinyint");
 
+                    b.Property<byte[]>("TherapistCancelNoteCipher")
+                        .HasMaxLength(4096)
+                        .HasColumnType("varbinary(4096)");
+
+                    b.Property<DateTimeOffset?>("TherapistLateAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int?>("TherapistLateMinutes")
+                        .HasColumnType("int");
+
                     b.Property<Guid>("TherapistUserId")
                         .HasColumnType("uniqueidentifier");
 
@@ -687,6 +697,9 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("rowversion");
+
+                    b.Property<byte>("Source")
+                        .HasColumnType("tinyint");
 
                     b.Property<DateTimeOffset>("StartsAtUtc")
                         .HasColumnType("datetimeoffset");
@@ -747,6 +760,34 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("MatchSuggestions", "clinical");
+                });
+
+            modelBuilder.Entity("Tamaneen.Clinical.Scheduling.TherapistAvailability", b =>
+                {
+                    b.Property<Guid>("TherapistUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("BufferMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ExceptionsJson")
+                        .IsRequired()
+                        .HasMaxLength(8000)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(8000)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("WeeklyJson")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(4000)");
+
+                    b.HasKey("TherapistUserId");
+
+                    b.ToTable("TherapistAvailabilities", "clinical");
                 });
 
             modelBuilder.Entity("Tamaneen.Clinical.Scheduling.TherapistProfile", b =>
@@ -1982,6 +2023,15 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                     b.HasOne("Tamaneen.Clinical.Scheduling.TherapistProfile", null)
                         .WithMany()
                         .HasForeignKey("TherapistUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Tamaneen.Clinical.Scheduling.TherapistAvailability", b =>
+                {
+                    b.HasOne("Tamaneen.Clinical.Scheduling.TherapistProfile", null)
+                        .WithOne()
+                        .HasForeignKey("Tamaneen.Clinical.Scheduling.TherapistAvailability", "TherapistUserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
