@@ -1,0 +1,137 @@
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" class="progress" [attr.aria-label]="'common.loading' | translate" />
+}
+@if (notFound()) {
+  <section class="tm-card" data-testid="not-found">
+    <h1 class="tm-card-title">{{ 'file.notFound' | translate }}</h1>
+    <p class="tm-muted">{{ 'file.notFoundHint' | translate }}</p>
+  </section>
+}
+<tm-problem-message [error]="error()" />
+
+@if (data(); as d) {
+  <h1 class="title" dir="ltr">{{ d.pseudonymId }}</h1>
+  <tm-patient-tabs [id]="d.pseudonymId" active="homework" />
+
+  <div class="layout">
+    <section class="tm-card" data-testid="current-homework">
+      <h2 class="tm-card-title">{{ 'care.homework.current' | translate }}</h2>
+      @if (d.current.length) {
+        <ul class="list">
+          @for (h of d.current; track h.id) {
+            <li data-testid="homework-row">
+              <div class="grow">
+                <strong>{{ h.title }}</strong>
+                <div class="tm-muted small">
+                  {{ 'care.homework.frequency.' + h.frequency | translate }} · {{ 'care.homework.until' | translate: { date: (h.endsOn | tmDate: 'longDate' : language.language()) } }} ·
+                  <span dir="ltr">{{ h.doneThisWeek }} / {{ h.weeklyTarget }}</span> {{ 'care.homework.thisWeek' | translate }}
+                  @if (h.averageFeeling !== null) { · {{ 'care.overview.feeling' | translate: { value: (h.averageFeeling | number: '1.1-1') } }} }
+                </div>
+                @if (h.latestCheckin; as c) {
+                  @if (c.note) {
+                    <p class="small" data-testid="latest-note">
+                      @if (c.gateLevel !== null && c.gateLevel >= 3) {
+                        <span class="chip danger" data-testid="risk-badge">{{ 'care.homework.riskBadge' | translate }}</span>
+                        <a routerLink="/crisis" class="small">{{ 'care.homework.openEvent' | translate }}</a>
+                      }
+                      {{ 'care.homework.lastNote' | translate: { note: c.note } }}
+                    </p>
+                  }
+                  @if (c.feedback) {
+                    <p class="tm-muted small" data-testid="last-reply">{{ 'care.homework.yourReply' | translate: { text: c.feedback } }}</p>
+                  }
+                }
+                @if (replyTo() && replyTo() === h.latestCheckin?.id) {
+                  <div class="form">
+                    <mat-form-field appearance="outline" class="tm-full">
+                      <mat-label>{{ 'care.homework.reply' | translate }}</mat-label>
+                      <textarea matInput rows="3" maxlength="1000" [(ngModel)]="replyText" data-testid="reply-text"></textarea>
+                    </mat-form-field>
+                    @if (replyPreview()) {
+                      <div class="preview" data-testid="reply-preview">{{ replyText }}</div>
+                    }
+                    <div class="actions">
+                      <button mat-button type="button" (click)="replyTo.set(null)">{{ 'common.cancel' | translate }}</button>
+                      <button mat-stroked-button type="button" (click)="replyPreview.set(true)" [disabled]="!replyText.trim()" data-testid="reply-preview-button">{{ 'care.homework.preview' | translate }}</button>
+                      <button mat-flat-button type="button" (click)="sendReply()" [disabled]="!replyText.trim() || !replyPreview() || saving()" data-testid="reply-send">{{ 'care.homework.send' | translate }}</button>
+                    </div>
+                  </div>
+                }
+              </div>
+              @if (d.canEdit) {
+                @if (h.latestCheckin) {
+                  <button mat-stroked-button type="button" (click)="startReply(h.latestCheckin)" data-testid="reply">{{ 'care.homework.reply' | translate }}</button>
+                }
+                <button mat-stroked-button type="button" (click)="edit(h)" data-testid="edit">{{ 'care.homework.edit' | translate }}</button>
+                <button mat-stroked-button type="button" class="tm-danger-outline" (click)="cancel(h)" data-testid="cancel">{{ 'care.homework.cancel' | translate }}</button>
+              }
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="tm-muted" data-testid="no-homework">{{ 'care.homework.empty' | translate }}</p>
+      }
+      @if (d.past.length) {
+        <h3 class="small">{{ 'care.homework.past' | translate }}</h3>
+        <ul class="list">
+          @for (h of d.past; track h.id) {
+            <li><span class="grow">{{ h.title }}</span><span class="chip">{{ 'care.homework.status.' + h.status | translate }}</span></li>
+          }
+        </ul>
+      }
+    </section>
+
+    @if (d.canEdit) {
+      <section class="tm-card" data-testid="homework-form">
+        <h2 class="tm-card-title">{{ (editing() ? 'care.homework.editTitle' : 'care.homework.new') | translate }}</h2>
+        @if (!editing()) {
+          <p class="small tm-muted">{{ 'care.homework.library' | translate }}</p>
+          <div class="row">
+            @for (t of templates(); track t.code) {
+              <button mat-stroked-button type="button" (click)="useTemplate(t.code)" [attr.data-testid]="'template-' + t.code">{{ t.title }}</button>
+            }
+            <button mat-stroked-button type="button" (click)="useTemplate(null)" data-testid="template-own">{{ 'care.homework.ownText' | translate }}</button>
+          </div>
+        }
+        <div class="form">
+          <mat-form-field appearance="outline" class="tm-full">
+            <mat-label>{{ 'care.homework.titleLabel' | translate }}</mat-label>
+            <input matInput maxlength="120" [(ngModel)]="draft.title" data-testid="hw-title" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="tm-full">
+            <mat-label>{{ 'care.homework.instructions' | translate }}</mat-label>
+            <textarea matInput rows="5" maxlength="2000" [(ngModel)]="draft.instructions" data-testid="hw-instructions"></textarea>
+            <mat-hint>{{ 'care.homework.instructionsHint' | translate }}</mat-hint>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'care.homework.frequencyLabel' | translate }}</mat-label>
+            <mat-select [(ngModel)]="draft.frequency" data-testid="hw-frequency">
+              @for (f of frequencies; track f) {
+                <mat-option [value]="f">{{ 'care.homework.frequency.' + f | translate }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'care.homework.endsOn' | translate }}</mat-label>
+            <input matInput type="date" [min]="minDate" [(ngModel)]="draft.endsOn" data-testid="hw-ends" />
+          </mat-form-field>
+        </div>
+        @if (preview()) {
+          <div class="preview" data-testid="hw-preview">
+            <strong>{{ draft.title }}</strong>
+            <p class="tm-muted small">{{ 'care.homework.frequency.' + draft.frequency | translate }} · {{ 'care.homework.until' | translate: { date: (draft.endsOn | tmDate: 'longDate' : language.language()) } }}</p>
+            <ol>
+              @for (line of lines(draft.instructions); track $index) { <li>{{ line }}</li> }
+            </ol>
+          </div>
+        }
+        <tm-problem-message [error]="formError()" />
+        <div class="actions">
+          @if (editing()) { <button mat-button type="button" (click)="cancelEdit()">{{ 'common.cancel' | translate }}</button> }
+          <button mat-stroked-button type="button" (click)="preview.set(!preview())" [disabled]="!valid()" data-testid="hw-preview-button">{{ 'care.homework.previewAsPatient' | translate }}</button>
+          <button mat-flat-button type="button" (click)="save()" [disabled]="!valid() || saving()" data-testid="hw-save">{{ (editing() ? 'care.homework.saveEdit' : 'care.homework.assign') | translate }}</button>
+        </div>
+      </section>
+    }
+  </div>
+}

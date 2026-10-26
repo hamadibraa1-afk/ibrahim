@@ -15,7 +15,6 @@
 @if (file(); as f) {
   <header class="head">
     <div class="who">
-      <a routerLink="/patients" class="back">{{ 'file.back' | translate }}</a>
       <div class="title-row">
         <h1 class="title" dir="ltr" data-testid="file-pseudonym">{{ f.pseudonymId }}</h1>
         <tm-risk-tag [level]="f.riskLevel" />
@@ -30,6 +29,7 @@
       <button mat-stroked-button type="button" class="tm-danger-outline" (click)="manualCrisis()" data-testid="manual-crisis">{{ 'file.manualCrisis' | translate }}</button>
     </div>
   </header>
+  <tm-patient-tabs [id]="f.pseudonymId" active="file" />
 
   <section class="scores" [attr.aria-label]="'file.scores.region' | translate">
     @for (score of [f.phq9, f.gad7]; track $index) {

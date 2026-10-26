@@ -1,0 +1,114 @@
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" class="progress" [attr.aria-label]="'common.loading' | translate" />
+}
+@if (notFound()) {
+  <section class="tm-card" data-testid="not-found"><h1 class="tm-card-title">{{ 'file.notFound' | translate }}</h1></section>
+}
+<tm-problem-message [error]="error()" />
+
+@if (history(); as h) {
+  <h1 class="title" dir="ltr">{{ h.pseudonymId }}</h1>
+  <tm-patient-tabs [id]="h.pseudonymId" active="plan" />
+
+  @if (!h.fileApproved) {
+    <p class="banner" data-testid="file-not-approved">
+      {{ 'care.plan.fileNotApproved' | translate }}
+      <a [routerLink]="['/patients', h.pseudonymId, 'file']">{{ 'care.plan.openFile' | translate }}</a>
+    </p>
+  }
+  @if (conflict(); as c) {
+    <section class="banner danger" role="alert" data-testid="plan-conflict">
+      <p>{{ 'care.plan.conflict' | translate: { version: c.version, name: c.authorName } }}</p>
+      <div class="compare">
+        <div><strong>{{ 'care.plan.theirs' | translate }}</strong><pre>{{ asText(c) }}</pre><pre>{{ c.interventions }}</pre></div>
+        <div><strong>{{ 'care.plan.yours' | translate }}</strong><pre>{{ draft.goals }}</pre><pre>{{ draft.interventions }}</pre></div>
+      </div>
+    </section>
+  }
+
+  <div class="layout">
+    <section class="tm-card" data-testid="plan-editor">
+      <h2 class="tm-card-title">{{ 'care.plan.versionDraft' | translate: { version: (h.current?.version ?? 0) + 1 } }}</h2>
+      <p class="tm-muted small">{{ 'care.plan.writtenByYou' | translate }}</p>
+      <fieldset class="form" [disabled]="!h.canEdit">
+        <mat-form-field appearance="outline" class="tm-full">
+          <mat-label>{{ 'care.plan.goals' | translate }}</mat-label>
+          <textarea matInput rows="5" maxlength="4000" [(ngModel)]="draft.goals" [placeholder]="'care.plan.goalsPlaceholder' | translate" data-testid="plan-goals"></textarea>
+          <mat-hint>{{ 'care.plan.goalsHint' | translate }}</mat-hint>
+        </mat-form-field>
+        @if (goalLines().length) {
+          <ul class="list" data-testid="goal-statuses">
+            @for (g of goalLines(); track $index; let i = $index) {
+              <li>
+                <span class="grow small">{{ g }}</span>
+                <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                  <mat-label>{{ 'care.plan.goalStatusLabel' | translate }}</mat-label>
+                  <mat-select [value]="statusAt(i)" (valueChange)="setStatus(i, $event)" [attr.data-testid]="'goal-status-' + i">
+                    @for (s of statuses; track s) { <mat-option [value]="s">{{ 'care.plan.goalStatus.' + s | translate }}</mat-option> }
+                  </mat-select>
+                </mat-form-field>
+              </li>
+            }
+          </ul>
+        }
+        <mat-form-field appearance="outline" class="tm-full">
+          <mat-label>{{ 'care.plan.interventions' | translate }}</mat-label>
+          <textarea matInput rows="3" maxlength="4000" [(ngModel)]="draft.interventions" [placeholder]="'care.plan.interventionsPlaceholder' | translate" data-testid="plan-interventions"></textarea>
+        </mat-form-field>
+        <div class="row">
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'care.plan.frequency' | translate }}</mat-label>
+            <mat-select [(ngModel)]="draft.frequency" data-testid="plan-frequency">
+              @for (f of frequencies; track f) { <mat-option [value]="f">{{ 'care.plan.frequencyOption.' + f | translate }}</mat-option> }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'care.plan.reviewOn' | translate }}</mat-label>
+            <input matInput type="date" [min]="minDate" [(ngModel)]="draft.reviewOn" data-testid="plan-review" />
+          </mat-form-field>
+        </div>
+        <mat-form-field appearance="outline" class="tm-full">
+          <mat-label>{{ 'care.plan.followUp' | translate }}</mat-label>
+          <textarea matInput rows="3" maxlength="4000" [(ngModel)]="draft.followUpNotes" data-testid="plan-notes"></textarea>
+        </mat-form-field>
+      </fieldset>
+      <tm-problem-message [error]="saveError()" />
+      @if (h.canEdit) {
+        <div class="actions">
+          <button mat-stroked-button type="button" (click)="discard()" data-testid="plan-discard">{{ 'care.plan.discard' | translate }}</button>
+          <button mat-flat-button type="button" (click)="save()" [disabled]="!h.fileApproved || !valid() || saving()" data-testid="plan-save">{{ 'care.plan.save' | translate }}</button>
+        </div>
+      }
+    </section>
+
+    <aside class="side">
+      <section class="tm-card" data-testid="plan-versions">
+        <h2 class="tm-card-title">{{ 'care.plan.versions' | translate }}</h2>
+        @if (h.versions.length) {
+          <ul class="list">
+            @for (v of h.versions; track v.version) {
+              <li>
+                <span class="grow">{{ 'care.plan.versionLine' | translate: { version: v.version, date: (v.createdAt | tmDate: 'longDate' : language.language()) } }}</span>
+                <button mat-button type="button" (click)="view(v.version)" [attr.data-testid]="'view-' + v.version">{{ 'care.plan.view' | translate }}</button>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="tm-muted small" data-testid="no-plan">{{ 'care.plan.none' | translate }}</p>
+        }
+        <p class="tm-muted small">{{ 'care.plan.neverDeleted' | translate }}</p>
+      </section>
+      @if (viewing(); as v) {
+        <section class="tm-card" data-testid="plan-viewing">
+          <h2 class="tm-card-title">{{ 'care.plan.versionLine' | translate: { version: v.version, date: (v.createdAt | tmDate: 'longDate' : language.language()) } }}</h2>
+          <p class="tm-muted small">{{ 'care.plan.readOnly' | translate }} · {{ v.authorName }}</p>
+          <ul class="list">
+            @for (g of v.goals; track $index) { <li><span class="grow">{{ g.text }}</span><span class="chip">{{ 'care.plan.goalStatus.' + g.status | translate }}</span></li> }
+          </ul>
+          <p class="pre">{{ v.interventions }}</p>
+          <button mat-button type="button" (click)="viewing.set(null)">{{ 'common.close' | translate }}</button>
+        </section>
+      }
+    </aside>
+  </div>
+}

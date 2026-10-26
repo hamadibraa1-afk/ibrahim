@@ -212,9 +212,9 @@ describe('DashboardComponent', () => {
     expect(el.querySelectorAll('[data-testid="outcome-recorded"]').length).toBe(2);
   });
 
-  it('links «review file» and each session «file» to the clinical file of the patient (S02)', async () => {
+  it('links «review file» to the clinical file (S02) and each session «file» to the patient overview (S14)', async () => {
     const { el } = await render('en');
-    expect(el.querySelector('[data-testid="review-file"]')!.getAttribute('href')).toBe('/patients/P-7Q4K-82XM');
+    expect(el.querySelector('[data-testid="review-file"]')!.getAttribute('href')).toBe('/patients/P-7Q4K-82XM/file');
     expect(el.querySelectorAll('[data-testid="open-file"]')[1].getAttribute('href')).toBe('/patients/P-3HX9-14QA');
   });
 

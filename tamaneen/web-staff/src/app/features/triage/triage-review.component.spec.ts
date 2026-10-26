@@ -148,7 +148,7 @@ describe('TriageReviewComponent (S03)', () => {
     expect(el.querySelector('[data-testid="safety"]')!.textContent).toContain('C-SSRS negative');
     expect(el.querySelectorAll('[data-testid="suggested"]').length).toBe(2);
     expect(el.querySelector('[data-testid="suggested"]')!.textContent).toContain('capacity 14/25');
-    expect(el.querySelector('[data-testid="full-file"]')!.getAttribute('href')).toBe('/patients/P-7Q4K-82XM');
+    expect(el.querySelector('[data-testid="full-file"]')!.getAttribute('href')).toBe('/patients/P-7Q4K-82XM/file');
     fixture.destroy();
     backend.expectOne((r) => r.method === 'DELETE' && r.url === `${CASE}/claim`).flush(null, { status: 204, statusText: 'No Content' });
     backend.verify();

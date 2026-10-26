@@ -106,7 +106,7 @@
       <section class="tm-card block">
         <div class="block-head">
           <h2 class="tm-card-title">{{ 'triage.summary.title' | translate }}</h2>
-          <a [routerLink]="['/patients', d.pseudonymId]" class="link" data-testid="full-file">{{ 'triage.summary.fullFile' | translate }}</a>
+          <a [routerLink]="['/patients', d.pseudonymId, 'file']" class="link" data-testid="full-file">{{ 'triage.summary.fullFile' | translate }}</a>
         </div>
         <p class="summary">{{ d.summary || ('triage.summary.none' | translate) }}</p>
       </section>

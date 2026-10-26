@@ -52,7 +52,7 @@ test('Sara signs in with password and authenticator code and sees her dashboard 
 test('Sara opens the file page (S02), sees the scores, and approves it', async () => {
   const row = page.getByTestId('pending-table').getByRole('row').filter({ hasText: pseudonymId });
   await row.getByTestId('review-file').click();
-  await expect(page).toHaveURL(new RegExp(`/patients/${pseudonymId}$`));
+  await expect(page).toHaveURL(new RegExp(`/patients/${pseudonymId}/file$`));
   await expect(page.getByTestId('file-pseudonym')).toHaveText(pseudonymId);
   // Direct booking: the safety check stands in for the intake, so there are no questionnaire scores.
   await expect(page.getByText('حجز مباشر: فحص السلامة بدل الاستقبال.')).toBeVisible();

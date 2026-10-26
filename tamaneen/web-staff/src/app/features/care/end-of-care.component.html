@@ -1,0 +1,109 @@
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" class="progress" [attr.aria-label]="'common.loading' | translate" />
+}
+@if (notFound()) {
+  <section class="tm-card" data-testid="not-found"><h1 class="tm-card-title">{{ 'file.notFound' | translate }}</h1></section>
+}
+<tm-problem-message [error]="error()" />
+
+@if (view(); as v) {
+  <a [routerLink]="['/patients', v.pseudonymId]" class="small">{{ 'care.tabs.overview' | translate }}</a>
+  <header class="head">
+    <div>
+      <h1 class="title">{{ 'care.close.title' | translate }} · <span dir="ltr">{{ v.pseudonymId }}</span></h1>
+      <p class="tm-muted small">{{ 'care.close.subtitle' | translate }}</p>
+    </div>
+    <div class="head-actions">
+      @if (v.canEdit && !locked()) {
+        <button mat-stroked-button type="button" (click)="save(false)" [disabled]="saving()" data-testid="close-draft">{{ 'care.notes.saveDraft' | translate }}</button>
+        <button mat-flat-button type="button" (click)="save(true)" [disabled]="saving() || v.blocked || !complete()" data-testid="close-submit">{{ 'care.close.submit' | translate }}</button>
+      }
+      @if (v.canEdit && status() === 'submitted') {
+        <button mat-stroked-button type="button" (click)="withdraw()" data-testid="close-withdraw">{{ 'care.close.withdraw' | translate }}</button>
+      }
+      @if (v.canSignOff) {
+        <button mat-stroked-button type="button" (click)="decide(false)" data-testid="close-reject">{{ 'care.close.reject' | translate }}</button>
+        <button mat-flat-button type="button" (click)="decide(true)" [disabled]="v.blocked" data-testid="close-sign-off">{{ 'care.close.signOff' | translate }}</button>
+      }
+    </div>
+  </header>
+
+  @if (v.blocked) {
+    <p class="banner danger" role="alert" data-testid="close-blocked">{{ 'care.close.blocked' | translate }}</p>
+  }
+  @if (status() === 'submitted') {
+    <p class="banner" data-testid="close-waiting">{{ 'care.close.waiting' | translate }}</p>
+  }
+  @if (status() === 'rejected') {
+    <p class="banner danger" data-testid="close-rejected">{{ 'care.close.rejectedBy' | translate: { name: v.closure!.decidedBy, reason: v.closure!.rejectionReason } }}</p>
+  }
+  @if (status() === 'signed_off') {
+    <p class="banner ok" data-testid="close-signed">{{ 'care.close.signedOffBy' | translate: { name: v.closure!.decidedBy, date: (v.closure!.decidedAt | tmDate: 'longDate' : language.language()) } }}</p>
+  }
+  <tm-problem-message [error]="saveError()" />
+
+  <fieldset class="grid" [disabled]="locked() || !v.canEdit">
+    <section class="tm-card form" data-testid="close-summary">
+      <h2 class="tm-card-title">{{ 'care.close.careSummary' | translate }}</h2>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'care.close.reason' | translate }}</mat-label>
+        <mat-select [(ngModel)]="draft.reasonCode" [disabled]="locked() || !v.canEdit" data-testid="close-reason">
+          @for (r of reasons; track r) { <mat-option [value]="r">{{ 'care.close.reasons.' + r | translate }}</mat-option> }
+        </mat-select>
+      </mat-form-field>
+      <div class="row">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'care.close.sessions' | translate }}</mat-label>
+          <input matInput type="number" min="0" [(ngModel)]="draft.sessionCount" data-testid="close-sessions" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'care.close.weeks' | translate }}</mat-label>
+          <input matInput type="number" min="0" [(ngModel)]="draft.durationWeeks" data-testid="close-weeks" />
+        </mat-form-field>
+      </div>
+      <table class="small" data-testid="close-measures">
+        <caption class="tm-muted">{{ 'care.close.measuresCaption' | translate }}</caption>
+        <tr><th scope="col">{{ 'care.close.measure' | translate }}</th><th scope="col">{{ 'care.close.start' | translate }}</th><th scope="col">{{ 'care.close.end' | translate }}</th></tr>
+        @for (m of v.measures; track m.instrument) {
+          <tr><td dir="ltr">{{ m.instrument }}</td><td>{{ m.start ?? '—' }}</td><td>{{ m.end ?? '—' }}</td></tr>
+        }
+      </table>
+    </section>
+
+    <section class="tm-card form" data-testid="close-patient">
+      <h2 class="tm-card-title">{{ 'care.close.patientSummary' | translate }}</h2>
+      <mat-form-field appearance="outline" class="tm-full">
+        <mat-label>{{ 'care.close.patientSummaryLabel' | translate }}</mat-label>
+        <textarea matInput rows="5" maxlength="1500" [(ngModel)]="draft.patientSummary" data-testid="close-patient-summary"></textarea>
+        <mat-hint>{{ 'care.close.patientSummaryHint' | translate }}</mat-hint>
+      </mat-form-field>
+      @if (summaryHasNumbers()) {
+        <p class="banner" data-testid="close-numbers">{{ 'care.close.numbersWarning' | translate }}</p>
+      }
+    </section>
+
+    <section class="tm-card form wide" data-testid="close-relapse">
+      <h2 class="tm-card-title">{{ 'care.close.relapsePlan' | translate }}</h2>
+      <div class="row">
+        <mat-form-field appearance="outline" class="grow">
+          <mat-label>{{ 'care.close.warningSigns' | translate }}</mat-label>
+          <textarea matInput rows="2" maxlength="300" [(ngModel)]="draft.warningSigns" data-testid="close-signs"></textarea>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="grow">
+          <mat-label>{{ 'care.close.whatToDo' | translate }}</mat-label>
+          <textarea matInput rows="2" maxlength="300" [(ngModel)]="draft.whatToDo" data-testid="close-todo"></textarea>
+        </mat-form-field>
+      </div>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'care.close.followUp' | translate }}</mat-label>
+        <mat-select [(ngModel)]="draft.followUp" [disabled]="locked() || !v.canEdit" data-testid="close-follow-up">
+          @for (f of followUps; track f) { <mat-option [value]="f">{{ 'care.close.followUps.' + f | translate }}</mat-option> }
+        </mat-select>
+      </mat-form-field>
+      <mat-slide-toggle [(ngModel)]="draft.keepLibrary" [disabled]="locked() || !v.canEdit" data-testid="close-keep-library">{{ 'care.close.keepLibrary' | translate }}</mat-slide-toggle>
+      <mat-slide-toggle [checked]="true" [disabled]="true">{{ 'care.close.keepSafetyPlan' | translate }}</mat-slide-toggle>
+      <p class="tm-muted small">{{ 'care.close.rule' | translate }}</p>
+      <p class="tm-muted small">{{ 'care.close.after' | translate }}</p>
+    </section>
+  </fieldset>
+}

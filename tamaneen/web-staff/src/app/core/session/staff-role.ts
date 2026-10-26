@@ -16,10 +16,10 @@ export const NAVIGATION: Record<StaffRole, NavGroup[]> = {
     { key: 'workspace', items: ['dashboard', 'patients', 'messages', 'schedule', 'alerts', 'notifications', 'availability', 'leave', 'wellbeing', 'cpd', 'profile'].map((key) => ({ key })) },
   ],
   supervisor: [
-    { key: 'oncall', items: ['triage', 'crisis', 'reviews', 'noshow', 'oncall', 'rota', 'reassign', 'qa', 'metrics'].map((key) => ({ key })) },
+    { key: 'oncall', items: ['triage', 'crisis', 'closures', 'reviews', 'noshow', 'oncall', 'rota', 'reassign', 'qa', 'metrics'].map((key) => ({ key })) },
   ],
   lead: [
-    { key: 'clinical', items: ['triage', 'crisis', 'rules', 'reporting', 'reviews', 'rota', 'qa', 'metrics'].map((key) => ({ key })) },
+    { key: 'clinical', items: ['triage', 'crisis', 'closures', 'rules', 'reporting', 'reviews', 'rota', 'qa', 'metrics'].map((key) => ({ key })) },
   ],
   admin: [
     { key: 'settings', items: ['settings-platform', 'ai', 'calendar', 'integrations', 'modules', 'flags'].map((key) => ({ key })) },
@@ -34,7 +34,7 @@ export const NAVIGATION: Record<StaffRole, NavGroup[]> = {
 export const ON_CALL_GROUP: NavGroup = { key: 'oncall', items: [{ key: 'crisis' }] };
 
 /** Menu entries that have a screen. Anything else is left out of the menu instead of linking nowhere. */
-export const IMPLEMENTED_ROUTES: ReadonlySet<string> = new Set(['dashboard', 'patients', 'triage', 'crisis']);
+export const IMPLEMENTED_ROUTES: ReadonlySet<string> = new Set(['dashboard', 'patients', 'triage', 'crisis', 'closures']);
 
 /** Keeps only the items with a screen, and drops groups left empty. */
 export function visibleNavigation(groups: readonly NavGroup[], implemented: ReadonlySet<string> = IMPLEMENTED_ROUTES): NavGroup[] {
