@@ -11,7 +11,7 @@ Public (no session): `/` P01 · `/how-it-works` P12 · `/legal` P13 · `/crisis-
 Signed in, under the `(app)` route group, whose layout already requires a session: `/start/consents` P03 · `/start/safety-info` P21 ·
 `/start/path` P22 · `/start/safety-check` P23 · `/intake` P04 · `/intake/summary` P05 · `/crisis` P06 · `/waiting` P36 ·
 `/matches` P07 · `/waitlist` P56 · `/therapists` P24 · `/therapists/[id]` P25 · `/therapists/[id]/book` P08 · `/appointments` P27 ·
-`/appointments/[id]` P28 · `/appointments/[id]/confirmed` P26 · `/home` P09 · `/homework` P29 · `/homework/[id]` P10 ·
+`/appointments/[id]` P28 · `/appointments/[id]/confirmed` P26 · `/appointments/[id]/lobby` P41 (P54 is its late state) · `/appointments/[id]/live` P42 · `/appointments/[id]/summary` P43 · `/home` P09 · `/homework` P29 · `/homework/[id]` P10 ·
 `/check-in` P30 · `/safety-plan` P37 · `/settings` P31 · `/settings/security` P32 · `/settings/notifications` P33 ·
 `/settings/safety` P34 · `/privacy` P11 · `/outbox` P66.
 

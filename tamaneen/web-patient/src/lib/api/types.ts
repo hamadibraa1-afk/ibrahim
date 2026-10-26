@@ -211,12 +211,60 @@ export interface Appointment {
   status: AppointmentStatus;
   rescheduled: boolean;
 }
-export interface AppointmentDetail extends Appointment { canChange: boolean; changeDeadline: string; joinUrl: string | null; joinAvailableAt: string }
+export interface AppointmentDetail extends Appointment {
+  canChange: boolean;
+  changeDeadline: string;
+  /** Kept for older clients; the apps open the lobby (P41) instead. */
+  joinUrl: string | null;
+  joinAvailableAt: string;
+  /** The therapist's own "running late" notice in minutes (S18), or null. P54 also starts when the start passes without the therapist. */
+  therapistLateMinutes: number | null;
+}
 export interface AppointmentList { upcoming: Appointment[]; past: Appointment[] }
 export interface RescheduleRequest { slotId: string }
 /** P28 cancel reasons (PB-45). Codes only; the labels are in messages `appointmentDetail.reasons`. */
 export type CancelReasonCode = 'schedule_conflict' | 'feeling_better' | 'unwell' | 'therapist_fit' | 'other';
 export interface CancelRequest { reasonCode: CancelReasonCode }
+
+// ---------- Session room: P41 lobby, P54, P42 live, P43 ----------
+export type VideoProvider = 'dev' | 'embed';
+/** POST /v1/appointments/{id}/join. `token` is the session pass the presence heartbeat needs. */
+export interface JoinDescriptor {
+  provider: VideoProvider;
+  mode: 'test_room' | 'embed';
+  url: string | null;
+  token: string;
+  expiresAt: string;
+  opensAt: string;
+  closesAt: string;
+  participant: 'patient' | 'therapist';
+  heartbeatSeconds: number;
+}
+export interface SessionPeer { present: boolean; joinedAt: string | null; lastSeenAt: string | null }
+/** GET/POST /v1/appointments/{id}/presence. `peer` is the therapist. Countdowns use serverNow (EC-09). */
+export interface SessionState {
+  appointmentId: string;
+  serverNow: string;
+  startsAt: string;
+  durationMinutes: number;
+  opensAt: string;
+  closesAt: string;
+  open: boolean;
+  status: AppointmentStatus;
+  peer: SessionPeer;
+  therapistLate: boolean;
+  lateOptionsAfterMinutes: number;
+  heartbeatSeconds: number;
+  provider: VideoProvider;
+  patientCrisisOpen: boolean;
+}
+export interface PresenceRequest { token: string; leaving?: boolean }
+export interface PreSessionNote { text: string | null; updatedAt: string | null }
+export interface PreSessionNoteSaved extends GateOutcome { text: string | null; updatedAt: string | null }
+export type SessionRating = 'not_helpful' | 'okay' | 'helpful';
+export interface SessionFeedback { rating: SessionRating | null; comfortable: boolean; comment: string | null; createdAt: string }
+export interface SessionFeedbackRequest { rating?: SessionRating; comfortable?: boolean; comment?: string }
+export interface SessionFeedbackSaved extends GateOutcome { feedback: SessionFeedback }
 
 // ---------- Home, mood, homework, safety plan ----------
 export interface HomeSummary {

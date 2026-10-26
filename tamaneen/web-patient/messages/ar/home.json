@@ -47,7 +47,7 @@
     "continueIntake": "متابعة الاستقبال",
     "continueIntakeBody": "حفظنا محادثتك. أكمل من حيث توقفت.",
     "join": "انضم إلى الجلسة",
-    "joinLabel": "انضم إلى الجلسة مع {name} (يفتح في نافذة جديدة)",
+    "joinLabel": "انضم إلى الجلسة مع {name}",
     "triageClosed": "راجعنا ملفك",
     "triageClosedBody": "نقترح عليك جهات تقدر تساعدك الآن. اعرضها هنا.",
     "triageEscalated": "نريد أن نطمئن عليك",

@@ -77,33 +77,26 @@ describe('AppointmentListView (P27)', () => {
 });
 
 describe('JoinSessionCard (P28)', () => {
-  it('stays disabled with a relative label until the link opens, then refreshes the page', async () => {
+  it('stays disabled with a relative label until ten minutes before, with the lobby open for getting ready', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(NOW);
     const opensAt = '2026-10-21T12:50:00Z';
-    renderWithIntl(<JoinSessionCard joinUrl={null} joinAvailableAt={opensAt} timeZone="Asia/Riyadh" />);
-    const button = screen.getByRole('button', { name: `فتح رابط الجلسة · ${formatRelativeDays(opensAt, 'ar', NOW)}` });
+    renderWithIntl(<JoinSessionCard appointmentId="a1" joinAvailableAt={opensAt} timeZone="Asia/Riyadh" />);
+    const button = screen.getByRole('button', { name: `دخول الجلسة · ${formatRelativeDays(opensAt, 'ar', NOW)}` });
     expect(button).toBeDisabled();
-    expect(screen.queryByRole('link')).toBeNull();
+    expect(screen.getByRole('link', { name: 'تجهيز الجلسة الآن' })).toHaveAttribute('href', '/appointments/a1/lobby');
 
     await act(async () => {
       vi.advanceTimersByTime(Date.parse(opensAt) - NOW.getTime() + 1000);
     });
-    expect(mocks.refresh).toHaveBeenCalled();
+    expect(screen.getByRole('link', { name: 'دخول غرفة الانتظار' })).toHaveAttribute('href', '/appointments/a1/lobby');
   });
 
-  it('opens the session link in a new tab once it is available', () => {
-    renderWithIntl(<JoinSessionCard joinUrl="https://meet.example.org/s/abc" joinAvailableAt={new Date(Date.now() - 60_000).toISOString()} timeZone="Asia/Riyadh" />, 'en');
-    const link = screen.getByRole('link', { name: 'Open the session link (opens in a new tab)' });
-    expect(link).toHaveAttribute('href', 'https://meet.example.org/s/abc');
-    expect(link).toHaveAttribute('target', '_blank');
-    expect(link).toHaveAttribute('rel', 'noopener noreferrer');
-  });
-
-  it('never links to a non-https session URL', () => {
-    renderWithIntl(<JoinSessionCard joinUrl="javascript:alert(1)" joinAvailableAt={new Date(Date.now() - 60_000).toISOString()} timeZone="Asia/Riyadh" />);
-    expect(screen.queryByRole('link')).toBeNull();
-    expect(screen.getByRole('button', { name: 'فتح رابط الجلسة' })).toBeDisabled();
+  it('opens the lobby in the same tab once the window is open', () => {
+    renderWithIntl(<JoinSessionCard appointmentId="a1" joinAvailableAt={new Date(Date.now() - 60_000).toISOString()} timeZone="Asia/Riyadh" />, 'en');
+    const link = screen.getByRole('link', { name: 'Go to the waiting room' });
+    expect(link).toHaveAttribute('href', '/appointments/a1/lobby');
+    expect(link).not.toHaveAttribute('target');
   });
 });
 

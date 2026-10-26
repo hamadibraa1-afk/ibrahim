@@ -153,19 +153,19 @@ describe('HomeView', () => {
   describe('join button (PB-43)', () => {
     afterEach(() => vi.useRealTimers());
 
-    it('stays hidden until ten minutes before, then opens the meeting link in a new tab', () => {
+    it('stays hidden until ten minutes before, then opens the session lobby', () => {
       vi.useFakeTimers({ toFake: ['Date'] });
       vi.setSystemTime(new Date('2026-10-21T12:45:00Z'));
-      const join = { joinUrl: 'https://meet.tamaneen.test/room/a1', joinAvailableAt: '2026-10-21T12:50:00Z' };
-      const { unmount } = renderWithIntl(<HomeView home={home} locale="ar" timeZone="Asia/Riyadh" now={new Date()} join={{ ...join, joinUrl: null }} />, 'ar');
+      const join = { joinAvailableAt: '2026-10-21T12:50:00Z' };
+      const { unmount } = renderWithIntl(<HomeView home={home} locale="ar" timeZone="Asia/Riyadh" now={new Date()} join={join} />, 'ar');
       expect(screen.queryByTestId('home-join')).not.toBeInTheDocument();
       unmount();
 
       vi.setSystemTime(new Date('2026-10-21T12:51:00Z'));
       renderWithIntl(<HomeView home={home} locale="en" timeZone="Asia/Riyadh" now={new Date()} join={join} />, 'en');
-      const link = screen.getByRole('link', { name: 'Join the session with أ. سارة (opens in a new tab)' });
-      expect(link).toHaveAttribute('href', join.joinUrl);
-      expect(link).toHaveAttribute('target', '_blank');
+      const link = screen.getByRole('link', { name: 'Join the session with أ. سارة' });
+      expect(link).toHaveAttribute('href', `/appointments/${home.nextAppointment!.id}/lobby`);
+      expect(link).not.toHaveAttribute('target');
     });
   });
 });

@@ -2,67 +2,54 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
-import { useRouter } from '@/i18n/navigation';
 import { formatRelativeDays, formatTime } from '@/lib/format';
-import { buttonClass } from '@/components/ui/Button';
+import { buttonClass, ButtonLink } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { asLocale } from '@/components/matching/labels';
 
 /** setTimeout cannot wait longer than this (about 24.8 days). */
 const MAX_TIMEOUT = 2_147_000_000;
-const POLL_FOR_LINK_MS = 30_000;
 
 const dayKey = (ms: number, timeZone: string) =>
   new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(ms));
 
 /**
- * P28 "session link" card. The button stays disabled until joinAvailableAt (labelled "in 2 days" or with
- * the time on the day itself); then the page refreshes to pick up joinUrl, which opens in a new tab.
+ * P28 "session room" card (PB-43). Until joinAvailableAt (ten minutes before) the main button is disabled and says
+ * when it opens ("in 2 days", or the time on the day itself); then it opens the lobby (P41), where the join happens.
+ * The lobby is also reachable earlier to check the camera and write the pre-session note.
  */
-export function JoinSessionCard({ joinUrl, joinAvailableAt, timeZone }: { joinUrl: string | null; joinAvailableAt: string; timeZone: string }) {
+export function JoinSessionCard({ appointmentId, joinAvailableAt, timeZone }: { appointmentId: string; joinAvailableAt: string; timeZone: string }) {
   const t = useTranslations('appointmentDetail');
   const locale = asLocale(useLocale());
-  const router = useRouter();
   const [now, setNow] = useState(() => Date.now());
   const opensAt = Date.parse(joinAvailableAt);
   const available = now >= opensAt;
-  const url = joinUrl && /^https:\/\//i.test(joinUrl) ? joinUrl : null;
+  const lobby = `/appointments/${encodeURIComponent(appointmentId)}/lobby`;
 
   useEffect(() => {
     if (available) return;
-    const id = window.setTimeout(() => {
-      const current = Date.now();
-      setNow(current);
-      if (current >= opensAt) router.refresh();
-    }, Math.min(Math.max(opensAt - Date.now(), 0) + 250, MAX_TIMEOUT));
+    const id = window.setTimeout(() => setNow(Date.now()), Math.min(Math.max(opensAt - Date.now(), 0) + 250, MAX_TIMEOUT));
     return () => window.clearTimeout(id);
-  }, [available, opensAt, now, router]);
-
-  // The link can lag a little behind the opening time; check back until it is there.
-  useEffect(() => {
-    if (!available || url) return;
-    const id = window.setInterval(() => router.refresh(), POLL_FOR_LINK_MS);
-    return () => window.clearInterval(id);
-  }, [available, url, router]);
+  }, [available, opensAt, now]);
 
   let action;
-  if (available && url) {
+  if (available) {
     action = (
-      <a href={url} target="_blank" rel="noopener noreferrer" className={buttonClass('primary', true)}>
+      <ButtonLink href={lobby} full data-testid="join-lobby">
         {t('join')}
-        <span className="sr-only">{t('newTab')}</span>
-      </a>
+      </ButtonLink>
     );
   } else {
-    const when = available
-      ? null
-      : dayKey(opensAt, timeZone) === dayKey(now, timeZone)
-        ? formatTime(joinAvailableAt, locale, timeZone)
-        : formatRelativeDays(joinAvailableAt, locale, new Date(now), timeZone);
+    const when = dayKey(opensAt, timeZone) === dayKey(now, timeZone) ? formatTime(joinAvailableAt, locale, timeZone) : formatRelativeDays(joinAvailableAt, locale, new Date(now), timeZone);
     action = (
-      <button type="button" disabled className={buttonClass('primary', true)}>
-        {when ? t('joinWhen', { when }) : t('join')}
-      </button>
+      <>
+        <button type="button" disabled className={buttonClass('primary', true)}>
+          {t('joinWhen', { when })}
+        </button>
+        <ButtonLink href={lobby} variant="ghost" full>
+          {t('prepare')}
+        </ButtonLink>
+      </>
     );
   }
 

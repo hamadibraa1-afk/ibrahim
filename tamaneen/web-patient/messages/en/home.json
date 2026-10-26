@@ -47,7 +47,7 @@
     "continueIntake": "Continue intake",
     "continueIntakeBody": "We saved your conversation. Pick up where you left off.",
     "join": "Join the session",
-    "joinLabel": "Join the session with {name} (opens in a new tab)",
+    "joinLabel": "Join the session with {name}",
     "triageClosed": "We have reviewed your file",
     "triageClosedBody": "We suggest services that can help you now. See them here.",
     "triageEscalated": "We want to check on you",

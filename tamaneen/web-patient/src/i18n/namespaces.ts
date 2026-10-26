@@ -12,7 +12,7 @@ export const namespaces = [
   // intake, crisis, safety plan
   'intake', 'summary', 'crisis', 'waitingTriage', 'safetyPlan',
   // matching and booking
-  'matching', 'therapists', 'therapistProfile', 'booking', 'bookConfirmed', 'appointments', 'appointmentDetail',
+  'matching', 'therapists', 'therapistProfile', 'booking', 'bookConfirmed', 'appointments', 'appointmentDetail', 'session',
   // home and settings
   'home', 'homework', 'checkin', 'privacy', 'settings',
 ] as const;

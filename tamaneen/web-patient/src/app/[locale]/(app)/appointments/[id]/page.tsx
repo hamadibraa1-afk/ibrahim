@@ -7,6 +7,7 @@ import { JoinSessionCard } from '@/components/appointments/JoinSessionCard';
 import { isCancelled, sessionLabel, statusLabel } from '@/components/appointments/labels';
 import { asLocale, genderKey, timeZoneOf, type Translator } from '@/components/matching/labels';
 import { BackLink } from '@/components/ui/BackLink';
+import { ButtonLink } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { getMe, serverGetOptional } from '@/lib/api/server';
 import type { AppointmentDetail } from '@/lib/api/types';
@@ -55,11 +56,17 @@ export default async function AppointmentDetailPage({ params }: { params: Params
 
       {appointment.status === 'confirmed' ? (
         <>
-          <JoinSessionCard joinUrl={appointment.joinUrl} joinAvailableAt={appointment.joinAvailableAt} timeZone={timeZone} />
+          <JoinSessionCard appointmentId={appointment.id} joinAvailableAt={appointment.joinAvailableAt} timeZone={timeZone} />
           <Card className="border border-line text-base leading-relaxed">
             <p>{t.rich('prep', { b: (chunks) => <b>{chunks}</b> })}</p>
           </Card>
         </>
+      ) : null}
+
+      {appointment.status === 'completed' || (appointment.status === 'confirmed' && Date.parse(appointment.startsAt) <= Date.now()) ? (
+        <ButtonLink href={`/appointments/${encodeURIComponent(appointment.id)}/summary`} variant="secondary" full>
+          {t('afterSession')}
+        </ButtonLink>
       ) : null}
 
       <div className="mt-4">

@@ -60,6 +60,7 @@ export function appointmentDetail(overrides: Partial<AppointmentDetail> = {}): A
     changeDeadline: '2026-10-20T13:00:00Z',
     joinUrl: null,
     joinAvailableAt: '2026-10-21T12:50:00Z',
+    therapistLateMinutes: null,
     ...overrides,
   };
 }

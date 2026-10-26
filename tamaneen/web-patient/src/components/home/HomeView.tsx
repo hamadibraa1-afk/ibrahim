@@ -37,7 +37,7 @@ export function HomeView({
   timeZone: string;
   now: Date;
   intakeStatus?: IntakeStatus;
-  join?: Pick<AppointmentDetail, 'joinUrl' | 'joinAvailableAt'> | null;
+  join?: Pick<AppointmentDetail, 'joinAvailableAt'> | null;
 }) {
   const t = useTranslations('home');
   const hour = hourIn(now, timeZone);
@@ -117,7 +117,7 @@ export function HomeView({
               {t('details')}
             </Link>
           </div>
-          {join ? <HomeJoinButton joinUrl={join.joinUrl} joinAvailableAt={join.joinAvailableAt} name={appt.therapist.displayName} /> : null}
+          {join ? <HomeJoinButton appointmentId={appt.id} joinAvailableAt={join.joinAvailableAt} name={appt.therapist.displayName} /> : null}
         </section>
       ) : intakeOpen ? null : (
         <Card className="flex flex-col items-start gap-2">

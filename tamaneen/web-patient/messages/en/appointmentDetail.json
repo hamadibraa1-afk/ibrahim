@@ -8,11 +8,10 @@
     "type": "Type",
     "typeValue": "Remote · {minutes} minutes",
     "status": "Status",
-    "linkTitle": "Session link",
-    "linkBody": "The link appears ten minutes before. Find a quiet place and use headphones if you can.",
-    "join": "Open the session link",
-    "joinWhen": "Open the session link · {when}",
-    "newTab": "(opens in a new tab)",
+    "linkTitle": "Session room",
+    "linkBody": "The session opens ten minutes before the start. You can already check your camera and microphone and note what you want to talk about.",
+    "join": "Go to the waiting room",
+    "joinWhen": "Join the session · {when}",
     "prep": "<b>Before the session:</b> think about what you'd like to start with. You don't need to repeat what you shared in the intake chat.",
     "change": "Change appointment",
     "cancel": "Cancel appointment",
@@ -32,6 +31,8 @@
       "other": "Another reason"
     },
     "cancelled": "Your appointment is cancelled. You can book a new one whenever you like.",
-    "bookNew": "Book a new appointment"
+    "bookNew": "Book a new appointment",
+    "prepare": "Get ready now",
+    "afterSession": "After the session: rating and next step"
   }
 }
