@@ -32,6 +32,38 @@
       "other": "Another reason"
     },
     "cancelled": "Your appointment is cancelled. You can book a new one whenever you like.",
-    "bookNew": "Book a new appointment"
+    "bookNew": "Book a new appointment",
+    "therapistCancelled": {
+      "metaTitle": "Session cancelled",
+      "titleFemale": "We're sorry, {name} had to cancel your session",
+      "titleMale": "We're sorry, {name} had to cancel your session",
+      "when": "The session on {when}",
+      "reason": "Something unexpected came up. There's nothing you need to do.",
+      "options": "Your options",
+      "rebookSameFemale": "Wait for {name} · choose a new time",
+      "rebookSameMale": "Wait for {name} · choose a new time",
+      "rebookHelp": "If no time suits you, the care team will contact you within 48 hours to help you rebook.",
+      "rebookOther": "See other suggested therapists",
+      "talkNow": "I need to talk to someone now",
+      "notCounted": "This won't count against your sessions."
+    },
+    "missed": {
+      "metaTitle": "You missed your session",
+      "titleToday": "You missed today's session",
+      "title": "You missed your session on {date}",
+      "reassure": "It happens, and it's okay. Nothing is deducted and it doesn't count against you.",
+      "howNow": "How are you now?",
+      "feelings": {
+        "ok": "I'm okay",
+        "tired": "A bit tired",
+        "not_ok": "Not okay"
+      },
+      "okReply": "Good to hear. Choose a new time whenever it suits you.",
+      "tiredReply": "Thanks for telling us. Take your time; your therapist is here when you're ready.",
+      "notOkBody": "Thank you for telling us. You don't have to wait for a session: someone can talk with you now.",
+      "resources": "Emergency numbers and support",
+      "rebook": "Book a new appointment",
+      "talkNow": "I need to talk to someone now"
+    }
   }
 }

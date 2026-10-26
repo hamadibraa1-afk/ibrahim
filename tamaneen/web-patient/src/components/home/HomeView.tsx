@@ -84,6 +84,20 @@ export function HomeView({
         </Link>
       ) : null}
 
+      {home.appointmentNotice ? (
+        <Link
+          href={`/appointments/${home.appointmentNotice.appointmentId}/${home.appointmentNotice.kind}`}
+          data-testid="appointment-notice"
+          className="flex items-center gap-3 rounded-card border-[1.5px] border-primary bg-surface p-4 text-ink"
+        >
+          <span className="flex flex-1 flex-col gap-1">
+            <span className="font-bold">{t(home.appointmentNotice.kind === 'missed' ? 'missedTitle' : 'cancelledTitle')}</span>
+            <span className="text-sm text-muted">{t(home.appointmentNotice.kind === 'missed' ? 'missedBody' : 'cancelledBody')}</span>
+          </span>
+          <Chevron />
+        </Link>
+      ) : null}
+
       <MoodFaces initialScore={home.moodToday} />
 
       {intakeOpen ? (

@@ -8,6 +8,7 @@ import { isCancelled, sessionLabel, statusLabel } from '@/components/appointment
 import { asLocale, genderKey, timeZoneOf, type Translator } from '@/components/matching/labels';
 import { BackLink } from '@/components/ui/BackLink';
 import { Card } from '@/components/ui/Card';
+import { redirect } from '@/i18n/navigation';
 import { getMe, serverGetOptional } from '@/lib/api/server';
 import type { AppointmentDetail } from '@/lib/api/types';
 import { formatDateTime, formatNumber } from '@/lib/format';
@@ -32,6 +33,9 @@ export default async function AppointmentDetailPage({ params }: { params: Params
     serverGetOptional<AppointmentDetail>(`appointments/${encodeURIComponent(id)}`),
   ]);
   if (!appointment) notFound();
+  // P67 and P63 explain what happened and offer rebooking.
+  if (appointment.cancelledBy === 'therapist') return redirect({ href: `/appointments/${appointment.id}/cancelled`, locale });
+  if (appointment.missed) return redirect({ href: `/appointments/${appointment.id}/missed`, locale });
   const timeZone = timeZoneOf(me);
   const tl: Translator = tList;
   const { therapist } = appointment;

@@ -29,12 +29,17 @@ const home: HomeSummary = {
     sequenceNumber: 2,
     status: 'confirmed',
     rescheduled: false,
+    therapistLateMinutes: null,
+    cancelledBy: null,
+    cancelReasonCode: null,
+    missed: false,
   },
   todayHomework: { id: 'h1', title: 'تمرين التنفس', minutes: 5, doneDays: 3, totalDays: 7 },
   latestFeedback: { therapistName: 'أ. سارة', initials: 'س م', text: 'أحسنت في الاستمرار هذا الأسبوع', at: '2026-10-18T10:00:00Z' },
   moodToday: null,
   hasSafetyPlan: true,
   triage: { status: 'matched', submittedAt: null, expectedBy: null, suggestionsReady: false },
+  appointmentNotice: null,
 };
 
 // 20:00 in Riyadh, two days before the session.
