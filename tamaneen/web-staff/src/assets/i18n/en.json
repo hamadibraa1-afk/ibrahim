@@ -677,5 +677,44 @@
       "coSigned": "Co-signed. The new level applies.",
       "coSignRefused": "Lowering refused. The level stays."
     }
+  },
+  "session": {
+    "back": "Today",
+    "lobbyTitle": "Before the session",
+    "liveTitle": "In session",
+    "loadError": "Couldn't open the session. Please try again.",
+    "joinError": "Couldn't join the session.",
+    "crisisOpen": "This patient has an open crisis event.",
+    "openConsole": "Open the crisis console",
+    "sequence": "Session {{n}}",
+    "minutes": "{{n}} minutes",
+    "noRecording": "Not recorded",
+    "patientIn": "The patient is in the session room",
+    "patientNotYet": "The patient hasn't joined yet",
+    "reconnecting": "Reconnecting…",
+    "noteTitle": "What the patient wants to talk about",
+    "noNote": "The patient left no note before the session.",
+    "devicesTitle": "Camera and microphone check",
+    "devicesLocal": "The check stays on your device. No sound or picture is sent.",
+    "devicesCheck": "Check camera and microphone",
+    "devices": {
+      "ok": "Camera and microphone work",
+      "denied": "We couldn't use the camera or microphone. Allow them in your browser settings.",
+      "unavailable": "This browser can't check the devices."
+    },
+    "preview": "Camera preview",
+    "privacy": "Sessions are never recorded. Make sure you are somewhere private.",
+    "join": "Join the session",
+    "opensBefore": "The room opens 10 minutes before the start",
+    "closed": "The time for this session is over.",
+    "testRoom": "Test room",
+    "testRoomBody": "This is a test room: there is no audio or video connection and nothing is sent. You only see your own camera, and we show whether the patient is in the room.",
+    "roomTitle": "Session room",
+    "you": "You",
+    "mute": "Mute microphone",
+    "unmute": "Unmute microphone",
+    "cameraOff": "Turn camera off",
+    "cameraOn": "Turn camera on",
+    "leave": "Leave the session"
   }
 }

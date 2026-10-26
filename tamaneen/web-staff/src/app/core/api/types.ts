@@ -197,3 +197,46 @@ export type TriageDecisionKind = 'approve' | 'override_risk' | 'reassign' | 'esc
 export type ReferralCode = 'crisis_line' | 'primary_care' | 'psychiatry' | 'community_support' | 'emergency_services';
 export interface TriageDecisionRequest { kind: TriageDecisionKind; reason?: string; riskLevel?: RiskLevel; therapistIds?: string[]; focus?: string[]; referrals?: ReferralCode[]; approve?: boolean }
 export interface TriageDecisionResult { kind: TriageDecisionKind; status: TriageCaseDetail['status']; riskLevel: RiskLevel; coSignRequested: boolean; crisisEventId: string | null }
+
+// ---------- Therapist session page (/sessions/:appointmentId): lobby and live ----------
+export type VideoProvider = 'dev' | 'embed';
+/** POST /v1/staff/appointments/{id}/join. `token` is the session pass the presence heartbeat needs. */
+export interface JoinDescriptor {
+  provider: VideoProvider;
+  mode: 'test_room' | 'embed';
+  url: string | null;
+  token: string;
+  expiresAt: string;
+  opensAt: string;
+  closesAt: string;
+  participant: 'patient' | 'therapist';
+  heartbeatSeconds: number;
+}
+export interface SessionPeer { present: boolean; joinedAt: string | null; lastSeenAt: string | null }
+/** GET/POST /v1/staff/appointments/{id}/presence. `peer` is the patient. Countdowns use serverNow. */
+export interface SessionState {
+  appointmentId: string;
+  serverNow: string;
+  startsAt: string;
+  durationMinutes: number;
+  opensAt: string;
+  closesAt: string;
+  open: boolean;
+  status: 'confirmed' | 'cancelled_by_patient' | 'cancelled_by_therapist' | 'completed' | 'no_show';
+  peer: SessionPeer;
+  therapistLate: boolean;
+  lateOptionsAfterMinutes: number;
+  heartbeatSeconds: number;
+  provider: VideoProvider;
+  patientCrisisOpen: boolean;
+}
+/** GET /v1/staff/appointments/{id}/session (audited `session.opened`). */
+export interface TherapistSessionPage {
+  appointmentId: string;
+  pseudonymId: string;
+  sequenceNumber: number;
+  riskLevel: RiskLevel | null;
+  state: SessionState;
+  preSessionNote: string | null;
+  preSessionNoteAt: string | null;
+}

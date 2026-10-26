@@ -33,6 +33,7 @@ export const routes: Routes = [
       { path: 'forbidden', loadComponent: () => import('./features/forbidden/forbidden.component').then((m) => m.ForbiddenComponent), title: 'Tamaneen' },
       { path: 'patients', canMatch: [clinicalGuard], loadComponent: () => import('./features/patient-file/patients.component').then((m) => m.PatientsComponent), title: 'Tamaneen' },
       { path: 'patients/:id', canMatch: [clinicalGuard], loadComponent: () => import('./features/patient-file/patient-file.component').then((m) => m.PatientFileComponent), title: 'Tamaneen' },
+      { path: 'sessions/:appointmentId', canMatch: [therapistGuard], loadComponent: () => import('./features/session/session.component').then((m) => m.SessionComponent), title: 'Tamaneen' },
       { path: 'triage', canMatch: [triageGuard], loadComponent: () => import('./features/triage/triage-review.component').then((m) => m.TriageReviewComponent), title: 'Tamaneen' },
       { path: 'triage/:id', canMatch: [triageGuard], loadComponent: () => import('./features/triage/triage-review.component').then((m) => m.TriageReviewComponent), title: 'Tamaneen' },
       { path: 'home', loadComponent: () => import('./features/home/home.component').then((m) => m.HomeComponent), title: 'Tamaneen' },

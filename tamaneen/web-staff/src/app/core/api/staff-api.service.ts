@@ -4,6 +4,9 @@ import { Observable } from 'rxjs';
 import { API_BASE_URL } from '../api';
 import type {
   CaseloadItem,
+  JoinDescriptor,
+  SessionState,
+  TherapistSessionPage,
   Evidence,
   ManualCrisisResult,
   PatientFile,
@@ -43,6 +46,30 @@ export class StaffApiService {
 
   recordOutcome(appointmentId: string, outcome: SessionOutcome): Observable<void> {
     return this.http.post<void>(`${this.base}/v1/staff/appointments/${encodeURIComponent(appointmentId)}/outcome`, { outcome });
+  }
+
+  // ---------- session page (/sessions/:appointmentId) ----------
+
+  private appointment(id: string): string {
+    return `${this.base}/v1/staff/appointments/${encodeURIComponent(id)}`;
+  }
+
+  /** The appointment, the patient's presence and pre-session note; audited. */
+  session(appointmentId: string): Observable<TherapistSessionPage> {
+    return this.http.get<TherapistSessionPage>(`${this.appointment(appointmentId)}/session`);
+  }
+
+  presence(appointmentId: string): Observable<SessionState> {
+    return this.http.get<SessionState>(`${this.appointment(appointmentId)}/presence`);
+  }
+
+  /** Only inside the join window (409 error.session.not_open otherwise). */
+  joinSession(appointmentId: string): Observable<JoinDescriptor> {
+    return this.http.post<JoinDescriptor>(`${this.appointment(appointmentId)}/join`, {});
+  }
+
+  heartbeat(appointmentId: string, token: string, leaving = false): Observable<SessionState> {
+    return this.http.post<SessionState>(`${this.appointment(appointmentId)}/presence`, leaving ? { token, leaving } : { token });
   }
 
   // ---------- S02 clinical file ----------
