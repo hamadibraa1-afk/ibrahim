@@ -34,6 +34,12 @@ public sealed partial class JourneyHosts : IAsyncDisposable
         Api = _api.WithWebHostBuilder(b => b.ConfigureTestServices(s =>
         {
             s.AddSingleton<ILanguageModel>(Model);
+            // Record every notification, then hand it to the real notification service (inbox, SMS/e-mail copies).
+            s.AddSingleton<Tamaneen.SharedKernel.Notifications.INotifier>(sp =>
+            {
+                Notifier.Inner = sp.GetRequiredService<Tamaneen.Api.Notifications.Notifier>();
+                return Notifier;
+            });
             s.AddHttpClient<CrisisGateClient>().ConfigurePrimaryHttpMessageHandler(() => Worker.Server.CreateHandler());
             s.AddHttpClient("crisis-console").ConfigurePrimaryHttpMessageHandler(() => Worker.Server.CreateHandler());
         }));
@@ -44,6 +50,9 @@ public sealed partial class JourneyHosts : IAsyncDisposable
     public WebApplicationFactory<Tamaneen.Api.SharedResource> Api { get; }
 
     public ScriptedModel Model { get; } = new();
+
+    /// <summary>Every notification the API handed to INotifier; each is also delivered by the real service.</summary>
+    public RecordingNotifier Notifier { get; } = new();
 
     public InMemoryMessageSender Outbox => (InMemoryMessageSender)Api.Services.GetRequiredService<IMessageSender>();
 
@@ -138,6 +147,35 @@ public sealed partial class JourneyHosts : IAsyncDisposable
         await Api.DisposeAsync();
         await _api.DisposeAsync();
         await Worker.DisposeAsync();
+    }
+
+    public sealed class RecordingNotifier : Tamaneen.SharedKernel.Notifications.INotifier
+    {
+        private readonly List<Tamaneen.SharedKernel.Notifications.Notification> _sent = [];
+
+        public IReadOnlyList<Tamaneen.SharedKernel.Notifications.Notification> Sent
+        {
+            get
+            {
+                lock (_sent)
+                {
+                    return _sent.ToList();
+                }
+            }
+        }
+
+        /// <summary>The real notifier the recorded notifications are forwarded to.</summary>
+        public Tamaneen.SharedKernel.Notifications.INotifier? Inner { get; set; }
+
+        public Task NotifyAsync(Tamaneen.SharedKernel.Notifications.Notification notification, CancellationToken ct)
+        {
+            lock (_sent)
+            {
+                _sent.Add(notification);
+            }
+
+            return Inner?.NotifyAsync(notification, ct) ?? Task.CompletedTask;
+        }
     }
 
     [GeneratedRegex(@"\d{6}")]

@@ -1,0 +1,158 @@
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" class="progress" [attr.aria-label]="'common.loading' | translate" />
+}
+@if (notFound()) {
+  <section class="tm-card" data-testid="not-found">
+    <h1 class="tm-card-title">{{ 'file.notFound' | translate }}</h1>
+    <p class="tm-muted">{{ 'file.notFoundHint' | translate }}</p>
+    <a mat-stroked-button routerLink="/patients">{{ 'file.back' | translate }}</a>
+  </section>
+}
+<tm-problem-message [error]="error()" />
+
+@if (data(); as o) {
+  <header class="head">
+    <div>
+      <div class="title-row">
+        <h1 class="title" dir="ltr" data-testid="overview-pseudonym">{{ o.pseudonymId }}</h1>
+        <tm-risk-tag [level]="o.riskLevel" />
+        @if (weeksInCare() !== null) {
+          <span class="tm-muted small" data-testid="weeks">{{ 'care.overview.inCareWeeks' | translate: { weeks: weeksInCare() } }}</span>
+        }
+      </div>
+      <p class="tm-muted small">{{ 'care.overview.audited' | translate }}</p>
+    </div>
+    @if (o.canEdit) {
+      <div class="head-actions">
+        <button mat-stroked-button type="button" (click)="raiseRisk()" [disabled]="o.riskLevel >= 4" data-testid="raise-risk">{{ 'file.raiseRisk' | translate }}</button>
+        <button mat-stroked-button type="button" class="tm-danger-outline" (click)="manualCrisis()" data-testid="manual-crisis">{{ 'file.manualCrisis' | translate }}</button>
+        <a mat-stroked-button [routerLink]="['/patients', o.pseudonymId, 'close']" data-testid="end-care">{{ 'care.overview.endCare' | translate }}</a>
+      </div>
+    }
+  </header>
+  <tm-patient-tabs [id]="o.pseudonymId" active="overview" />
+
+  @if (!o.inCare) {
+    <p class="banner" data-testid="read-only">{{ 'care.overview.readOnly' | translate }}</p>
+  }
+  @if (o.closureStatus === 'submitted') {
+    <p class="banner" data-testid="closure-pending">{{ 'care.overview.closurePending' | translate }}</p>
+  }
+
+  <div class="grid">
+    <section class="tm-card" data-testid="mood">
+      <h2 class="tm-card-title">{{ 'care.overview.mood' | translate }}</h2>
+      @if (o.mood.length) {
+        @if (moodPath()) {
+          <svg class="spark" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true"><polyline [attr.points]="moodPath()" /></svg>
+        }
+        <p class="small">
+          @if (o.moodAverage7Days !== null) { <span data-testid="mood-average">{{ 'care.overview.moodAverage' | translate: { value: (o.moodAverage7Days | number: '1.1-1') } }}</span> }
+          <span class="tm-muted"> · {{ 'care.overview.moodSpan' | translate }}</span>
+        </p>
+        <table class="tm-visually-hidden" data-testid="mood-table">
+          <caption>{{ 'care.overview.mood' | translate }}</caption>
+          <tr><th scope="col">{{ 'care.overview.date' | translate }}</th><th scope="col">{{ 'care.overview.score' | translate }}</th></tr>
+          @for (m of o.mood; track m.at) {
+            <tr><td>{{ m.at | tmDate: 'dayTime' : language.language() }}</td><td>{{ m.score }}</td></tr>
+          }
+        </table>
+      } @else {
+        <p class="tm-muted" data-testid="no-mood">{{ 'care.overview.noMood' | translate }}</p>
+      }
+      @if (o.phq9AtIntake !== null || o.gad7AtIntake !== null) {
+        <p class="tm-muted small" data-testid="intake-scores">{{ 'care.overview.intakeScores' | translate: { phq9: o.phq9AtIntake ?? '—', gad7: o.gad7AtIntake ?? '—' } }}</p>
+      }
+    </section>
+
+    <section class="tm-card" data-testid="next-session">
+      <h2 class="tm-card-title">{{ 'care.overview.nextSession' | translate }}</h2>
+      @if (o.nextAppointment; as n) {
+        <p>{{ 'care.overview.sessionLine' | translate: { time: (n.startsAt | tmDate: 'dayTime' : language.language()), number: n.sequenceNumber } }}</p>
+        @if (started(n.startsAt)) {
+          <a mat-stroked-button [routerLink]="['/patients', o.pseudonymId, 'sessions', n.id, 'notes']" data-testid="next-note">{{ 'care.overview.note.' + n.noteStatus | translate }}</a>
+        }
+      } @else {
+        <p class="tm-muted" data-testid="no-session">{{ 'care.overview.noSession' | translate }}</p>
+      }
+      <h3 class="small">{{ 'care.overview.pastSessions' | translate }}</h3>
+      @if (o.pastAppointments.length) {
+        <ul class="list" data-testid="past-sessions">
+          @for (a of o.pastAppointments; track a.id) {
+            <li>
+              <span class="grow">{{ 'care.overview.sessionLine' | translate: { time: (a.startsAt | tmDate: 'dayTime' : language.language()), number: a.sequenceNumber } }}</span>
+              <span class="chip">{{ 'care.overview.status.' + a.status | translate }}</span>
+              @if (a.status === 'completed' || a.status === 'no_show' || a.status === 'confirmed') {
+                <a mat-button [routerLink]="['/patients', o.pseudonymId, 'sessions', a.id, 'notes']" data-testid="past-note">{{ 'care.overview.note.' + a.noteStatus | translate }}</a>
+              }
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="tm-muted small">{{ 'care.overview.noPast' | translate }}</p>
+      }
+    </section>
+
+    <section class="tm-card" data-testid="plan-goals">
+      <h2 class="tm-card-title">
+        @if (o.plan) { {{ 'care.overview.planGoals' | translate: { version: o.plan.version } }} } @else { {{ 'care.overview.planGoalsNone' | translate }} }
+      </h2>
+      @if (o.plan; as plan) {
+        <ul class="list">
+          @for (g of plan.goals; track $index) {
+            <li><span class="grow">{{ g.text }}</span><span class="chip" [class.ok]="g.status === 'improving'" [class.warn]="g.status === 'ongoing'">{{ 'care.plan.goalStatus.' + g.status | translate }}</span></li>
+          }
+        </ul>
+        <p class="tm-muted small">{{ 'care.overview.reviewOn' | translate: { date: (plan.reviewOn | tmDate: 'longDate' : language.language()) } }}</p>
+      } @else {
+        <p class="tm-muted" data-testid="no-plan">{{ 'care.overview.noPlan' | translate }}</p>
+        @if (o.canEdit) { <a mat-button [routerLink]="['/patients', o.pseudonymId, 'plan']">{{ 'care.overview.writePlan' | translate }}</a> }
+      }
+    </section>
+
+    <section class="tm-card" data-testid="homework-week">
+      <h2 class="tm-card-title">{{ 'care.overview.homework' | translate }}</h2>
+      @if (o.homework.length) {
+        <ul class="list">
+          @for (h of o.homework; track h.id) {
+            <li>
+              <span class="grow">{{ h.title }}</span>
+              <span class="chip" dir="ltr">{{ h.doneThisWeek }} / {{ h.weeklyTarget }}</span>
+              @if (h.averageFeeling !== null) { <span class="tm-muted small">{{ 'care.overview.feeling' | translate: { value: (h.averageFeeling | number: '1.1-1') } }}</span> }
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="tm-muted">{{ 'care.homework.empty' | translate }}</p>
+      }
+    </section>
+
+    <section class="tm-card" data-testid="safety-status">
+      <h2 class="tm-card-title">{{ 'care.overview.safetyPlan' | translate }}</h2>
+      @if (o.safetyPlan.exists) {
+        <p>{{ 'care.overview.safetyVersion' | translate: { version: o.safetyPlan.version, date: (o.safetyPlan.updatedAt | tmDate: 'longDate' : language.language()) } }}
+          <span class="tm-muted small"> · {{ 'care.safety.by.' + (o.safetyPlan.updatedByRole ?? 'therapist') | translate }}</span></p>
+      } @else {
+        <p class="tm-muted" data-testid="no-safety-plan">{{ 'care.overview.noSafetyPlan' | translate }}</p>
+      }
+      <a mat-button [routerLink]="['/patients', o.pseudonymId, 'safety-plan']">{{ 'care.overview.openSafetyPlan' | translate }}</a>
+    </section>
+
+    <section class="tm-card" data-testid="alerts">
+      <h2 class="tm-card-title">{{ 'care.overview.alerts' | translate }}</h2>
+      @if (o.alerts.length) {
+        <ul class="list">
+          @for (a of o.alerts; track a.eventId) {
+            <li>
+              <tm-risk-tag [level]="$any(a.level)" />
+              <span class="grow small">{{ a.openedAt | tmDate: 'dayTime' : language.language() }} · {{ 'care.overview.alertStatus.' + a.status | translate }}</span>
+              <a mat-button [routerLink]="['/crisis', a.eventId]">{{ 'dashboard.alerts.openConsole' | translate }}</a>
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="tm-muted">{{ 'care.overview.noAlerts' | translate }}</p>
+      }
+    </section>
+  </div>
+}

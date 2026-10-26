@@ -109,4 +109,15 @@ public static class ErrorCodes
     public const string CapacityBelowCaseload = "error.profile.capacity_below_caseload";
     public const string ProfileContactDetails = "error.profile.contact_details";
     public const string TotpMoveExpired = "error.totp.move_expired";
+    public const string VersionRequired = "error.version.required";
+    public const string VersionChanged = "error.version.changed";
+    public const string PlanFileNotApproved = "error.plan.file_not_approved";
+    public const string NoteSigned = "error.note.signed";
+    public const string NoteNotSigned = "error.note.not_signed";
+    public const string ClosureLocked = "error.closure.locked";
+    public const string ClosureNotSubmitted = "error.closure.not_submitted";
+    public const string ClosureSignOffNotAllowed = "error.closure.signoff_not_allowed";
+    public const string ClosureBlocked = "error.closure.blocked";
+    public const string ChangeRequestOpen = "error.change_request.open";
+    public const string NotInCare = "error.care.not_in_care";
 }

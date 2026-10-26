@@ -30,6 +30,8 @@ export interface PublicConfig {
   emergencyNumber: string;
   supportLine: string;
   matchWithinHours: number;
+  /** P44: the supervisor suggests new therapists within this many hours. */
+  changeTherapistWithinHours?: number;
   triageWithinHours: number;
   minAge: number;
   pilotRegion: string;
@@ -80,6 +82,8 @@ export interface Me {
     triageStatus: TriageStatus;
   };
   chatLocked: boolean;
+  /** Set once a supervisor signed off the end of care (P53) while the patient has no therapist. */
+  careClosedAt?: string | null;
 }
 export interface UpdateProfileRequest { nickname: string; timeZone: string }
 
@@ -212,7 +216,7 @@ export interface Appointment {
   rescheduled: boolean;
   /** S18 "running late": minutes the therapist said they will be late (P54), or null. */
   therapistLateMinutes: number | null;
-  cancelledBy: 'patient' | 'therapist' | null;
+  cancelledBy: 'patient' | 'therapist' | 'care_ended' | null;
   /** The patient's own reason when they cancelled; always null when the therapist cancelled (P67 never shows it). */
   cancelReasonCode: string | null;
   /** The therapist recorded a no-show (P63). */
@@ -318,7 +322,8 @@ export interface CheckinResponse extends GateOutcome { homework: HomeworkDetail 
 export type SafetyPlanSection = 'warningSigns' | 'copingAlone' | 'distractions' | 'peopleToAsk' | 'professionals' | 'safeEnvironment' | 'reasonToLive';
 /** A personal help contact in section 4 (P37), shown as a tel: button. Name up to 100 characters; at most 5. */
 export interface PlanContact { name: string; phone: string }
-export interface SafetyPlan { sections: Record<SafetyPlanSection, string>; contacts: PlanContact[]; updatedAt: string | null; coAuthor: string | null }
+/** `version` is shared with the therapist's S35 builder and is the ETag (PUT may send it in If-Match; 412 when stale). */
+export interface SafetyPlan { sections: Record<SafetyPlanSection, string>; contacts: PlanContact[]; updatedAt: string | null; coAuthor: string | null; version?: number }
 export interface UpdateSafetyPlanRequest { sections: Record<SafetyPlanSection, string>; contacts: PlanContact[] }
 
 export interface ContactRequestCreated { requestedAt: string; expectedBy: string; withinHours: number }
@@ -357,3 +362,23 @@ export interface CrisisFollowUp {
   /** Not seen yet: home opens P38. */
   unread: boolean;
 }
+// ---------- Phase 5: change therapist (P44), end of care (P53), session summary ----------
+
+export type ChangeReasonCode = 'not_comfortable' | 'schedule' | 'gender' | 'specialty' | 'other';
+export interface ChangeReason { code: ChangeReasonCode; label: string }
+export type ChangeRequestStatus = 'requested' | 'matching' | 'offered' | 'accepted' | 'closed';
+export interface ChangeTherapistRequest { id: string; status: ChangeRequestStatus; reasonCode: ChangeReasonCode | null; createdAt: string; expectedBy: string; withinHours: number }
+export interface CreateChangeRequest { reasonCode?: ChangeReasonCode }
+export interface CareClosure {
+  therapistName: string;
+  sessionCount: number;
+  summary: string;
+  warningSigns: string | null;
+  whatToDo: string | null;
+  followUp: 'none' | 'phq9_1m_3m';
+  keepLibrary: boolean;
+  closedAt: string;
+  returnRequested: boolean;
+}
+export interface CareReturnResponse { next: string }
+export interface SessionSummary { points: string[]; sharedAt: string }

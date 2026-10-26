@@ -1,0 +1,133 @@
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" class="progress" [attr.aria-label]="'common.loading' | translate" />
+}
+@if (notFound()) {
+  <section class="tm-card" data-testid="not-found"><h1 class="tm-card-title">{{ 'file.notFound' | translate }}</h1></section>
+}
+<tm-problem-message [error]="error()" />
+
+@if (plan(); as p) {
+  <header class="head">
+    <div>
+      <h1 class="title">{{ 'care.safety.title' | translate }}</h1>
+      <p class="tm-muted small"><span dir="ltr">{{ p.pseudonymId }}</span> · {{ 'care.safety.inTheirWords' | translate }}</p>
+    </div>
+    @if (p.canEdit) {
+      <div class="head-actions">
+        <button mat-stroked-button type="button" (click)="preview.set(!preview())" data-testid="safety-preview-button">{{ 'care.homework.previewAsPatient' | translate }}</button>
+        <button mat-flat-button type="button" (click)="save()" [disabled]="saving() || tooLong()" data-testid="safety-save">{{ 'care.safety.save' | translate }}</button>
+      </div>
+    }
+  </header>
+  <tm-patient-tabs [id]="p.pseudonymId" active="safety-plan" />
+  <tm-problem-message [error]="saveError()" />
+
+  @if (conflict(); as c) {
+    <section class="banner danger" role="alert" data-testid="safety-conflict">
+      <p>{{ 'care.safety.conflict' | translate: { version: c.version } }}</p>
+      <div class="compare">
+        <div>
+          <strong>{{ 'care.safety.theirs' | translate }}</strong>
+          @for (s of sections; track s) { @if (c.sections[s]) { <pre>{{ 'care.safety.sections.' + s | translate }}: {{ c.sections[s] }}</pre> } }
+        </div>
+        <div>
+          <strong>{{ 'care.plan.yours' | translate }}</strong>
+          @for (s of sections; track s) { @if (draft[s]) { <pre>{{ 'care.safety.sections.' + s | translate }}: {{ draft[s] }}</pre> } }
+        </div>
+      </div>
+      <div class="actions">
+        <button mat-stroked-button type="button" (click)="useTheirs()" data-testid="use-theirs">{{ 'care.notes.useTheirs' | translate }}</button>
+        <button mat-flat-button type="button" (click)="conflict.set(null); save()" data-testid="keep-mine">{{ 'care.notes.keepMine' | translate }}</button>
+      </div>
+    </section>
+  }
+
+  <div class="layout">
+    <section class="tm-card form" data-testid="safety-editor">
+      @for (s of sections; track s; let i = $index) {
+        <div class="step">
+          <span class="num" aria-hidden="true">{{ s === 'reasonToLive' ? '♥' : i + 1 }}</span>
+          <div>
+            @if (s === 'professionals') {
+              <p class="small"><strong>{{ 'care.safety.sections.professionals' | translate }}</strong></p>
+              <ul class="list small" data-testid="auto-lines">
+                @if (p.emergency.therapistName) { <li>{{ 'care.safety.yourTherapist' | translate: { name: p.emergency.therapistName } }}</li> }
+                <li>{{ 'care.safety.supportLine' | translate }} <bdi dir="ltr">{{ p.emergency.supportLine }}</bdi></li>
+                <li>{{ 'care.safety.emergency' | translate }} <bdi dir="ltr">{{ p.emergency.emergencyNumber }}</bdi></li>
+              </ul>
+            }
+            <mat-form-field appearance="outline" class="tm-full">
+              <mat-label>{{ (s === 'professionals' ? 'care.safety.otherProfessionals' : 'care.safety.sections.' + s) | translate }}</mat-label>
+              <textarea matInput rows="2" maxlength="1000" [readonly]="!p.canEdit" [(ngModel)]="draft[s]" [placeholder]="'care.safety.examples.' + s | translate" [attr.data-testid]="'section-' + s"></textarea>
+            </mat-form-field>
+            @if (s === 'peopleToAsk') {
+              <ul class="list" data-testid="contacts">
+                @for (c of contacts; track $index; let j = $index) {
+                  <li><span class="grow">{{ c.name }} · <bdi dir="ltr">{{ c.phone }}</bdi></span>
+                    @if (p.canEdit) { <button mat-button type="button" (click)="removeContact(j)" [attr.aria-label]="'care.safety.removeContact' | translate: { name: c.name }">{{ 'care.safety.remove' | translate }}</button> }
+                  </li>
+                }
+              </ul>
+              @if (p.canEdit && contacts.length < maxContacts) {
+                @if (addingContact()) {
+                  <div class="row">
+                    <mat-form-field appearance="outline">
+                      <mat-label>{{ 'care.safety.contactName' | translate }}</mat-label>
+                      <input matInput maxlength="100" [(ngModel)]="newName" data-testid="contact-name" />
+                    </mat-form-field>
+                    <mat-form-field appearance="outline">
+                      <mat-label>{{ 'care.safety.contactPhone' | translate }}</mat-label>
+                      <input matInput dir="ltr" inputmode="tel" [(ngModel)]="newPhone" data-testid="contact-phone" />
+                    </mat-form-field>
+                    <button mat-stroked-button type="button" (click)="addContact()" [disabled]="!newName.trim() || !validPhone()" data-testid="contact-add">{{ 'care.safety.add' | translate }}</button>
+                  </div>
+                } @else {
+                  <button mat-button type="button" (click)="addingContact.set(true)" data-testid="add-person">{{ 'care.safety.addPerson' | translate }}</button>
+                }
+              }
+            }
+          </div>
+        </div>
+      }
+    </section>
+
+    <aside class="side">
+      @if (preview()) {
+        <section class="preview" data-testid="safety-preview">
+          <h2 class="tm-card-title">{{ 'care.safety.previewTitle' | translate }}</h2>
+          @for (s of sections; track s) {
+            @if (draft[s]) { <p><strong>{{ 'care.safety.patientSections.' + s | translate }}</strong><br />{{ draft[s] }}</p> }
+          }
+          @for (c of contacts; track $index) { <p>{{ c.name }} · <bdi dir="ltr">{{ c.phone }}</bdi></p> }
+        </section>
+      }
+      <section class="tm-card">
+        <h2 class="tm-card-title">{{ 'care.safety.guidance' | translate }}</h2>
+        <p class="small">{{ 'care.safety.guidanceText' | translate }}</p>
+      </section>
+      <section class="tm-card" data-testid="safety-versions">
+        <h2 class="tm-card-title">{{ 'care.safety.versions' | translate }}</h2>
+        @if (p.version) {
+          <p class="small" data-testid="safety-version">{{ 'care.safety.versionLine' | translate: { version: p.version, date: (p.updatedAt | tmDate: 'longDate' : language.language()), by: p.updatedBy || ('care.safety.by.' + (p.updatedByRole ?? 'patient') | translate) } }}</p>
+        } @else {
+          <p class="tm-muted small" data-testid="safety-new">{{ 'care.safety.new' | translate }}</p>
+        }
+        <ul class="list">
+          @for (v of versions(); track v.version) {
+            <li>
+              <span class="grow small">{{ 'care.plan.versionLine' | translate: { version: v.version, date: (v.createdAt | tmDate: 'longDate' : language.language()) } }} · {{ 'care.safety.by.' + v.authorRole | translate }}</span>
+              <button mat-button type="button" (click)="view(v.version)">{{ 'care.plan.view' | translate }}</button>
+            </li>
+          }
+        </ul>
+      </section>
+      @if (viewing(); as v) {
+        <section class="tm-card" data-testid="safety-viewing">
+          <h2 class="tm-card-title">{{ 'care.plan.versionLine' | translate: { version: v.version, date: (v.createdAt | tmDate: 'longDate' : language.language()) } }}</h2>
+          @for (s of sections; track s) { @if (v.sections[s]) { <p class="small"><strong>{{ 'care.safety.sections.' + s | translate }}</strong>: {{ v.sections[s] }}</p> } }
+          <button mat-button type="button" (click)="viewing.set(null)">{{ 'common.close' | translate }}</button>
+        </section>
+      }
+    </aside>
+  </div>
+}

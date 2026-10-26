@@ -104,6 +104,8 @@ public static class ApiHost
         builder.Services.AddHostedService(sp => sp.GetRequiredService<NotificationWorker>());
         builder.AddTamaneenVideo();
         builder.Services.AddScoped<AppointmentNotices>();
+        builder.Services.AddScoped<CareRecords>();
+        builder.Services.AddSingleton(HomeworkTemplates.LoadEmbedded());
         builder.Services.AddHttpClient("crisis-console");
         builder.Services.AddScoped<StepUpVerifier>();
         if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing"))
@@ -163,6 +165,7 @@ public static class ApiHost
         app.MapSchedulingEndpoints();
         app.MapWaitlistEndpoints();
         app.MapCareEndpoints();
+        app.MapCareJourneyEndpoints();
         app.MapStaffEndpoints();
         app.MapStaffScheduleEndpoints();
         app.MapAvailabilityEndpoints();

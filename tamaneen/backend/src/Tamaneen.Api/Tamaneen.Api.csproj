@@ -18,6 +18,7 @@
   <ItemGroup>
     <EmbeddedResource Include="Auth\common-passwords.txt" LogicalName="common-passwords.txt" />
     <EmbeddedResource Include="Clinical\questionnaires.json" LogicalName="questionnaires.json" />
+    <EmbeddedResource Include="Clinical\homework-templates.json" LogicalName="homework-templates.json" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Tamaneen.UnitTests" />

@@ -16,7 +16,7 @@ describe('SessionService', () => {
     const session = TestBed.inject(SessionService);
     session.setRoles(['therapist', 'supervisor']);
     session.switchTo('supervisor');
-    expect(session.navigation()[0].items.map((i) => i.key)).toEqual(['triage', 'crisis']);
+    expect(session.navigation()[0].items.map((i) => i.key)).toEqual(['triage', 'crisis', 'closures']);
     expect(session.home()).toBe('/crisis');
     expect(() => session.switchTo('admin')).toThrowError(/not held/);
   });
@@ -42,7 +42,7 @@ describe('SessionService', () => {
   it('gives the clinical lead the triage queue to co-sign', () => {
     const session = TestBed.inject(SessionService);
     session.setRoles(['lead']);
-    expect(session.navigation()[0].items.map((i) => i.key)).toEqual(['triage', 'crisis']);
+    expect(session.navigation()[0].items.map((i) => i.key)).toEqual(['triage', 'crisis', 'closures']);
   });
 
   it('shows nothing when signed out', () => {

@@ -22,7 +22,7 @@ public static class CareEndpoints
 
     public sealed record PilotCityDto(string Code, string Name);
 
-    public sealed record PublicConfigDto(string EmergencyNumber, string SupportLine, int MatchWithinHours, int TriageWithinHours, int MinAge, string PilotRegion, IReadOnlyList<PilotCityDto> PilotCities, string TimeZone, bool SignupsOpen);
+    public sealed record PublicConfigDto(string EmergencyNumber, string SupportLine, int MatchWithinHours, int TriageWithinHours, int MinAge, string PilotRegion, IReadOnlyList<PilotCityDto> PilotCities, string TimeZone, bool SignupsOpen, int ChangeTherapistWithinHours = 24);
 
     public sealed record CrisisStatusDto(bool Locked, bool EventOpen, bool Acknowledged, string? ContactPhoneLast4, string? Script);
 
@@ -65,7 +65,7 @@ public static class CareEndpoints
     /// <summary>A personal help contact in section 4 of the safety plan (P37), shown as a tel: button.</summary>
     public sealed record PlanContactDto(string Name, string Phone);
 
-    public sealed record SafetyPlanDto(IReadOnlyDictionary<string, string> Sections, IReadOnlyList<PlanContactDto> Contacts, DateTimeOffset? UpdatedAt, string? CoAuthor, bool Crisis = false, string? Script = null);
+    public sealed record SafetyPlanDto(IReadOnlyDictionary<string, string> Sections, IReadOnlyList<PlanContactDto> Contacts, DateTimeOffset? UpdatedAt, string? CoAuthor, bool Crisis = false, string? Script = null, int Version = 0);
 
     public sealed record UpdateSafetyPlanRequest(Dictionary<string, string>? Sections, List<PlanContactDto>? Contacts);
 
@@ -103,7 +103,8 @@ public static class CareEndpoints
             en ? o.RegionNameEn : o.RegionNameAr,
             o.Cities.Select(c => new PilotCityDto(c.Code, en ? c.NameEn : c.NameAr)).ToList(),
             o.TimeZone,
-            o.SignupsOpen));
+            o.SignupsOpen,
+            o.ChangeTherapistWithinHours));
     }
 
     // ---------- P06 ----------
@@ -320,6 +321,7 @@ public static class CareEndpoints
         }
 
         checkin.Report(status, status == CheckinStatus.Skipped ? null : request.Feeling, await p.EncryptOptionalAsync(Fields.CheckinNote, note, ct).ConfigureAwait(false), clock);
+        checkin.SetGateLevel(verdict?.Level);
         await p.Db.SaveChangesAsync(ct).ConfigureAwait(false);
         var detail = await DetailAsync(p, directory, id, clock, markSeen: false, ct).ConfigureAwait(false);
         return TypedResults.Ok(new CheckinResponse(verdict?.Crisis ?? false, (int)(verdict?.Level ?? RiskLevel.Routine), verdict is { Crisis: true } ? verdict.Script : null, detail));
@@ -408,7 +410,13 @@ public static class CareEndpoints
 
     // ---------- P37 ----------
 
-    internal static async Task<Ok<SafetyPlanDto>> SafetyPlanAsync(PatientContext p, CancellationToken ct) => TypedResults.Ok(await PlanAsync(p, ct).ConfigureAwait(false));
+    /// <summary>The ETag is the plan's version (S35/P37 concurrency rule): a save that sends If-Match must name the current one.</summary>
+    internal static async Task<Ok<SafetyPlanDto>> SafetyPlanAsync(HttpContext http, PatientContext p, CancellationToken ct)
+    {
+        var plan = await PlanAsync(p, ct).ConfigureAwait(false);
+        CareRecords.SendVersion(http, plan.Version.ToString(CultureInfo.InvariantCulture));
+        return TypedResults.Ok(plan);
+    }
 
     private static async Task<SafetyPlanDto> PlanAsync(PatientContext p, CancellationToken ct)
     {
@@ -431,7 +439,7 @@ public static class CareEndpoints
             coAuthor = await p.Db.StaffProfiles.AsNoTracking().Where(s => s.UserId == therapist).Select(s => p.Language == "en" ? s.DisplayNameEn : s.DisplayNameAr).FirstOrDefaultAsync(ct).ConfigureAwait(false);
         }
 
-        return new SafetyPlanDto(sections, stored.Contacts ?? [], plan.UpdatedAtUtc, coAuthor);
+        return new SafetyPlanDto(sections, stored.Contacts ?? [], plan.UpdatedAtUtc, coAuthor, Version: plan.Version);
     }
 
     internal static StoredSafetyPlan ReadStoredPlan(string json)
@@ -446,15 +454,16 @@ public static class CareEndpoints
         return new StoredSafetyPlan(doc.RootElement.Deserialize<Dictionary<string, string>>(PatientContext.Json) ?? [], []);
     }
 
-    internal static async Task<Ok<SafetyPlanDto>> UpdateSafetyPlanAsync(UpdateSafetyPlanRequest request, PatientContext p, ICurrentUser user, IAuditLog audit, IClock clock, CancellationToken ct)
+    /// <summary>
+    /// P37 save. If-Match is optional here (a write queued offline before versions existed has none): when sent it must
+    /// name the current version, else 412 and the app shows the plan the therapist saved meanwhile. Each save adds a
+    /// version and tells the treating therapist.
+    /// </summary>
+    internal static async Task<Ok<SafetyPlanDto>> UpdateSafetyPlanAsync(UpdateSafetyPlanRequest request, HttpContext http, PatientContext p, CareRecords care, ICurrentUser user, IAuditLog audit, IClock clock, CancellationToken ct)
     {
-        var sections = SafetyPlan.Sections.ToDictionary(s => s, s => (request.Sections ?? []).GetValueOrDefault(s)?.Trim() ?? string.Empty);
-        if (sections.Values.Any(v => v.Length > 1500))
-        {
-            throw MeEndpoints.Invalid("sections");
-        }
-
-        var contacts = CleanContacts(request.Contacts);
+        var (sections, contacts) = CleanPlan(request);
+        var current = await p.Db.SafetyPlans.AsNoTracking().Where(s => s.PatientId == p.PatientId).Select(s => (int?)s.Version).FirstOrDefaultAsync(ct).ConfigureAwait(false) ?? 0;
+        CareRecords.CheckVersionIfPresent(http, current.ToString(CultureInfo.InvariantCulture));
         var all = string.Join("\n", sections.Values.Concat(contacts.Select(c => c.Name)).Where(v => v.Length > 0));
         Gate.GateVerdict? verdict = null;
         if (all.Length > 0)
@@ -470,13 +479,52 @@ public static class CareEndpoints
         }
 
         plan.Update(await p.EncryptJsonAsync(Fields.SafetyPlan, new StoredSafetyPlan(sections, contacts), ct).ConfigureAwait(false), user.UserId!.Value, user.Role!, clock);
-        audit.Append("safety_plan.updated", "SafetyPlan", null, (await p.AccountAsync(ct).ConfigureAwait(false)).PseudonymId);
-        await p.Db.SaveChangesAsync(ct).ConfigureAwait(false);
-        return TypedResults.Ok(await PlanAsync(p, ct).ConfigureAwait(false) with { Crisis = verdict?.Crisis ?? false, Script = verdict is { Crisis: true } ? verdict.Script : null });
+        p.Db.SafetyPlanVersions.Add(SafetyPlanVersion.Of(plan));
+        audit.Append("safety_plan.updated", "SafetyPlan", null, (await p.AccountAsync(ct).ConfigureAwait(false)).PseudonymId, $"version={plan.Version}");
+        await SavePlanOrConflictAsync(p.Db, ct).ConfigureAwait(false);
+        foreach (var therapist in await care.ActiveTherapistsAsync(p.PatientId, ct).ConfigureAwait(false))
+        {
+            await care.NotifyAsync(therapist, "safety_plan.updated", new Dictionary<string, string> { ["pseudonymId"] = (await p.AccountAsync(ct).ConfigureAwait(false)).PseudonymId, ["version"] = plan.Version.ToString(CultureInfo.InvariantCulture), ["by"] = "patient" },
+                $"/patients/{(await p.AccountAsync(ct).ConfigureAwait(false)).PseudonymId}/safety-plan", ct).ConfigureAwait(false);
+        }
+
+        var saved = await PlanAsync(p, ct).ConfigureAwait(false);
+        CareRecords.SendVersion(http, saved.Version.ToString(CultureInfo.InvariantCulture));
+        return TypedResults.Ok(saved with { Crisis = verdict?.Crisis ?? false, Script = verdict is { Crisis: true } ? verdict.Script : null });
+    }
+
+    /// <summary>Sections (up to 1500 characters each) and up to five contacts with a valid phone.</summary>
+    internal static (Dictionary<string, string> Sections, List<PlanContactDto> Contacts) CleanPlan(UpdateSafetyPlanRequest request)
+    {
+        var sections = SafetyPlan.Sections.ToDictionary(s => s, s => (request.Sections ?? []).GetValueOrDefault(s)?.Trim() ?? string.Empty);
+        if (sections.Values.Any(v => v.Length > 1500))
+        {
+            throw MeEndpoints.Invalid("sections");
+        }
+
+        return (sections, CleanContacts(request.Contacts));
+    }
+
+    /// <summary>Two saves of the same version at once (patient and therapist): the second gets 412.</summary>
+    internal static async Task SavePlanOrConflictAsync(Tamaneen.Infrastructure.Persistence.TamaneenDbContext db, CancellationToken ct)
+    {
+        try
+        {
+            await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            throw new DomainException(ErrorCodes.VersionChanged, "The safety plan changed concurrently.");
+        }
+        catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("IX_SafetyPlanVersions_PatientId_Version", StringComparison.Ordinal) == true
+            || ex.InnerException?.Message.Contains("PK_SafetyPlans", StringComparison.Ordinal) == true)
+        {
+            throw new DomainException(ErrorCodes.VersionChanged, "The safety plan changed concurrently.");
+        }
     }
 
     /// <summary>Each contact needs a name (up to 100 characters) and a valid phone number; at most five.</summary>
-    private static List<PlanContactDto> CleanContacts(List<PlanContactDto>? contacts)
+    internal static List<PlanContactDto> CleanContacts(List<PlanContactDto>? contacts)
     {
         var list = contacts ?? [];
         if (list.Count > MaxPlanContacts)

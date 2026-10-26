@@ -124,6 +124,14 @@ public static class Fields
     public const string PreSessionNote = "clinical.pre_session_note";
     public const string SessionFeedbackComment = "clinical.session_feedback_comment";
     public const string TherapistCancelNote = "clinical.therapist_cancel_note";
+    public const string TreatmentPlan = "clinical.treatment_plan";
+    public const string SessionNote = "clinical.session_note";
+    public const string SessionNoteSummary = "clinical.session_note_summary";
+    public const string SessionNoteAddendum = "clinical.session_note_addendum";
+    public const string SessionSummary = "clinical.session_summary";
+    public const string ClosurePatientSummary = "clinical.closure_patient_summary";
+    public const string ClosureRelapsePlan = "clinical.closure_relapse_plan";
+    public const string ClosureRejection = "clinical.closure_rejection";
 }
 
 public sealed record SafetyInfoData(string? ContactPhone, string? TrustedName, string? TrustedPhone);

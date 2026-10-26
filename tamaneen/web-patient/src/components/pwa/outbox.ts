@@ -35,6 +35,8 @@ export interface OutboxItem {
   /** API path under /v1, e.g. "mood" or "homework/{id}/checkins". */
   path: string;
   body: unknown;
+  /** The version the write is based on (If-Match), e.g. the P37 safety plan's; a stale one is refused with 412. */
+  ifMatch?: string;
   /** A short name shown in the list, e.g. the homework title. */
   label?: string;
   createdAt: string;
@@ -362,7 +364,7 @@ async function runFlush(force: boolean, interactiveId?: string) {
     // Signed out (or another patient signed in) mid-way: stop; their items are not ours to send.
     if (owner !== who || !items.some((i) => i.id === item.id)) break;
     try {
-      const response = await api<unknown>(item.path, { method: item.method, body: item.body, idempotencyKey: item.id, navigate: false });
+      const response = await api<unknown>(item.path, { method: item.method, body: item.body, idempotencyKey: item.id, ifMatch: item.ifMatch, navigate: false });
       await drop(item.id);
       if (item.id === interactiveId) outcomes.set(item.id, { sent: true, response });
       else if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent<OutboxSentDetail>(OUTBOX_SENT_EVENT, { detail: { item, response } }));
@@ -396,12 +398,12 @@ export function flushOutbox(options: { force?: boolean } = {}): Promise<void> {
  * 'sent' carries the API response, 'queued' means it waits on the device, 'rejected' means the API refused it
  * (shown on the form; nothing is kept). Without a signed-in owner the write is simply sent once.
  */
-export async function submitWrite<T>(input: { kind: OutboxKind; method: 'POST' | 'PUT'; path: string; body: unknown; label?: string }): Promise<WriteResult<T>> {
+export async function submitWrite<T>(input: { kind: OutboxKind; method: 'POST' | 'PUT'; path: string; body: unknown; label?: string; ifMatch?: string }): Promise<WriteResult<T>> {
   const who = owner;
   const id = newId();
   if (!who) {
     try {
-      return { status: 'sent', response: await api<T>(input.path, { method: input.method, body: input.body, idempotencyKey: id }) };
+      return { status: 'sent', response: await api<T>(input.path, { method: input.method, body: input.body, idempotencyKey: id, ifMatch: input.ifMatch }) };
     } catch (error) {
       return { status: 'rejected', error };
     }

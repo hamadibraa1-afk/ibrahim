@@ -75,10 +75,11 @@ public sealed class Appointment : Entity
 
     public static readonly int MaxLateMinutes = 60;
 
-    /// <summary>"patient", "therapist" or null.</summary>
+    /// <summary>"patient", "therapist", "care_ended" (closed at end of care, S57: no apology page) or null.</summary>
     public string? CancelledBy => Status switch
     {
         AppointmentStatus.CancelledByPatient => "patient",
+        AppointmentStatus.CancelledByTherapist when CancelReason == CareEndedReason => "care_ended",
         AppointmentStatus.CancelledByTherapist => "therapist",
         _ => null,
     };
@@ -127,6 +128,21 @@ public sealed class Appointment : Entity
         CancelReason = reasonCode;
         TherapistCancelNoteCipher = noteCipher;
     }
+
+    /// <summary>S57 sign-off: the remaining sessions with the therapist end with the care, reason <c>care_ended</c>.</summary>
+    public void CancelBecauseCareEnded(IClock clock)
+    {
+        if (Status != AppointmentStatus.Confirmed)
+        {
+            throw new DomainException(ErrorCodes.AppointmentNotChangeable, $"Appointment {Id} is not confirmed.");
+        }
+
+        Status = AppointmentStatus.CancelledByTherapist;
+        CancelledAtUtc = clock.UtcNow;
+        CancelReason = CareEndedReason;
+    }
+
+    public const string CareEndedReason = "care_ended";
 
     /// <summary>
     /// S18 "running late": from the moment the lobby opens until the session's planned end. A new value replaces

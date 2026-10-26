@@ -102,7 +102,8 @@ test.describe('English patient', () => {
     await page.getByRole('region', { name: 'Upcoming' }).getByRole('link').first().click();
     await expect(page).toHaveURL(/\/en\/appointments\/[^/]+$/);
     await expectDirection(page, 'en');
-    await expect(page.getByRole('button', { name: /^Open the session link/ })).toBeDisabled();
+    // P28: joining opens 10 minutes before; until then the button says when, and the waiting room can be prepared.
+    await expect(page.getByRole('button', { name: /^Join the session · / })).toBeDisabled();
 
     const cancel = page.getByRole('button', { name: 'Cancel appointment' });
     await expect(cancel).toBeEnabled();

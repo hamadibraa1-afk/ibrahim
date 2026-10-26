@@ -5,6 +5,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { useRouter } from '@/i18n/navigation';
 import { isLocale, routing } from '@/i18n/routing';
 import { api } from '@/lib/api/client';
+import { ApiError } from '@/lib/api/errors';
 import { OUTBOX_SENT_EVENT, submitWrite, useOutbox, type OutboxSentDetail } from '@/components/pwa/outbox';
 import type { PlanContact, SafetyPlan, SafetyPlanSection } from '@/lib/api/types';
 import { formatDate } from '@/lib/format';
@@ -137,10 +138,22 @@ export function SafetyPlanView({ numbers }: { numbers: ReactNode }) {
     try {
       const sections = Object.fromEntries(ALL.map((s) => [s, drafts[s].trim()])) as Record<SafetyPlanSection, string>;
       const contacts = contactDrafts.map((c) => ({ name: c.name.trim(), phone: c.phone.trim() })).filter((c) => c.name || c.phone);
-      const result = await submitWrite<SafetyPlan>({ kind: 'safety-plan', method: 'PUT', path: 'safety-plan', body: { sections, contacts } });
+      // The version this edit is based on (shared with the therapist's S35): a stale one is refused with 412.
+      const ifMatch = plan?.version ? `"${plan.version}"` : undefined;
+      const result = await submitWrite<SafetyPlan>({ kind: 'safety-plan', method: 'PUT', path: 'safety-plan', body: { sections, contacts }, ifMatch });
       if (result.status === 'rejected') {
         const e = result.error;
         setError(apiMessage(e) ?? (isNetworkError(e) ? tErrors('network') : tErrors('generic')));
+        if (e instanceof ApiError && e.status === 412) {
+          // The therapist saved a newer version: show it behind the patient's draft, which stays for them to re-save.
+          api<SafetyPlan>('safety-plan')
+            .then((latest) => {
+              const updated = { ...latest, contacts: latest.contacts ?? [] };
+              void writeCachedPlan(updated, locale);
+              setPlan(updated);
+            })
+            .catch(() => undefined);
+        }
         return;
       }
       if (result.status === 'queued') {

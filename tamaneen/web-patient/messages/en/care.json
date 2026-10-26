@@ -1,0 +1,55 @@
+{
+  "care": {
+    "change": {
+      "metaTitle": "Change therapist",
+      "title": "Change therapist",
+      "reassure": "It’s normal for the first therapist not to suit you. We won’t tell {name} the reason, and your file stays with you.",
+      "reassureNoName": "It’s normal for the first therapist not to suit you. We won’t tell your therapist the reason, and your file stays with you.",
+      "reasonLegend": "What’s the reason? (optional)",
+      "next": "A supervisor will suggest new therapists within {hours} hours. Your current appointment stays booked until you choose.",
+      "submit": "Send the request",
+      "sent": "We received your request. We’ll send you suggestions within {hours} hours.",
+      "back": "Back",
+      "loadError": "We couldn’t load this page. Try again.",
+      "retry": "Try again",
+      "status": {
+        "title": "Your change request",
+        "requested": "Received. A supervisor will suggest new therapists by {time}.",
+        "matching": "A supervisor is choosing therapists for you now.",
+        "offered": "Your new suggestions are ready.",
+        "closed": "The team has been in touch about your request.",
+        "accepted": "You booked with your new therapist."
+      },
+      "seeMatches": "See the suggestions",
+      "notInCare": "You don’t have a therapist yet, so there is nothing to change.",
+      "findTherapist": "Find a therapist"
+    },
+    "complete": {
+      "metaTitle": "End of care",
+      "eyebrow": "The end of the journey",
+      "title": "You’ve reached an important milestone",
+      "sessions": "You finished {count, plural, one {# session} other {# sessions}} with {name}. The progress you made is your own work.",
+      "planTitle": "My plan if hard days come back",
+      "signs": "My signs: {text}",
+      "todo": "What I do: {text}",
+      "reminder": "A reminder of a short check-up in a month",
+      "keepsTitle": "Still yours",
+      "keeps": "Library · My journal · Safety plan · Help now",
+      "keepsNoLibrary": "Safety plan · Help now",
+      "download": "Download my summary",
+      "return": "I need to come back to sessions",
+      "returning": "Opening the suggestions…",
+      "returnNote": "You can come back at any time without signing up again.",
+      "returnRequested": "You asked to come back; your previous therapist is suggested first.",
+      "loadError": "We couldn’t load your summary. Try again.",
+      "retry": "Try again",
+      "none": "Nothing to show here yet.",
+      "home": "Home"
+    },
+    "home": {
+      "title": "Your care has ended",
+      "body": "Your plan if hard days come back, and how to return.",
+      "link": "Open"
+    }
+  }
+}

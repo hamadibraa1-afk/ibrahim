@@ -7,6 +7,7 @@ const items = [
   { key: 'privacy', href: '/privacy' },
   { key: 'notifications', href: '/settings/notifications' },
   { key: 'safety', href: '/settings/safety' },
+  { key: 'changeTherapist', href: '/care/change-therapist' },
 ] as const;
 
 export type SettingsSection = (typeof items)[number]['key'];

@@ -1,0 +1,113 @@
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" class="progress" [attr.aria-label]="'common.loading' | translate" />
+}
+@if (notFound()) {
+  <section class="tm-card" data-testid="not-found"><h1 class="tm-card-title">{{ 'file.notFound' | translate }}</h1></section>
+}
+<tm-problem-message [error]="error()" />
+
+@if (view(); as v) {
+  <header class="head">
+    <div>
+      <h1 class="title">{{ 'care.notes.title' | translate }}</h1>
+      <p class="tm-muted small" data-testid="note-session">
+        <span dir="ltr">{{ v.pseudonymId }}</span> · {{ 'care.notes.session' | translate: { number: v.appointment.sequenceNumber } }} ·
+        {{ v.appointment.startsAt | tmDate: 'dayTime' : language.language() }}
+      </p>
+      <p class="small" aria-live="polite" data-testid="save-state">
+        @if (saving()) { {{ 'care.notes.saving' | translate }} }
+        @else if (saveError()) { <span class="chip danger">{{ 'care.notes.notSaved' | translate }}</span> }
+        @else if (dirty()) { {{ 'care.notes.unsaved' | translate }} }
+        @else if (savedAt()) { {{ 'care.notes.savedAt' | translate: { time: (savedAt()!.toISOString() | tmDate: 'time' : language.language()) } }} }
+      </p>
+    </div>
+    @if (v.canEdit && !signed()) {
+      <div class="head-actions">
+        <button mat-stroked-button type="button" (click)="save()" [disabled]="saving()" data-testid="note-save">{{ 'care.notes.saveDraft' | translate }}</button>
+        <button mat-flat-button type="button" (click)="sign()" [disabled]="saving() || !!conflict()" data-testid="note-sign">{{ 'care.notes.sign' | translate }}</button>
+      </div>
+    }
+  </header>
+  <tm-patient-tabs [id]="v.pseudonymId" active="overview" />
+  <tm-problem-message [error]="saveError()" />
+
+  @if (conflict(); as c) {
+    <section class="banner danger" role="alert" data-testid="note-conflict">
+      <p>{{ 'care.notes.conflict' | translate }}</p>
+      <div class="compare">
+        <div><strong>{{ 'care.plan.theirs' | translate }}</strong><pre>{{ fieldsOf(c) }}</pre></div>
+        <div><strong>{{ 'care.plan.yours' | translate }}</strong><pre>{{ mineText() }}</pre></div>
+      </div>
+      <div class="actions">
+        <button mat-stroked-button type="button" (click)="conflict.set(null); load()">{{ 'care.notes.useTheirs' | translate }}</button>
+        <button mat-flat-button type="button" (click)="conflict.set(null); save()" data-testid="keep-mine">{{ 'care.notes.keepMine' | translate }}</button>
+      </div>
+    </section>
+  }
+
+  <div class="layout">
+    <section class="tm-card" data-testid="note-editor">
+      @if (signed()) {
+        <p class="banner ok" data-testid="note-signed">{{ 'care.notes.signedBy' | translate: { name: v.note!.signedBy, time: (v.note!.signedAt | tmDate: 'dayTime' : language.language()) } }}</p>
+      }
+      <div class="row" role="radiogroup" [attr.aria-label]="'care.notes.template' | translate">
+        <span class="small">{{ 'care.notes.template' | translate }}</span>
+        @for (t of templates; track t) {
+          <button mat-stroked-button type="button" role="radio" [attr.aria-checked]="t === template" [class.mat-mdc-unelevated-button]="t === template" [disabled]="signed() || !v.canEdit" (click)="switchTemplate(t)" [attr.data-testid]="'template-' + t">{{ 'care.notes.templates.' + t | translate }}</button>
+        }
+      </div>
+      <div class="form">
+        @for (k of keys(); track k) {
+          <mat-form-field appearance="outline" class="tm-full">
+            <mat-label>{{ 'care.notes.fields.' + template + '.' + k | translate }}</mat-label>
+            <textarea matInput rows="4" maxlength="4000" [readonly]="signed() || !v.canEdit" [(ngModel)]="fields[k]" (ngModelChange)="changed()" [attr.data-testid]="'field-' + k"></textarea>
+          </mat-form-field>
+        }
+      </div>
+      <h2 class="tm-card-title">{{ 'care.notes.summaryTitle' | translate }}</h2>
+      <p class="tm-muted small">{{ 'care.notes.summaryHint' | translate }}</p>
+      @for (p of points; track $index; let i = $index) {
+        <mat-form-field appearance="outline" class="tm-full">
+          <mat-label>{{ 'care.notes.point' | translate: { n: i + 1 } }}</mat-label>
+          <input matInput maxlength="300" [readonly]="signed() || !v.canEdit" [(ngModel)]="points[i]" (ngModelChange)="changed()" [attr.data-testid]="'point-' + i" />
+        </mat-form-field>
+      }
+      <mat-checkbox [(ngModel)]="share" (ngModelChange)="changed()" [disabled]="signed() || !v.canEdit" data-testid="share">{{ 'care.notes.share' | translate }}</mat-checkbox>
+
+      @if (v.note?.addenda?.length) {
+        <h2 class="tm-card-title">{{ 'care.notes.addenda' | translate }}</h2>
+        <ul class="list" data-testid="addenda">
+          @for (a of v.note!.addenda; track a.id) {
+            <li><span class="grow pre">{{ a.text }}</span><span class="tm-muted small">{{ a.authorName }} · {{ a.at | tmDate: 'dayTime' : language.language() }}</span></li>
+          }
+        </ul>
+      }
+      @if (signed() && v.canEdit) {
+        <mat-form-field appearance="outline" class="tm-full">
+          <mat-label>{{ 'care.notes.addAddendum' | translate }}</mat-label>
+          <textarea matInput rows="3" maxlength="4000" [(ngModel)]="addendum" data-testid="addendum-text"></textarea>
+        </mat-form-field>
+        <div class="actions"><button mat-stroked-button type="button" (click)="addAddendum()" [disabled]="!addendum.trim()" data-testid="addendum-add">{{ 'care.notes.addAddendum' | translate }}</button></div>
+      }
+    </section>
+
+    <aside class="side">
+      <section class="tm-card" data-testid="last-week">
+        <h2 class="tm-card-title">{{ 'care.notes.lastWeek' | translate }}</h2>
+        <p class="small">
+          {{ 'care.notes.homeworkDone' | translate: { done: v.lastWeek.homeworkDone, target: v.lastWeek.homeworkTarget } }} ·
+          @if (v.lastWeek.moodAverage !== null) { {{ 'care.notes.mood' | translate: { value: (v.lastWeek.moodAverage | number: '1.1-1') } }} } @else { {{ 'care.notes.noMood' | translate }} } ·
+          {{ (v.lastWeek.alerts ? 'care.notes.alerts' : 'care.notes.noAlerts') | translate: { count: v.lastWeek.alerts } }}
+        </p>
+      </section>
+      <section class="tm-card">
+        <h2 class="tm-card-title">{{ 'care.notes.quick' | translate }}</h2>
+        <div class="form">
+          <a mat-stroked-button [routerLink]="['/patients', v.pseudonymId, 'homework']" data-testid="quick-homework">{{ 'care.notes.assignHomework' | translate }}</a>
+          <a mat-stroked-button [routerLink]="['/patients', v.pseudonymId, 'safety-plan']">{{ 'care.overview.openSafetyPlan' | translate }}</a>
+          <a mat-stroked-button [routerLink]="['/patients', v.pseudonymId]">{{ 'care.tabs.overview' | translate }}</a>
+        </div>
+      </section>
+    </aside>
+  </div>
+}

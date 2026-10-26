@@ -128,7 +128,7 @@ export interface PatientFile {
   riskLevel: RiskLevel;
   crisisFloor: number;
   firstSessionAt: string | null;
-  path: 'intake' | 'direct';
+  path: 'intake' | 'direct' | 'change';
   version: string;
   generatedByAi: boolean;
   statements: FileStatement[];
@@ -153,7 +153,7 @@ export interface TriageClaim { by: string | null; until: string | null; mine: bo
 export interface TriageQueueItem {
   id: string;
   pseudonymId: string;
-  path: 'intake' | 'direct';
+  path: 'intake' | 'direct' | 'change';
   contactRequested: boolean;
   riskLevel: RiskLevel;
   phq9: number | null;
@@ -169,7 +169,7 @@ export type RuleReason = 'phq9' | 'gad7' | 'cssrs' | 'crisis' | 'routine';
 export interface TriageCaseDetail {
   id: string;
   pseudonymId: string;
-  path: 'intake' | 'direct';
+  path: 'intake' | 'direct' | 'change';
   contactRequested: boolean;
   status: 'pending' | 'reviewed' | 'matched' | 'escalated' | 'closed';
   riskLevel: RiskLevel;
@@ -259,7 +259,7 @@ export interface StaffAppointment {
   canCancel: boolean;
   canReportLate: boolean;
   therapistLateMinutes: number | null;
-  cancelledBy: 'patient' | 'therapist' | null;
+  cancelledBy: 'patient' | 'therapist' | 'care_ended' | null;
   cancelReasonCode: string | null;
   missed: boolean;
 }
@@ -354,3 +354,144 @@ export interface StepUpRequest { password: string; code: string }
 export interface StaffPasswordRequest { currentPassword: string; newPassword: string; code: string }
 export interface TotpMove { secret: string; otpauthUri: string; moveToken: string; expiresAt: string }
 export interface StaffNotificationPrefs { riskAlerts: true; bookings: boolean; weeklyReport: boolean; dailyDigest: boolean }
+// ---------- Phase 5: care record (S14, S15, S16, S33, S35, S57) ----------
+
+export type HomeworkFrequency = 'daily' | 'twice_weekly' | 'weekly' | 'once';
+export interface HomeworkTemplate { code: string; title: string; instructions: string[]; frequency: HomeworkFrequency; minutes: number | null }
+export interface StaffCheckin {
+  id: string;
+  day: string;
+  status: 'done' | 'partial' | 'skipped';
+  feeling: number | null;
+  note: string | null;
+  /** Crisis gate level of the note; 3 or 4 shows the risk badge. */
+  gateLevel: number | null;
+  feedback: string | null;
+  feedbackAt: string | null;
+  feedbackSeen: boolean;
+}
+export interface StaffHomework {
+  id: string;
+  title: string;
+  instructions: string[];
+  minutes: number | null;
+  frequency: HomeworkFrequency;
+  startsOn: string;
+  endsOn: string;
+  status: 'active' | 'ended' | 'cancelled';
+  templateCode: string | null;
+  doneThisWeek: number;
+  weeklyTarget: number;
+  averageFeeling: number | null;
+  latestCheckin: StaffCheckin | null;
+  checkins: StaffCheckin[];
+}
+export interface StaffHomeworkList { pseudonymId: string; current: StaffHomework[]; past: StaffHomework[]; canEdit: boolean }
+export interface AssignHomeworkRequest { title: string; instructions: string[]; minutes?: number | null; frequency: HomeworkFrequency; startsOn: string; endsOn: string; templateCode?: string | null }
+export interface UpdateHomeworkRequest { title: string; instructions: string[]; minutes?: number | null; frequency: HomeworkFrequency; endsOn: string }
+
+export type GoalStatus = 'not_started' | 'ongoing' | 'improving';
+export type PlanFrequency = 'weekly' | 'biweekly' | 'monthly';
+export interface PlanGoal { text: string; status: GoalStatus }
+export interface PlanVersion { version: number; createdAt: string; authorName: string; goals: PlanGoal[]; interventions: string; frequency: PlanFrequency; reviewOn: string; followUpNotes: string }
+export interface PlanHistory { pseudonymId: string; current: PlanVersion | null; versions: { version: number; createdAt: string; authorName: string }[]; fileApproved: boolean; canEdit: boolean }
+export interface SavePlanRequest { goals: PlanGoal[]; interventions: string; frequency: PlanFrequency; reviewOn: string; followUpNotes: string }
+
+export type NoteTemplate = 'soap' | 'dap' | 'free';
+export interface NoteAddendum { id: string; text: string; authorName: string; at: string }
+export interface SessionNote {
+  id: string;
+  template: NoteTemplate;
+  fields: Record<string, string>;
+  summaryPoints: string[];
+  shareSummary: boolean;
+  status: 'draft' | 'signed';
+  revision: number;
+  updatedAt: string;
+  signedAt: string | null;
+  signedBy: string | null;
+  addenda: NoteAddendum[];
+}
+export interface SessionNoteView {
+  pseudonymId: string;
+  appointment: { id: string; startsAt: string; durationMinutes: number; sequenceNumber: number; status: string };
+  note: SessionNote | null;
+  lastWeek: { homeworkDone: number; homeworkTarget: number; moodAverage: number | null; alerts: number };
+  canEdit: boolean;
+  templates: Record<NoteTemplate, string[]>;
+}
+export interface SaveNoteRequest { template: NoteTemplate; fields: Record<string, string>; summaryPoints: string[]; shareSummary: boolean }
+
+export type SafetyPlanSection = 'warningSigns' | 'copingAlone' | 'distractions' | 'peopleToAsk' | 'professionals' | 'safeEnvironment' | 'reasonToLive';
+export interface PlanContact { name: string; phone: string }
+export type AuthorRole = 'patient' | 'therapist' | 'supervisor' | 'lead' | 'admin';
+export interface StaffSafetyPlan {
+  pseudonymId: string;
+  sections: Record<SafetyPlanSection, string>;
+  contacts: PlanContact[];
+  /** Shared with the patient's P37; also the ETag. */
+  version: number;
+  updatedAt: string | null;
+  updatedBy: string | null;
+  updatedByRole: AuthorRole | null;
+  emergency: { emergencyNumber: string; supportLine: string; therapistName: string };
+  canEdit: boolean;
+}
+export interface SafetyPlanVersionSummary { version: number; createdAt: string; authorRole: AuthorRole; authorName: string }
+export interface SafetyPlanVersion extends SafetyPlanVersionSummary { sections: Record<SafetyPlanSection, string>; contacts: PlanContact[] }
+export interface UpdateSafetyPlanRequest { sections: Partial<Record<SafetyPlanSection, string>>; contacts: PlanContact[] }
+
+export type ClosureReason = 'goals_met' | 'patient_choice' | 'transferred' | 'no_contact' | 'other';
+export type ClosureFollowUp = 'none' | 'phq9_1m_3m';
+export interface Closure {
+  id: string;
+  status: 'draft' | 'submitted' | 'signed_off' | 'rejected';
+  reasonCode: ClosureReason | '';
+  sessionCount: number;
+  durationWeeks: number;
+  patientSummary: string;
+  warningSigns: string;
+  whatToDo: string;
+  followUp: ClosureFollowUp;
+  keepLibrary: boolean;
+  submittedAt: string | null;
+  rejectionReason: string | null;
+  decidedBy: string | null;
+  decidedAt: string | null;
+  revision: number;
+}
+export interface ClosureView {
+  pseudonymId: string;
+  closure: Closure | null;
+  prefill: { sessionCount: number; durationWeeks: number };
+  measures: { instrument: string; start: number | null; end: number | null }[];
+  /** Risk 3–4 in the last 14 days: sending and signing off are refused. */
+  blocked: boolean;
+  canEdit: boolean;
+  canSignOff: boolean;
+  therapistName: string;
+}
+export interface SaveClosureRequest { reasonCode: ClosureReason | ''; sessionCount: number; durationWeeks: number; patientSummary: string; warningSigns: string; whatToDo: string; followUp: ClosureFollowUp; keepLibrary: boolean; submit: boolean }
+export interface ClosureQueueItem { id: string; pseudonymId: string; therapistName: string; reasonCode: ClosureReason; sessionCount: number; submittedAt: string; blocked: boolean }
+
+export interface OverviewAppointment { id: string; startsAt: string; durationMinutes: number; sequenceNumber: number; status: string; noteStatus: 'none' | 'draft' | 'signed' }
+export interface PatientOverview {
+  pseudonymId: string;
+  riskLevel: RiskLevel;
+  crisisFloor: number;
+  careStartedAt: string | null;
+  inCare: boolean;
+  closureStatus: Closure['status'] | null;
+  fileApproved: boolean;
+  phq9AtIntake: number | null;
+  gad7AtIntake: number | null;
+  nextAppointment: OverviewAppointment | null;
+  pastAppointments: OverviewAppointment[];
+  mood: { at: string; score: number }[];
+  moodAverage7Days: number | null;
+  plan: { version: number; createdAt: string; reviewOn: string; goals: PlanGoal[] } | null;
+  homework: { id: string; title: string; frequency: HomeworkFrequency; doneThisWeek: number; weeklyTarget: number; averageFeeling: number | null }[];
+  safetyPlan: { exists: boolean; version: number; updatedAt: string | null; updatedByRole: AuthorRole | null };
+  alerts: { eventId: string; level: number; status: string; source: string; openedAt: string }[];
+  canEdit: boolean;
+}

@@ -9,7 +9,7 @@ Every response is localized by `Accept-Language` (`ar` default, `en`). Errors ar
 
 | Method | Path | Body → Response | Screen |
 |---|---|---|---|
-| GET | /v1/meta/config | → PublicConfig (includes `signupsOpen`) | P01, P02, P12, P14, P15, P35 |
+| GET | /v1/meta/config | → PublicConfig (includes `signupsOpen` and `changeTherapistWithinHours`) | P01, P02, P12, P14, P15, P35 |
 | GET | /v1/meta/locale | → LocaleResponse | all |
 
 ## Auth (anonymous; the patient BFF stores tokens in HttpOnly cookies)
@@ -88,7 +88,7 @@ and P01, P02, P12 and P15 show the emergency numbers instead of the start button
 | PUT | /v1/me/waitlist | JoinWaitlistRequest { therapistId?, gender: any/female/male, language: any/ar/en, timesOfDay: morning/afternoon/evening[], days: weekdays/weekend[] } → Waitlist (joins, or changes the preferences and keeps the place; booking eligibility required, 400 field errors for unknown values) | P56 (from P07, P24, P25) |
 | DELETE | /v1/me/waitlist | → 204 (leaves) | P56 |
 | GET | /v1/appointments | → AppointmentList (each item has `therapistLateMinutes`, `cancelledBy`, `cancelReasonCode`, `missed`) | P27 |
-| GET | /v1/appointments/{id} | → AppointmentDetail (same four fields; P54 reads `therapistLateMinutes`, P67 `cancelledBy: therapist`, P63 `missed`; `joinUrl` is kept for older clients, the apps now use the lobby) | P26, P28, P41, P54, P63, P67 |
+| GET | /v1/appointments/{id} | → AppointmentDetail (same four fields; `cancelledBy` is `patient`, `therapist`, `care_ended` (S57 closed the care) or null; P54 reads `therapistLateMinutes`, P67 `cancelledBy: therapist`, P63 `missed`; `joinUrl` is kept for older clients, the apps now use the lobby) | P26, P28, P41, P54, P63, P67 |
 | GET | /v1/appointments/{id}/calendar | → text/calendar `appointment.ics`, neutral title «موعد» / "Appointment" with no platform, therapist or patient name (PB-42) | P26 |
 | POST | /v1/appointments/{id}/cancel | CancelRequest { reasonCode: schedule_conflict, feeling_better, unwell, therapist_fit, other } → AppointmentDetail (400 field error without a known reason; 409 within 24 h) | P28 |
 | POST | /v1/appointments/{id}/reschedule | RescheduleRequest → AppointmentDetail | P28 |
@@ -98,7 +98,14 @@ and P01, P02, P12 and P15 show the emergency numbers instead of the start button
 | GET | /v1/homework | → HomeworkList | P29 |
 | GET | /v1/homework/{id} | → HomeworkDetail | P10 |
 | POST | /v1/homework/{id}/checkins | CheckinRequest → CheckinResponse (note gated) | P10 |
-| GET/PUT | /v1/safety-plan | SafetyPlan / UpdateSafetyPlanRequest (gate; sections and contact names). `contacts`: up to 5 `{ name ≤ 100, phone }`, encrypted with the patient key like the sections | P37 |
+| GET/PUT | /v1/safety-plan | SafetyPlan + `ETag` / UpdateSafetyPlanRequest (gate; sections and contact names). `contacts`: up to 5 `{ name ≤ 100, phone }`, encrypted with the patient key like the sections. `version` (also the ETag) is shared with the therapist's S35 builder: If-Match is optional here (queued offline writes), but when sent it must name the current version, else 412 `error.version.changed` | P37 |
+| GET | /v1/catalogs/change-reasons | → ChangeReason[] (`not_comfortable`, `schedule`, `gender`, `specialty`, `other`, labels in Accept-Language) | P44 |
+| POST | /v1/me/change-therapist-requests | CreateChangeRequest { reasonCode? } (Idempotency-Key) → 201 ChangeTherapistRequest (409 `error.change_request.open` + `current`; 409 `error.care.not_in_care` without a therapist) | P44 |
+| GET | /v1/me/change-therapist-requests/current | → ChangeTherapistRequest (`status`: requested, matching, offered, closed; 404 when none is open) | P44 |
+| GET | /v1/me/care-closure | → CareClosure (404 until a supervisor signed off the end of care) | P53 |
+| GET | /v1/me/care-closure/summary | → `text/plain` `summary.txt` (plain-language summary and relapse plan, no diagnosis or scores; audited `care.summary_downloaded`) | P53 |
+| POST | /v1/me/care/return | → { next } (`/matches` with the previous therapist suggested first, or `/therapists`) | P53 |
+| GET | /v1/appointments/{id}/session-summary | → SessionSummary { points, sharedAt } (the points the therapist shared when signing the note; 404 otherwise) | P43 |
 
 Idempotency (P66 outbox, EC-01, EC-07): `POST /v1/mood`, `POST /v1/homework/{id}/checkins` and `PUT /v1/safety-plan` accept an
 `Idempotency-Key` header (one GUID per write, the same on every retry; the BFF forwards it). The first request with a key runs
@@ -203,8 +210,25 @@ During scheduled maintenance (`Platform:Maintenance` true) every patient endpoin
 | POST | /v1/staff/availability/slots | { startsAt } → 201 AvailabilitySlot (one-off time, profile session length; 400 `error.slot.too_soon` within 2 h; 409 `error.slot.overlap`) | S19 |
 | PATCH | /v1/staff/availability/slots/{slotId} | { startsAt } → AvailabilitySlot (free times only: 409 `error.slot.taken` when booked or held) | S19 |
 | DELETE | /v1/staff/availability/slots/{slotId} | → 204 (free times only, 409 `error.slot.taken`) | S19 |
-| POST | /v1/staff/patients/{pseudonymId}/homework | { title, instructions[], minutes, frequency, startsOn, endsOn } → 201 | (S16 later) |
-| POST | /v1/staff/checkins/{id}/feedback | { text } → 204 | (S16 later) |
+| POST | /v1/staff/patients/{pseudonymId}/homework | AssignHomeworkRequest { title ≤ 120, instructions[] (≤ 2,000 in all), minutes?, frequency, startsOn, endsOn ≥ today, templateCode? } → 201 StaffHomework (therapist; notifies `homework.assigned`) | S16 |
+| POST | /v1/staff/checkins/{id}/feedback | { text ≤ 1,000 } → 204 (therapist; notifies `homework.feedback`; the patient sees it on P10 and P09) | S16 |
+| GET | /v1/staff/homework/templates | → HomeworkTemplate[] (library: behavioral_activation, thought_record, sleep_diary, breathing) | S16 |
+| GET | /v1/staff/patients/{pseudonymId}/homework | → StaffHomeworkList (current and past, check-ins with notes, `gateLevel`, replies; audited `patient.homework_viewed`) | S16 |
+| PUT · DELETE | /v1/staff/homework/{id} | UpdateHomeworkRequest → StaffHomework · → 204 (cancel: ends today, the patient sees it as finished; notifies `homework.cancelled`; therapist) | S16 |
+| GET | /v1/staff/patients/{pseudonymId}/overview | → PatientOverview (audited `patient.overview_opened`) | S14 |
+| GET | /v1/staff/patients/{pseudonymId}/plans | → PlanHistory + `ETag` (current version, "0" before the first; audited) | S15 |
+| GET | /v1/staff/patients/{pseudonymId}/plans/{version} | → PlanVersion (read-only, audited) | S15 |
+| POST | /v1/staff/patients/{pseudonymId}/plans | `If-Match` + SavePlanRequest → 201 PlanVersion + `ETag` (428 `error.version.required`, 412 `error.version.changed`, 409 `error.plan.file_not_approved`; therapist) | S15 |
+| GET | /v1/staff/patients/{pseudonymId}/sessions/{appointmentId}/note | → SessionNoteView + `ETag` (note revision, "0" before the first save; audited `patient.note_opened`) | S33 |
+| PUT | /v1/staff/patients/{pseudonymId}/sessions/{appointmentId}/note | `If-Match` + SaveNoteRequest { template soap/dap/free, fields ≤ 4,000 each, summaryPoints ≤ 3 × 300, shareSummary } → SessionNoteView (the session's therapist, from its start; 409 `error.note.signed`) | S33 |
+| POST | …/note/sign · …/note/addenda | `If-Match` → SessionNoteView (locks; shares the points → `session.summary_shared`) · { text } → SessionNoteView (signed notes only) | S33 |
+| GET | /v1/staff/patients/{pseudonymId}/safety-plan | → StaffSafetyPlan + `ETag` (version; audited) | S35 |
+| GET | /v1/staff/patients/{pseudonymId}/safety-plan/versions · /versions/{n} | → SafetyPlanVersionSummary[] · SafetyPlanVersion | S35 |
+| POST | /v1/staff/patients/{pseudonymId}/safety-plans | `If-Match` + UpdateSafetyPlanRequest → 201 StaffSafetyPlan (therapist; 428/412; notifies `safety_plan.updated` to the patient) | S35 |
+| GET · PUT | /v1/staff/patients/{pseudonymId}/closure | → ClosureView + `ETag` · `If-Match` + SaveClosureRequest → ClosureView (`submit: true` sends it for sign-off: required fields as field errors, 409 `error.closure.blocked` at risk 3–4 in 14 days; notifies `care.closure_submitted`) | S57 |
+| POST | /v1/staff/patients/{pseudonymId}/closure/withdraw | → ClosureView | S57 |
+| GET | /v1/staff/closures | → ClosureQueueItem[] (submitted; supervisor, lead) | S57 |
+| POST | /v1/staff/closures/{id}/sign-off | { approve, reason? } → Closure (approve: ends the care assignment, cancels the remaining sessions with that therapist, notifies `care.ended`; refuse: reason required, notifies `care.closure_rejected`; not the author, 403) | S57 |
 | GET | /v1/staff/patients | → CaseloadItem[] (the therapist's active patients; supervisors see all assigned) | menu "My patients" |
 | GET | /v1/staff/patients/{pseudonymId}/file | → PatientFile + `ETag` (audited `patient.file_opened`) | S02 |
 | GET | /v1/staff/patients/{pseudonymId}/evidence/{statementKey} | → Evidence { messageIds, turns, removed } (audited `patient.evidence_viewed`) | S02 |
@@ -270,3 +294,27 @@ Review deadlines follow the level: 24 h for 1, 4 h for 2, 1 h for 3 and 4. Every
 Alerts and the open-events list carry `number` (CE-1001), `source`, `sourceLabel` and `acknowledgedBy`. Status is Open, Acknowledged, InContact or Closed. CrisisEventDetail adds `canAct`, `isOwner`, `pendingHandover`, `pendingClose`, `canCoSign`, `emergencyNumber`, `emergencyScript` (rule-pack responder script, with or without a known location), `recentCallAttempts`, `callAdvice` (local_emergency or unreachable after 3 calls in 15 minutes to a Critical patient, EC-33) and `reviewDueAtUtc`. The timeline ends with the next scheduled escalation while nobody owns the event. Supervisors, the
 clinical lead and on-call staff receive every alert; other therapists only receive alerts for their own patients. The console endpoints follow the same rule through RLS: on-call therapists see every crisis event, and contact data and excerpts only while the event is open.
 Staff refresh and sign-out send `{}`; the refresh token is the HttpOnly cookie `tamaneen_staff_rt` on `/v1/auth`.
+
+## Phase 5: care record (S14–S16, S33, S35, S57) and the patient's side (P44, P53)
+
+- **Row-level security.** New tables: `TreatmentPlanVersions`, `SafetyPlanVersions`, `SessionSummaries` and `CareClosures` use
+  `fn_patient_access`. `SessionNotes` and `SessionNoteAddenda` use `fn_clinician_only_access`: supervisors, the lead and the
+  therapist with an active assignment; never the patient. `ChangeTherapistRequests` use `fn_change_request_access`: the patient,
+  supervisors, the lead and the scheduling service; never a therapist, so the current therapist never sees the request or reason.
+  Ending the assignment (end of care, change of therapist) therefore stops the therapist reading any of the patient's rows.
+- **Concurrency (If-Match).** Plans, notes, closures and the safety plan answer with an `ETag` (a version number, "0" before the
+  first save). Staff saves must send it: 428 `error.version.required` without, 412 `error.version.changed` when someone saved
+  first (the portal then shows both versions). The safety plan has one version number for the patient (P37) and the therapist
+  (S35); the patient's PUT may omit If-Match so that writes queued offline still arrive.
+- **Encryption.** Plan content, note fields, summary points, addenda, the closing summary, the relapse plan and a supervisor's
+  refusal reason are encrypted with the patient's key. Staff-written text does not pass the crisis gate (it is not a patient
+  disclosure); patient homework notes still do, and the gate's level is kept on the check-in (`gateLevel`).
+- **Change of therapist (P44).** The request opens a triage case with `path: "change"` in the S03 queue, due within
+  `Platform:ChangeTherapistWithinHours` (24) or the level's shorter deadline; its suggestions never include the current therapist.
+  Approve shows the new suggestions on P07; booking one ends the old assignment (scheduling service), cancels the old therapist's
+  sessions that can still be changed, and notifies the old therapist with `care.transferred` (no reason). Close or escalate
+  closes the request. Change cases never appear in the patient's triage state or the clinical file.
+- **Notification kinds** handed to `INotifier`: `homework.assigned`, `homework.feedback`, `homework.cancelled` (patient);
+  `session.summary_shared` (patient); `safety_plan.updated` (patient when the therapist saves, the treating therapist when the
+  patient saves); `care.closure_submitted` (supervisors, lead); `care.closure_rejected` (therapist); `care.ended` (patient);
+  `care.change_requested` (supervisors, lead); `care.transferred` (the former therapist).

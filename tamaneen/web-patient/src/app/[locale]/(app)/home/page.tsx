@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { CareEndedCard } from '@/components/care/CareEndedCard';
 import { HomeView } from '@/components/home/HomeView';
 import { Link, redirect } from '@/i18n/navigation';
 import { BottomNav, BottomNavSpacer } from '@/components/ui/BottomNav';
@@ -40,6 +41,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           <span aria-hidden="true" className="rtl:rotate-180">→</span>
         </Link>
       ) : null}
+      {me.careClosedAt ? <CareEndedCard /> : null}
       <HomeView
         home={home}
         locale={isLocale(locale) ? locale : routing.defaultLocale}

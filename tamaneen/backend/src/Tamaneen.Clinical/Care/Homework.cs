@@ -60,6 +60,16 @@ public sealed class HomeworkAssignment : Entity
 
     public DateTimeOffset CreatedAtUtc { get; private set; }
 
+    /// <summary>Library template it came from (S16), or null for the therapist's own text.</summary>
+    public string? TemplateCode { get; private set; }
+
+    public DateTimeOffset? UpdatedAtUtc { get; private set; }
+
+    /// <summary>Set when the therapist ends the exercise early (S16 "cancel"); the patient then sees it as finished.</summary>
+    public DateTimeOffset? CancelledAtUtc { get; private set; }
+
+    public bool IsCancelled => CancelledAtUtc is not null;
+
     public static HomeworkAssignment Assign(Guid patientId, Guid therapistUserId, byte[] titleCipher, byte[] instructionsCipher, int? minutes, HomeworkFrequency frequency, DateOnly startsOn, DateOnly endsOn, IClock clock)
     {
         if (endsOn < startsOn)
@@ -70,7 +80,41 @@ public sealed class HomeworkAssignment : Entity
         return new HomeworkAssignment(Guid.NewGuid(), patientId, therapistUserId, titleCipher, instructionsCipher, minutes, frequency, startsOn, endsOn, clock.UtcNow);
     }
 
-    public bool IsCompleted(DateOnly today) => today > EndsOn;
+    public void SetTemplate(string? templateCode) => TemplateCode = templateCode;
+
+    /// <summary>S16 edit: the patient sees the change at once. An ended exercise cannot be edited.</summary>
+    public void Update(byte[] titleCipher, byte[] instructionsCipher, int? minutes, HomeworkFrequency frequency, DateOnly endsOn, DateOnly today, IClock clock)
+    {
+        if (IsCompleted(today))
+        {
+            throw new DomainException(ErrorCodes.HomeworkEnded, $"Homework {Id} has ended.");
+        }
+
+        if (endsOn < StartsOn || endsOn < today)
+        {
+            throw new DomainException(ErrorCodes.Validation, "Homework must end on or after its start and today.");
+        }
+
+        TitleCipher = titleCipher;
+        InstructionsCipher = instructionsCipher;
+        Minutes = minutes;
+        Frequency = frequency;
+        EndsOn = endsOn;
+        UpdatedAtUtc = clock.UtcNow;
+    }
+
+    public void Cancel(DateOnly today, IClock clock)
+    {
+        if (IsCompleted(today))
+        {
+            throw new DomainException(ErrorCodes.HomeworkEnded, $"Homework {Id} has ended.");
+        }
+
+        CancelledAtUtc = clock.UtcNow;
+        UpdatedAtUtc = clock.UtcNow;
+    }
+
+    public bool IsCompleted(DateOnly today) => today > EndsOn || CancelledAtUtc is not null;
 
     /// <summary>Days in the assignment for daily work (P10 "3 of 7 days"); target count for the other frequencies.</summary>
     public int TotalDays => Frequency switch
@@ -130,6 +174,11 @@ public sealed class HomeworkCheckin : Entity
     public DateTimeOffset CreatedAtUtc { get; private set; }
 
     public DateTimeOffset UpdatedAtUtc { get; private set; }
+
+    /// <summary>The crisis gate's level for the note (S16 shows a risk badge at 3 or 4); null without a note.</summary>
+    public RiskLevel? GateLevel { get; private set; }
+
+    public void SetGateLevel(RiskLevel? level) => GateLevel = level;
 
     public static HomeworkCheckin Start(Guid assignmentId, Guid patientId, DateOnly day, IClock clock) => new(Guid.NewGuid(), assignmentId, patientId, day, clock.UtcNow);
 

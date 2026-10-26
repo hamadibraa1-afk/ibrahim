@@ -19,12 +19,13 @@ import { LocalDatePipe } from '../../shared/local-date.pipe';
 import { ProblemMessageComponent } from '../../shared/problem-message.component';
 import { type ReasonDialogData, type ReasonDialogResult, ReasonDialogComponent } from '../../shared/reason-dialog.component';
 import { RiskTagComponent } from '../../shared/risk-tag.component';
+import { PatientTabsComponent } from '../care/patient-tabs.component';
 
 export type FileTab = 'summary' | 'transcript' | 'scores' | 'cssrs' | 'corrections';
 export const FILE_TABS: readonly FileTab[] = ['summary', 'transcript', 'scores', 'cssrs', 'corrections'];
 
 /**
- * S02 clinical file and evidence inspector (/patients/:id). The AI's intake summary sits next to the intake chat:
+ * S02 clinical file and evidence inspector (/patients/:id/file, a tab of the S14 overview). The AI's intake summary sits next to the intake chat:
  * each statement shows how many messages it came from, and "source" highlights them in the chat. The therapist edits
  * statements in place (saved with the approval), dismisses them with a reason, rates the file and approves it with the
  * version they read (412 shows the latest). Raising the risk and a manual crisis alert are in the header. Every read
@@ -32,7 +33,7 @@ export const FILE_TABS: readonly FileTab[] = ['summary', 'transcript', 'scores',
  */
 @Component({
   selector: 'tm-patient-file',
-  imports: [NgTemplateOutlet, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatProgressBarModule, RouterLink, TranslateModule, LocalDatePipe, ProblemMessageComponent, RiskTagComponent],
+  imports: [NgTemplateOutlet, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatProgressBarModule, RouterLink, TranslateModule, LocalDatePipe, ProblemMessageComponent, RiskTagComponent, PatientTabsComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './patient-file.component.html',
   styleUrl: './patient-file.component.scss',

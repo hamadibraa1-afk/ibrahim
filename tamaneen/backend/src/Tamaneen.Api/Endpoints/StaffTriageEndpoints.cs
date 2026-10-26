@@ -115,8 +115,9 @@ public static class StaffTriageEndpoints
     /// <summary>Approved therapists with free capacity, for "change the suggestions" (SB-34).</summary>
     internal static async Task<Ok<List<SuggestedTherapistDto>>> TherapistsAsync(Guid id, ICurrentUser user, TamaneenDbContext db, TherapistDirectory directory, CancellationToken ct)
     {
-        await FindAsync(db, id, ct).ConfigureAwait(false);
-        var available = await directory.AvailableAsync(user.Language, ct).ConfigureAwait(false);
+        var triage = await FindAsync(db, id, ct).ConfigureAwait(false);
+        var excluded = await ExcludedTherapistsAsync(db, triage, ct).ConfigureAwait(false);
+        var available = (await directory.AvailableAsync(user.Language, ct).ConfigureAwait(false)).Where(a => !excluded.Contains(a.Therapist.Id)).ToList();
         return TypedResults.Ok(available.Select((a, i) => Card(a.Therapist, i + 1, [], a.Load, a.Capacity)).ToList());
     }
 
@@ -246,6 +247,13 @@ public static class StaffTriageEndpoints
             throw await WithHolderAsync(ex, triage, db, user.Language, ct).ConfigureAwait(false);
         }
 
+        if (triage.IsChangeRequest && triage.Status is TriageStatus.Closed or TriageStatus.Escalated)
+        {
+            // P44: the supervisor decided against offering new therapists; the patient's request closes with the case.
+            var change = await db.ChangeTherapistRequests.FirstOrDefaultAsync(r => r.TriageCaseId == triage.Id, ct).ConfigureAwait(false);
+            change?.Close(clock);
+        }
+
         var detail = kind switch
         {
             "override_risk" => $"{(int)before}->{request.RiskLevel}{(coSignRequested ? " (co-sign requested)" : string.Empty)}",
@@ -288,7 +296,8 @@ public static class StaffTriageEndpoints
             return;
         }
 
-        var available = (await directory.AvailableAsync(language, ct).ConfigureAwait(false)).ToDictionary(a => a.Therapist.Id);
+        var excluded = await ExcludedTherapistsAsync(db, triage, ct).ConfigureAwait(false);
+        var available = (await directory.AvailableAsync(language, ct).ConfigureAwait(false)).Where(a => !excluded.Contains(a.Therapist.Id)).ToDictionary(a => a.Therapist.Id);
         List<(Guid Id, IReadOnlyList<string> Shared)> picks;
         if (chosen is { Count: > 0 })
         {
@@ -301,7 +310,7 @@ public static class StaffTriageEndpoints
         }
         else
         {
-            picks = (await directory.SuggestAsync(focus, language, 3, ct).ConfigureAwait(false)).Where(p => available.ContainsKey(p.TherapistId)).Select(p => (p.TherapistId, p.Shared)).ToList();
+            picks = (await directory.SuggestAsync(focus, language, 3 + excluded.Count, ct).ConfigureAwait(false)).Where(p => available.ContainsKey(p.TherapistId)).Take(3).Select(p => (p.TherapistId, p.Shared)).ToList();
         }
 
         if (picks.Count == 0)
@@ -360,7 +369,8 @@ public static class StaffTriageEndpoints
         }
 
         // The suggestions the patient would get: saved ones (after a Reassign), else the directory's proposal.
-        var available = (await directory.AvailableAsync(patient.PreferredLanguage, ct).ConfigureAwait(false)).ToDictionary(a => a.Therapist.Id);
+        var excluded = await ExcludedTherapistsAsync(db, triage, ct).ConfigureAwait(false);
+        var available = (await directory.AvailableAsync(patient.PreferredLanguage, ct).ConfigureAwait(false)).Where(a => !excluded.Contains(a.Therapist.Id)).ToDictionary(a => a.Therapist.Id);
         var saved = await db.MatchSuggestions.AsNoTracking().Where(m => m.PatientId == triage.PatientId && !m.Dismissed).OrderBy(m => m.Rank).ToListAsync(ct).ConfigureAwait(false);
         List<SuggestedTherapistDto> suggestions;
         if (saved.Count > 0)
@@ -374,7 +384,7 @@ public static class StaffTriageEndpoints
         }
         else
         {
-            var picks = await directory.SuggestAsync([], patient.PreferredLanguage, 3, ct).ConfigureAwait(false);
+            var picks = (await directory.SuggestAsync([], patient.PreferredLanguage, 3 + excluded.Count, ct).ConfigureAwait(false)).Where(p => !excluded.Contains(p.TherapistId)).Take(3).ToList();
             var cards = (await directory.ListAsync(language, picks.Select(p => p.TherapistId), ct).ConfigureAwait(false)).ToDictionary(t => t.Id);
             suggestions = picks.Where(p => cards.ContainsKey(p.TherapistId) && available.ContainsKey(p.TherapistId))
                 .Select((p, i) => Card(cards[p.TherapistId], i + 1, p.Shared, available[p.TherapistId].Load, available[p.TherapistId].Capacity)).ToList();
@@ -410,6 +420,12 @@ public static class StaffTriageEndpoints
             triage.DueAtUtc,
             now);
     }
+
+    /// <summary>A change-of-therapist case (P44) never offers the therapist the patient is leaving.</summary>
+    private static async Task<HashSet<Guid>> ExcludedTherapistsAsync(TamaneenDbContext db, TriageCase triage, CancellationToken ct) =>
+        triage.IsChangeRequest
+            ? (await db.ChangeTherapistRequests.AsNoTracking().Where(r => r.TriageCaseId == triage.Id).Select(r => r.FromTherapistUserId).ToListAsync(ct).ConfigureAwait(false)).ToHashSet()
+            : [];
 
     private static SuggestedTherapistDto Card(TherapistSummaryDto t, int rank, IReadOnlyList<string> shared, int load, int capacity) =>
         new(t.Id, rank, t.DisplayName, t.Specialties, shared, t.Languages, load, capacity, t.NextAvailableAt);

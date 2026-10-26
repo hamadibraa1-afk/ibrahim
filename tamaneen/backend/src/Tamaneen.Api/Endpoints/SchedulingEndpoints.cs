@@ -182,7 +182,7 @@ public static class SchedulingEndpoints
         return TypedResults.NoContent();
     }
 
-    internal static async Task<Ok<AppointmentDetailDto>> ConfirmAsync(Guid holdId, PatientContext p, TherapistDirectory directory, ScopeRunner scopes, IAuditLog audit, INotifier notifier, IOptions<PlatformOptions> platform, IClock clock, CancellationToken ct)
+    internal static async Task<Ok<AppointmentDetailDto>> ConfirmAsync(Guid holdId, PatientContext p, TherapistDirectory directory, ScopeRunner scopes, CareRecords care, IAuditLog audit, INotifier notifier, IOptions<PlatformOptions> platform, IClock clock, CancellationToken ct)
     {
         await EnsureCanBookAsync(p, ct).ConfigureAwait(false);
         var slot = await p.Db.AvailabilitySlots.FirstOrDefaultAsync(s => s.HoldId == holdId, ct).ConfigureAwait(false)
@@ -209,6 +209,9 @@ public static class SchedulingEndpoints
         // Booking a therapist gives them access to the file: the assignment is created by the scheduling service.
         var patientId = p.PatientId;
         var therapistId = slot.TherapistUserId;
+        // P44: booking with a new therapist completes a change-of-therapist request; the old assignment ends first
+        // (a patient has one active assignment).
+        await CareJourneyEndpoints.CompleteTransferAsync(p, scopes, care, therapistId, profile.PseudonymId, clock, ct).ConfigureAwait(false);
         await scopes.AsServiceAsync(SchedulingServiceId, AppRoles.SchedulingService, async sp =>
         {
             var sdb = sp.GetRequiredService<TamaneenDbContext>();
