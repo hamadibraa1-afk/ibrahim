@@ -205,6 +205,9 @@ public static class SchedulingEndpoints
         // Booking a therapist gives them access to the file: the assignment is created by the scheduling service.
         var patientId = p.PatientId;
         var therapistId = slot.TherapistUserId;
+        // P44: booking with a new therapist completes a change-of-therapist request; the old assignment ends first
+        // (a patient has one active assignment).
+        await CareJourneyEndpoints.CompleteTransferAsync(p, scopes, care, therapistId, profile.PseudonymId, clock, ct).ConfigureAwait(false);
         await scopes.AsServiceAsync(SchedulingServiceId, AppRoles.SchedulingService, async sp =>
         {
             var sdb = sp.GetRequiredService<TamaneenDbContext>();
@@ -218,8 +221,6 @@ public static class SchedulingEndpoints
             return true;
         }).ConfigureAwait(false);
 
-        // P44: booking with the new therapist completes a change-of-therapist request.
-        await CareJourneyEndpoints.CompleteTransferAsync(p, scopes, care, therapistId, profile.PseudonymId, clock, ct).ConfigureAwait(false);
         return TypedResults.Ok(await DetailDtoAsync(p, directory, appointment, platform, clock, ct).ConfigureAwait(false));
     }
 

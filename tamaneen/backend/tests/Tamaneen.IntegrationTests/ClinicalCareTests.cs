@@ -192,8 +192,9 @@ public sealed class ClinicalCareTests : IAsyncLifetime
 
         using var noura = _hosts.ApiClient("ar", await _hosts.StaffSignInAsync("noura@staff.tamaneen.dev"));
         await Problem(await noura.GetAsync(path), 404);
-        (await Read(await sara.GetAsync($"/v1/staff/patients/{patient.Pseudonym}/overview"))).GetProperty("pastAppointments").EnumerateArray()
-            .Should().Contain(a => a.GetProperty("id").GetGuid() == patient.AppointmentId && a.GetProperty("noteStatus").GetString() == "signed");
+        var session = (await Read(await sara.GetAsync($"/v1/staff/patients/{patient.Pseudonym}/overview"))).GetProperty("nextAppointment");
+        session.GetProperty("id").GetGuid().Should().Be(patient.AppointmentId, "the session under way is still the next one");
+        session.GetProperty("noteStatus").GetString().Should().Be("signed");
         var log = await Read(await patient.Me.GetAsync("/v1/me/access-log"));
         log.EnumerateArray().Select(e => e.GetProperty("action").GetString()).Should().Contain(["patient.note_opened", "patient.note_saved", "patient.note_signed"]);
     }
