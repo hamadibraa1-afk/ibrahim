@@ -55,6 +55,10 @@ public sealed class PlatformOptions
     /// <summary>False pauses new sign-ups (EC-26): eligibility and sign-up are refused and the apps show the emergency numbers instead.</summary>
     public bool SignupsOpen { get; set; } = true;
 
+    /// <summary>P44: the supervisor proposes new therapists within this many hours of a change-of-therapist request.</summary>
+    [Range(1, 168)]
+    public int ChangeTherapistWithinHours { get; set; } = 24;
+
     /// <summary>Base address of the video service; the room id is appended ten minutes before a session.</summary>
     [Required]
     public string VideoBaseUrl { get; set; } = string.Empty;

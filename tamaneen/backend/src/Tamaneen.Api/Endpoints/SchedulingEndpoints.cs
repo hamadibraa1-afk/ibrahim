@@ -178,7 +178,7 @@ public static class SchedulingEndpoints
         return TypedResults.NoContent();
     }
 
-    internal static async Task<Ok<AppointmentDetailDto>> ConfirmAsync(Guid holdId, PatientContext p, TherapistDirectory directory, ScopeRunner scopes, IAuditLog audit, IOptions<PlatformOptions> platform, IClock clock, CancellationToken ct)
+    internal static async Task<Ok<AppointmentDetailDto>> ConfirmAsync(Guid holdId, PatientContext p, TherapistDirectory directory, ScopeRunner scopes, CareRecords care, IAuditLog audit, IOptions<PlatformOptions> platform, IClock clock, CancellationToken ct)
     {
         await EnsureCanBookAsync(p, ct).ConfigureAwait(false);
         var slot = await p.Db.AvailabilitySlots.FirstOrDefaultAsync(s => s.HoldId == holdId, ct).ConfigureAwait(false)
@@ -218,6 +218,8 @@ public static class SchedulingEndpoints
             return true;
         }).ConfigureAwait(false);
 
+        // P44: booking with the new therapist completes a change-of-therapist request.
+        await CareJourneyEndpoints.CompleteTransferAsync(p, scopes, care, therapistId, profile.PseudonymId, clock, ct).ConfigureAwait(false);
         return TypedResults.Ok(await DetailDtoAsync(p, directory, appointment, platform, clock, ct).ConfigureAwait(false));
     }
 

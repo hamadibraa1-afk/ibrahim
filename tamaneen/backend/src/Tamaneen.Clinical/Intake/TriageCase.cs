@@ -114,6 +114,29 @@ public sealed class TriageCase : Entity
         _ => TimeSpan.FromHours(24),
     };
 
+    /// <summary>Path of a case opened by a patient's change-of-therapist request (P44); it reuses the S03 queue.</summary>
+    public const string ChangePath = "change";
+
+    public bool IsChangeRequest => Path == ChangePath;
+
+    /// <summary>
+    /// P44: a supervisor proposes new therapists for a patient already in care. The case carries the clinical
+    /// file's level, scores and intake (so S03 shows the summary) and is due within <paramref name="dueWithin"/>,
+    /// or sooner when the level asks for it.
+    /// </summary>
+    public static TriageCase ForChange(TriageCase? clinical, Guid patientId, TimeSpan dueWithin, IClock clock)
+    {
+        var level = clinical?.RiskLevel ?? RiskLevel.Routine;
+        var c = new TriageCase(Guid.NewGuid(), patientId, clinical?.IntakeId, ChangePath, level, clinical?.Phq9, clinical?.Gad7, clinical?.CssrsPositive, clock.UtcNow);
+        var due = clock.UtcNow + dueWithin;
+        if (due < c.DueAtUtc)
+        {
+            c.DueAtUtc = due;
+        }
+
+        return c;
+    }
+
     public static TriageCase FromIntake(Guid patientId, Guid intakeId, RiskLevel riskLevel, int? phq9, int? gad7, IClock clock) =>
         new(Guid.NewGuid(), patientId, intakeId, "intake", riskLevel, phq9, gad7, null, clock.UtcNow);
 

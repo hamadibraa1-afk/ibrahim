@@ -34,6 +34,7 @@ public sealed partial class JourneyHosts : IAsyncDisposable
         Api = _api.WithWebHostBuilder(b => b.ConfigureTestServices(s =>
         {
             s.AddSingleton<ILanguageModel>(Model);
+            s.AddSingleton<Tamaneen.SharedKernel.Notifications.INotifier>(Notifier);
             s.AddHttpClient<CrisisGateClient>().ConfigurePrimaryHttpMessageHandler(() => Worker.Server.CreateHandler());
             s.AddHttpClient("crisis-console").ConfigurePrimaryHttpMessageHandler(() => Worker.Server.CreateHandler());
         }));
@@ -44,6 +45,9 @@ public sealed partial class JourneyHosts : IAsyncDisposable
     public WebApplicationFactory<Tamaneen.Api.SharedResource> Api { get; }
 
     public ScriptedModel Model { get; } = new();
+
+    /// <summary>Every notification the API handed to INotifier (the notification service is another module).</summary>
+    public RecordingNotifier Notifier { get; } = new();
 
     public InMemoryMessageSender Outbox => (InMemoryMessageSender)Api.Services.GetRequiredService<IMessageSender>();
 
@@ -138,6 +142,32 @@ public sealed partial class JourneyHosts : IAsyncDisposable
         await Api.DisposeAsync();
         await _api.DisposeAsync();
         await Worker.DisposeAsync();
+    }
+
+    public sealed class RecordingNotifier : Tamaneen.SharedKernel.Notifications.INotifier
+    {
+        private readonly List<Tamaneen.SharedKernel.Notifications.Notification> _sent = [];
+
+        public IReadOnlyList<Tamaneen.SharedKernel.Notifications.Notification> Sent
+        {
+            get
+            {
+                lock (_sent)
+                {
+                    return _sent.ToList();
+                }
+            }
+        }
+
+        public Task NotifyAsync(Tamaneen.SharedKernel.Notifications.Notification notification, CancellationToken ct)
+        {
+            lock (_sent)
+            {
+                _sent.Add(notification);
+            }
+
+            return Task.CompletedTask;
+        }
     }
 
     [GeneratedRegex(@"\d{6}")]

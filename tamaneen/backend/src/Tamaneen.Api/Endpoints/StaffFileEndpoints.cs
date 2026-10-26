@@ -116,7 +116,7 @@ public static class StaffFileEndpoints
 
         var ids = await query.Select(a => a.PatientId).Distinct().ToListAsync(ct).ConfigureAwait(false);
         var pseudonyms = await db.UserAccounts.AsNoTracking().Where(a => ids.Contains(a.Id)).ToDictionaryAsync(a => a.Id, a => a.PseudonymId, ct).ConfigureAwait(false);
-        var triage = (await db.TriageCases.AsNoTracking().Where(t => ids.Contains(t.PatientId)).ToListAsync(ct).ConfigureAwait(false))
+        var triage = (await db.TriageCases.AsNoTracking().Where(t => ids.Contains(t.PatientId) && t.Path != TriageCase.ChangePath).ToListAsync(ct).ConfigureAwait(false))
             .GroupBy(t => t.PatientId).ToDictionary(g => g.Key, g => g.OrderByDescending(t => t.SubmittedAtUtc).First());
         var intakeIds = triage.Values.Where(t => t.IntakeId is not null).Select(t => t.IntakeId!.Value).ToList();
         var approvedIntakes = await db.IntakeSessions.AsNoTracking().Where(i => intakeIds.Contains(i.Id) && i.TherapistApprovedAtUtc != null).Select(i => i.Id).ToListAsync(ct).ConfigureAwait(false);
@@ -263,7 +263,7 @@ public static class StaffFileEndpoints
         }
 
         var patientId = await StaffEndpoints.PatientIdAsync(db, pseudonymId, ct).ConfigureAwait(false);
-        var triage = await db.TriageCases.Where(t => t.PatientId == patientId).OrderByDescending(t => t.SubmittedAtUtc).FirstOrDefaultAsync(ct).ConfigureAwait(false)
+        var triage = await db.TriageCases.Where(t => t.PatientId == patientId && t.Path != TriageCase.ChangePath).OrderByDescending(t => t.SubmittedAtUtc).FirstOrDefaultAsync(ct).ConfigureAwait(false)
             ?? throw new DomainException(ErrorCodes.NotFound, "No file for this patient.");
         var floor = await CrisisFloorAsync(db, patientId, clock, ct).ConfigureAwait(false);
         var current = (RiskLevel)Math.Max((int)triage.RiskLevel, (int)floor);
@@ -310,7 +310,7 @@ public static class StaffFileEndpoints
             db.CrisisActions.Add(CrisisAction.Record(evt, "note", user.UserId!.Value, user.Role!, await protector.EncryptAsync(patientId, Fields.CrisisNote, note, ct).ConfigureAwait(false), clock));
         }
 
-        var triage = await db.TriageCases.Where(t => t.PatientId == patientId).OrderByDescending(t => t.SubmittedAtUtc).FirstOrDefaultAsync(ct).ConfigureAwait(false);
+        var triage = await db.TriageCases.Where(t => t.PatientId == patientId && t.Path != TriageCase.ChangePath).OrderByDescending(t => t.SubmittedAtUtc).FirstOrDefaultAsync(ct).ConfigureAwait(false);
         triage?.RaiseRisk(verdict.Level);
         audit.Append("crisis.manual_raised", "CrisisEvent", eventId.ToString(), StaffEndpoints.Canonical(pseudonymId), $"level={request.Level}");
         await SaveAsync(db, ct).ConfigureAwait(false);
@@ -336,7 +336,7 @@ public static class StaffFileEndpoints
     private static async Task<FileContext> LoadAsync(string pseudonymId, TamaneenDbContext db, IPatientDataProtector protector, CancellationToken ct)
     {
         var patientId = await StaffEndpoints.PatientIdAsync(db, pseudonymId, ct).ConfigureAwait(false);
-        var triage = await db.TriageCases.Where(t => t.PatientId == patientId).OrderByDescending(t => t.SubmittedAtUtc).FirstOrDefaultAsync(ct).ConfigureAwait(false)
+        var triage = await db.TriageCases.Where(t => t.PatientId == patientId && t.Path != TriageCase.ChangePath).OrderByDescending(t => t.SubmittedAtUtc).FirstOrDefaultAsync(ct).ConfigureAwait(false)
             ?? throw new DomainException(ErrorCodes.NotFound, "No file for this patient.");
         var intake = triage.IntakeId is { } iid ? await db.IntakeSessions.AsNoTracking().FirstOrDefaultAsync(i => i.Id == iid, ct).ConfigureAwait(false) : null;
         IntakeEndpoints.StoredSummary? summary = null;

@@ -357,7 +357,7 @@ public static class IntakeEndpoints
 
     internal static async Task<TriageStateDto> TriageStateAsync(PatientContext p, CancellationToken ct)
     {
-        var triage = await p.Db.TriageCases.AsNoTracking().Where(t => t.PatientId == p.PatientId).OrderByDescending(t => t.SubmittedAtUtc).FirstOrDefaultAsync(ct).ConfigureAwait(false);
+        var triage = await p.Db.TriageCases.AsNoTracking().Where(t => t.PatientId == p.PatientId && t.Path != TriageCase.ChangePath).OrderByDescending(t => t.SubmittedAtUtc).FirstOrDefaultAsync(ct).ConfigureAwait(false);
         if (triage is null)
         {
             return new TriageStateDto("none", null, null, false);
@@ -376,7 +376,7 @@ public static class IntakeEndpoints
             throw MeEndpoints.Invalid("text");
         }
 
-        var triage = await p.Db.TriageCases.Where(t => t.PatientId == p.PatientId).OrderByDescending(t => t.SubmittedAtUtc).FirstOrDefaultAsync(ct).ConfigureAwait(false)
+        var triage = await p.Db.TriageCases.Where(t => t.PatientId == p.PatientId && t.Path != TriageCase.ChangePath).OrderByDescending(t => t.SubmittedAtUtc).FirstOrDefaultAsync(ct).ConfigureAwait(false)
             ?? throw new DomainException(ErrorCodes.NotFound, "No triage case.");
         var verdict = await p.GateAsync(text, null, "triage", ct).ConfigureAwait(false);
         var existing = await p.DecryptOptionalAsync(Fields.TriageAddenda, triage.AddendaCipher, ct).ConfigureAwait(false);

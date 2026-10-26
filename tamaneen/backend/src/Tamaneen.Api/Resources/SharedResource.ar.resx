@@ -101,4 +101,26 @@
   <data name="error.idempotency.invalid_key" xml:space="preserve"><value>تعذّر ربط هذا الطلب بما حفظته. حاول مرة أخرى.</value></data>
   <data name="error.idempotency.key_reused" xml:space="preserve"><value>هذا العنصر المحفوظ يخص طلبًا آخر، لذلك لم نرسله. يمكنك تجاهله وإدخاله من جديد.</value></data>
   <data name="error.idempotency.in_progress" xml:space="preserve"><value>ما زلنا نحفظ هذا الطلب. سنتحقق مرة أخرى بعد قليل.</value></data>
+  <data name="error.version.required" xml:space="preserve"><value>أعد فتح الصفحة ثم احفظ، لنتأكد أنك تعدّل آخر نسخة.</value></data>
+  <data name="error.version.changed" xml:space="preserve"><value>حفظ شخص آخر نسخة أحدث منذ فتحت الصفحة. راجع النسختين ثم احفظ من جديد.</value></data>
+  <data name="error.plan.file_not_approved" xml:space="preserve"><value>اعتمد الملف السريري أولًا، ثم احفظ خطة العلاج.</value></data>
+  <data name="error.note.signed" xml:space="preserve"><value>هذه الملاحظة موقّعة ومقفلة. يمكنك إضافة ملحق فقط.</value></data>
+  <data name="error.note.not_signed" xml:space="preserve"><value>الملاحظة ما زالت مسودة. عدّلها مباشرة بدل إضافة ملحق.</value></data>
+  <data name="error.closure.locked" xml:space="preserve"><value>ملخص نهاية الرعاية بانتظار المشرف أو معتمد، ولا يمكن تعديله الآن.</value></data>
+  <data name="error.closure.not_submitted" xml:space="preserve"><value>لم يُرسل هذا الملخص للاعتماد.</value></data>
+  <data name="error.closure.signoff_not_allowed" xml:space="preserve"><value>لا يمكنك اعتماد ملخص كتبته بنفسك.</value></data>
+  <data name="error.closure.blocked" xml:space="preserve"><value>لا يمكن إنهاء الرعاية الآن: كان مستوى الخطر 3 أو 4 خلال آخر 14 يومًا.</value></data>
+  <data name="error.change_request.open" xml:space="preserve"><value>لديك طلب تغيير مفتوح، وسنرسل لك الاقتراحات قريبًا.</value></data>
+  <data name="error.care.not_in_care" xml:space="preserve"><value>لا يوجد أخصائي متابع لك الآن.</value></data>
+  <data name="catalog.change_reason.not_comfortable" xml:space="preserve"><value>لم أشعر بالارتياح</value></data>
+  <data name="catalog.change_reason.schedule" xml:space="preserve"><value>المواعيد لا تناسبني</value></data>
+  <data name="catalog.change_reason.gender" xml:space="preserve"><value>أفضّل أخصائيًا من جنس آخر</value></data>
+  <data name="catalog.change_reason.specialty" xml:space="preserve"><value>أحتاج تخصصًا مختلفًا</value></data>
+  <data name="catalog.change_reason.other" xml:space="preserve"><value>سبب آخر</value></data>
+  <data name="closure.summary.title" xml:space="preserve"><value>ملخصي من طمأنينة</value></data>
+  <data name="closure.summary.sessions" xml:space="preserve"><value>عدد الجلسات: {0}</value></data>
+  <data name="closure.summary.plan" xml:space="preserve"><value>خطتي لو رجعت الأيام الصعبة</value></data>
+  <data name="closure.summary.signs" xml:space="preserve"><value>علاماتي: {0}</value></data>
+  <data name="closure.summary.do" xml:space="preserve"><value>ما أفعله: {0}</value></data>
+  <data name="closure.summary.return" xml:space="preserve"><value>تقدر ترجع في أي وقت دون تسجيل جديد.</value></data>
 </root>

@@ -121,6 +121,14 @@ public static class Fields
     public const string FileEdits = "clinical.file_edits";
     public const string FileFeedback = "clinical.file_feedback";
     public const string IdempotentResponse = "clinical.idempotent_response";
+    public const string TreatmentPlan = "clinical.treatment_plan";
+    public const string SessionNote = "clinical.session_note";
+    public const string SessionNoteSummary = "clinical.session_note_summary";
+    public const string SessionNoteAddendum = "clinical.session_note_addendum";
+    public const string SessionSummary = "clinical.session_summary";
+    public const string ClosurePatientSummary = "clinical.closure_patient_summary";
+    public const string ClosureRelapsePlan = "clinical.closure_relapse_plan";
+    public const string ClosureRejection = "clinical.closure_rejection";
 }
 
 public sealed record SafetyInfoData(string? ContactPhone, string? TrustedName, string? TrustedPhone);

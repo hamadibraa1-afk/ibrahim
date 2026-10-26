@@ -71,6 +71,17 @@ public sealed partial class DomainExceptionHandler<TResource> : IExceptionHandle
         [ErrorCodes.IdempotencyInProgress] = StatusCodes.Status409Conflict,
         [ErrorCodes.SettingsVersionRequired] = StatusCodes.Status428PreconditionRequired,
         [ErrorCodes.SettingsVersionChanged] = StatusCodes.Status412PreconditionFailed,
+        [ErrorCodes.VersionRequired] = StatusCodes.Status428PreconditionRequired,
+        [ErrorCodes.VersionChanged] = StatusCodes.Status412PreconditionFailed,
+        [ErrorCodes.PlanFileNotApproved] = StatusCodes.Status409Conflict,
+        [ErrorCodes.NoteSigned] = StatusCodes.Status409Conflict,
+        [ErrorCodes.NoteNotSigned] = StatusCodes.Status409Conflict,
+        [ErrorCodes.ClosureLocked] = StatusCodes.Status409Conflict,
+        [ErrorCodes.ClosureNotSubmitted] = StatusCodes.Status409Conflict,
+        [ErrorCodes.ClosureSignOffNotAllowed] = StatusCodes.Status403Forbidden,
+        [ErrorCodes.ClosureBlocked] = StatusCodes.Status409Conflict,
+        [ErrorCodes.ChangeRequestOpen] = StatusCodes.Status409Conflict,
+        [ErrorCodes.NotInCare] = StatusCodes.Status409Conflict,
     };
 
     private readonly IProblemDetailsService _problems;

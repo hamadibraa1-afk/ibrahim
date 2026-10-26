@@ -44,10 +44,6 @@ public static class StaffEndpoints
 
     public sealed record ReviewRequest(int RiskLevel, List<string>? Focus);
 
-    public sealed record AssignHomeworkRequest(string? Title, List<string>? Instructions, int? Minutes, string? Frequency, DateOnly StartsOn, DateOnly EndsOn);
-
-    public sealed record FeedbackRequest(string? Text);
-
     public static IEndpointRouteBuilder MapStaffEndpoints(this IEndpointRouteBuilder app)
     {
         var staff = app.MapGroup("/v1/staff").RequireAuthorization(p => p.RequireAuthenticatedUser().RequireRole(AppRoles.Therapist, AppRoles.Supervisor, AppRoles.ClinicalLead, AppRoles.Admin));
@@ -58,13 +54,12 @@ public static class StaffEndpoints
         clinical.MapGet("/patients/{pseudonymId}/intake", IntakeViewAsync);
         clinical.MapPost("/patients/{pseudonymId}/intake/approve", ApproveAsync);
         clinical.MapPost("/appointments/{id:guid}/outcome", OutcomeAsync);
-        clinical.MapPost("/patients/{pseudonymId}/homework", AssignHomeworkAsync);
-        clinical.MapPost("/checkins/{id:guid}/feedback", FeedbackAsync);
 
         var supervisors = app.MapGroup("/v1/staff/triage").RequireAuthorization(AuthSetup.CrisisCloserPolicy);
         supervisors.MapGet("", StaffTriageEndpoints.QueueAsync);
         supervisors.MapPost("/{id:guid}/review", ReviewAsync);
         app.MapStaffFileEndpoints();
+        app.MapStaffCareEndpoints();
         app.MapStaffTriageEndpoints();
         return app;
     }
@@ -98,7 +93,7 @@ public static class StaffEndpoints
 
         var assignments = await db.CareAssignments.AsNoTracking().Where(a => a.TherapistUserId == me && a.EndedAtUtc == null).Select(a => a.PatientId).ToListAsync(ct).ConfigureAwait(false);
         var pseudonyms = await db.UserAccounts.AsNoTracking().Where(a => assignments.Contains(a.Id)).ToDictionaryAsync(a => a.Id, a => a.PseudonymId, ct).ConfigureAwait(false);
-        var triage = (await db.TriageCases.AsNoTracking().Where(t => assignments.Contains(t.PatientId)).ToListAsync(ct).ConfigureAwait(false))
+        var triage = (await db.TriageCases.AsNoTracking().Where(t => assignments.Contains(t.PatientId) && t.Path != TriageCase.ChangePath).ToListAsync(ct).ConfigureAwait(false))
             .GroupBy(t => t.PatientId).ToDictionary(g => g.Key, g => g.OrderByDescending(t => t.SubmittedAtUtc).First());
         var intakes = (await db.IntakeSessions.AsNoTracking().Where(i => assignments.Contains(i.PatientId) && i.Status == IntakeStatus.Submitted).ToListAsync(ct).ConfigureAwait(false))
             .GroupBy(i => i.PatientId).ToDictionary(g => g.Key, g => g.OrderByDescending(i => i.SubmittedAtUtc).First());
@@ -172,7 +167,7 @@ public static class StaffEndpoints
     internal static async Task<Ok<StaffIntakeViewDto>> IntakeViewAsync(string pseudonymId, TamaneenDbContext db, IPatientDataProtector protector, IAuditLog audit, CancellationToken ct)
     {
         var patientId = await PatientIdAsync(db, pseudonymId, ct).ConfigureAwait(false);
-        var triage = await db.TriageCases.AsNoTracking().Where(t => t.PatientId == patientId).OrderByDescending(t => t.SubmittedAtUtc).FirstOrDefaultAsync(ct).ConfigureAwait(false)
+        var triage = await db.TriageCases.AsNoTracking().Where(t => t.PatientId == patientId && t.Path != TriageCase.ChangePath).OrderByDescending(t => t.SubmittedAtUtc).FirstOrDefaultAsync(ct).ConfigureAwait(false)
             ?? throw new DomainException(ErrorCodes.NotFound, "No file for this patient.");
         var intake = triage.IntakeId is { } iid ? await db.IntakeSessions.AsNoTracking().FirstOrDefaultAsync(i => i.Id == iid, ct).ConfigureAwait(false) : null;
         var sections = new IntakeSectionsDto(string.Empty, string.Empty, string.Empty, string.Empty, string.Empty);
@@ -208,7 +203,7 @@ public static class StaffEndpoints
         else
         {
             // Direct booking: approving the file is reviewing the triage case.
-            var triage = await db.TriageCases.Where(t => t.PatientId == patientId).OrderByDescending(t => t.SubmittedAtUtc).FirstOrDefaultAsync(ct).ConfigureAwait(false)
+            var triage = await db.TriageCases.Where(t => t.PatientId == patientId && t.Path != TriageCase.ChangePath).OrderByDescending(t => t.SubmittedAtUtc).FirstOrDefaultAsync(ct).ConfigureAwait(false)
                 ?? throw new DomainException(ErrorCodes.NotFound, "No file for this patient.");
             triage.ApproveByTherapist(user.UserId!.Value, clock);
         }
@@ -243,54 +238,6 @@ public static class StaffEndpoints
             // P56: the freed time goes to the waitlist.
             await waitlist.CheckAsync(ct).ConfigureAwait(false);
         }
-        return TypedResults.NoContent();
-    }
-
-    internal static async Task<Created> AssignHomeworkAsync(string pseudonymId, AssignHomeworkRequest request, ICurrentUser user, TamaneenDbContext db, IPatientDataProtector protector, IAuditLog audit, IClock clock, CancellationToken ct)
-    {
-        if (string.IsNullOrWhiteSpace(request.Title) || request.Title.Length > 200 || request.Instructions is not { Count: > 0 and <= 20 } || request.Instructions.Any(i => string.IsNullOrWhiteSpace(i) || i.Length > 500))
-        {
-            throw MeEndpoints.Invalid("homework");
-        }
-
-        var frequency = request.Frequency switch
-        {
-            "daily" => HomeworkFrequency.Daily,
-            "twice_weekly" => HomeworkFrequency.TwiceWeekly,
-            "weekly" => HomeworkFrequency.Weekly,
-            "once" => HomeworkFrequency.Once,
-            _ => throw MeEndpoints.Invalid("frequency"),
-        };
-        var patientId = await PatientIdAsync(db, pseudonymId, ct).ConfigureAwait(false);
-        var assignment = HomeworkAssignment.Assign(
-            patientId,
-            user.UserId!.Value,
-            await protector.EncryptAsync(patientId, Fields.HomeworkTitle, request.Title.Trim(), ct).ConfigureAwait(false),
-            await protector.EncryptAsync(patientId, Fields.HomeworkInstructions, JsonSerializer.Serialize(request.Instructions.Select(i => i.Trim()).ToList(), PatientContext.Json), ct).ConfigureAwait(false),
-            request.Minutes is > 0 and <= 240 ? request.Minutes : null,
-            frequency,
-            request.StartsOn,
-            request.EndsOn,
-            clock);
-        db.HomeworkAssignments.Add(assignment);
-        audit.Append("homework.assigned", "HomeworkAssignment", assignment.Id.ToString(), pseudonymId);
-        await db.SaveChangesAsync(ct).ConfigureAwait(false);
-        return TypedResults.Created($"/v1/homework/{assignment.Id}");
-    }
-
-    internal static async Task<NoContent> FeedbackAsync(Guid id, FeedbackRequest request, TamaneenDbContext db, IPatientDataProtector protector, IAuditLog audit, IClock clock, CancellationToken ct)
-    {
-        if (string.IsNullOrWhiteSpace(request.Text) || request.Text.Length > 1000)
-        {
-            throw MeEndpoints.Invalid("text");
-        }
-
-        var checkin = await db.HomeworkCheckins.FirstOrDefaultAsync(c => c.Id == id, ct).ConfigureAwait(false)
-            ?? throw new DomainException(ErrorCodes.NotFound, $"Check-in {id} not found.");
-        checkin.GiveFeedback(await protector.EncryptAsync(checkin.PatientId, Fields.CheckinFeedback, request.Text.Trim(), ct).ConfigureAwait(false), clock);
-        var pseudonym = await db.UserAccounts.Where(a => a.Id == checkin.PatientId).Select(a => a.PseudonymId).FirstAsync(ct).ConfigureAwait(false);
-        audit.Append("homework.feedback_given", "HomeworkCheckin", checkin.Id.ToString(), pseudonym);
-        await db.SaveChangesAsync(ct).ConfigureAwait(false);
         return TypedResults.NoContent();
     }
 

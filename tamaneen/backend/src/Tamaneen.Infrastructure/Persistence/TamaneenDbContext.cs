@@ -95,6 +95,20 @@ public sealed class TamaneenDbContext : DbContext
 
     public DbSet<CrisisAction> CrisisActions => Set<CrisisAction>();
 
+    public DbSet<TreatmentPlanVersion> TreatmentPlanVersions => Set<TreatmentPlanVersion>();
+
+    public DbSet<SessionNote> SessionNotes => Set<SessionNote>();
+
+    public DbSet<SessionNoteAddendum> SessionNoteAddenda => Set<SessionNoteAddendum>();
+
+    public DbSet<SessionSummary> SessionSummaries => Set<SessionSummary>();
+
+    public DbSet<SafetyPlanVersion> SafetyPlanVersions => Set<SafetyPlanVersion>();
+
+    public DbSet<CareClosure> CareClosures => Set<CareClosure>();
+
+    public DbSet<ChangeTherapistRequest> ChangeTherapistRequests => Set<ChangeTherapistRequest>();
+
     public DbSet<IdempotencyRecord> IdempotencyRecords => Set<IdempotencyRecord>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

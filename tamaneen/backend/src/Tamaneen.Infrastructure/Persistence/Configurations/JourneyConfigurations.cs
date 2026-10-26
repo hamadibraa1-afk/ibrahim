@@ -238,6 +238,7 @@ internal sealed class TriageCaseConfiguration : IEntityTypeConfiguration<TriageC
         b.Property(x => x.RowVersion).IsRowVersion();
         b.Property(x => x.AddendaCipher).HasMaxLength(16000);
         b.Ignore(x => x.IsOpen);
+        b.Ignore(x => x.IsChangeRequest);
         b.HasIndex(x => new { x.Status, x.DueAtUtc });
         b.HasIndex(x => x.PatientId);
         b.HasOne<UserAccount>().WithMany().HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Restrict);
@@ -305,7 +306,9 @@ internal sealed class HomeworkAssignmentConfiguration : IEntityTypeConfiguration
         b.Property(x => x.TitleCipher).HasMaxLength(1024).IsRequired();
         b.Property(x => x.InstructionsCipher).HasMaxLength(8100).IsRequired();
         b.Property(x => x.Frequency).HasConversion<byte>();
+        b.Property(x => x.TemplateCode).HasMaxLength(32).IsUnicode(false);
         b.Ignore(x => x.TotalDays);
+        b.Ignore(x => x.IsCancelled);
         b.HasIndex(x => new { x.PatientId, x.EndsOn });
         b.HasOne<UserAccount>().WithMany().HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Restrict);
     }
@@ -321,6 +324,7 @@ internal sealed class HomeworkCheckinConfiguration : IEntityTypeConfiguration<Ho
         b.Property(x => x.Status).HasConversion<byte>();
         b.Property(x => x.NoteCipher).HasMaxLength(8100);
         b.Property(x => x.FeedbackCipher).HasMaxLength(8100);
+        b.Property(x => x.GateLevel).HasConversion<byte?>();
         b.HasIndex(x => new { x.AssignmentId, x.Day }).IsUnique();
         b.HasIndex(x => x.PatientId);
         b.HasOne<HomeworkAssignment>().WithMany().HasForeignKey(x => x.AssignmentId).OnDelete(DeleteBehavior.Cascade);
@@ -335,6 +339,7 @@ internal sealed class SafetyPlanConfiguration : IEntityTypeConfiguration<SafetyP
         b.HasKey(x => x.PatientId);
         b.Property(x => x.SectionsCipher).HasMaxLength(16000).IsRequired();
         b.Property(x => x.UpdatedByRole).HasMaxLength(32).IsUnicode(false).IsRequired();
+        b.Property(x => x.Version).IsConcurrencyToken();
         b.HasOne<UserAccount>().WithOne().HasForeignKey<SafetyPlan>(x => x.PatientId).OnDelete(DeleteBehavior.Restrict);
     }
 }

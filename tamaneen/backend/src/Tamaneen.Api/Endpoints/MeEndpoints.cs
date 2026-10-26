@@ -31,7 +31,8 @@ public static class MeEndpoints
 
     public sealed record OnboardingDto(bool ConsentsDone, bool SafetyInfoDone, string? Path, bool ScreeningDone, string IntakeStatus, string TriageStatus);
 
-    public sealed record MeDto(string PseudonymId, string Nickname, string Language, string TimeZone, OnboardingDto Onboarding, bool ChatLocked);
+    /// <summary>CareClosedAt: when a supervisor signed off the end of care (P53), while the patient has no therapist.</summary>
+    public sealed record MeDto(string PseudonymId, string Nickname, string Language, string TimeZone, OnboardingDto Onboarding, bool ChatLocked, DateTimeOffset? CareClosedAt = null);
 
     public sealed record UpdateProfileRequest(string? Nickname, string? TimeZone);
 
@@ -155,7 +156,7 @@ public static class MeEndpoints
             await p.Db.SaveChangesAsync(ct).ConfigureAwait(false);
         }
 
-        var triage = await p.Db.TriageCases.Where(t => t.PatientId == p.PatientId).OrderByDescending(t => t.SubmittedAtUtc).FirstOrDefaultAsync(ct).ConfigureAwait(false);
+        var triage = await p.Db.TriageCases.Where(t => t.PatientId == p.PatientId && t.Path != TriageCase.ChangePath).OrderByDescending(t => t.SubmittedAtUtc).FirstOrDefaultAsync(ct).ConfigureAwait(false);
         var screened = await p.Db.Screenings.AnyAsync(s => s.PatientId == p.PatientId, ct).ConfigureAwait(false);
         return new MeDto(
             account.PseudonymId,
@@ -169,7 +170,8 @@ public static class MeEndpoints
                 screened,
                 intake is null ? "none" : IntakeStatusCode(intake.Status),
                 triage is null ? "none" : TriageStatusCode(triage.Status)),
-            await p.IsChatLockedAsync(ct).ConfigureAwait(false));
+            await p.IsChatLockedAsync(ct).ConfigureAwait(false),
+            (await CareJourneyEndpoints.LatestSignedOffAsync(p.Db, p.PatientId, ct).ConfigureAwait(false))?.DecidedAtUtc);
     }
 
     internal static string IntakeStatusCode(IntakeStatus status) => status switch

@@ -1,0 +1,45 @@
+{
+  "version": "2026-10-homework-1",
+  "templates": [
+    {
+      "code": "behavioral_activation",
+      "frequency": "twice_weekly",
+      "minutes": 15,
+      "title": { "ar": "التنشيط السلوكي", "en": "Behavioural activation" },
+      "instructions": {
+        "ar": ["اختر نشاطًا صغيرًا ممتعًا أو مفيدًا، مثل المشي 15 دقيقة.", "سجّل مزاجك من 0 إلى 10 قبل النشاط وبعده.", "اكتب ملاحظة قصيرة عن ما لاحظته."],
+        "en": ["Pick a small activity you enjoy or find useful, such as a 15-minute walk.", "Rate your mood from 0 to 10 before and after.", "Write a short note about what you noticed."]
+      }
+    },
+    {
+      "code": "thought_record",
+      "frequency": "twice_weekly",
+      "minutes": 10,
+      "title": { "ar": "سجل الأفكار", "en": "Thought record" },
+      "instructions": {
+        "ar": ["عندما يتغير مزاجك، اكتب الموقف باختصار.", "اكتب الفكرة التي خطرت لك وكم صدّقتها.", "اكتب فكرة أخرى أكثر توازنًا، ولاحظ شعورك بعدها."],
+        "en": ["When your mood shifts, note the situation in a few words.", "Write down the thought you had and how much you believed it.", "Write a more balanced thought and notice how you feel after."]
+      }
+    },
+    {
+      "code": "sleep_diary",
+      "frequency": "daily",
+      "minutes": 5,
+      "title": { "ar": "مذكرات النوم", "en": "Sleep diary" },
+      "instructions": {
+        "ar": ["كل صباح، سجّل متى نمت ومتى استيقظت.", "قدّر كم دقيقة احتجت حتى تنام.", "قيّم نومك من 0 إلى 10."],
+        "en": ["Each morning, note when you went to bed and when you woke up.", "Estimate how many minutes it took to fall asleep.", "Rate your sleep from 0 to 10."]
+      }
+    },
+    {
+      "code": "breathing",
+      "frequency": "daily",
+      "minutes": 5,
+      "title": { "ar": "تمرين التنفس قبل النوم", "en": "Breathing before bed" },
+      "instructions": {
+        "ar": ["اجلس أو استلقِ في مكان هادئ قبل النوم بنصف ساعة.", "تنفس من أنفك 4 ثوانٍ، واحبس النفس 4 ثوانٍ.", "أخرج النفس ببطء 6 ثوانٍ. كرر ذلك 5 دقائق."],
+        "en": ["Sit or lie down somewhere quiet half an hour before bed.", "Breathe in through your nose for 4 seconds and hold for 4.", "Breathe out slowly for 6 seconds. Repeat for 5 minutes."]
+      }
+    }
+  ]
+}

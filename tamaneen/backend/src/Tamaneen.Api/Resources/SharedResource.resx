@@ -101,4 +101,26 @@
   <data name="error.idempotency.invalid_key" xml:space="preserve"><value>This request could not be matched to what you saved. Please try again.</value></data>
   <data name="error.idempotency.key_reused" xml:space="preserve"><value>This saved item belongs to a different request, so it was not sent. You can discard it and enter it again.</value></data>
   <data name="error.idempotency.in_progress" xml:space="preserve"><value>We are still saving this. We'll check again in a moment.</value></data>
+  <data name="error.version.required" xml:space="preserve"><value>Reload the page and save again, so we know you are editing the latest version.</value></data>
+  <data name="error.version.changed" xml:space="preserve"><value>Someone saved a newer version since you opened the page. Compare the two, then save again.</value></data>
+  <data name="error.plan.file_not_approved" xml:space="preserve"><value>Approve the clinical file first, then save the treatment plan.</value></data>
+  <data name="error.note.signed" xml:space="preserve"><value>This note is signed and locked. You can only add an addendum.</value></data>
+  <data name="error.note.not_signed" xml:space="preserve"><value>This note is still a draft. Edit it instead of adding an addendum.</value></data>
+  <data name="error.closure.locked" xml:space="preserve"><value>This end-of-care summary is waiting for a supervisor or already signed off, so it can't be changed now.</value></data>
+  <data name="error.closure.not_submitted" xml:space="preserve"><value>This summary was not sent for sign-off.</value></data>
+  <data name="error.closure.signoff_not_allowed" xml:space="preserve"><value>You can't sign off a summary you wrote yourself.</value></data>
+  <data name="error.closure.blocked" xml:space="preserve"><value>Care can't be closed now: the risk level was 3 or 4 in the last 14 days.</value></data>
+  <data name="error.change_request.open" xml:space="preserve"><value>You already have an open change request; we will send you suggestions soon.</value></data>
+  <data name="error.care.not_in_care" xml:space="preserve"><value>You don't have a therapist right now.</value></data>
+  <data name="catalog.change_reason.not_comfortable" xml:space="preserve"><value>I didn't feel comfortable</value></data>
+  <data name="catalog.change_reason.schedule" xml:space="preserve"><value>The times don't suit me</value></data>
+  <data name="catalog.change_reason.gender" xml:space="preserve"><value>I'd prefer a therapist of another gender</value></data>
+  <data name="catalog.change_reason.specialty" xml:space="preserve"><value>I need a different specialty</value></data>
+  <data name="catalog.change_reason.other" xml:space="preserve"><value>Another reason</value></data>
+  <data name="closure.summary.title" xml:space="preserve"><value>My summary from Tamaneen</value></data>
+  <data name="closure.summary.sessions" xml:space="preserve"><value>Sessions: {0}</value></data>
+  <data name="closure.summary.plan" xml:space="preserve"><value>My plan if hard days come back</value></data>
+  <data name="closure.summary.signs" xml:space="preserve"><value>My signs: {0}</value></data>
+  <data name="closure.summary.do" xml:space="preserve"><value>What I do: {0}</value></data>
+  <data name="closure.summary.return" xml:space="preserve"><value>You can come back at any time without signing up again.</value></data>
 </root>
