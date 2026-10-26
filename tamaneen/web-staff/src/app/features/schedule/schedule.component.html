@@ -1,0 +1,77 @@
+<section class="page" data-testid="schedule">
+  <header class="head">
+    <h1>{{ 'schedule.title' | translate }} · <span data-testid="schedule-range">{{ title() }}</span></h1>
+    <div class="controls">
+      <mat-button-toggle-group [value]="view()" (change)="setView($event.value)" [attr.aria-label]="'schedule.viewLabel' | translate" hideSingleSelectionIndicator>
+        <mat-button-toggle value="day" data-testid="view-day">{{ 'schedule.day' | translate }}</mat-button-toggle>
+        <mat-button-toggle value="week" data-testid="view-week">{{ 'schedule.week' | translate }}</mat-button-toggle>
+      </mat-button-toggle-group>
+      <button mat-stroked-button type="button" (click)="previous()" [attr.aria-label]="(view() === 'week' ? 'schedule.previousWeek' : 'schedule.previousDay') | translate" data-testid="previous">{{ 'schedule.previous' | translate }}</button>
+      <button mat-stroked-button type="button" (click)="goToday()" data-testid="today">{{ 'schedule.today' | translate }}</button>
+      <button mat-stroked-button type="button" (click)="next()" [attr.aria-label]="(view() === 'week' ? 'schedule.nextWeek' : 'schedule.nextDay') | translate" data-testid="next">{{ 'schedule.next' | translate }}</button>
+    </div>
+  </header>
+  <p class="tm-muted zone">{{ 'schedule.timeZone' | translate: { zone: timeZone() } }}</p>
+
+  <tm-problem-message [error]="loadError()" />
+
+  <div class="tm-card grid-card">
+    @if (loading()) {
+      <mat-progress-bar mode="indeterminate" />
+      <div class="skeleton" aria-hidden="true" data-testid="schedule-loading">
+        @for (row of [1, 2, 3]; track row) { <div class="bone"></div> }
+      </div>
+    } @else if (hours().length === 0) {
+      <p class="empty" data-testid="schedule-empty">{{ (view() === 'week' ? 'schedule.emptyWeek' : 'schedule.emptyDay') | translate }}</p>
+    } @else {
+      <div class="grid" role="grid" [style.grid-template-columns]="'64px repeat(' + days().length + ', minmax(120px, 1fr))'">
+        <div class="hd" role="columnheader"></div>
+        @for (day of days(); track day) {
+          <div class="hd" role="columnheader" [class.today]="day === todayDate()">{{ dayLabel(day, 'short') }}</div>
+        }
+        @for (hour of hours(); track hour) {
+          <div class="tm" role="rowheader">{{ hourLabel(hour) }}</div>
+          @for (day of days(); track day) {
+            <div class="cell" role="gridcell" [class.today]="day === todayDate()">
+              @for (a of at(day, hour); track a.id) {
+                <button type="button" class="ev" [class]="'ev ev-' + (badge(a) ?? 'plain')" [class.selected]="a.id === selectedId()" (click)="select(a)" [attr.data-testid]="'appointment-' + a.id">
+                  <span>{{ time(a.startsAt) }} · {{ a.pseudonymId }} · {{ sessionLabel(a) }}</span>
+                  @if (badge(a); as b) { <strong class="badge">{{ 'schedule.badge.' + b | translate: { minutes: a.therapistLateMinutes } }}</strong> }
+                </button>
+              }
+            </div>
+          }
+        }
+      </div>
+    }
+  </div>
+
+  @if (selected(); as a) {
+    <section class="tm-card panel" data-testid="appointment-panel" [attr.aria-label]="'schedule.panelLabel' | translate">
+      <div class="info">
+        <div class="what">{{ dayLabel(day(a), 'long') }} {{ time(a.startsAt) }} · {{ a.pseudonymId }} · {{ sessionLabel(a) }}</div>
+        <div class="tm-muted" data-testid="appointment-state">{{ stateKey(a) | translate }}</div>
+        @if (a.riskLevel >= 3) { <div class="tm-tag tm-risk-{{ a.riskLevel }}">{{ 'risk.' + a.riskLevel | translate }}</div> }
+        @if (a.therapistLateMinutes !== null && a.status === 'confirmed') { <div class="tm-muted">{{ 'schedule.lateSaid' | translate: { minutes: a.therapistLateMinutes } }}</div> }
+        @if (a.cancelReasonCode) { <div class="tm-muted">{{ 'schedule.reasonShown' | translate: { reason: ('schedule.reasons.' + a.cancelReasonCode | translate) } }}</div> }
+      </div>
+      <tm-problem-message [error]="actionError()" />
+      @if (a.status === 'confirmed') {
+        <div class="actions">
+          @if (a.canReportLate) {
+            <a mat-flat-button [routerLink]="['/sessions', a.id]" data-testid="start-session">{{ 'schedule.start' | translate }}</a>
+          }
+          <button mat-flat-button type="button" [disabled]="!a.canRecordOutcome || busy()" (click)="record(a, 'attended')" data-testid="outcome-attended">{{ 'schedule.attended' | translate }}</button>
+          <button mat-stroked-button type="button" [disabled]="!a.canRecordOutcome || busy()" (click)="record(a, 'no_show')" data-testid="outcome-no-show">{{ 'schedule.noShow' | translate }}</button>
+          @if (a.canReportLate) {
+            <button mat-stroked-button type="button" [disabled]="busy()" (click)="runningLate(a)" data-testid="running-late">{{ 'schedule.late.button' | translate }}</button>
+          }
+          @if (a.canCancel) {
+            <button mat-stroked-button type="button" class="tm-danger-outline" [disabled]="busy()" (click)="cancel(a)" data-testid="cancel">{{ 'schedule.cancel.button' | translate }}</button>
+          }
+        </div>
+        @if (!a.canRecordOutcome) { <p class="tm-muted hint">{{ 'schedule.outcomeLater' | translate }}</p> }
+      }
+    </section>
+  }
+</section>

@@ -677,5 +677,133 @@
       "coSigned": "Co-signed. The new level applies.",
       "coSignRefused": "Lowering refused. The level stays."
     }
+  },
+  "schedule": {
+    "title": "Schedule",
+    "viewLabel": "View",
+    "day": "Day",
+    "week": "Week",
+    "previous": "Previous",
+    "next": "Next",
+    "today": "Today",
+    "previousWeek": "Previous week",
+    "nextWeek": "Next week",
+    "previousDay": "Previous day",
+    "nextDay": "Next day",
+    "timeZone": "Times are in {{zone}}.",
+    "emptyWeek": "No sessions this week.",
+    "emptyDay": "No sessions this day.",
+    "loadError": "The schedule couldn't be loaded. Try again.",
+    "actionError": "That didn't go through. The schedule has been refreshed.",
+    "first": "First",
+    "session": "Session {{n}}",
+    "panelLabel": "Selected session",
+    "badge": {
+      "cancelled": "Cancelled",
+      "missed": "Didn't attend",
+      "outcome": "Record the outcome",
+      "risk": "High risk",
+      "file": "File awaiting your approval",
+      "late": "Running late · {{minutes}} min"
+    },
+    "state": {
+      "upcoming": "Upcoming. The outcome can be recorded once it starts.",
+      "now": "Starting now.",
+      "ended": "The session has ended. Record the outcome.",
+      "completed": "Attended.",
+      "missed": "Recorded as not attended.",
+      "cancelledByYou": "You cancelled this session.",
+      "cancelledByPatient": "The patient cancelled this session."
+    },
+    "lateSaid": "You said you're running {{minutes}} minutes late.",
+    "reasonShown": "Reason: {{reason}}",
+    "start": "Start session",
+    "attended": "Attended",
+    "noShow": "Didn't attend",
+    "outcomeLater": "Recording the outcome is available after the start time.",
+    "late": {
+      "button": "Running late",
+      "title": "Running late",
+      "body": "The patient is told in the waiting room. Late time isn't taken from their session.",
+      "minutes": "How many minutes?",
+      "unit": "minutes",
+      "confirm": "Tell the patient"
+    },
+    "cancel": {
+      "button": "Cancel",
+      "title": "Cancel this session",
+      "body": "The patient is told it was cancelled for an unexpected reason, without your reason, and offered other times. The time opens again for booking.",
+      "reason": "Reason",
+      "note": "Note (optional, not shown to the patient)",
+      "confirm": "Cancel session"
+    },
+    "reasons": {
+      "emergency": "Emergency",
+      "illness": "Illness",
+      "schedule_conflict": "Schedule conflict",
+      "technical": "Technical problem",
+      "other": "Other",
+      "feeling_better": "Patient: feeling better",
+      "unwell": "Patient: unwell",
+      "therapist_fit": "Patient: therapist fit"
+    },
+    "done": {
+      "attended": "Recorded as attended.",
+      "noShow": "Recorded as not attended. The patient gets a gentle message.",
+      "late": "The patient has been told.",
+      "cancelled": "Session cancelled. The patient has been told."
+    }
+  },
+  "availability": {
+    "title": "Availability",
+    "loadError": "Your availability couldn't be loaded. Try again.",
+    "saveError": "Saving failed. Your changes are still here; try again.",
+    "slotError": "That time couldn't be changed.",
+    "licensePaused": "Your licence isn't verified, so no new times are created. Your pattern is still saved.",
+    "week": "Usual week",
+    "off": "Not available",
+    "start": "Start",
+    "end": "End",
+    "addPeriod": "Add period",
+    "removePeriod": "Remove period",
+    "errors": {
+      "overlap": "These periods overlap.",
+      "end_before_start": "The end must be after the start."
+    },
+    "session": "Session length",
+    "buffer": "Gap between sessions",
+    "minutes": "{{count}} minutes",
+    "zone": "Times are in {{zone}}.",
+    "exceptions": "Exceptions",
+    "noExceptions": "No leave or absences.",
+    "kindLabel": "Type",
+    "kind": {
+      "leave": "Leave",
+      "absence": "Absence"
+    },
+    "from": "From",
+    "to": "To",
+    "remove": "Remove",
+    "addException": "Add exception",
+    "affected": "{{count}} booked times fall outside the times you removed. They won't be cancelled automatically:",
+    "save": "Save and update times for {{weeks}} weeks",
+    "saveAnyway": "Save anyway",
+    "saved": "Saved: {{added}} times added, {{removed}} removed.",
+    "upcoming": "Upcoming times",
+    "noSlots": "No times in the next 8 weeks.",
+    "removeTime": "Remove {{time}}",
+    "status": {
+      "booked": "Booked",
+      "held": "Being booked",
+      "open": "Open",
+      "blocked": "Removed"
+    },
+    "oneOff": {
+      "date": "Date",
+      "time": "Time",
+      "add": "Add a one-off time",
+      "added": "Time added.",
+      "tag": "one-off"
+    }
   }
 }

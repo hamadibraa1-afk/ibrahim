@@ -1,0 +1,150 @@
+<section class="page" data-testid="availability">
+  <h1>{{ 'availability.title' | translate }}</h1>
+  <tm-problem-message [error]="loadError()" />
+
+  @if (loading() && !data()) {
+    <mat-progress-bar mode="indeterminate" />
+    <div class="tm-card skeleton" aria-hidden="true" data-testid="availability-loading">
+      @for (d of days; track d) { <div class="bone"></div> }
+    </div>
+  } @else if (data(); as a) {
+    @if (!a.licenseVerified) {
+      <div class="warn" role="status" data-testid="license-paused">{{ 'availability.licensePaused' | translate }}</div>
+    }
+    <div class="columns">
+      <section class="tm-card week" [attr.aria-label]="'availability.week' | translate">
+        <h2 class="tm-card-title">{{ 'availability.week' | translate }}</h2>
+        @for (plan of plans(); track plan.day; let i = $index) {
+          <div class="day" [attr.data-testid]="'day-' + plan.day">
+            <mat-slide-toggle [checked]="plan.enabled" (change)="toggleDay(plan.day, $event.checked)" class="day-name" [attr.data-testid]="'toggle-' + plan.day">{{ dayName(plan.day) }}</mat-slide-toggle>
+            @if (plan.enabled) {
+              <div class="periods">
+                @for (p of plan.periods; track $index; let j = $index) {
+                  <span class="period">
+                    <input type="time" class="field" [ngModel]="p.start" (ngModelChange)="setPeriod(plan.day, j, 'start', $event)" [attr.aria-label]="'availability.start' | translate" [attr.data-testid]="'start-' + plan.day + '-' + j" />
+                    <span aria-hidden="true">–</span>
+                    <input type="time" class="field" [ngModel]="p.end" (ngModelChange)="setPeriod(plan.day, j, 'end', $event)" [attr.aria-label]="'availability.end' | translate" [attr.data-testid]="'end-' + plan.day + '-' + j" />
+                    @if (plan.periods.length > 1) {
+                      <button mat-button type="button" class="link danger" (click)="removePeriod(plan.day, j)" [attr.aria-label]="'availability.removePeriod' | translate">×</button>
+                    }
+                  </span>
+                }
+                <button mat-button type="button" class="link" (click)="addPeriod(plan.day)" [attr.data-testid]="'add-period-' + plan.day">{{ 'availability.addPeriod' | translate }}</button>
+              </div>
+              @if (errors()[i]; as e) {
+                <p class="error" role="alert" [attr.data-testid]="'day-error-' + plan.day">{{ 'availability.errors.' + e | translate }}</p>
+              }
+            } @else {
+              <span class="tm-muted off">{{ 'availability.off' | translate }}</span>
+            }
+          </div>
+        }
+        <div class="settings">
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'availability.session' | translate }}</mat-label>
+            <mat-select [value]="sessionMinutes()" (valueChange)="setSession($event)" data-testid="session-minutes">
+              @for (m of a.sessionLengths; track m) { <mat-option [value]="m">{{ 'availability.minutes' | translate: { count: m } }}</mat-option> }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'availability.buffer' | translate }}</mat-label>
+            <mat-select [value]="bufferMinutes()" (valueChange)="setBuffer($event)" data-testid="buffer-minutes">
+              @for (m of a.bufferOptions; track m) { <mat-option [value]="m">{{ 'availability.minutes' | translate: { count: m } }}</mat-option> }
+            </mat-select>
+          </mat-form-field>
+        </div>
+        <p class="tm-muted note">{{ 'availability.zone' | translate: { zone: a.timeZone } }}</p>
+      </section>
+
+      <section class="tm-card side">
+        <h2 class="tm-card-title">{{ 'availability.exceptions' | translate }}</h2>
+        @for (b of exceptions(); track $index; let k = $index) {
+          <div class="row" [attr.data-testid]="'exception-' + k">
+            <span>{{ range(b) }} · {{ 'availability.kind.' + b.kind | translate }}</span>
+            <button mat-button type="button" class="link danger" (click)="removeException(k)">{{ 'availability.remove' | translate }}</button>
+          </div>
+        } @empty {
+          <p class="tm-muted">{{ 'availability.noExceptions' | translate }}</p>
+        }
+        @if (addingException()) {
+          <div class="add-exception" data-testid="exception-form">
+            <label>{{ 'availability.kindLabel' | translate }}
+              <select class="field" [ngModel]="exceptionKind()" (ngModelChange)="exceptionKind.set($event)" data-testid="exception-kind">
+                <option value="leave">{{ 'availability.kind.leave' | translate }}</option>
+                <option value="absence">{{ 'availability.kind.absence' | translate }}</option>
+              </select>
+            </label>
+            <label>{{ 'availability.from' | translate }}
+              <input type="date" class="field" [ngModel]="exceptionFrom()" (ngModelChange)="exceptionFrom.set($event)" data-testid="exception-from" />
+            </label>
+            @if (exceptionKind() === 'leave') {
+              <label>{{ 'availability.to' | translate }}
+                <input type="date" class="field" [ngModel]="exceptionTo()" (ngModelChange)="exceptionTo.set($event)" data-testid="exception-to" />
+              </label>
+            } @else {
+              <label>{{ 'availability.start' | translate }}
+                <input type="time" class="field" [ngModel]="absenceStart()" (ngModelChange)="absenceStart.set($event)" />
+              </label>
+              <label>{{ 'availability.end' | translate }}
+                <input type="time" class="field" [ngModel]="absenceEnd()" (ngModelChange)="absenceEnd.set($event)" />
+              </label>
+            }
+            <div class="buttons">
+              <button mat-button type="button" (click)="addingException.set(false)">{{ 'common.cancel' | translate }}</button>
+              <button mat-flat-button type="button" [disabled]="!exceptionValid()" (click)="addException()" data-testid="exception-add">{{ 'availability.addException' | translate }}</button>
+            </div>
+          </div>
+        } @else {
+          <button mat-stroked-button type="button" (click)="addingException.set(true)" data-testid="exception-open">{{ 'availability.addException' | translate }}</button>
+        }
+
+        @if (affected().length > 0) {
+          <div class="warn" role="status" data-testid="affected">
+            <p>{{ 'availability.affected' | translate: { count: affected().length } }}</p>
+            <ul>
+              @for (s of affected(); track s.slotId) { <li>{{ dateLabel(zonedDate(s)) }} {{ time(s.startsAt) }}</li> }
+            </ul>
+          </div>
+        }
+      </section>
+    </div>
+
+    <tm-problem-message [error]="saveError()" />
+    <div class="save">
+      <button mat-flat-button type="button" [disabled]="invalid() || saving()" (click)="save()" data-testid="save">
+        {{ (pendingAffected() ? 'availability.saveAnyway' : 'availability.save') | translate: { weeks: a.horizonDays / 7 } }}
+      </button>
+    </div>
+
+    <section class="tm-card" [attr.aria-label]="'availability.upcoming' | translate">
+      <h2 class="tm-card-title">{{ 'availability.upcoming' | translate }}</h2>
+      <div class="one-off">
+        <label>{{ 'availability.oneOff.date' | translate }}
+          <input type="date" class="field" [ngModel]="oneOffDate()" (ngModelChange)="oneOffDate.set($event)" data-testid="one-off-date" />
+        </label>
+        <label>{{ 'availability.oneOff.time' | translate }}
+          <input type="time" class="field" [ngModel]="oneOffTime()" (ngModelChange)="oneOffTime.set($event)" data-testid="one-off-time" />
+        </label>
+        <button mat-stroked-button type="button" [disabled]="!oneOffDate() || !oneOffTime()" (click)="addOneOff()" data-testid="one-off-add">{{ 'availability.oneOff.add' | translate }}</button>
+      </div>
+      <tm-problem-message [error]="slotError()" />
+      @for (group of slotDays(); track group.date) {
+        <div class="slot-day">
+          <span class="slot-date">{{ dateLabel(group.date) }}</span>
+          @for (s of group.slots; track s.slotId) {
+            @if (locked(s)) {
+              <span class="chip locked" [attr.data-testid]="'slot-' + s.slotId">{{ time(s.startsAt) }} · {{ 'availability.status.' + s.status | translate }}</span>
+            } @else {
+              <span class="chip" [attr.data-testid]="'slot-' + s.slotId">
+                {{ time(s.startsAt) }}@if (s.source === 'manual') { · {{ 'availability.oneOff.tag' | translate }} }
+                <button type="button" class="chip-x" (click)="removeSlot(s)" [attr.aria-label]="'availability.removeTime' | translate: { time: time(s.startsAt) }" [attr.data-testid]="'remove-' + s.slotId">×</button>
+              </span>
+            }
+          }
+        </div>
+      } @empty {
+        <p class="tm-muted" data-testid="no-slots">{{ 'availability.noSlots' | translate }}</p>
+      }
+    </section>
+  }
+</section>
