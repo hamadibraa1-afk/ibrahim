@@ -1,0 +1,23 @@
+{
+  "notifications": {
+    "title": "Notifications",
+    "bell": "Notifications",
+    "bellUnread": "Notifications, {count} unread",
+    "unread": "unread",
+    "empty": "No notifications",
+    "emptyBody": "Your messages, appointments, homework and security notices will show here.",
+    "more": "Show more",
+    "notYou": "Not you? End the session",
+    "confirmTitle": "End the session on the other device?",
+    "confirmBody": "That device will have to sign in again.",
+    "confirmEnd": "End session",
+    "cancel": "Cancel",
+    "sessionEnded": "We ended that session. We suggest changing your password.",
+    "changePassword": "Change password",
+    "error": "Couldn't load. Please try again.",
+    "errorTitle": "Couldn't load your notifications",
+    "errorBody": "The problem is on our side, not yours. Try again in a little while.",
+    "errorCode": "Problem code:",
+    "retry": "Try again"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "afterCrisis": {
+    "metaTitle": "After a crisis",
+    "glad": "I'm glad you're here",
+    "talkedWith": "You spoke with {name} today",
+    "teamWithYou": "Our team is still with you",
+    "brave": "What you went through was hard, and asking for help was a brave step. Here is what was agreed:",
+    "agreed": "What you agreed",
+    "therapistInformed": "{name} knows what happened and will follow up with you.",
+    "therapistInformedPlain": "Your therapist knows what happened and will follow up with you.",
+    "nextAppointment": "Your next appointment: {when}.",
+    "planReady": "Your safety plan is ready",
+    "planBody": "Open it whenever you need it",
+    "open": "Open",
+    "checkInTitle": "How are you feeling now?",
+    "checkInBody": "Note how you feel in a minute.",
+    "checkIn": "Check in",
+    "resources": "If you need help right now",
+    "home": "Back to home",
+    "talkNow": "I need to talk to someone now",
+    "contactingTitle": "We're contacting you now",
+    "contactingBody": "Someone from our team is working on reaching you. If you are in danger right now, call emergency services.",
+    "errorTitle": "Couldn't load",
+    "errorBody": "The problem is on our side. The help numbers below always work.",
+    "retry": "Try again",
+    "homeCard": "What we agreed after our last conversation"
+  }
+}
