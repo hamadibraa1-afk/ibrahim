@@ -182,6 +182,7 @@
   <data name="error.closure.locked" xml:space="preserve"><value>This end-of-care summary is waiting for a supervisor or already signed off, so it can't be changed now.</value></data>
   <data name="error.closure.not_submitted" xml:space="preserve"><value>This summary was not sent for sign-off.</value></data>
   <data name="error.closure.signoff_not_allowed" xml:space="preserve"><value>You can't sign off a summary you wrote yourself.</value></data>
+  <data name="error.closure.patient_continue" xml:space="preserve"><value>Care can't be closed now: the patient asked to continue care.</value></data>
   <data name="error.closure.blocked" xml:space="preserve"><value>Care can't be closed now: the risk level was 3 or 4 in the last 14 days.</value></data>
   <data name="error.change_request.open" xml:space="preserve"><value>You already have an open change request; we will send you suggestions soon.</value></data>
   <data name="error.care.not_in_care" xml:space="preserve"><value>You don't have a therapist right now.</value></data>

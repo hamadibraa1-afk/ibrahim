@@ -383,3 +383,6 @@ export interface CareClosure {
 }
 export interface CareReturnResponse { next: string }
 export interface SessionSummary { points: string[]; sharedAt: string }
+
+/** GET · POST · DELETE /v1/me/care/continue: the patient's request to continue care (§10.4; blocks S57 closing while open). */
+export interface ContinueCare { requested: boolean; requestedAt: string | null }

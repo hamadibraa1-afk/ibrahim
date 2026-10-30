@@ -502,14 +502,17 @@ export interface ClosureView {
   closure: Closure | null;
   prefill: { sessionCount: number; durationWeeks: number };
   measures: { instrument: string; start: number | null; end: number | null }[];
-  /** Risk 3–4 in the last 14 days: sending and signing off are refused. */
+  /** Sending and signing off are refused (§10.4): see blockedReason. */
   blocked: boolean;
   canEdit: boolean;
   canSignOff: boolean;
   therapistName: string;
+  /** risk: level 3–4 in the last 14 days; patient_continue: the patient asked to continue care. */
+  blockedReason?: ClosureBlockReason | null;
 }
+export type ClosureBlockReason = 'risk' | 'patient_continue';
 export interface SaveClosureRequest { reasonCode: ClosureReason | ''; sessionCount: number; durationWeeks: number; patientSummary: string; warningSigns: string; whatToDo: string; followUp: ClosureFollowUp; keepLibrary: boolean; submit: boolean }
-export interface ClosureQueueItem { id: string; pseudonymId: string; therapistName: string; reasonCode: ClosureReason; sessionCount: number; submittedAt: string; blocked: boolean }
+export interface ClosureQueueItem { id: string; pseudonymId: string; therapistName: string; reasonCode: ClosureReason; sessionCount: number; submittedAt: string; blocked: boolean; blockedReason?: ClosureBlockReason | null }
 
 export interface OverviewAppointment { id: string; startsAt: string; durationMinutes: number; sequenceNumber: number; status: string; noteStatus: 'none' | 'draft' | 'signed' }
 export interface PatientOverview {

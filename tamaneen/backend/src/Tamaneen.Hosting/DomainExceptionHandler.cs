@@ -92,6 +92,7 @@ public sealed partial class DomainExceptionHandler<TResource> : IExceptionHandle
         [ErrorCodes.ClosureNotSubmitted] = StatusCodes.Status409Conflict,
         [ErrorCodes.ClosureSignOffNotAllowed] = StatusCodes.Status403Forbidden,
         [ErrorCodes.ClosureBlocked] = StatusCodes.Status409Conflict,
+        [ErrorCodes.ClosureBlockedByPatient] = StatusCodes.Status409Conflict,
         [ErrorCodes.ChangeRequestOpen] = StatusCodes.Status409Conflict,
         [ErrorCodes.NotInCare] = StatusCodes.Status409Conflict,
     };

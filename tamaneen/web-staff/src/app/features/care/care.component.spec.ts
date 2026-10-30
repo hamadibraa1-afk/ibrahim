@@ -453,9 +453,18 @@ function closureView(overrides: Partial<ClosureView> = {}): ClosureView {
 describe('EndOfCareComponent (S57)', () => {
   it('blocks sending at high risk and explains why', async () => {
     const { q, update, backend } = await renderCare(EndOfCareComponent, { id: PID }, { language: 'ar' });
-    backend.expectOne(`${PATIENT_URL}/closure`).flush(closureView({ blocked: true }), { headers: new HttpHeaders({ ETag: '"0"' }) });
+    backend.expectOne(`${PATIENT_URL}/closure`).flush(closureView({ blocked: true, blockedReason: 'risk' }), { headers: new HttpHeaders({ ETag: '"0"' }) });
     await update();
     expect(q('close-blocked')!.textContent).toContain('3 أو 4');
+    expect((q('close-submit') as HTMLButtonElement).disabled).toBeTrue();
+  });
+
+  it('says when the patient asked to continue care', async () => {
+    const { q, update, backend } = await renderCare(EndOfCareComponent, { id: PID }, { language: 'ar' });
+    backend.expectOne(`${PATIENT_URL}/closure`).flush(closureView({ blocked: true, blockedReason: 'patient_continue' }), { headers: new HttpHeaders({ ETag: '"0"' }) });
+    await update();
+    expect(q('close-blocked')!.textContent).toContain('طلب المريض الاستمرار');
+    expect(q('close-blocked')!.textContent).not.toContain('3 أو 4');
     expect((q('close-submit') as HTMLButtonElement).disabled).toBeTrue();
   });
 

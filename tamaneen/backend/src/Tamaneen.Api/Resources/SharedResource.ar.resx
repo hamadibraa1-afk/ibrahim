@@ -182,6 +182,7 @@
   <data name="error.closure.locked" xml:space="preserve"><value>ملخص نهاية الرعاية بانتظار المشرف أو معتمد، ولا يمكن تعديله الآن.</value></data>
   <data name="error.closure.not_submitted" xml:space="preserve"><value>لم يُرسل هذا الملخص للاعتماد.</value></data>
   <data name="error.closure.signoff_not_allowed" xml:space="preserve"><value>لا يمكنك اعتماد ملخص كتبته بنفسك.</value></data>
+  <data name="error.closure.patient_continue" xml:space="preserve"><value>لا يمكن إنهاء الرعاية الآن: طلب المريض الاستمرار في الرعاية.</value></data>
   <data name="error.closure.blocked" xml:space="preserve"><value>لا يمكن إنهاء الرعاية الآن: كان مستوى الخطر 3 أو 4 خلال آخر 14 يومًا.</value></data>
   <data name="error.change_request.open" xml:space="preserve"><value>لديك طلب تغيير مفتوح، وسنرسل لك الاقتراحات قريبًا.</value></data>
   <data name="error.care.not_in_care" xml:space="preserve"><value>لا يوجد أخصائي متابع لك الآن.</value></data>

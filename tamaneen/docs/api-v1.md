@@ -104,7 +104,8 @@ and P01, P02, P12 and P15 show the emergency numbers instead of the start button
 | GET | /v1/me/change-therapist-requests/current | → ChangeTherapistRequest (`status`: requested, matching, offered, closed; 404 when none is open) | P44 |
 | GET | /v1/me/care-closure | → CareClosure (404 until a supervisor signed off the end of care) | P53 |
 | GET | /v1/me/care-closure/summary | → `text/plain` `summary.txt` (plain-language summary and relapse plan, no diagnosis or scores; audited `care.summary_downloaded`) | P53 |
-| POST | /v1/me/care/return | → { next } (`/matches` with the previous therapist suggested first, or `/therapists`) | P53 |
+| POST | /v1/me/care/return | → { next } (`/matches` with the previous therapist suggested first, or `/therapists`; also stores a CareContinueRequest `return` linked to the closure) | P53 |
+| GET · POST · DELETE | /v1/me/care/continue | → ContinueCare { requested, requestedAt } (§10.4 «طلب المريض الاستمرار»: POST records the patient's request to continue care (idempotent; audited `care.continue_requested`), DELETE withdraws it (`care.continue_withdrawn`). While a request made during the current care is open, S57 sending and sign-off are refused with 409 `error.closure.patient_continue`. Table `clinical.CareContinueRequests`, under `PatientDataPolicy` with `fn_patient_access`. API only: the patient-app entry point belongs to the patient side) | S57 rule (patient) |
 | GET | /v1/appointments/{id}/session-summary | → SessionSummary { points, sharedAt } (the points the therapist shared when signing the note; 404 otherwise) | P43 |
 
 Idempotency (P66 outbox, EC-01, EC-07): `POST /v1/mood`, `POST /v1/homework/{id}/checkins` and `PUT /v1/safety-plan` accept an
@@ -233,7 +234,7 @@ During scheduled maintenance (`Platform:Maintenance` true) every patient endpoin
 | GET | /v1/staff/patients/{pseudonymId}/safety-plan | → StaffSafetyPlan + `ETag` (version; audited) | S35 |
 | GET | /v1/staff/patients/{pseudonymId}/safety-plan/versions · /versions/{n} | → SafetyPlanVersionSummary[] · SafetyPlanVersion | S35 |
 | POST | /v1/staff/patients/{pseudonymId}/safety-plans | `If-Match` + UpdateSafetyPlanRequest → 201 StaffSafetyPlan (therapist; 428/412; notifies `safety_plan.updated` to the patient) | S35 |
-| GET · PUT | /v1/staff/patients/{pseudonymId}/closure | → ClosureView + `ETag` · `If-Match` + SaveClosureRequest → ClosureView (`submit: true` sends it for sign-off: required fields as field errors, 409 `error.closure.blocked` at risk 3–4 in 14 days; notifies `care.closure_submitted`) | S57 |
+| GET · PUT | /v1/staff/patients/{pseudonymId}/closure | → ClosureView + `ETag` · `If-Match` + SaveClosureRequest → ClosureView (`submit: true` sends it for sign-off: required fields as field errors, 409 `error.closure.blocked` at risk 3–4 in 14 days, 409 `error.closure.patient_continue` while the patient asks to continue, each with `reason` (`risk` / `patient_continue`); ClosureView and the `/v1/staff/closures` queue items carry `blockedReason` for the banner; notifies `care.closure_submitted`) | S57 |
 | POST | /v1/staff/patients/{pseudonymId}/closure/withdraw | → ClosureView | S57 |
 | GET | /v1/staff/closures | → ClosureQueueItem[] (submitted; supervisor, lead) | S57 |
 | POST | /v1/staff/closures/{id}/sign-off | { approve, reason? } → Closure (approve: ends the care assignment, cancels the remaining sessions with that therapist, notifies `care.ended`; refuse: reason required, notifies `care.closure_rejected`; not the author, 403) | S57 |

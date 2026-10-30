@@ -1391,13 +1391,15 @@
       "rejectTitle": "Send it back to the therapist?",
       "rejectBody": "The therapist sees your reason and edits the summary.",
       "rejectReason": "Reason",
-      "rejected": "Sent back to the therapist."
+      "rejected": "Sent back to the therapist.",
+      "blockedByPatient": "Care can’t be closed now: the patient asked to continue care. Talk it through first; sending opens again if they withdraw the request."
     },
     "closures": {
       "title": "End-of-care sign-off",
       "loadError": "The list can’t be loaded right now.",
       "empty": "Nothing is waiting for sign-off.",
-      "blocked": "Risk 3–4 in 14 days"
+      "blocked": "Risk 3–4 in 14 days",
+      "blockedByPatient": "Patient asked to continue"
     }
   },
   "slotPicker": {

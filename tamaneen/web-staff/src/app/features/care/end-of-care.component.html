@@ -29,7 +29,7 @@
   </header>
 
   @if (v.blocked) {
-    <p class="banner danger" role="alert" data-testid="close-blocked">{{ 'care.close.blocked' | translate }}</p>
+    <p class="banner danger" role="alert" data-testid="close-blocked">{{ (v.blockedReason === 'patient_continue' ? 'care.close.blockedByPatient' : 'care.close.blocked') | translate }}</p>
   }
   @if (status() === 'submitted') {
     <p class="banner" data-testid="close-waiting">{{ 'care.close.waiting' | translate }}</p>

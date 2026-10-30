@@ -113,6 +113,8 @@ public sealed class TamaneenDbContext : DbContext
 
     public DbSet<CareClosure> CareClosures => Set<CareClosure>();
 
+    public DbSet<CareContinueRequest> CareContinueRequests => Set<CareContinueRequest>();
+
     public DbSet<ChangeTherapistRequest> ChangeTherapistRequests => Set<ChangeTherapistRequest>();
 
     public DbSet<IdempotencyRecord> IdempotencyRecords => Set<IdempotencyRecord>();

@@ -342,6 +342,58 @@ public sealed class ClinicalCareTests : IAsyncLifetime
         (await Read(await patient.Me.PostAsync("/v1/me/care/return", null))).GetProperty("next").GetString().Should().Be("/matches");
         var matches = await Read(await patient.Me.GetAsync("/v1/matches"));
         matches.GetProperty("items")[0].GetProperty("therapist").GetProperty("displayName").GetString().Should().Be("أ. سارة م.", "the previous therapist comes first");
+
+        // P53's way back is stored as the patient's request to continue, linked to the closure.
+        await using var asPatient = _sql.Context(StaticCurrentUser.ForPatient(patient.PatientId));
+        (await asPatient.CareContinueRequests.SingleAsync()).Should().Match<Tamaneen.Clinical.Care.CareContinueRequest>(r => r.Source == "return" && r.ClosureId == id);
+    }
+
+    [Fact]
+    public async Task Closing_is_refused_while_the_patient_asks_to_continue_and_the_banner_says_so()
+    {
+        var patient = await BookedPatientAsync("أ. سارة م.");
+        using var sara = _hosts.ApiClient("en", await _hosts.StaffSignInAsync("sara@staff.tamaneen.dev"));
+        var path = $"/v1/staff/patients/{patient.Pseudonym}/closure";
+        (await Read(await sara.GetAsync(path))).GetProperty("blockedReason").ValueKind.Should().Be(JsonValueKind.Null);
+
+        (await Read(await patient.Me.PostAsync("/v1/me/care/continue", null))).GetProperty("requested").GetBoolean().Should().BeTrue();
+        (await Read(await patient.Me.PostAsync("/v1/me/care/continue", null))).GetProperty("requested").GetBoolean().Should().BeTrue();
+        var view = await Read(await sara.GetAsync(path));
+        view.GetProperty("blocked").GetBoolean().Should().BeTrue();
+        view.GetProperty("blockedReason").GetString().Should().Be("patient_continue");
+        var body = new { reasonCode = "goals_met", patientSummary = "ملخص.", warningSigns = "قلة النوم", whatToDo = "المشي", submit = true };
+        var refused = await Problem(await Send(sara, HttpMethod.Put, path, "\"0\"", body), 409);
+        refused.GetProperty("code").GetString().Should().Be(ErrorCodes.ClosureBlockedByPatient);
+        refused.GetProperty("reason").GetString().Should().Be("patient_continue");
+        refused.GetProperty("detail").GetString().Should().Contain("asked to continue");
+
+        // Row-level security: the patient, the treating therapist and supervisors see the request; another therapist does not.
+        var saraId = await SaraIdAsync();
+        await using (var other = _sql.Context(StaticCurrentUser.ForStaff(Guid.NewGuid(), AppRoles.Therapist)))
+        {
+            (await other.CareContinueRequests.CountAsync(r => r.PatientId == patient.PatientId)).Should().Be(0);
+        }
+
+        await using (var treating = _sql.Context(StaticCurrentUser.ForStaff(saraId, AppRoles.Therapist)))
+        {
+            (await treating.CareContinueRequests.CountAsync(r => r.PatientId == patient.PatientId)).Should().Be(1);
+        }
+
+        await using (var supervisor = _sql.Context(StaticCurrentUser.ForStaff(Guid.NewGuid(), AppRoles.Supervisor)))
+        {
+            (await supervisor.CareContinueRequests.CountAsync(r => r.PatientId == patient.PatientId)).Should().Be(1);
+        }
+
+        var stranger = await _sql.CreatePatientAsync("س");
+        await using (var asStranger = _sql.Context(StaticCurrentUser.ForPatient(stranger.Id)))
+        {
+            (await asStranger.CareContinueRequests.CountAsync()).Should().Be(0);
+        }
+
+        // Withdrawn: closing may go ahead.
+        (await Read(await patient.Me.DeleteAsync("/v1/me/care/continue"))).GetProperty("requested").GetBoolean().Should().BeFalse();
+        (await Read(await sara.GetAsync(path))).GetProperty("blocked").GetBoolean().Should().BeFalse();
+        (await Read(await Send(sara, HttpMethod.Put, path, "\"0\"", body))).GetProperty("closure").GetProperty("status").GetString().Should().Be("submitted");
     }
 
     [Fact]
@@ -353,7 +405,10 @@ public sealed class ClinicalCareTests : IAsyncLifetime
         var path = $"/v1/staff/patients/{patient.Pseudonym}/closure";
         (await Read(await sara.GetAsync(path))).GetProperty("blocked").GetBoolean().Should().BeTrue();
         var body = new { reasonCode = "goals_met", patientSummary = "ملخص.", warningSigns = "قلة النوم", whatToDo = "المشي", submit = true };
-        (await Problem(await Send(sara, HttpMethod.Put, path, "\"0\"", body), 409)).GetProperty("code").GetString().Should().Be(ErrorCodes.ClosureBlocked);
+        var refused = await Problem(await Send(sara, HttpMethod.Put, path, "\"0\"", body), 409);
+        refused.GetProperty("code").GetString().Should().Be(ErrorCodes.ClosureBlocked);
+        refused.GetProperty("reason").GetString().Should().Be("risk");
+        (await Read(await sara.GetAsync(path))).GetProperty("blockedReason").GetString().Should().Be("risk");
     }
 
     [Fact]
