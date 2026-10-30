@@ -92,6 +92,7 @@ Each entry: date, agent, task id, branch or PR, what changed, test results, note
 ### 2026-10-30 · Claude · T-001 · claude/brave-bardeen-3nott4
 - Added `AGENTS.md` (root and `tamaneen/`), `tamaneen/CLAUDE.md`, this file, `.github/workflows/tamaneen-ci.yml` and `scripts/codex-setup.sh`.
 - CI runs the backend build, unit and integration tests (SQL Server service), the migration check, and the patient and staff app checks on every push and pull request that touches `tamaneen/`. It does not run the e2e suites; run those locally (§4 of HANDOFF).
+- **CI status:** the first run (https://github.com/hamadibraa1-afk/ibrahim/actions/runs/41062758177) failed within 3 seconds with no runner assigned and no logs. The account's GitHub Actions setup (billing or spending limit) stopped it before any step ran, not the code. When the owner fixes that, re-run it. Until CI runs, run the §4 checks locally and report the counts in the work log.
 - **Next:** T-501.
 
 ### 2026-10-30 · Claude · phases 1–5 (summary) · claude/brave-bardeen-3nott4 @ 4a123d5
