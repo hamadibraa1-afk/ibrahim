@@ -19,7 +19,7 @@ This file is the shared memory between AI agents (Codex, Claude, any other) and 
 
 | Id | Task | Status | Owner | Branch |
 |---|---|---|---|---|
-| T-501 | Patient app button for "I want to continue care" (`POST /v1/me/care/continue`) during ongoing care. The API exists. Use the care-journey spec in `docs/design/spec`; Arabic and English text; unit test and e2e. | in-progress | Codex, 2026-10-30 | codex/T-501-continue-care |
+| T-501 | Patient app button for "I want to continue care" (`POST /v1/me/care/continue`) during ongoing care. The API exists. Use the care-journey spec in `docs/design/spec`; Arabic and English text; unit test and e2e. | blocked — environment proxy denies api.github.com (HTTP 403); required draft PR cannot be opened | Codex, 2026-10-30 | codex/T-501-continue-care |
 | T-502 | Add the phase 5 screens (P41–P44, P46, P53, P54, P56, P63, P66, P67, S18–S22, S32, S33, S35, S41, S57, closures queue) to the bilingual test map PDF, as `docs/testmap/` source plus the generated PDF. | todo | | |
 | T-503 | Phase 5 gate: full §4 run, a design-conformance review of the new button, Docker rebuild, and owner sign-off. | todo | | |
 
@@ -88,6 +88,12 @@ This file is the shared memory between AI agents (Codex, Claude, any other) and 
 ## Work log (newest first)
 
 Each entry: date, agent, task id, branch or PR, what changed, test results, notes for the next agent.
+
+### 2026-10-30 · Codex · T-501 · codex/T-501-continue-care
+- Pulled integration branch `claude/brave-bardeen-3nott4` at `b002fd2a723bd5e7b9ff80fe6fb3cce4e3935e5a`, read AGENTS → HANDOFF → PROGRESS, and claimed the first todo task on the required task branch. Pushed the claim.
+- **Blocked before implementation:** opening the required draft PR with `gh pr create` failed: `Post https://api.github.com/graphql: Forbidden`. A separate HTTPS request to `https://api.github.com/zen` failed at the proxy CONNECT step with HTTP 403. Git HTTPS fetch/push works; this does not establish GitHub API access. Do not request a replacement token based only on `gh auth status` while the API destination is blocked.
+- **Tests:** none run (0 passed); only task-board documentation changed. No application files changed. No PR was created, marked ready, or merged; CI was not validated.
+- **Next agent:** after the owner enables `api.github.com` in environment network settings, retry draft PR creation into `claude/brave-bardeen-3nott4`, then resume T-501 on this branch. If API authorization still fails after connectivity works, diagnose the existing injected GitHub authentication. Follow the design and run HANDOFF §4 before marking done. The existing care-continue endpoint is in `backend/src/Tamaneen.Api/Endpoints/CareJourneyEndpoints.cs` and its contract is already in `docs/api-v1.md`.
 
 ### 2026-10-30 · Claude · T-001 · claude/brave-bardeen-3nott4
 - Added `AGENTS.md` (root and `tamaneen/`), `tamaneen/CLAUDE.md`, this file, `.github/workflows/tamaneen-ci.yml` and `scripts/codex-setup.sh`.
