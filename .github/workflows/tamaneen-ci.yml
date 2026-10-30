@@ -1,0 +1,92 @@
+# Tamaneen gate (tamaneen/docs/HANDOFF.md §4) on every change to tamaneen/.
+# The e2e suites need the running stack and stay a local step.
+name: tamaneen-ci
+
+on:
+  push:
+    branches: ['claude/**', 'codex/**']
+    paths: ['tamaneen/**', '.github/workflows/tamaneen-ci.yml']
+  pull_request:
+    paths: ['tamaneen/**', '.github/workflows/tamaneen-ci.yml']
+  workflow_dispatch:
+
+concurrency:
+  group: tamaneen-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: tamaneen
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    services:
+      sql:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: 'Y'
+          MSSQL_SA_PASSWORD: Tamaneen!Dev2026
+        ports: ['1433:1433']
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P 'Tamaneen!Dev2026' -Q 'SELECT 1' -b"
+          --health-interval 10s --health-timeout 5s --health-retries 20
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+      DOTNET_NOLOGO: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: tamaneen/global.json
+      - run: dotnet tool restore
+      - run: dotnet build Tamaneen.sln
+      - run: dotnet test backend/tests/Tamaneen.UnitTests --no-build
+      - name: Integration tests (SQL Server with row-level security)
+        env:
+          TAMANEEN_TEST_SQL: Server=localhost,1433;User Id=sa;Password=Tamaneen!Dev2026;TrustServerCertificate=True
+        run: dotnet test backend/tests/Tamaneen.IntegrationTests --no-build
+      - name: No pending EF model changes
+        env:
+          TAMANEEN_SQL: Server=localhost;Database=x;TrustServerCertificate=True
+        run: dotnet ef migrations has-pending-model-changes -p backend/src/Tamaneen.Infrastructure
+
+  web-patient:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: tamaneen/web-patient
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tamaneen/web-patient/package-lock.json
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npm run lint
+      - run: npx vitest run
+      - run: npm run build
+
+  web-staff:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: tamaneen/web-staff
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tamaneen/web-staff/package-lock.json
+      - run: npm ci
+      - name: Unit tests (headless Chrome)
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: npx ng test --watch=false
+      - run: npx ng build

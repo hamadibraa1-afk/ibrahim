@@ -5,6 +5,7 @@ Read this file first. It tells you what the project is, where everything is, how
 - **Repository:** https://github.com/hamadibraa1-afk/ibrahim
 - **Branch:** `claude/brave-bardeen-3nott4`. The repository's default branch holds a different project, so always switch to this branch.
 - **Project folder:** `tamaneen/`. Everything else in the repository belongs to the other project.
+- **Several AI agents (Codex, Claude) share this project.** Their rules are in `AGENTS.md`. The task board and work log are in `docs/PROGRESS.md`. CI is `.github/workflows/tamaneen-ci.yml` at the repository root.
 - **Download as ZIP:** https://github.com/hamadibraa1-afk/ibrahim/archive/refs/heads/claude/brave-bardeen-3nott4.zip
 
 ## 1. What it is
@@ -205,7 +206,7 @@ Last full run, after merging phase 5 and both review fix lists:
   - S41: links to the pending file;
   - EC-52/EC-53 supervisor alerts;
   - S57: blocked while the patient asked to continue.
-- **Still open, small:**
+- **Still open, small** (tasks T-501 and T-502 in `docs/PROGRESS.md`):
   - The patient app has no button for `POST /v1/me/care/continue` ("I want to continue care") during ongoing care. The API exists; P53's way back already records a request.
   - The test map PDF does not cover the phase 5 screens yet.
 - **Full findings, with file:line evidence:** `docs/reviews/phase5-review-patient.md` and `phase5-review-staff.md`.
@@ -263,4 +264,9 @@ Do the phases in this order. Each one ends with the gate in §4, a design-confor
   - audit for staff reads;
   - `docs/api-v1.md` and the TS types (`web-patient/src/lib/api/types.ts`, `web-staff/src/app/core/api/types.ts`) updated with every endpoint.
 - Run the whole gate in §4 before committing. A change is not done until the build is clean and every suite passes.
-- Commit to the same branch, or to a new branch made from it, and keep commits small and described.
+- Follow `AGENTS.md`:
+  - work on a task branch (`codex/<task-id>-…` or `claude/<task-id>-…`) made from `claude/brave-bardeen-3nott4`;
+  - claim the task in `docs/PROGRESS.md`;
+  - open a pull request into the integration branch, and merge it only when CI is green;
+  - update the board and the work log in the same pull request.
+- Keep commits small and described.
