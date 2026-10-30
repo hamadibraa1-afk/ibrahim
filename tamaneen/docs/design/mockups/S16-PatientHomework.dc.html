@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>واجبات المريض</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.card{background:#FFFFFF;border:1px solid #DDE3E1;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.btn{font:inherit;font-weight:600;font-size:14px;min-height:44px;border-radius:10px;border:0;padding:0 16px;cursor:pointer;white-space:nowrap}
+.btn-primary{background:#1F5F5B;color:#FFFFFF}
+.btn-ghost{background:#FFFFFF;color:#1F5F5B;border:1px solid #B9C9C6}
+.muted{color:#4A5A5E}
+.tab{font-size:14px;font-weight:600;min-height:44px;display:flex;align-items:center;padding:0 14px;text-decoration:none;color:#4A5A5E;border-bottom:3px solid transparent}
+.lbl{font-size:14px;font-weight:600}
+.field{font:inherit;font-size:14px;height:44px;box-sizing:border-box;width:100%;border:1px solid #B9C9C6;border-radius:10px;padding:0 10px;background:#FFFFFF;color:#1B2A2F}
+.task{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid #EDF1F0}
+.tpl{font:inherit;font-size:13px;font-weight:600;min-height:40px;padding:0 12px;border-radius:999px;border:1px solid #B9C9C6;background:#FFFFFF;color:#1B2A2F;cursor:pointer}
+.lnk{font:inherit;font-size:13px;font-weight:600;min-height:36px;border:0;background:none;color:#1F5F5B;cursor:pointer;padding:0 6px}
+</style>
+</helmet>
+<div dir="rtl" style="min-height: 900px; background: #F6F7F5; display: flex; flex-wrap: wrap">
+  <div style="flex: 1 1 220px; max-width: 260px"><dc-import name="StaffNav" role="therapist" active="patients" hint-size="100%,900px"></dc-import></div>
+  <div style="flex: 999 1 560px; min-width: 0; padding: 20px 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px">
+    <div><a href="#" style="font-size: 13px; font-weight: 600">مرضاي</a><h1 style="margin: 0; font-size: 24px; font-weight: 700">P-4TT8-90AA</h1></div>
+    <nav aria-label="أقسام ملف المريض" style="display: flex; flex-wrap: wrap; border-bottom: 1px solid #DDE3E1"><a class="tab" href="#">نظرة عامة</a><a class="tab" href="#">الملف السريري</a><a class="tab" href="#">خطة العلاج</a><a class="tab" href="#" style="color: #163F3C; border-bottom-color: #1F5F5B">الواجبات</a><a class="tab" href="#">التقارير</a></nav>
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+      <section class="card" style="flex: 3 1 480px; min-width: 0; gap: 0">
+        <h2 style="margin: 0 0 6px; font-size: 17px; font-weight: 700">الواجبات الحالية</h2>
+        <div class="task"><div style="flex: 1 1 200px"><div style="font-weight: 700">تمرين التنفس قبل النوم</div><div class="muted" style="font-size: 13px">يوميًا حتى 28 أكتوبر · 6 / 7 هذا الأسبوع</div></div><button class="lnk" type="button">إرسال تعليق</button><button class="lnk" type="button">تعديل</button><button class="lnk" type="button" style="color: #9B2219">إلغاء</button></div>
+        <div class="task"><div style="flex: 1 1 200px"><div style="font-weight: 700">سجل الأفكار</div><div class="muted" style="font-size: 13px">مرتين أسبوعيًا · 2 / 2 · آخر ملاحظة: «فكرت أن مديري غاضب مني»</div></div><button class="lnk" type="button">إرسال تعليق</button><button class="lnk" type="button">تعديل</button><button class="lnk" type="button" style="color: #9B2219">إلغاء</button></div>
+        <div class="task" style="border-bottom: 0"><div style="flex: 1 1 200px"><div style="font-weight: 700">نشاط ممتع صغير</div><div class="muted" style="font-size: 13px">أسبوعيًا · لم يبدأ</div></div><button class="lnk" type="button">تعديل</button><button class="lnk" type="button" style="color: #9B2219">إلغاء</button></div>
+      </section>
+      <section class="card" style="flex: 2 1 360px; min-width: 0">
+        <h2 style="margin: 0; font-size: 17px; font-weight: 700">واجب جديد</h2>
+        <div class="lbl">من المكتبة</div>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px"><button class="tpl" type="button" style="background: #E3EFED; border-color: #1F5F5B">التنشيط السلوكي</button><button class="tpl" type="button">سجل الأفكار</button><button class="tpl" type="button">مذكرات النوم</button><button class="tpl" type="button">التنفس</button><button class="tpl" type="button">نص خاص</button></div>
+        <div style="display: flex; flex-direction: column; gap: 6px"><label class="lbl" for="t">العنوان</label><input class="field" id="t" value="نشاط بدني خفيف"></div>
+        <div style="display: flex; flex-direction: column; gap: 6px"><label class="lbl" for="i">التعليمات للمريض</label><textarea id="i" style="font: inherit; font-size: 14px; height: 80px; box-sizing: border-box; border: 1px solid #B9C9C6; border-radius: 10px; padding: 8px 10px; resize: vertical">امشِ 15 دقيقة مرتين هذا الأسبوع، وسجّل مزاجك قبل المشي وبعده.</textarea></div>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+          <div style="display: flex; flex-direction: column; gap: 6px"><label class="lbl" for="s">التكرار</label><select id="s" class="field"><option>مرتين أسبوعيًا</option></select></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><label class="lbl" for="d">ينتهي في</label><input id="d" class="field" type="date" value="2026-10-26"></div>
+        </div>
+        <div style="display: flex; gap: 8px; justify-content: flex-end"><button class="btn btn-ghost" type="button">معاينة كما يراها المريض</button><button class="btn btn-primary" type="button">إسناد الواجب</button></div>
+      </section>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

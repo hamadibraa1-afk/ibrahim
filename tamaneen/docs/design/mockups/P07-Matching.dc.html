@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>الأخصائيون المقترحون</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.card{background:#FFFFFF;border:1px solid #DDE3E1;border-radius:16px}
+.help{font:inherit;font-weight:600;font-size:14px;min-height:44px;padding:0 14px;border-radius:999px;border:1.5px solid #B3261E;color:#B3261E;background:#FFFFFF;cursor:pointer}
+.muted{color:#4A5A5E}
+.av{width:48px;height:48px;border-radius:50%;background:#E3EFED;color:#1F5F5B;font-weight:700;font-size:17px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.chip{font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;background:#F1F4F3;color:#33464B}
+.sm{font:inherit;font-weight:600;font-size:14px;min-height:44px;border-radius:10px;padding:0 14px;cursor:pointer}
+</style>
+</helmet>
+<div dir="rtl" style="width: 390px; height: 844px; box-sizing: border-box; background: #FFF8F1; display: flex; flex-direction: column; overflow: hidden">
+  <header style="display: flex; align-items: center; justify-content: space-between; height: 64px; padding: 0 20px">
+    <div style="font-weight: 700; font-size: 20px; color: #1F5F5B">طمأنينة</div>
+    <button class="help" type="button">مساعدة فورية</button>
+  </header>
+  <main style="flex: 1; display: flex; flex-direction: column; gap: 12px; padding: 0 20px 16px">
+    <div style="display: flex; flex-direction: column; gap: 4px">
+      <h1 style="margin: 0; font-size: 23px; font-weight: 700">اخترنا لك ثلاثة أخصائيين</h1>
+      <p class="muted" style="margin: 0; font-size: 14px; line-height: 1.7">راجع مختصٌّ ملفك واعتمد هذه الاقتراحات. الاختيار لك.</p>
+    </div>
+    <div class="card" style="padding: 14px; display: flex; flex-direction: column; gap: 10px; border: 1.5px solid #1F5F5B">
+      <div style="display: flex; gap: 12px; align-items: center">
+        <div class="av">س م</div>
+        <div style="flex: 1"><div style="font-weight: 700; font-size: 16px">أ. سارة م.</div><div class="muted" style="font-size: 13px">أخصائية نفسية إكلينيكية · مرخصة</div></div>
+        <span style="font-size: 11px; font-weight: 700; color: #1F5F5B; background: #E3EFED; padding: 3px 8px; border-radius: 999px">الأنسب</span>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 6px"><span class="chip">القلق والضغط</span><span class="chip">مشكلات النوم</span><span class="chip">العلاج المعرفي السلوكي</span></div>
+      <div style="font-size: 13px; line-height: 1.6; background: #FFF8F1; border-radius: 10px; padding: 8px 10px"><strong>لماذا اقترحناها:</strong> خبرة في الضغط المهني وقلة النوم، وتتحدث العربية، وأقرب موعد بعد يومين.</div>
+      <div style="display: flex; gap: 8px">
+        <a href="#" class="sm" style="flex: 1; display: flex; align-items: center; justify-content: center; background: #1F5F5B; color: #FFFFFF; text-decoration: none">عرض الملف والمواعيد</a>
+        <button class="sm" type="button" style="border: 1px solid #B9C9C6; background: #FFFFFF; color: #4A5A5E">غير مناسب</button>
+      </div>
+    </div>
+    <div class="card" style="padding: 14px; display: flex; flex-direction: column; gap: 10px">
+      <div style="display: flex; gap: 12px; align-items: center">
+        <div class="av">خ ع</div>
+        <div style="flex: 1"><div style="font-weight: 700; font-size: 16px">أ. خالد ع.</div><div class="muted" style="font-size: 13px">أخصائي نفسي · مرخص</div></div>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 6px"><span class="chip">القلق</span><span class="chip">اليقظة الذهنية</span></div>
+      <div style="font-size: 13px; line-height: 1.6; background: #FFF8F1; border-radius: 10px; padding: 8px 10px"><strong>لماذا اقترحناه:</strong> متخصص في تقنيات التهدئة، ومواعيد مسائية متاحة.</div>
+      <div style="display: flex; gap: 8px">
+        <a href="#" class="sm" style="flex: 1; display: flex; align-items: center; justify-content: center; border: 1px solid #1F5F5B; color: #1F5F5B; text-decoration: none">عرض الملف والمواعيد</a>
+        <button class="sm" type="button" style="border: 1px solid #B9C9C6; background: #FFFFFF; color: #4A5A5E">غير مناسب</button>
+      </div>
+    </div>
+    <div class="card" style="padding: 14px; display: flex; gap: 12px; align-items: center">
+      <div class="av">ن ح</div>
+      <div style="flex: 1"><div style="font-weight: 700; font-size: 16px">أ. نورة ح.</div><div class="muted" style="font-size: 13px">الضغط المهني · التكيف</div></div>
+      <a href="#" style="font-size: 14px; font-weight: 600; min-height: 44px; display: flex; align-items: center">عرض</a>
+    </div>
+    <div style="flex: 1"></div>
+    <a href="#" style="text-align: center; font-size: 15px; font-weight: 600; min-height: 44px; display: flex; align-items: center; justify-content: center">تصفح جميع الأخصائيين</a>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

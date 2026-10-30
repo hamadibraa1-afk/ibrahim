@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>العرض وسهولة الاستخدام</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}
+.ph{width:390px;height:844px;box-sizing:border-box;background:#FFF8F1;display:flex;flex-direction:column;gap:12px;padding:20px;overflow:hidden}
+.muted{color:#4A5A5E}
+.card{background:#FFFFFF;border-radius:22px;box-shadow:0 1px 0 #F1E6DA;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.btn{font:inherit;font-weight:600;font-size:16px;min-height:52px;border-radius:999px;border:0;padding:0 24px;cursor:pointer;background:#1F5F5B;color:#FFFFFF}
+.btn-ghost{background:#FFFFFF;color:#1F5F5B;border:1.5px solid #CFE2DE}
+.help{font:inherit;font-weight:600;font-size:14px;min-height:44px;padding:0 14px;border-radius:999px;border:1.5px solid #B3261E;color:#B3261E;background:#FFFFFF;cursor:pointer}
+.chip{font:inherit;font-size:14px;font-weight:600;min-height:44px;padding:0 16px;border-radius:999px;border:1.5px solid #E8DCCF;background:#FFFFFF;color:#1B2A2F;cursor:pointer}
+.chip-on{background:#E4F1EE;border-color:#1F5F5B;color:#163F3C}
+.lbl{font-size:14px;font-weight:700}
+.top{display:flex;justify-content:space-between;align-items:center}
+.back{font:inherit;font-size:14px;font-weight:600;min-height:44px;border:0;background:none;color:#1F5F5B;cursor:pointer;padding:0}
+.ta{font:inherit;font-size:15px;line-height:1.8;box-sizing:border-box;width:100%;border:1.5px solid #E8DCCF;border-radius:18px;padding:12px 14px;resize:none;background:#FFFFFF}
+.sw{width:46px;height:28px;border-radius:999px;background:#1F5F5B;position:relative;flex-shrink:0}
+.sw::after{content:'';position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#FFFFFF}
+.sw-off{background:#D9CFC4}.sw-off::after{left:auto;right:3px}
+.rowx{display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:44px}
+</style>
+</helmet>
+<div class="ph" dir="rtl">
+<div class="top"><button class="back" type="button">→ رجوع</button><button class="help" type="button">مساعدة فورية</button></div><div><h1 style="margin: 0; font-size: 24px; font-weight: 700">العرض وسهولة الاستخدام</h1></div><div class="card" style=""><div class="lbl">حجم الخط</div><div style="display: flex; align-items: center; gap: 12px"><span style="font-size: 14px">أ</span><div style="flex: 1; height: 8px; border-radius: 999px; background: #E8DCCF; position: relative"><div style="position: absolute; inset-inline-start: 0; width: 60%; height: 8px; border-radius: 999px; background: #1F5F5B"></div><div style="position: absolute; inset-inline-start: calc(60% - 12px); top: -8px; width: 24px; height: 24px; border-radius: 50%; background: #FFFFFF; border: 3px solid #1F5F5B; box-sizing: border-box"></div></div><span style="font-size: 22px; font-weight: 700">أ</span></div><div style="font-size: 17px; line-height: 1.8; background: #FFF8F1; border-radius: 14px; padding: 10px">هذا مثال على حجم النص.</div></div><div class="card" style=""><div class="lbl">المظهر</div><div style="display: flex; flex-wrap: wrap; gap: 8px"><button class="chip" type="button" aria-pressed="false">فاتح</button><button class="chip" type="button" aria-pressed="false">داكن</button><button class="chip chip-on" type="button" aria-pressed="true">حسب الجهاز</button></div></div><div class="card" style=""><div class="lbl">اللغة</div><div style="display: flex; flex-wrap: wrap; gap: 8px"><button class="chip chip-on" type="button" aria-pressed="true">العربية</button><button class="chip" type="button" aria-pressed="false">English</button></div></div><div class="card" style=""><div class="rowx"><div><div style="font-size: 15px; font-weight: 600">تقليل الحركة والمؤثرات</div></div><span class="sw" role="switch" aria-checked="true" aria-label="تقليل الحركة والمؤثرات"></span></div><div class="rowx"><div><div style="font-size: 15px; font-weight: 600">تباين أعلى</div></div><span class="sw sw-off" role="switch" aria-checked="false" aria-label="تباين أعلى"></span></div><div class="rowx"><div><div style="font-size: 15px; font-weight: 600">قراءة الرسائل بصوت مسموع</div></div><span class="sw sw-off" role="switch" aria-checked="false" aria-label="قراءة الرسائل بصوت مسموع"></span></div></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

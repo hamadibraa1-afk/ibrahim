@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>مراجعة الملخص</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.card{background:#FFFFFF;border:1px solid #DDE3E1;border-radius:16px}
+.btn{font:inherit;font-weight:600;font-size:16px;min-height:52px;border-radius:999px;border:0;padding:0 24px;cursor:pointer}
+.btn-primary{background:#1F5F5B;color:#FFFFFF}
+.help{font:inherit;font-weight:600;font-size:14px;min-height:44px;padding:0 14px;border-radius:999px;border:1.5px solid #B3261E;color:#B3261E;background:#FFFFFF;cursor:pointer}
+.muted{color:#4A5A5E}
+.edit{font:inherit;font-size:13px;font-weight:600;min-height:44px;min-width:44px;border:0;background:none;color:#1F5F5B;cursor:pointer;padding:0}
+.sec{padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+</style>
+</helmet>
+<div dir="rtl" style="width: 390px; height: 844px; box-sizing: border-box; background: #FFF8F1; display: flex; flex-direction: column; overflow: hidden">
+  <header style="display: flex; align-items: center; justify-content: space-between; height: 64px; padding: 0 20px">
+    <div style="font-weight: 700; font-size: 20px; color: #1F5F5B">طمأنينة</div>
+    <button class="help" type="button">مساعدة فورية</button>
+  </header>
+  <main style="flex: 1; display: flex; flex-direction: column; gap: 14px; padding: 0 20px 20px">
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <h1 style="margin: 0; font-size: 24px; font-weight: 700">هل فهمناك بشكل صحيح؟</h1>
+      <p class="muted" style="margin: 0; font-size: 15px; line-height: 1.7">هذا ملخص ما شاركته معنا. صحّح أي شيء غير دقيق قبل إرساله لفريق الرعاية.</p>
+    </div>
+    <div class="card" style="display: flex; flex-direction: column">
+      <div class="sec" style="border-bottom: 1px solid #EDF1F0">
+        <div style="display: flex; justify-content: space-between; align-items: center"><div style="font-weight: 600; font-size: 15px">ما الذي يضايقك</div><button class="edit" type="button">تعديل</button></div>
+        <div style="font-size: 14px; line-height: 1.75">تشعر بضغط كبير في العمل منذ نحو ثلاثة أشهر، ويصعب عليك النوم أغلب الليالي.</div>
+      </div>
+      <div class="sec" style="border-bottom: 1px solid #EDF1F0">
+        <div style="display: flex; justify-content: space-between; align-items: center"><div style="display: flex; gap: 8px; align-items: center"><div style="font-weight: 600; font-size: 15px">ما تأمل تحقيقه</div><span style="font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: #FFF3DC; color: #7A4B00">صحّحته أنت</span></div><button class="edit" type="button">تعديل</button></div>
+        <div style="font-size: 14px; line-height: 1.75">أن تتعلم طرقًا لتهدئة نفسك قبل النوم، وأن تعود لممارسة الرياضة.</div>
+      </div>
+      <div class="sec" style="border-bottom: 1px solid #EDF1F0">
+        <div style="display: flex; justify-content: space-between; align-items: center"><div style="font-weight: 600; font-size: 15px">ما يساعدك حاليًا</div><button class="edit" type="button">تعديل</button></div>
+        <div style="font-size: 14px; line-height: 1.75">الحديث مع أختك، والمشي في المساء.</div>
+      </div>
+      <div class="sec">
+        <div style="display: flex; justify-content: space-between; align-items: center"><div style="font-weight: 600; font-size: 15px">رعاية سابقة</div><button class="edit" type="button">تعديل</button></div>
+        <div style="font-size: 14px; line-height: 1.75">لم تراجع مختصًا نفسيًا من قبل.</div>
+      </div>
+    </div>
+    <button type="button" style="font: inherit; font-size: 15px; font-weight: 600; min-height: 48px; border: 1.5px dashed #B9C9C6; border-radius: 12px; background: #FFFFFF; color: #1F5F5B; cursor: pointer">أضف شيئًا لم نذكره</button>
+    <div style="display: flex; gap: 10px; align-items: flex-start; background: #E3EFED; border-radius: 12px; padding: 12px 14px">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1F5F5B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0; margin-top: 2px"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+      <div style="font-size: 14px; line-height: 1.6; color: #163F3C">سيراجع مختص ملفك خلال 24 ساعة، ثم نقترح عليك أخصائيين مناسبين.</div>
+    </div>
+    <div style="flex: 1"></div>
+    <button class="btn btn-primary" type="button">إرسال إلى فريق الرعاية</button>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

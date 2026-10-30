@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>أوقات التوفر</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.card{background:#FFFFFF;border:1px solid #DDE3E1;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.btn{font:inherit;font-weight:600;font-size:14px;min-height:44px;border-radius:10px;border:0;padding:0 16px;cursor:pointer;white-space:nowrap}
+.btn-primary{background:#1F5F5B;color:#FFFFFF}
+.btn-ghost{background:#FFFFFF;color:#1F5F5B;border:1px solid #B9C9C6}
+.muted{color:#4A5A5E}
+.day{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid #EDF1F0}
+.rng{font-size:13px;font-weight:600;padding:6px 12px;border-radius:999px;background:#E3EFED;color:#163F3C}
+.lnk{font:inherit;font-size:13px;font-weight:600;min-height:36px;border:0;background:none;color:#1F5F5B;cursor:pointer}
+.field{font:inherit;font-size:14px;height:44px;box-sizing:border-box;width:100%;border:1px solid #B9C9C6;border-radius:10px;padding:0 10px;background:#FFFFFF}
+</style>
+</helmet>
+<div dir="rtl" style="min-height: 900px; background: #F6F7F5; display: flex; flex-wrap: wrap">
+  <div style="flex: 1 1 220px; max-width: 260px"><dc-import name="StaffNav" role="therapist" active="availability" hint-size="100%,900px"></dc-import></div>
+  <div style="flex: 999 1 560px; min-width: 0; padding: 20px 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px">
+    <h1 style="margin: 0; font-size: 24px; font-weight: 700">أوقات التوفر</h1>
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+      <section class="card" style="flex: 3 1 480px; min-width: 0; gap: 0">
+        <h2 style="margin: 0 0 6px; font-size: 16px; font-weight: 700">الأسبوع المعتاد</h2>
+        <div class="day"><label style="display: flex; gap: 8px; align-items: center; width: 110px; font-weight: 600"><input type="checkbox" checked style="width: 18px; height: 18px; accent-color: #1F5F5B">الأحد</label><span class="rng">10:00 – 1:00</span><span class="rng">4:00 – 7:00</span><button class="lnk" type="button">إضافة فترة</button></div>
+        <div class="day"><label style="display: flex; gap: 8px; align-items: center; width: 110px; font-weight: 600"><input type="checkbox" checked style="width: 18px; height: 18px; accent-color: #1F5F5B">الإثنين</label><span class="rng">11:00 – 6:00</span><button class="lnk" type="button">إضافة فترة</button></div>
+        <div class="day"><label style="display: flex; gap: 8px; align-items: center; width: 110px; font-weight: 600"><input type="checkbox" checked style="width: 18px; height: 18px; accent-color: #1F5F5B">الثلاثاء</label><span class="rng">10:00 – 2:00</span><button class="lnk" type="button">إضافة فترة</button></div>
+        <div class="day"><label style="display: flex; gap: 8px; align-items: center; width: 110px; font-weight: 600"><input type="checkbox" checked style="width: 18px; height: 18px; accent-color: #1F5F5B">الأربعاء</label><span class="rng">2:00 – 8:00</span><button class="lnk" type="button">إضافة فترة</button></div>
+        <div class="day"><label style="display: flex; gap: 8px; align-items: center; width: 110px; font-weight: 600"><input type="checkbox" checked style="width: 18px; height: 18px; accent-color: #1F5F5B">الخميس</label><span class="rng">10:00 – 1:00</span><button class="lnk" type="button">إضافة فترة</button></div>
+        <div class="day" style="border-bottom: 0"><label style="display: flex; gap: 8px; align-items: center; width: 110px; font-weight: 600" class="muted"><input type="checkbox" style="width: 18px; height: 18px; accent-color: #1F5F5B">الجمعة والسبت</label><span class="muted" style="font-size: 13px">غير متاح</span></div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; padding-top: 12px">
+          <div style="display: flex; flex-direction: column; gap: 6px"><label for="d" style="font-size: 14px; font-weight: 600">مدة الجلسة</label><select id="d" class="field"><option>50 دقيقة</option></select></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><label for="b" style="font-size: 14px; font-weight: 600">فاصل بين الجلسات</label><select id="b" class="field"><option>10 دقائق</option></select></div>
+        </div>
+      </section>
+      <section class="card" style="flex: 2 1 320px; min-width: 0">
+        <h2 style="margin: 0; font-size: 16px; font-weight: 700">استثناءات</h2>
+        <div style="display: flex; justify-content: space-between; font-size: 14px; padding: 8px 0; border-bottom: 1px solid #EDF1F0"><span>2 – 3 نوفمبر · إجازة</span><button class="lnk" type="button" style="color: #9B2219">حذف</button></div>
+        <button class="btn btn-ghost" type="button">إضافة استثناء</button>
+        <h2 style="margin: 8px 0 0; font-size: 16px; font-weight: 700">رابط الجلسات</h2>
+        <label for="u" style="font-size: 13px" class="muted">رابط أداة الاجتماعات التي تستخدمها (يظهر للمريض قبل الجلسة بعشر دقائق)</label>
+        <input id="u" class="field" dir="ltr" value="https://[meeting-tool]/room">
+        <div style="background: #FFF3DC; border-radius: 10px; padding: 10px 12px; font-size: 13px; color: #5C3900">3 مواعيد محجوزة تقع ضمن فترات قمت بإزالتها ولن تُلغى تلقائيًا.</div>
+      </section>
+    </div>
+    <div style="display: flex; justify-content: flex-end"><button class="btn btn-primary" type="button">حفظ وتحديث المواعيد لـ 8 أسابيع</button></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

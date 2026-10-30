@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>طلب انضمام: الترخيص</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.card{background:#FFFFFF;border:1px solid #DDE3E1;border-radius:16px;padding:28px;display:flex;flex-direction:column;gap:16px}
+.btn{font:inherit;font-weight:600;font-size:15px;min-height:48px;border-radius:10px;border:0;padding:0 20px;cursor:pointer}
+.btn-primary{background:#1F5F5B;color:#FFFFFF}
+.btn-ghost{background:#FFFFFF;color:#1F5F5B;border:1px solid #B9C9C6}
+.muted{color:#4A5A5E}
+.lbl{font-size:14px;font-weight:600}
+.field{font:inherit;font-size:15px;height:48px;box-sizing:border-box;width:100%;border:1px solid #B9C9C6;border-radius:10px;padding:0 12px;background:#FFFFFF;color:#1B2A2F}
+.st{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;font-size:13px;font-weight:600;color:#4A5A5E}
+.dot{width:28px;height:28px;border-radius:50%;border:2px solid #B9C9C6;background:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+.chk{display:flex;gap:8px;align-items:center;min-height:40px;padding:0 12px;border:1px solid #DDE3E1;border-radius:10px;font-size:14px}
+.chk input{width:18px;height:18px;accent-color:#1F5F5B}
+</style>
+</helmet>
+<div dir="rtl" style="min-height: 900px; background: #F6F7F5; padding: 32px 28px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 24px">
+  <div style="width: 100%; max-width: 820px; font-weight: 700; font-size: 22px; color: #1F5F5B">طمأنينة <span class="muted" style="font-size: 14px">للفريق</span></div>
+  <ol aria-label="خطوات الطلب" style="list-style: none; margin: 0; padding: 0; width: 100%; max-width: 820px; display: flex; gap: 8px">
+    <li class="st"><span class="dot" style="background: #E3EFED; border-color: #1F5F5B; color: #1F5F5B">✓</span>الحساب</li>
+    <li class="st"><span class="dot" style="background: #E3EFED; border-color: #1F5F5B; color: #1F5F5B">✓</span>البيانات</li>
+    <li class="st" style="color: #163F3C"><span class="dot" style="background: #1F5F5B; border-color: #1F5F5B; color: #FFFFFF">3</span>الترخيص</li>
+    <li class="st"><span class="dot">4</span>المستندات</li>
+    <li class="st"><span class="dot">5</span>المراجعة</li>
+  </ol>
+  <section class="card" style="width: 100%; max-width: 820px; box-sizing: border-box">
+    <h1 style="margin: 0; font-size: 22px; font-weight: 700">الترخيص والتخصصات</h1>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px">
+      <div style="display: flex; flex-direction: column; gap: 6px"><label class="lbl" for="a">جهة الترخيص</label><select class="field" id="a"><option>[الهيئة الصحية المختصة]</option></select></div>
+      <div style="display: flex; flex-direction: column; gap: 6px"><label class="lbl" for="n">رقم الترخيص</label><input class="field" id="n" dir="ltr" value=""></div>
+      <div style="display: flex; flex-direction: column; gap: 6px"><label class="lbl" for="x">تاريخ الانتهاء</label><input class="field" id="x" type="date" value="2028-03-14"></div>
+    </div>
+    <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px">
+      <legend class="lbl" style="margin-bottom: 8px">التخصصات</legend>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px">
+        <label class="chk"><input type="checkbox" checked>القلق</label><label class="chk"><input type="checkbox">الاكتئاب</label><label class="chk"><input type="checkbox" checked>مشكلات النوم</label><label class="chk"><input type="checkbox">الصدمات</label><label class="chk"><input type="checkbox" checked>الضغط المهني</label><label class="chk"><input type="checkbox">العلاقات</label>
+      </div>
+    </fieldset>
+    <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px">
+      <legend class="lbl" style="margin-bottom: 8px">المدارس العلاجية</legend>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px"><label class="chk"><input type="checkbox" checked>العلاج المعرفي السلوكي</label><label class="chk"><input type="checkbox">العلاج الجدلي السلوكي</label><label class="chk"><input type="checkbox" checked>اليقظة الذهنية</label><label class="chk"><input type="checkbox">العلاج بالقبول والالتزام</label></div>
+    </fieldset>
+    <div style="display: flex; flex-direction: column; gap: 6px; max-width: 240px"><label class="lbl" for="c">الحد الأقصى للمرضى</label><input class="field" id="c" type="number" value="25"></div>
+    <div style="display: flex; justify-content: space-between"><button class="btn btn-ghost" type="button">السابق</button><button class="btn btn-primary" type="button">حفظ والمتابعة</button></div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

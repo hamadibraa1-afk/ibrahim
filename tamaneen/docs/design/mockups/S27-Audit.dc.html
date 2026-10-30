@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>سجل التدقيق</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.card{background:#FFFFFF;border:1px solid #DDE3E1;border-radius:14px}
+.btn{font:inherit;font-weight:600;font-size:14px;min-height:44px;border-radius:10px;border:0;padding:0 16px;cursor:pointer;white-space:nowrap}
+.btn-primary{background:#1F5F5B;color:#FFFFFF}
+.btn-ghost{background:#FFFFFF;color:#1F5F5B;border:1px solid #B9C9C6}
+.muted{color:#4A5A5E}
+.lbl{font-size:12px;font-weight:600;color:#4A5A5E}
+.field{font:inherit;font-size:14px;height:44px;box-sizing:border-box;width:100%;border:1px solid #B9C9C6;border-radius:10px;padding:0 10px;background:#FFFFFF}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:right;font-size:12px;font-weight:600;color:#4A5A5E;padding:10px 12px;border-bottom:1px solid #DDE3E1;white-space:nowrap}
+.tbl td{padding:9px 12px;border-bottom:1px solid #EDF1F0;white-space:nowrap}
+.mono{font-family:ui-monospace,Menlo,monospace;font-size:12px}
+</style>
+</helmet>
+<div dir="rtl" style="min-height: 900px; background: #F6F7F5; display: flex; flex-wrap: wrap">
+  <div style="flex: 1 1 220px; max-width: 260px"><dc-import name="StaffNav" role="admin" active="audit" hint-size="100%,900px"></dc-import></div>
+  <div style="flex: 999 1 560px; min-width: 0; padding: 20px 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px">
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px"><h1 style="margin: 0; font-size: 24px; font-weight: 700">سجل التدقيق</h1><span style="font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: #E6F2EA; color: #22533A">سجل غير قابل للتعديل · آخر بصمة اليوم 3:00 ص</span></div>
+    <section class="card" style="padding: 14px; display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; align-items: end">
+      <div style="display: flex; flex-direction: column; gap: 4px"><label class="lbl" for="p">المريض</label><input class="field" id="p" value="P-7Q4K-82XM"></div>
+      <div style="display: flex; flex-direction: column; gap: 4px"><label class="lbl" for="u">المستخدم</label><input class="field" id="u" value=""></div>
+      <div style="display: flex; flex-direction: column; gap: 4px"><label class="lbl" for="a">الإجراء</label><select class="field" id="a"><option>الكل</option></select></div>
+      <div style="display: flex; flex-direction: column; gap: 4px"><label class="lbl" for="d">الفترة (حتى 90 يومًا)</label><select class="field" id="d"><option>آخر 7 أيام</option></select></div>
+      <button class="btn btn-primary" type="button">بحث</button>
+    </section>
+    <div class="card" style="overflow-x: auto">
+      <table class="tbl">
+        <thead><tr><th>الوقت</th><th>المنفّذ</th><th>الدور</th><th>الإجراء</th><th>المورد</th><th>النتيجة</th><th>السبب</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">2026-10-19 09:12</td><td>T-SARA-M</td><td>أخصائي</td><td>قراءة</td><td>الملف السريري</td><td style="color: #22533A; font-weight: 600">نجاح</td><td></td></tr>
+          <tr><td class="mono">2026-10-18 15:40</td><td>S-FAHAD-R</td><td>مشرف</td><td>قرار فرز</td><td>حالة فرز · اعتماد</td><td style="color: #22533A; font-weight: 600">نجاح</td><td></td></tr>
+          <tr><td class="mono">2026-10-18 14:05</td><td>النظام</td><td>نظام</td><td>قراءة ذكاء اصطناعي</td><td>محادثة الاستقبال</td><td style="color: #22533A; font-weight: 600">نجاح</td><td>إعداد الملخص</td></tr>
+          <tr><td class="mono">2026-10-18 11:22</td><td>T-OLD-X</td><td>أخصائي</td><td>قراءة</td><td>الملف السريري</td><td style="color: #9B2219; font-weight: 600">مرفوض</td><td>لا توجد رعاية فعّالة</td></tr>
+          <tr><td class="mono">2026-10-18 10:31</td><td>S-LAILA-A</td><td>مسؤول سريري</td><td>فك تشفير</td><td>بيانات التواصل</td><td style="color: #22533A; font-weight: 600">نجاح</td><td>حدث طوارئ CE-1039</td></tr>
+          <tr><td class="mono">2026-10-17 20:10</td><td>P-7Q4K-82XM</td><td>مريض</td><td>موافقة</td><td>المساعدة بالذكاء الاصطناعي</td><td style="color: #22533A; font-weight: 600">نجاح</td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; align-items: center"><span class="muted" style="font-size: 13px">البحث والتصدير يتطلبان تحققًا إضافيًا، ويُسجَّلان هنا أيضًا.</span><button class="btn btn-ghost" type="button">تصدير موقّع</button></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

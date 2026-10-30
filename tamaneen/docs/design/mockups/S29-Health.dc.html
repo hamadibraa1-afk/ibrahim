@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>صحة النظام</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.card{background:#FFFFFF;border:1px solid #DDE3E1;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:6px}
+.btn{font:inherit;font-weight:600;font-size:14px;min-height:44px;border-radius:10px;border:0;padding:0 16px;cursor:pointer;white-space:nowrap}
+.btn-ghost{background:#FFFFFF;color:#1F5F5B;border:1px solid #B9C9C6}
+.muted{color:#4A5A5E}
+.n{font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px}
+.dot{width:10px;height:10px;border-radius:50%;background:#2E7D4F;flex-shrink:0}
+.warn{background:#C98A1B}
+.m{font-size:13px;color:#4A5A5E}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl td{padding:8px 12px;border-bottom:1px solid #EDF1F0}
+</style>
+</helmet>
+<div dir="rtl" style="min-height: 900px; background: #F6F7F5; display: flex; flex-wrap: wrap">
+  <div style="flex: 1 1 220px; max-width: 260px"><dc-import name="StaffNav" role="admin" active="health" hint-size="100%,900px"></dc-import></div>
+  <div style="flex: 999 1 560px; min-width: 0; padding: 20px 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px">
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px"><h1 style="margin: 0; font-size: 24px; font-weight: 700">صحة النظام</h1><button class="btn btn-ghost" type="button">تشغيل فحص شامل</button></div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px">
+      <div class="card" style="border: 1.5px solid #1F5F5B"><div class="n"><span class="dot"></span>بوابة الطوارئ</div><div class="m">آخر رسالة اختبار قبل 20 ثانية · 180 م.ث</div></div>
+      <div class="card"><div class="n"><span class="dot"></span>مصنّف المخاطر</div><div class="m">متوسط 95 م.ث · لا مهلات اليوم</div></div>
+      <div class="card"><div class="n"><span class="dot"></span>الاتصال والرسائل (أساسي)</div><div class="m">آخر تنبيه وصل خلال 11 ثانية</div></div>
+      <div class="card"><div class="n"><span class="dot"></span>قناة التنبيه الاحتياطية</div><div class="m">اختبار اليوم 8:00 ص ناجح</div></div>
+      <div class="card"><div class="n"><span class="dot warn"></span>نموذج الذكاء الاصطناعي</div><div class="m">بطء: متوسط 9.4 ث · 2 مهلة خلال ساعة · القاطع مغلق</div></div>
+      <div class="card"><div class="n"><span class="dot"></span>إخفاء الهوية</div><div class="m">يعمل · 0 أخطاء</div></div>
+      <div class="card"><div class="n"><span class="dot"></span>قاعدة البيانات</div><div class="m">زمن الاستجابة 12 م.ث · آخر نسخة احتياطية 2:00 ص</div></div>
+      <div class="card"><div class="n"><span class="dot"></span>صندوق الإرسال</div><div class="m">0 رسائل طوارئ معلّقة · 4 رسائل عادية</div></div>
+    </div>
+    <section class="card" style="gap: 10px">
+      <h2 style="margin: 0; font-size: 16px; font-weight: 700">آخر الأحداث التقنية</h2>
+      <table class="tbl"><tbody>
+        <tr><td style="width: 140px; font-weight: 600">اليوم 10:05</td><td>بطء في استجابة نموذج الذكاء الاصطناعي. استخدم 3 مرضى نموذج الاستمارة البديل.</td></tr>
+        <tr><td style="font-weight: 600">أمس 3:00 ص</td><td>حُفظت بصمة سجل التدقيق في التخزين غير القابل للتعديل.</td></tr>
+        <tr><td style="font-weight: 600">17 أكتوبر</td><td>فشل مؤقت في مزود الرسائل لمدة 40 ثانية، ونجح التحويل للقناة الاحتياطية.</td></tr>
+      </tbody></table>
+    </section>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

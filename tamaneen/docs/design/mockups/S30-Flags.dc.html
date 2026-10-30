@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>مفاتيح الإيقاف</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.card{background:#FFFFFF;border:1px solid #DDE3E1;border-radius:14px}
+.muted{color:#4A5A5E}
+.row{display:flex;flex-wrap:wrap;gap:14px;align-items:center;padding:16px 18px;border-bottom:1px solid #EDF1F0}
+.sw{width:24px;height:24px;accent-color:#1F5F5B;flex-shrink:0}
+.who{font-size:12px;color:#4A5A5E;min-width:180px}
+</style>
+</helmet>
+<div dir="rtl" style="min-height: 900px; background: #F6F7F5; display: flex; flex-wrap: wrap">
+  <div style="flex: 1 1 220px; max-width: 260px"><dc-import name="StaffNav" role="admin" active="flags" hint-size="100%,900px"></dc-import></div>
+  <div style="flex: 999 1 560px; min-width: 0; padding: 20px 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px">
+    <h1 style="margin: 0; font-size: 24px; font-weight: 700">مفاتيح الإيقاف</h1>
+    <p class="muted" style="margin: 0; font-size: 14px; line-height: 1.7">لإيقاف جزء من الخدمة فورًا عند حدوث مشكلة. كل تغيير يحتاج سببًا ويُسجّل. بوابة الطوارئ لا يمكن إيقافها من هنا.</p>
+    <div class="card">
+      <label class="row"><input class="sw" type="checkbox" checked><span style="flex: 1 1 280px"><span style="display: block; font-weight: 700">محادثة الاستقبال بالذكاء الاصطناعي</span><span class="muted" style="font-size: 13px">عند الإيقاف: يتحول الجميع إلى الاستمارة الثابتة بنفس الأسئلة</span></span><span class="who">مفعّل · منذ 1 أكتوبر</span></label>
+      <label class="row"><input class="sw" type="checkbox" checked><span style="flex: 1 1 280px"><span style="display: block; font-weight: 700">ردود متابعة الواجبات بالذكاء الاصطناعي</span><span class="muted" style="font-size: 13px">عند الإيقاف: رسائل ثابتة معتمدة فقط</span></span><span class="who">مفعّل · منذ 1 أكتوبر</span></label>
+      <label class="row"><input class="sw" type="checkbox" checked><span style="flex: 1 1 280px"><span style="display: block; font-weight: 700">التسجيل الجديد</span><span class="muted" style="font-size: 13px">يتوقف تلقائيًا عند وجود فجوة في المناوبة</span></span><span class="who">مفعّل · آليًا</span></label>
+      <label class="row"><input class="sw" type="checkbox" checked><span style="flex: 1 1 280px"><span style="display: block; font-weight: 700">اقتراحات المطابقة</span><span class="muted" style="font-size: 13px">عند الإيقاف: يختار المشرف الأخصائيين يدويًا</span></span><span class="who">مفعّل</span></label>
+      <label class="row" style="border-bottom: 0"><input class="sw" type="checkbox"><span style="flex: 1 1 280px"><span style="display: block; font-weight: 700">وضع الصيانة</span><span class="muted" style="font-size: 13px">يعرض صفحة الصيانة مع أرقام الطوارئ للجميع</span></span><span class="who">معطّل</span></label>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 6px; max-width: 560px"><label for="r" style="font-size: 14px; font-weight: 600">سبب التغيير</label><input id="r" style="font: inherit; font-size: 14px; height: 44px; box-sizing: border-box; border: 1px solid #B9C9C6; border-radius: 10px; padding: 0 12px"></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

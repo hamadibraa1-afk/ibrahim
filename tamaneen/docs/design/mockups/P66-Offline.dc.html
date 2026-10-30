@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>الاتصال ضعيف</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}
+.ph{width:390px;height:844px;box-sizing:border-box;background:#FFF8F1;display:flex;flex-direction:column;gap:12px;padding:20px;overflow:hidden}
+.muted{color:#4A5A5E}
+.card{background:#FFFFFF;border-radius:22px;box-shadow:0 1px 0 #F1E6DA;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.btn{font:inherit;font-weight:600;font-size:16px;min-height:52px;border-radius:999px;border:0;padding:0 24px;cursor:pointer;background:#1F5F5B;color:#FFFFFF}
+.btn-ghost{background:#FFFFFF;color:#1F5F5B;border:1.5px solid #CFE2DE}
+.help{font:inherit;font-weight:600;font-size:14px;min-height:44px;padding:0 14px;border-radius:999px;border:1.5px solid #B3261E;color:#B3261E;background:#FFFFFF;cursor:pointer}
+.chip{font:inherit;font-size:14px;font-weight:600;min-height:44px;padding:0 16px;border-radius:999px;border:1.5px solid #E8DCCF;background:#FFFFFF;color:#1B2A2F;cursor:pointer}
+.chip-on{background:#E4F1EE;border-color:#1F5F5B;color:#163F3C}
+.lbl{font-size:14px;font-weight:700}
+.top{display:flex;justify-content:space-between;align-items:center}
+.back{font:inherit;font-size:14px;font-weight:600;min-height:44px;border:0;background:none;color:#1F5F5B;cursor:pointer;padding:0}
+.ta{font:inherit;font-size:15px;line-height:1.8;box-sizing:border-box;width:100%;border:1.5px solid #E8DCCF;border-radius:18px;padding:12px 14px;resize:none;background:#FFFFFF}
+.sw{width:46px;height:28px;border-radius:999px;background:#1F5F5B;position:relative;flex-shrink:0}
+.sw::after{content:'';position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#FFFFFF}
+.sw-off{background:#D9CFC4}.sw-off::after{left:auto;right:3px}
+.rowx{display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:44px}
+</style>
+</helmet>
+<div class="ph" dir="rtl">
+<div style="background: #FFF0DD; border-radius: 14px; padding: 8px 12px; font-size: 13px; font-weight: 600; color: #7A4B00; display: flex; justify-content: space-between"><span>الاتصال ضعيف · نعيد المحاولة تلقائيًا</span><span>⟳</span></div><div class="top"><button class="back" type="button">→ المساعد</button><button class="help" type="button">مساعدة فورية</button></div><div style="flex: 1; display: flex; flex-direction: column; gap: 10px; justify-content: flex-end"><div style="align-self: flex-end; background: #E4F1EE; border-radius: 18px; padding: 10px 14px; font-size: 14px; max-width: 80%">اليوم كان صعب شوي<div style="font-size: 11px; color: #1F5F5B; margin-top: 4px">✓✓ وصلت</div></div><div style="align-self: flex-end; background: #F3EADF; border-radius: 18px; padding: 10px 14px; font-size: 14px; max-width: 80%">وما أدري ليش<div style="font-size: 11px; color: #9A5B13; margin-top: 4px">◷ بانتظار الإرسال · محفوظة على جوالك</div></div></div><div style="background: #FDECEA; border-radius: 18px; padding: 12px 14px; font-size: 14px; line-height: 1.7; color: #7A1C15">إن كنت في خطر والإنترنت ضعيف: <b>اتصل مباشرة بـ [رقم الطوارئ]</b>. الاتصال لا يحتاج إنترنت.</div><button class="help" type="button" style="min-height: 52px; font-size: 16px">📞 اتصال بالطوارئ</button>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>بناء خطة الأمان</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.card{background:#FFFFFF;border:1px solid #DDE3E1;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.btn{font:inherit;font-weight:600;font-size:14px;min-height:44px;border-radius:10px;border:0;padding:0 16px;cursor:pointer;white-space:nowrap}
+.btn-primary{background:#1F5F5B;color:#FFFFFF}
+.btn-ghost{background:#FFFFFF;color:#1F5F5B;border:1px solid #B9C9C6}
+.muted{color:#4A5A5E}
+.st{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid #EDF1F0}
+.n{width:28px;height:28px;border-radius:50%;background:#E3EFED;color:#163F3C;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.in{font:inherit;font-size:14px;line-height:1.7;width:100%;box-sizing:border-box;border:1px solid #B9C9C6;border-radius:10px;padding:6px 10px;resize:vertical}
+</style>
+</helmet>
+<div dir="rtl" style="min-height: 900px; background: #F6F7F5; display: flex; flex-wrap: wrap">
+  <div style="flex: 1 1 220px; max-width: 260px"><dc-import name="StaffNav" role="therapist" active="patients" hint-size="100%,900px"></dc-import></div>
+  <div style="flex: 999 1 560px; min-width: 0; padding: 20px 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px">
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px"><div><div class="muted" style="font-size: 13px">P-3HX9-14QA · تُكتب مع المريض وبكلماته</div><h1 style="margin: 0; font-size: 24px; font-weight: 700">خطة الأمان</h1></div><div style="display: flex; gap: 8px"><button class="btn btn-ghost" type="button">معاينة كما يراها المريض</button><button class="btn btn-primary" type="button">حفظ وإرسالها للمريض</button></div></div>
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+      <section class="card" style="flex: 3 1 520px; min-width: 0; gap: 0">
+        <div class="st"><span class="n">1</span><div style="flex: 1; display: flex; flex-direction: column; gap: 4px"><label for="a" style="font-weight: 700; font-size: 14px">علامات الإنذار</label><textarea id="a" class="in" style="height: 52px">أسهر كثيرًا، وأنعزل في غرفتي، وأفكر أني عبء.</textarea></div></div>
+        <div class="st"><span class="n">2</span><div style="flex: 1; display: flex; flex-direction: column; gap: 4px"><label for="b" style="font-weight: 700; font-size: 14px">طرق التهدئة الذاتية</label><textarea id="b" class="in" style="height: 52px">المشي 10 دقائق، والتنفس 4-4-6، والاستحمام بماء دافئ.</textarea></div></div>
+        <div class="st"><span class="n">3</span><div style="flex: 1; display: flex; flex-direction: column; gap: 4px"><label for="c" style="font-weight: 700; font-size: 14px">أماكن وأشخاص للتشتيت</label><textarea id="c" class="in" style="height: 40px">بيت أختي، المقهى القريب.</textarea></div></div>
+        <div class="st"><span class="n">4</span><div style="flex: 1; display: flex; flex-direction: column; gap: 4px"><span style="font-weight: 700; font-size: 14px">من يطلب منه المساعدة</span><div style="font-size: 14px">أختي · صديقي خالد <a href="#" style="font-weight: 600; margin-right: 8px">إضافة شخص</a></div></div></div>
+        <div class="st"><span class="n">5</span><div style="flex: 1; display: flex; flex-direction: column; gap: 4px"><span style="font-weight: 700; font-size: 14px">المختصون والطوارئ</span><div class="muted" style="font-size: 13px">تُضاف تلقائيًا: أخصائيتك، خط الدعم، رقم الطوارئ المحلي</div></div></div>
+        <div class="st"><span class="n">6</span><div style="flex: 1; display: flex; flex-direction: column; gap: 4px"><label for="d" style="font-weight: 700; font-size: 14px">جعل المكان آمنًا</label><textarea id="d" class="in" style="height: 40px">يعطي الأدوية الزائدة لأخته تحتفظ بها.</textarea></div></div>
+        <div class="st" style="border-bottom: 0"><span class="n" style="background: #1F5F5B; color: #FFFFFF">♥</span><div style="flex: 1; display: flex; flex-direction: column; gap: 4px"><label for="e" style="font-weight: 700; font-size: 14px">سبب للاستمرار</label><textarea id="e" class="in" style="height: 40px">ابنة أختي الصغيرة، وحلمي أن أسافر.</textarea></div></div>
+      </section>
+      <aside class="card" style="flex: 2 1 300px; min-width: 0">
+        <h2 style="margin: 0; font-size: 15px; font-weight: 700">إرشادات</h2>
+        <div style="font-size: 13px; line-height: 1.8">اكتبها مع المريض أثناء الجلسة أو المكالمة، بكلماته هو. تُحفظ على جهازه وتعمل بلا إنترنت، وتظهر في الرئيسية وبعد أي أزمة.</div>
+        <div style="font-size: 13px" class="muted">الإصدار 2 · آخر تعديل 18 أكتوبر · أ. سارة م.</div>
+        <a href="#" style="font-size: 13px; font-weight: 600">الإصدارات السابقة</a>
+      </aside>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

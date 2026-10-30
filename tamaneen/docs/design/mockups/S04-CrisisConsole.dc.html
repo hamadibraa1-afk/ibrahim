@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>غرفة الطوارئ</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.card{background:#FFFFFF;border:1px solid #DDE3E1;border-radius:14px}
+.btn{font:inherit;font-weight:600;font-size:14px;min-height:44px;border-radius:10px;border:0;padding:0 16px;cursor:pointer;white-space:nowrap}
+.btn-ghost{background:#FFFFFF;color:#1F5F5B;border:1px solid #B9C9C6}
+.muted{color:#4A5A5E}
+.ok{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;padding:4px 10px;border-radius:999px;background:#E6F2EA;color:#22533A}
+.ev{display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-bottom:1px solid #EDF1F0;text-decoration:none;color:#1B2A2F}
+.dot{width:8px;height:8px;border-radius:50%;background:#2E7D4F}
+.tl{display:flex;gap:12px;align-items:flex-start;font-size:14px}
+</style>
+</helmet>
+<div dir="rtl" style="min-height: 900px; background: #F6F7F5; display: flex; flex-direction: column">
+  <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; padding: 14px 28px; background: #FFFFFF; border-bottom: 1px solid #DDE3E1">
+    <h1 style="margin: 0; font-size: 20px; font-weight: 700">غرفة الطوارئ</h1>
+    <div style="display: flex; flex-wrap: wrap; gap: 8px">
+      <span class="ok"><span class="dot"></span>بوابة الأمان تعمل</span>
+      <span class="ok"><span class="dot"></span>المصنّف يعمل</span>
+      <span class="ok"><span class="dot"></span>الاتصال والرسائل تعمل</span>
+      <span style="font-size: 13px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: #E3EFED; color: #163F3C">المناوب: أنت · الاحتياطي: د. فهد ر.</span>
+    </div>
+  </div>
+  <div style="display: flex; flex-wrap: wrap; flex: 1">
+    <aside style="flex: 1 1 280px; max-width: 320px; background: #FFFFFF; border-left: 1px solid #DDE3E1; box-sizing: border-box">
+      <div style="padding: 16px 14px 8px; font-weight: 700; font-size: 16px">الأحداث المفتوحة · 2</div>
+      <a class="ev" href="#" style="background: #FBEAE8; border-right: 4px solid #B3261E"><div style="display: flex; justify-content: space-between; align-items: center"><span style="font-weight: 700">CE-1042 · حرج</span><span style="font-weight: 700; color: #B3261E; font-size: 18px; font-variant-numeric: tabular-nums">01:24</span></div><div class="muted" style="font-size: 12px">P-9KD2-07LM · محادثة الاستقبال · لم يُقَرّ</div></a>
+      <a class="ev" href="#"><div style="display: flex; justify-content: space-between; align-items: center"><span style="font-weight: 700">CE-1041 · عالٍ</span><span style="font-weight: 600; color: #22533A; font-size: 13px">قيد التواصل</span></div><div class="muted" style="font-size: 12px">P-3HX9-14QA · متابعة واجب · د. فهد ر.</div></a>
+    </aside>
+    <div style="flex: 999 1 560px; min-width: 0; padding: 22px 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+      <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between">
+        <div style="display: flex; flex-direction: column; gap: 2px">
+          <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center"><h2 style="margin: 0; font-size: 22px; font-weight: 700">CE-1042</h2><span style="font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: #B3261E; color: #FFFFFF">المستوى 4 · حرج</span></div>
+          <div class="muted" style="font-size: 14px">القاعدة CR-1 (نية مع خطة) · حزمة القواعد ar-1.4 · بدأ 10:31:05</div>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-end"><span class="muted" style="font-size: 12px; font-weight: 600">مهلة الإقرار</span><span style="font-size: 30px; font-weight: 700; color: #B3261E; font-variant-numeric: tabular-nums">01:24</span></div>
+      </div>
+      <button class="btn" type="button" style="background: #B3261E; color: #FFFFFF; min-height: 56px; font-size: 17px">إقرار وتولي الحالة</button>
+      <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+        <section class="card" style="flex: 1 1 360px; min-width: 0; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+          <h3 style="margin: 0; font-size: 16px; font-weight: 700">ما كتبه المريض</h3>
+          <div style="background: #F6F7F5; border-radius: 10px; padding: 12px; font-size: 14px; line-height: 1.8">[مقتطف مشفّر يظهر هنا للمشرف فقط بعد فتح الحدث]</div>
+          <h3 style="margin: 0; font-size: 16px; font-weight: 700">بيانات التواصل والموقع</h3>
+          <div style="display: flex; flex-direction: column; gap: 6px; background: #F6F7F5; border-radius: 10px; padding: 12px">
+            <div style="font-size: 14px">الجوال: ••• ••• ••21 · جهة طوارئ: مسجلة · الموقع: موافَق عليه</div>
+            <button class="btn btn-ghost" type="button" style="align-self: flex-start">إظهار البيانات (تحقق إضافي)</button>
+            <div class="muted" style="font-size: 12px">يُسجَّل الإظهار في سجل التدقيق، ويُخفى تلقائيًا بعد 10 دقائق.</div>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+            <button class="btn btn-ghost" type="button">الاتصال بالمريض</button>
+            <button class="btn btn-ghost" type="button">تم التواصل</button>
+            <button class="btn" type="button" style="background: #FFFFFF; color: #B3261E; border: 1px solid #E8B4AE">إجراء الطوارئ المحلي</button>
+            <button class="btn btn-ghost" type="button">إضافة ملاحظة</button>
+            <button class="btn btn-ghost" type="button">تسليم لمناوب آخر</button>
+            <button class="btn btn-ghost" type="button" style="color: #4A5A5E">إغلاق مع النتيجة</button>
+          </div>
+        </section>
+        <section class="card" style="flex: 1 1 320px; min-width: 0; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+          <h3 style="margin: 0; font-size: 16px; font-weight: 700">التسلسل الزمني</h3>
+          <div class="tl"><span style="font-weight: 700; width: 70px; font-variant-numeric: tabular-nums">10:31:05</span><span>فتح الحدث آليًا وأُوقفت المحادثة، وظهرت شاشة الطوارئ للمريض</span></div>
+          <div class="tl"><span style="font-weight: 700; width: 70px; font-variant-numeric: tabular-nums">10:31:06</span><span>اتصال ورسالة إلى المناوب (أنت)</span></div>
+          <div class="tl"><span style="font-weight: 700; width: 70px; font-variant-numeric: tabular-nums">10:31:07</span><span>إشعار للأخصائية المسؤولة</span></div>
+          <div class="tl" style="color: #7A1C15"><span style="font-weight: 700; width: 70px; font-variant-numeric: tabular-nums">10:33:05</span><span>إن لم يُقَرّ: اتصال بالاحتياطي د. فهد ر.، ثم بالمسؤول السريري</span></div>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

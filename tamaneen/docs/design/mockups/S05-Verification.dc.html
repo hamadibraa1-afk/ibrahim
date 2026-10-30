@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>التحقق من التراخيص</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.card{background:#FFFFFF;border:1px solid #DDE3E1;border-radius:14px}
+.btn{font:inherit;font-weight:600;font-size:14px;min-height:44px;border-radius:10px;border:0;padding:0 16px;cursor:pointer;white-space:nowrap}
+.btn-primary{background:#1F5F5B;color:#FFFFFF}
+.btn-ghost{background:#FFFFFF;color:#1F5F5B;border:1px solid #B9C9C6}
+.muted{color:#4A5A5E}
+.q{display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-bottom:1px solid #EDF1F0;text-decoration:none;color:#1B2A2F}
+.kv{display:flex;flex-direction:column;gap:2px;font-size:14px}
+.k{font-size:12px;font-weight:600;color:#4A5A5E}
+.chkrow{display:flex;gap:10px;align-items:center;font-size:14px;min-height:40px}
+.chkrow input{width:20px;height:20px;accent-color:#1F5F5B}
+</style>
+</helmet>
+<div dir="rtl" style="min-height: 900px; background: #F6F7F5; display: flex; flex-wrap: wrap">
+  <aside style="flex: 1 1 280px; max-width: 320px; background: #FFFFFF; border-left: 1px solid #DDE3E1; box-sizing: border-box">
+    <div style="padding: 18px 14px 10px; display: flex; flex-direction: column; gap: 4px"><div style="font-weight: 700; font-size: 18px">طلبات التحقق</div><div class="muted" style="font-size: 13px">3 بانتظار المراجعة</div></div>
+    <a class="q" href="#" style="background: #F3F8F7; border-right: 4px solid #1F5F5B"><span style="font-weight: 700">سارة م.</span><span class="muted" style="font-size: 12px">أخصائية نفسية إكلينيكية · قُدّم قبل يومين</span></a>
+    <a class="q" href="#"><span style="font-weight: 700">عبدالله ك.</span><span class="muted" style="font-size: 12px">أخصائي نفسي · بانتظار رد المتقدم</span></a>
+    <a class="q" href="#"><span style="font-weight: 700">ريم س.</span><span class="muted" style="font-size: 12px">أخصائية نفسية · قُدّم اليوم</span></a>
+  </aside>
+  <div style="flex: 999 1 560px; min-width: 0; padding: 22px 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+    <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between">
+      <h1 style="margin: 0; font-size: 24px; font-weight: 700">طلب سارة م.</h1>
+      <span style="font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: #FFF3DC; color: #7A4B00">قيد المراجعة</span>
+    </div>
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+      <section class="card" style="flex: 1 1 360px; min-width: 0; padding: 16px; display: flex; flex-direction: column; gap: 14px">
+        <h2 style="margin: 0; font-size: 16px; font-weight: 700">بيانات الترخيص</h2>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px">
+          <div class="kv"><span class="k">الاسم القانوني</span><span>[الاسم كما في الترخيص]</span></div>
+          <div class="kv"><span class="k">جهة الترخيص</span><span>[الهيئة الصحية المختصة]</span></div>
+          <div class="kv"><span class="k">رقم الترخيص</span><span dir="ltr" style="text-align: right">[LICENSE-NO]</span></div>
+          <div class="kv"><span class="k">تاريخ الانتهاء</span><span>14 مارس 2028</span></div>
+          <div class="kv"><span class="k">التخصصات</span><span>القلق، النوم، العلاج المعرفي السلوكي</span></div>
+          <div class="kv"><span class="k">اللغات</span><span>العربية، الإنجليزية</span></div>
+        </div>
+        <h2 style="margin: 0; font-size: 16px; font-weight: 700">المستندات</h2>
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid #EDF1F0; border-radius: 10px"><span style="flex: 1 1 180px; font-weight: 600; font-size: 14px">الترخيص المهني.pdf</span><span style="font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: #E6F2EA; color: #22533A">فحص: سليم</span><a href="#" style="font-size: 14px; font-weight: 600">عرض</a></div>
+          <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid #EDF1F0; border-radius: 10px"><span style="flex: 1 1 180px; font-weight: 600; font-size: 14px">شهادة الماجستير.pdf</span><span style="font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: #E6F2EA; color: #22533A">فحص: سليم</span><a href="#" style="font-size: 14px; font-weight: 600">عرض</a></div>
+        </div>
+        <div class="muted" style="font-size: 12px">تُفتح المستندات برابط مؤقت لمدة 5 دقائق، وكل فتح مسجّل.</div>
+      </section>
+      <section class="card" style="flex: 1 1 320px; min-width: 0; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+        <h2 style="margin: 0; font-size: 16px; font-weight: 700">التحقق</h2>
+        <a href="#" class="btn btn-ghost" style="display: inline-flex; align-items: center; justify-content: center; text-decoration: none">فتح سجل التراخيص الرسمي</a>
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <label for="ref" style="font-size: 14px; font-weight: 600">مرجع التحقق من السجل</label>
+          <input id="ref" placeholder="رقم أو رابط نتيجة البحث" style="font: inherit; font-size: 14px; height: 44px; box-sizing: border-box; border: 1px solid #B9C9C6; border-radius: 10px; padding: 0 12px">
+        </div>
+        <div style="display: flex; flex-direction: column">
+          <label class="chkrow"><input type="checkbox" checked>الترخيص ساري ومطابق للسجل</label>
+          <label class="chkrow"><input type="checkbox" checked>الاسم مطابق للمستندات</label>
+          <label class="chkrow"><input type="checkbox">لا توجد إجراءات تأديبية</label>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <label for="note" style="font-size: 14px; font-weight: 600">رسالة للمتقدم (عند الرفض أو طلب معلومات)</label>
+          <textarea id="note" style="font: inherit; font-size: 14px; height: 64px; box-sizing: border-box; border: 1px solid #B9C9C6; border-radius: 10px; padding: 8px 12px; resize: none"></textarea>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px">
+          <button class="btn btn-primary" type="button">اعتماد (تحقق إضافي)</button>
+          <button class="btn btn-ghost" type="button">طلب معلومات</button>
+          <button class="btn" type="button" style="background: #FFFFFF; color: #9B2219; border: 1px solid #E8B4AE">رفض</button>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

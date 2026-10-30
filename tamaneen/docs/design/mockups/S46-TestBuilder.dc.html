@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>إضافة اختبار</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.card{background:#FFFFFF;border:1px solid #DDE3E1;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.btn{font:inherit;font-weight:600;font-size:14px;min-height:44px;border-radius:10px;border:0;padding:0 16px;cursor:pointer;white-space:nowrap}
+.btn-primary{background:#1F5F5B;color:#FFFFFF}
+.btn-ghost{background:#FFFFFF;color:#1F5F5B;border:1px solid #B9C9C6}
+.muted{color:#4A5A5E}
+.lbl{font-size:13px;font-weight:600}
+.field{font:inherit;font-size:14px;height:40px;box-sizing:border-box;width:100%;border:1px solid #B9C9C6;border-radius:10px;padding:0 10px;background:#FFFFFF}
+.step{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#4A5A5E}
+.dot{width:26px;height:26px;border-radius:50%;border:2px solid #B9C9C6;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;background:#FFFFFF}
+.item{border:1px solid #EDF1F0;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:right;font-size:12px;font-weight:600;color:#4A5A5E;padding:6px 8px;border-bottom:1px solid #DDE3E1}
+.tbl td{padding:5px 8px;border-bottom:1px solid #EDF1F0}
+</style>
+</helmet>
+<div dir="rtl" style="min-height: 900px; background: #F6F7F5; display: flex; flex-wrap: wrap">
+  <div style="flex: 1 1 220px; max-width: 260px"><dc-import name="StaffNav" role="admin" active="tests" hint-size="100%,900px"></dc-import></div>
+  <div style="flex: 999 1 560px; min-width: 0; padding: 20px 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px">
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px"><div><a href="#" style="font-size: 13px; font-weight: 600">الاختبارات والمقاييس</a><h1 style="margin: 0; font-size: 24px; font-weight: 700">إضافة اختبار: PCL-5</h1></div><div style="display: flex; gap: 8px"><button class="btn btn-ghost" type="button">معاينة كما يراها المريض</button><button class="btn btn-primary" type="button">إرسال للاعتماد</button></div></div>
+    <ol aria-label="خطوات الإضافة" style="list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 18px">
+      <li class="step"><span class="dot" style="background: #E3EFED; border-color: #1F5F5B; color: #1F5F5B">✓</span>البيانات</li>
+      <li class="step" style="color: #163F3C"><span class="dot" style="background: #1F5F5B; border-color: #1F5F5B; color: #FFFFFF">2</span>البنود والإجابات</li>
+      <li class="step"><span class="dot">3</span>طريقة الحساب</li>
+      <li class="step"><span class="dot">4</span>قواعد السلامة</li>
+      <li class="step"><span class="dot">5</span>المراجعة</li>
+    </ol>
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+      <section class="card" style="flex: 3 1 520px; min-width: 0">
+        <div style="display: flex; justify-content: space-between; align-items: center"><h2 style="margin: 0; font-size: 16px; font-weight: 700">البنود · 20</h2><button class="btn btn-ghost" type="button" style="min-height: 36px">استيراد من ملف</button></div>
+        <div class="item">
+          <div class="lbl">البند 1</div>
+          <input class="field" aria-label="نص البند بالعربية" value="ذكريات متكررة ومزعجة وغير مرغوب فيها عن التجربة المؤلمة">
+          <input class="field" aria-label="نص البند بالإنجليزية" dir="ltr" value="Repeated, disturbing, and unwanted memories of the stressful experience">
+        </div>
+        <div class="item" style="border-color: #E8B4AE; background: #FDF5F4">
+          <div style="display: flex; justify-content: space-between"><span class="lbl">البند 16</span><span style="font-size: 11px; font-weight: 700; color: #7A1C15">مرتبط بقواعد السلامة</span></div>
+          <input class="field" aria-label="نص البند" value="القيام بمخاطرات كثيرة أو أشياء قد تؤذيك">
+        </div>
+        <div class="lbl">الإجابات (موحدة لكل البنود)</div>
+        <table class="tbl"><thead><tr><th>الإجابة</th><th>English</th><th>النقاط</th></tr></thead><tbody>
+          <tr><td><input class="field" aria-label="إجابة" value="أبدًا"></td><td><input class="field" aria-label="answer" dir="ltr" value="Not at all"></td><td><input class="field" aria-label="نقاط" value="0"></td></tr>
+          <tr><td><input class="field" aria-label="إجابة" value="قليلًا"></td><td><input class="field" aria-label="answer" dir="ltr" value="A little bit"></td><td><input class="field" aria-label="نقاط" value="1"></td></tr>
+          <tr><td><input class="field" aria-label="إجابة" value="متوسط"></td><td><input class="field" aria-label="answer" dir="ltr" value="Moderately"></td><td><input class="field" aria-label="نقاط" value="2"></td></tr>
+          <tr><td><input class="field" aria-label="إجابة" value="كثيرًا"></td><td><input class="field" aria-label="answer" dir="ltr" value="Quite a bit"></td><td><input class="field" aria-label="نقاط" value="3"></td></tr>
+          <tr><td><input class="field" aria-label="إجابة" value="بشدة"></td><td><input class="field" aria-label="answer" dir="ltr" value="Extremely"></td><td><input class="field" aria-label="نقاط" value="4"></td></tr>
+        </tbody></table>
+      </section>
+      <aside style="flex: 2 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
+        <div class="card">
+          <h2 style="margin: 0; font-size: 15px; font-weight: 700">الحساب ونطاقات الشدة</h2>
+          <div><label class="lbl" for="m">الطريقة</label><select id="m" class="field"><option>مجموع النقاط (0 – 80)</option></select></div>
+          <table class="tbl"><thead><tr><th>من</th><th>إلى</th><th>التصنيف</th></tr></thead><tbody>
+            <tr><td>0</td><td>32</td><td>دون الحد</td></tr><tr><td>33</td><td>80</td><td>محتمل · يرفع الفرز إلى 2</td></tr>
+          </tbody></table>
+        </div>
+        <div class="card">
+          <h2 style="margin: 0; font-size: 15px; font-weight: 700">بيانات الترخيص والمصدر</h2>
+          <div><label class="lbl" for="l">الترخيص</label><input id="l" class="field" value="[مرجع إذن الاستخدام]"></div>
+          <div><label class="lbl" for="tr">مصدر الترجمة المعتمدة</label><input id="tr" class="field" value="[المرجع العلمي]"></div>
+          <div class="muted" style="font-size: 12px">لا يُفعَّل اختبار بلا ترخيص ومصدر ترجمة.</div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

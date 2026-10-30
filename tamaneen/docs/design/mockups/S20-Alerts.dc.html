@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>التنبيهات</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.btn{font:inherit;font-weight:600;font-size:14px;min-height:40px;border-radius:10px;border:0;padding:0 14px;cursor:pointer;white-space:nowrap}
+.btn-ghost{background:#FFFFFF;color:#1F5F5B;border:1px solid #B9C9C6}
+.muted{color:#4A5A5E}
+.al{display:flex;flex-wrap:wrap;gap:14px;align-items:center;padding:14px 18px;border-radius:14px;background:#FFFFFF;border:1px solid #DDE3E1}
+.lv{font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px;display:inline-block;white-space:nowrap}
+.f{font:inherit;font-size:13px;font-weight:600;min-height:40px;padding:0 12px;border-radius:999px;border:1px solid #B9C9C6;background:#FFFFFF;color:#1B2A2F;cursor:pointer}
+</style>
+</helmet>
+<div dir="rtl" style="min-height: 900px; background: #F6F7F5; display: flex; flex-wrap: wrap">
+  <div style="flex: 1 1 220px; max-width: 260px"><dc-import name="StaffNav" role="therapist" active="alerts" hint-size="100%,900px"></dc-import></div>
+  <div style="flex: 999 1 560px; min-width: 0; padding: 20px 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px">
+    <h1 style="margin: 0; font-size: 24px; font-weight: 700">تنبيهات مرضاي</h1>
+    <div style="display: flex; flex-wrap: wrap; gap: 8px"><button class="f" type="button" style="background: #1F5F5B; color: #FFFFFF; border-color: #1F5F5B">مفتوحة · 1</button><button class="f" type="button">تمت معالجتها</button><button class="f" type="button">الكل</button></div>
+    <div class="al" style="border: 1.5px solid #B3261E; background: #FDF5F4">
+      <span class="lv" style="background: #B3261E; color: #FFFFFF">عالٍ</span>
+      <div style="flex: 1 1 300px"><div style="font-weight: 700">P-3HX9-14QA · قاعدة CR-4 (أفكار انتحارية دون خطة)</div><div class="muted" style="font-size: 13px">من ملاحظة متابعة الواجب · قبل 6 دقائق · المناوب: لم يُقِرّ بعد</div></div>
+      <button class="btn" type="button" style="background: #B3261E; color: #FFFFFF">إقرار</button>
+      <button class="btn btn-ghost" type="button">إحالة للمناوب مع ملاحظة</button>
+      <a href="#" style="font-size: 14px; font-weight: 600">فتح الحدث</a>
+    </div>
+    <div style="font-weight: 600; font-size: 14px; margin-top: 10px" class="muted">آخر 30 يومًا</div>
+    <div class="al"><span class="lv" style="background: #FFF3DC; color: #7A4B00">رفع مستوى</span><div style="flex: 1 1 300px"><div style="font-weight: 600">P-9KD2-07LM · رفعه المشرف إلى المستوى 2</div><div class="muted" style="font-size: 13px">PHQ-9 = 15 في المتابعة · 12 أكتوبر</div></div><span style="font-size: 13px; font-weight: 600; color: #22533A">تمت المراجعة</span></div>
+    <div class="al"><span class="lv" style="background: #EEF0EF; color: #33464B">لا حضور</span><div style="flex: 1 1 300px"><div style="font-weight: 600">P-1AB2-11XY · غياب مرتين متتاليتين</div><div class="muted" style="font-size: 13px">أُرسلت رسالة اطمئنان · 9 أكتوبر</div></div><span style="font-size: 13px; font-weight: 600; color: #22533A">تم التواصل</span></div>
+    <div class="al"><span class="lv" style="background: #FBEAE8; color: #7A1C15">عالٍ</span><div style="flex: 1 1 300px"><div style="font-weight: 600">P-5RT3-20MN · إنذار خاطئ</div><div class="muted" style="font-size: 13px">جملة عن فيلم · أغلقه المناوب كإنذار خاطئ مع السبب · 3 أكتوبر</div></div><span style="font-size: 13px; font-weight: 600" class="muted">مغلق</span></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

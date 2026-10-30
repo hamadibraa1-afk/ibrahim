@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>جدول المناوبات</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.card{background:#FFFFFF;border:1px solid #DDE3E1;border-radius:14px}
+.btn{font:inherit;font-weight:600;font-size:14px;min-height:44px;border-radius:10px;border:0;padding:0 16px;cursor:pointer;white-space:nowrap}
+.btn-primary{background:#1F5F5B;color:#FFFFFF}
+.btn-ghost{background:#FFFFFF;color:#1F5F5B;border:1px solid #B9C9C6}
+.muted{color:#4A5A5E}
+.hd{font-size:13px;font-weight:700;padding:10px 8px;border-bottom:1px solid #DDE3E1;text-align:center}
+.rl{font-size:13px;font-weight:600;padding:10px 8px;border-top:1px solid #EDF1F0}
+.c{border-top:1px solid #EDF1F0;border-right:1px solid #EDF1F0;padding:6px;font-size:12px;font-weight:600;min-height:44px}
+.s{display:block;border-radius:8px;padding:6px 8px;background:#E3EFED;color:#163F3C}
+.gap{display:block;border-radius:8px;padding:6px 8px;background:#FBEAE8;color:#7A1C15;border:1px dashed #B3261E}
+</style>
+</helmet>
+<div dir="rtl" style="min-height: 900px; background: #F6F7F5; display: flex; flex-wrap: wrap">
+  <div style="flex: 1 1 220px; max-width: 260px"><dc-import name="StaffNav" role="supervisor" active="rota" hint-size="100%,900px"></dc-import></div>
+  <div style="flex: 999 1 560px; min-width: 0; padding: 20px 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px">
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px"><h1 style="margin: 0; font-size: 24px; font-weight: 700">جدول المناوبات · 19 – 23 أكتوبر</h1><div style="display: flex; gap: 8px"><button class="btn btn-ghost" type="button">الأسبوع السابق</button><button class="btn btn-ghost" type="button">الأسبوع التالي</button></div></div>
+    <div role="alert" style="background: #FBEAE8; border: 1px solid #E8B4AE; border-radius: 12px; padding: 12px 16px; font-size: 14px; color: #7A1C15">فجوة تغطية: الأربعاء 8:00 م – 8:00 ص بلا مناوب أساسي. إن لم تُملأ، يتوقف التسجيل الجديد تلقائيًا في تلك الفترة.</div>
+    <div class="card" style="overflow-x: auto">
+      <div style="min-width: 820px; display: grid; grid-template-columns: 150px repeat(5, minmax(0, 1fr))">
+        <div class="hd"></div><div class="hd">الإثنين 19</div><div class="hd">الثلاثاء 20</div><div class="hd">الأربعاء 21</div><div class="hd">الخميس 22</div><div class="hd">الجمعة 23</div>
+        <div class="rl">أساسي · نهاري</div><div class="c"><span class="s">د. ليلى ع.</span></div><div class="c"><span class="s">د. فهد ر.</span></div><div class="c"><span class="s">د. ليلى ع.</span></div><div class="c"><span class="s">أ. هند ك.</span></div><div class="c"><span class="s">د. فهد ر.</span></div>
+        <div class="rl">أساسي · ليلي</div><div class="c"><span class="s">أنت</span></div><div class="c"><span class="s">أ. هند ك.</span></div><div class="c"><span class="gap">غير مغطى</span></div><div class="c"><span class="s">أنت</span></div><div class="c"><span class="s">أ. هند ك.</span></div>
+        <div class="rl">احتياطي</div><div class="c"><span class="s">د. فهد ر.</span></div><div class="c"><span class="s">أنت</span></div><div class="c"><span class="s">د. فهد ر.</span></div><div class="c"><span class="s">د. ليلى ع.</span></div><div class="c"><span class="s">أنت</span></div>
+        <div class="rl">المسؤول السريري</div><div class="c"><span class="s">د. ليلى ع.</span></div><div class="c"><span class="s">د. ليلى ع.</span></div><div class="c"><span class="s">د. ليلى ع.</span></div><div class="c"><span class="s">د. ليلى ع.</span></div><div class="c"><span class="s">د. ليلى ع.</span></div>
+      </div>
+    </div>
+    <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px"><span class="muted" style="font-size: 13px">اضغط على أي خانة لإسنادها. يُرسل تأكيد لكل من يُضاف للجدول.</span><button class="btn btn-primary" type="button">حفظ الجدول</button></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

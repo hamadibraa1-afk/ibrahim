@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>مؤشرات التجربة</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.card{background:#FFFFFF;border:1px solid #DDE3E1;border-radius:14px}
+.btn{font:inherit;font-weight:600;font-size:14px;min-height:44px;border-radius:10px;border:0;padding:0 16px;cursor:pointer;white-space:nowrap}
+.btn-ghost{background:#FFFFFF;color:#1F5F5B;border:1px solid #B9C9C6}
+.muted{color:#4A5A5E}
+.k{font-size:12px;font-weight:600;color:#4A5A5E}
+.v{font-size:26px;font-weight:700}
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th{text-align:right;font-size:12px;font-weight:600;color:#4A5A5E;padding:10px 14px;border-bottom:1px solid #DDE3E1;white-space:nowrap}
+.tbl td{padding:12px 14px;border-bottom:1px solid #EDF1F0;white-space:nowrap}
+.st{font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px;display:inline-block}
+.ok{background:#E6F2EA;color:#22533A}.no{background:#FFF3DC;color:#7A4B00}
+</style>
+</helmet>
+<div dir="rtl" style="min-height: 900px; background: #F6F7F5; display: flex; flex-wrap: wrap">
+  <div style="flex: 1 1 220px; max-width: 260px"><dc-import name="StaffNav" role="admin" active="metrics" hint-size="100%,900px"></dc-import></div>
+  <div style="flex: 999 1 560px; min-width: 0; padding: 20px 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px">
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px"><div><h1 style="margin: 0; font-size: 24px; font-weight: 700">مؤشرات التجربة</h1><div class="muted" style="font-size: 14px">الأسبوع 3 من 12 · يُحدَّث يوميًا · أرقام مجمّعة فقط</div></div><button class="btn btn-ghost" type="button">تنزيل CSV</button></div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px">
+      <div class="card" style="padding: 14px"><div class="k">المرضى المسجلون</div><div class="v">84 <span class="muted" style="font-size: 14px">/ 300</span></div></div>
+      <div class="card" style="padding: 14px"><div class="k">الأخصائيون المعتمدون</div><div class="v">12 <span class="muted" style="font-size: 14px">/ 20</span></div></div>
+      <div class="card" style="padding: 14px"><div class="k">أحداث الطوارئ</div><div class="v">6</div></div>
+      <div class="card" style="padding: 14px"><div class="k">جلسات مكتملة</div><div class="v">97</div></div>
+    </div>
+    <div class="card" style="overflow-x: auto">
+      <table class="tbl">
+        <thead><tr><th>المؤشر</th><th>الهدف</th><th>الحالي</th><th>الحالة</th></tr></thead>
+        <tbody>
+          <tr><td style="font-weight: 600">توفير وقت الاستقبال للأخصائي</td><td>30% أو أكثر</td><td>34%</td><td><span class="st ok">محقق</span></td></tr>
+          <tr><td style="font-weight: 600">أخصائيون يقيّمون الملف «مفيد» أو أعلى</td><td>70% أو أكثر</td><td>78%</td><td><span class="st ok">محقق</span></td></tr>
+          <tr><td style="font-weight: 600">إكمال محادثة الاستقبال بعد بدئها</td><td>65% أو أكثر</td><td>61%</td><td><span class="st no">دون الهدف</span></td></tr>
+          <tr><td style="font-weight: 600">من التسجيل إلى أول حجز (الوسيط)</td><td>72 ساعة أو أقل</td><td>58 ساعة</td><td><span class="st ok">محقق</span></td></tr>
+          <tr><td style="font-weight: 600">تنبيهات خطر أُقِرّت ضمن المهلة</td><td>100%</td><td>100% (6 من 6)</td><td><span class="st ok">محقق</span></td></tr>
+          <tr><td style="font-weight: 600">حالات خطر فاتت النظام (مراجعة الجودة)</td><td>0</td><td>0</td><td><span class="st ok">محقق</span></td></tr>
+          <tr><td style="font-weight: 600">مرضى أنجزوا نصف الواجبات أو أكثر</td><td>50% أو أكثر</td><td>57%</td><td><span class="st ok">محقق</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

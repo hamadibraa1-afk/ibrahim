@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>تقييم الخطر</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.card{background:#FFFFFF;border:1px solid #DDE3E1;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.btn{font:inherit;font-weight:600;font-size:14px;min-height:44px;border-radius:10px;border:0;padding:0 16px;cursor:pointer;white-space:nowrap}
+.btn-primary{background:#1F5F5B;color:#FFFFFF}
+.btn-ghost{background:#FFFFFF;color:#1F5F5B;border:1px solid #B9C9C6}
+.muted{color:#4A5A5E}
+.q{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #EDF1F0;font-size:14px}
+.seg{display:flex;border:1px solid #B9C9C6;border-radius:10px;overflow:hidden}
+.seg button{font:inherit;font-size:13px;font-weight:600;min-height:36px;padding:0 14px;border:0;background:#FFFFFF;color:#1B2A2F;cursor:pointer}
+.lv{font:inherit;font-size:13px;font-weight:700;min-height:44px;flex:1;border-radius:10px;border:1px solid #DDE3E1;background:#FFFFFF;cursor:pointer}
+</style>
+</helmet>
+<div dir="rtl" style="min-height: 900px; background: #F6F7F5; display: flex; flex-wrap: wrap">
+  <div style="flex: 1 1 220px; max-width: 260px"><dc-import name="StaffNav" role="supervisor" active="crisis" hint-size="100%,900px"></dc-import></div>
+  <div style="flex: 999 1 560px; min-width: 0; padding: 20px 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px">
+    <div><div class="muted" style="font-size: 13px">CE-1041 · P-3HX9-14QA · قاعدة CR-4</div><h1 style="margin: 0; font-size: 24px; font-weight: 700">تقييم الخطر المنظم</h1></div>
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+      <section class="card" style="flex: 3 1 520px; min-width: 0; gap: 0">
+        <h2 style="margin: 0 0 6px; font-size: 16px; font-weight: 700">أسئلة التقييم أثناء المكالمة</h2>
+        <div class="q"><span>أفكار انتحارية حالية</span><div class="seg"><button type="button" style="background: #FBEAE8; color: #7A1C15">نعم</button><button type="button">لا</button></div></div>
+        <div class="q"><span>خطة محددة</span><div class="seg"><button type="button">نعم</button><button type="button" style="background: #E3EFED; color: #163F3C">لا</button></div></div>
+        <div class="q"><span>نية للتنفيذ</span><div class="seg"><button type="button">نعم</button><button type="button" style="background: #E3EFED; color: #163F3C">لا</button></div></div>
+        <div class="q"><span>وصول لوسيلة</span><div class="seg"><button type="button">نعم</button><button type="button" style="background: #E3EFED; color: #163F3C">لا</button></div></div>
+        <div class="q"><span>محاولة سابقة</span><div class="seg"><button type="button">نعم</button><button type="button" style="background: #E3EFED; color: #163F3C">لا</button></div></div>
+        <div class="q"><span>عوامل حماية</span><span class="muted" style="font-size: 13px">الأخت، العمل، رغبة في العلاج</span></div>
+        <div class="q" style="border-bottom: 0"><span>شخص داعم موجود الآن</span><div class="seg"><button type="button" style="background: #E3EFED; color: #163F3C">نعم</button><button type="button">لا</button></div></div>
+        <div style="display: flex; flex-direction: column; gap: 6px; padding-top: 10px"><label for="n" style="font-size: 14px; font-weight: 600">ملاحظات التقييم</label><textarea id="n" style="font: inherit; font-size: 14px; height: 70px; box-sizing: border-box; border: 1px solid #B9C9C6; border-radius: 10px; padding: 8px 10px; resize: vertical">أفكار عابرة دون خطة بعد يوم عمل صعب. متعاون ويقبل خطة الأمان.</textarea></div>
+      </section>
+      <aside class="card" style="flex: 2 1 320px; min-width: 0">
+        <h2 style="margin: 0; font-size: 16px; font-weight: 700">القرار</h2>
+        <div style="font-size: 13px" class="muted">مستوى الخطر بعد التقييم</div>
+        <div style="display: flex; gap: 6px"><button class="lv" type="button">حرج</button><button class="lv" type="button" style="border: 2px solid #B3261E; background: #FBEAE8; color: #7A1C15">عالٍ</button><button class="lv" type="button">مرتفع</button><button class="lv" type="button">روتيني</button></div>
+        <div style="font-size: 13px; font-weight: 600">الخطوات المتفق عليها</div>
+        <label style="display: flex; gap: 8px; align-items: center; font-size: 14px"><input type="checkbox" checked style="width: 18px; height: 18px; accent-color: #1F5F5B">بناء خطة أمان الآن</label>
+        <label style="display: flex; gap: 8px; align-items: center; font-size: 14px"><input type="checkbox" checked style="width: 18px; height: 18px; accent-color: #1F5F5B">مكالمة متابعة خلال 24 ساعة</label>
+        <label style="display: flex; gap: 8px; align-items: center; font-size: 14px"><input type="checkbox" checked style="width: 18px; height: 18px; accent-color: #1F5F5B">تقديم الجلسة القادمة</label>
+        <label style="display: flex; gap: 8px; align-items: center; font-size: 14px"><input type="checkbox" style="width: 18px; height: 18px; accent-color: #1F5F5B">إحالة لطوارئ مستشفى</label>
+        <button class="btn btn-primary" type="button">حفظ التقييم وفتح خطة الأمان</button>
+        <div class="muted" style="font-size: 12px">يُحفظ في سجل الحدث ولا يمكن تعديله بعد التوقيع.</div>
+      </aside>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

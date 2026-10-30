@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>الإشعارات</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.card{background:#FFFFFF;border:1px solid #DDE3E1;border-radius:16px}
+.btn{font:inherit;font-weight:600;font-size:16px;min-height:52px;border-radius:999px;border:0;padding:0 24px;cursor:pointer}
+.btn-primary{background:#1F5F5B;color:#FFFFFF}
+.help{font:inherit;font-weight:600;font-size:14px;min-height:44px;padding:0 14px;border-radius:999px;border:1.5px solid #B3261E;color:#B3261E;background:#FFFFFF;cursor:pointer}
+.muted{color:#4A5A5E}
+.li{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:52px;padding:6px 16px;box-sizing:border-box;border-bottom:1px solid #EDF1F0;font-size:15px}
+.sw{width:22px;height:22px;accent-color:#1F5F5B}
+.sel{font:inherit;font-size:14px;height:40px;border:1px solid #B9C9C6;border-radius:10px;padding:0 10px;background:#FFFFFF}
+.h2{margin:0;font-size:15px;font-weight:700}
+</style>
+</helmet>
+<div dir="rtl" style="width: 390px; height: 844px; box-sizing: border-box; background: #FFF8F1; display: flex; flex-direction: column; overflow: hidden">
+  <header style="display: flex; align-items: center; justify-content: space-between; height: 64px; padding: 0 20px">
+    <a href="#" aria-label="رجوع" style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1B2A2F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></a>
+    <button class="help" type="button">مساعدة فورية</button>
+  </header>
+  <main style="flex: 1; display: flex; flex-direction: column; gap: 12px; padding: 0 20px 20px">
+    <h1 style="margin: 0; font-size: 23px; font-weight: 700">الإشعارات</h1>
+    <h2 class="h2">طريقة التنبيه</h2>
+    <div class="card">
+      <label class="li">إشعارات التطبيق<input class="sw" type="checkbox" checked></label>
+      <label class="li">رسائل نصية<input class="sw" type="checkbox" checked></label>
+      <label class="li" style="border-bottom: 0">البريد الإلكتروني<input class="sw" type="checkbox"></label>
+    </div>
+    <h2 class="h2">الخصوصية على جوالي</h2>
+    <div class="card">
+      <label class="li"><span><span style="display: block">إشعارات محايدة</span><span class="muted" style="font-size: 12px">يظهر «لديك تذكير» بدل محتوى الرسالة</span></span><input class="sw" type="checkbox" checked></label>
+      <label class="li" style="border-bottom: 0"><span><span style="display: block">زر الخروج السريع</span><span class="muted" style="font-size: 12px">ينقلك فورًا لصفحة عادية</span></span><input class="sw" type="checkbox"></label>
+    </div>
+    <h2 class="h2">تذكير الواجبات</h2>
+    <div class="card">
+      <div class="li"><label for="f">عدد التذكيرات</label><select id="f" class="sel"><option>مرة يوميًا</option><option>كل يومين</option><option>بدون</option></select></div>
+      <div class="li" style="border-bottom: 0"><label for="tm">الوقت المفضل</label><select id="tm" class="sel"><option>9:00 م</option></select></div>
+    </div>
+    <h2 class="h2">ساعات الهدوء</h2>
+    <div class="card">
+      <div class="li" style="border-bottom: 0"><span>من 11:00 م إلى 8:00 ص</span><a href="#" style="font-size: 14px; font-weight: 600">تعديل</a></div>
+    </div>
+    <div style="background: #E3EFED; border-radius: 12px; padding: 12px 14px; font-size: 13px; line-height: 1.6; color: #163F3C">اتصالات فريق الطوارئ تصلك دائمًا، حتى في ساعات الهدوء.</div>
+    <div style="flex: 1"></div>
+    <button class="btn btn-primary" type="button">حفظ</button>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

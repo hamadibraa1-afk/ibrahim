@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>مراجعة الجودة</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.card{background:#FFFFFF;border:1px solid #DDE3E1;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.btn{font:inherit;font-weight:600;font-size:14px;min-height:44px;border-radius:10px;border:0;padding:0 16px;cursor:pointer;white-space:nowrap}
+.btn-primary{background:#1F5F5B;color:#FFFFFF}
+.muted{color:#4A5A5E}
+.q{display:flex;justify-content:space-between;align-items:center;min-height:48px;padding:0 12px;border-radius:10px;text-decoration:none;color:#1B2A2F;font-size:14px;font-weight:600}
+.opt{display:flex;gap:10px;align-items:center;font-size:14px;min-height:40px}
+.opt input{width:18px;height:18px;accent-color:#1F5F5B}
+.msg{padding:10px 12px;border-radius:10px;font-size:14px;line-height:1.7;max-width:90%}
+</style>
+</helmet>
+<div dir="rtl" style="min-height: 900px; background: #F6F7F5; display: flex; flex-wrap: wrap">
+  <div style="flex: 1 1 220px; max-width: 260px"><dc-import name="StaffNav" role="supervisor" active="qa" hint-size="100%,900px"></dc-import></div>
+  <div style="flex: 999 1 560px; min-width: 0; padding: 20px 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px">
+    <div><h1 style="margin: 0; font-size: 24px; font-weight: 700">مراجعة الجودة الأسبوعية</h1><div class="muted" style="font-size: 14px">عينة عشوائية 10% من محادثات الاستقبال · 3 من 6 تمت</div></div>
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+      <aside class="card" style="flex: 1 1 220px; max-width: 280px; gap: 4px">
+        <a class="q" href="#" style="color: #22533A">QA-31 · تمت</a><a class="q" href="#" style="color: #22533A">QA-32 · تمت</a><a class="q" href="#" style="color: #22533A">QA-33 · تمت</a>
+        <a class="q" href="#" style="background: #E3EFED; color: #163F3C">QA-34 · قيد المراجعة</a><a class="q" href="#">QA-35</a><a class="q" href="#">QA-36</a>
+      </aside>
+      <section class="card" style="flex: 2 1 380px; min-width: 0">
+        <h2 style="margin: 0; font-size: 16px; font-weight: 700">المحادثة (مجهولة الهوية)</h2>
+        <div class="msg" style="background: #F6F7F5; align-self: flex-start">كيف كان نومك مؤخرًا؟</div>
+        <div class="msg" style="background: #FFF3DC; align-self: flex-end">صرت أتمنى أنام وما أصحى.</div>
+        <div class="msg" style="background: #F6F7F5; align-self: flex-start">[نص السكربت الثابت للسلامة]</div>
+        <div style="font-size: 13px; background: #E6F2EA; color: #22533A; border-radius: 10px; padding: 8px 12px">البوابة أطلقت CR-4 (عالٍ) · أُقِرّ خلال 4 دقائق</div>
+      </section>
+      <section class="card" style="flex: 2 1 320px; min-width: 0">
+        <h2 style="margin: 0; font-size: 16px; font-weight: 700">التقييم</h2>
+        <fieldset style="border: 0; padding: 0; margin: 0"><legend style="font-size: 14px; font-weight: 600; margin-bottom: 6px">هل فات النظام أي مؤشر خطر؟</legend><label class="opt"><input type="radio" name="m" checked>لا</label><label class="opt"><input type="radio" name="m">نعم · يفتح طلب تعديل على القواعد</label></fieldset>
+        <fieldset style="border: 0; padding: 0; margin: 0"><legend style="font-size: 14px; font-weight: 600; margin-bottom: 6px">جودة الملخص</legend><label class="opt"><input type="checkbox" checked>كل جملة لها مصدر صحيح</label><label class="opt"><input type="checkbox" checked>لا يوجد تشخيص أو نصيحة دوائية</label><label class="opt"><input type="checkbox">النبرة مناسبة ودافئة</label></fieldset>
+        <div style="display: flex; flex-direction: column; gap: 6px"><label for="n" style="font-size: 14px; font-weight: 600">ملاحظات</label><textarea id="n" style="font: inherit; font-size: 14px; height: 70px; box-sizing: border-box; border: 1px solid #B9C9C6; border-radius: 10px; padding: 8px 10px; resize: vertical">رد الذكاء الاصطناعي في الدور 6 كان مختصرًا أكثر من اللازم.</textarea></div>
+        <button class="btn btn-primary" type="button">حفظ التقييم والتالي</button>
+      </section>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

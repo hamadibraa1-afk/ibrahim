@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>الإشعارات</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.card{background:#FFFFFF;border:1px solid #DDE3E1;border-radius:14px;overflow:hidden}
+.muted{color:#4A5A5E}
+.f{font:inherit;font-size:13px;font-weight:600;min-height:40px;padding:0 12px;border-radius:999px;border:1px solid #B9C9C6;background:#FFFFFF;color:#1B2A2F;cursor:pointer}
+.n{display:flex;gap:14px;align-items:center;padding:14px 18px;border-bottom:1px solid #EDF1F0;text-decoration:none;color:#1B2A2F}
+.ic{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;font-weight:700}
+.dot{width:9px;height:9px;border-radius:50%;background:#1F5F5B;flex-shrink:0}
+</style>
+</helmet>
+<div dir="rtl" style="min-height: 900px; background: #F6F7F5; display: flex; flex-wrap: wrap">
+  <div style="flex: 1 1 220px; max-width: 260px"><dc-import name="StaffNav" role="therapist" active="notifications" hint-size="100%,900px"></dc-import></div>
+  <div style="flex: 999 1 560px; min-width: 0; padding: 20px 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px">
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px"><h1 style="margin: 0; font-size: 24px; font-weight: 700">الإشعارات</h1><a href="#" style="font-size: 14px; font-weight: 600">تحديد الكل كمقروء</a></div>
+    <div style="display: flex; flex-wrap: wrap; gap: 8px"><button class="f" type="button" style="background: #1F5F5B; color: #FFFFFF; border-color: #1F5F5B">الكل · 5</button><button class="f" type="button">الخطر</button><button class="f" type="button">المواعيد</button><button class="f" type="button">الرسائل</button><button class="f" type="button">النظام</button></div>
+    <div class="card">
+      <a class="n" href="#" style="background: #FDF5F4"><span class="ic" style="background: #FBEAE8; color: #7A1C15">!</span><div style="flex: 1"><div style="font-weight: 700">تنبيه خطر عالٍ · P-3HX9-14QA</div><div class="muted" style="font-size: 13px">قبل 6 دقائق · لم يُقَرّ بعد</div></div><span class="dot" style="background: #B3261E"></span></a>
+      <a class="n" href="#"><span class="ic" style="background: #E3EFED; color: #163F3C">ر</span><div style="flex: 1"><div style="font-weight: 600">رسالة جديدة من P-4TT8-90AA</div><div class="muted" style="font-size: 13px">أمس 9:40 م</div></div><span class="dot"></span></a>
+      <a class="n" href="#"><span class="ic" style="background: #FFF3DC; color: #7A4B00">م</span><div style="flex: 1"><div style="font-weight: 600">حجز جديد: P-7Q4K-82XM الأربعاء 4:00 م</div><div class="muted" style="font-size: 13px">الملف بانتظار اعتمادك</div></div><span class="dot"></span></a>
+      <a class="n" href="#"><span class="ic" style="background: #E3EFED; color: #163F3C">ت</span><div style="flex: 1"><div style="font-weight: 600">التقرير الأسبوعي جاهز · P-4TT8-90AA</div><div class="muted" style="font-size: 13px">اليوم 1:00 ص</div></div></a>
+      <a class="n" href="#"><span class="ic" style="background: #EEF0EF; color: #33464B">س</span><div style="flex: 1"><div style="font-weight: 600">رد المشرف على استشارتك</div><div class="muted" style="font-size: 13px">قبل يومين</div></div></a>
+      <a class="n" href="#" style="border-bottom: 0"><span class="ic" style="background: #EEF0EF; color: #33464B">ن</span><div style="flex: 1"><div style="font-weight: 600">دخول جديد إلى حسابك من متصفح</div><div class="muted" style="font-size: 13px">قبل 3 أيام · ليس أنت؟ أنهِ الجلسة</div></div></a>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

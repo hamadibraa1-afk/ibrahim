@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>المحادثات</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.help{font:inherit;font-weight:600;font-size:14px;min-height:44px;padding:0 14px;border-radius:999px;border:1.5px solid #B3261E;color:#B3261E;background:#FFFFFF;cursor:pointer}
+.muted{color:#4A5A5E}
+.th{display:flex;gap:12px;align-items:center;padding:14px;background:#FFFFFF;border-radius:20px;text-decoration:none;color:#1B2A2F;box-shadow:0 1px 0 #F1E6DA}
+.av{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:15px}
+.nav{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:56px;font-size:11px;font-weight:600;text-decoration:none;color:#4A5A5E}
+</style>
+</helmet>
+<div dir="rtl" style="width: 390px; height: 844px; box-sizing: border-box; background: #FFF8F1; display: flex; flex-direction: column; overflow: hidden">
+  <header style="display: flex; align-items: center; justify-content: space-between; height: 64px; padding: 0 20px">
+    <div style="font-weight: 700; font-size: 21px">المحادثات</div>
+    <button class="help" type="button">مساعدة فورية</button>
+  </header>
+  <main style="flex: 1; display: flex; flex-direction: column; gap: 10px; padding: 0 20px 16px">
+    <a class="th" href="#">
+      <div class="av" style="background: #E4F1EE; color: #1F5F5B">س م</div>
+      <div style="flex: 1; min-width: 0"><div style="display: flex; justify-content: space-between"><span style="font-weight: 700">أ. سارة م.</span><span class="muted" style="font-size: 12px">4:12 م</span></div><div style="font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600">أحسنت في الاستمرار هذا الأسبوع…</div></div>
+      <span style="min-width: 22px; height: 22px; border-radius: 999px; background: #E07A3F; color: #FFFFFF; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center">2</span>
+    </a>
+    <a class="th" href="#">
+      <div class="av" style="background: #8CC3B8"><svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><circle cx="12" cy="14" r="1.8" fill="#163F3C"></circle><circle cx="20" cy="14" r="1.8" fill="#163F3C"></circle><path d="M11 19c3 2.5 7 2.5 10 0" stroke="#163F3C" stroke-width="2" fill="none" stroke-linecap="round"></path></svg></div>
+      <div style="flex: 1; min-width: 0"><div style="display: flex; justify-content: space-between"><span style="font-weight: 700">رفيق · متابعة الواجبات</span><span class="muted" style="font-size: 12px">أمس</span></div><div class="muted" style="font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">كيف كان تمرين التنفس الليلة؟</div></div>
+    </a>
+    <a class="th" href="#">
+      <div class="av" style="background: #FFF0DD; color: #9A5B13">ف</div>
+      <div style="flex: 1; min-width: 0"><div style="display: flex; justify-content: space-between"><span style="font-weight: 700">فريق الرعاية</span><span class="muted" style="font-size: 12px">15 أكتوبر</span></div><div class="muted" style="font-size: 13px">تمت مراجعة ملفك، واخترنا لك ثلاثة أخصائيين.</div></div>
+    </a>
+    <div style="flex: 1"></div>
+    <div style="background: #FFFFFF; border-radius: 16px; padding: 12px 14px; font-size: 13px; line-height: 1.6; color: #4A5A5E">ترد أخصائيتك عادة خلال يوم عمل. المحادثات ليست للطوارئ، فإن كنت في خطر اضغط «مساعدة فورية».</div>
+  </main>
+  <nav aria-label="القائمة الرئيسية" style="display: flex; background: #FFFFFF; padding: 4px 6px; border-radius: 22px 22px 0 0; box-shadow: 0 -1px 0 #F1E6DA">
+    <a class="nav" href="#">الرئيسية</a><a class="nav" href="#" style="color: #1F5F5B">المحادثات</a><a class="nav" href="#">المواعيد</a><a class="nav" href="#">الواجبات</a><a class="nav" href="#">المزيد</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>استشارة وتحويل</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.card{background:#FFFFFF;border:1px solid #DDE3E1;border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.btn{font:inherit;font-weight:600;font-size:14px;min-height:44px;border-radius:10px;border:0;padding:0 16px;cursor:pointer;white-space:nowrap}
+.btn-primary{background:#1F5F5B;color:#FFFFFF}
+.muted{color:#4A5A5E}
+.lbl{font-size:14px;font-weight:600}
+.field{font:inherit;font-size:14px;height:44px;box-sizing:border-box;width:100%;border:1px solid #B9C9C6;border-radius:10px;padding:0 10px;background:#FFFFFF}
+.ta{font:inherit;font-size:14px;line-height:1.7;box-sizing:border-box;width:100%;border:1px solid #B9C9C6;border-radius:10px;padding:8px 10px;resize:vertical}
+.opt{display:flex;gap:8px;align-items:center;min-height:40px;font-size:14px}
+.opt input{width:18px;height:18px;accent-color:#1F5F5B}
+</style>
+</helmet>
+<div dir="rtl" style="min-height: 900px; background: #F6F7F5; display: flex; flex-wrap: wrap">
+  <div style="flex: 1 1 220px; max-width: 260px"><dc-import name="StaffNav" role="therapist" active="patients" hint-size="100%,900px"></dc-import></div>
+  <div style="flex: 999 1 560px; min-width: 0; padding: 20px 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px">
+    <div><div class="muted" style="font-size: 13px">P-9KD2-07LM</div><h1 style="margin: 0; font-size: 24px; font-weight: 700">استشارة وتحويل</h1></div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 16px; align-items: start">
+      <section class="card">
+        <h2 style="margin: 0; font-size: 17px; font-weight: 700">طلب استشارة من المشرف</h2>
+        <div style="display: flex; flex-direction: column; gap: 6px"><label class="lbl" for="q">سؤالك</label><textarea id="q" class="ta" style="height: 90px">تحسن بطيء بعد 3 جلسات وPHQ-9 ثابت عند 15. هل نضيف تقييمًا طبيًا للنوم؟</textarea></div>
+        <fieldset style="border: 0; margin: 0; padding: 0"><legend class="lbl" style="margin-bottom: 4px">الأولوية</legend><label class="opt"><input type="radio" name="p" checked>عادية · خلال يومين</label><label class="opt"><input type="radio" name="p">عاجلة · اليوم</label></fieldset>
+        <label class="opt"><input type="checkbox" checked>مشاركة آخر ملاحظتي جلسة مع المشرف</label>
+        <button class="btn btn-primary" type="button">إرسال الاستشارة</button>
+      </section>
+      <section class="card">
+        <h2 style="margin: 0; font-size: 17px; font-weight: 700">تحويل المريض</h2>
+        <fieldset style="border: 0; margin: 0; padding: 0"><legend class="lbl" style="margin-bottom: 4px">إلى</legend><label class="opt"><input type="radio" name="t" checked>أخصائي آخر في المنصة</label><label class="opt"><input type="radio" name="t">جهة خارجية (طبيب نفسي، مستشفى)</label></fieldset>
+        <div style="display: flex; flex-direction: column; gap: 6px"><label class="lbl" for="w">الأخصائي المقترح</label><select id="w" class="field"><option>يختاره المشرف</option><option>أ. خالد ع.</option></select></div>
+        <div style="display: flex; flex-direction: column; gap: 6px"><label class="lbl" for="s">ملخص التسليم</label><textarea id="s" class="ta" style="height: 80px">3 جلسات CBT للقلق والأرق. استجابة جزئية. لا مؤشرات خطر. خطة الأمان محدّثة.</textarea></div>
+        <div style="background: #FFF3DC; border-radius: 10px; padding: 10px 12px; font-size: 13px; color: #5C3900">يُطلب موافقة المريض قبل التحويل، وتبقى رعايتك قائمة حتى يقبل الأخصائي الجديد.</div>
+        <button class="btn btn-primary" type="button">طلب التحويل</button>
+      </section>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

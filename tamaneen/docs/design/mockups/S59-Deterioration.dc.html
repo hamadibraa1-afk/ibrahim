@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>تنبيهات التدهور</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.card{background:#FFFFFF;border:1px solid #DDE3E1;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.btn{font:inherit;font-weight:600;font-size:14px;min-height:44px;border-radius:10px;border:0;padding:0 16px;cursor:pointer;white-space:nowrap}
+.btn-primary{background:#1F5F5B;color:#FFFFFF}
+.btn-ghost{background:#FFFFFF;color:#1F5F5B;border:1px solid #B9C9C6}
+.btn-danger{background:#FFFFFF;color:#9B2C22;border:1px solid #E8B4AE}
+.muted{color:#4A5A5E}
+.lbl{font-size:13px;font-weight:600}
+.field{font:inherit;font-size:14px;height:40px;box-sizing:border-box;width:100%;border:1px solid #B9C9C6;border-radius:10px;padding:0 10px;background:#FFFFFF}
+.ta{font:inherit;font-size:14px;line-height:1.8;box-sizing:border-box;width:100%;border:1px solid #B9C9C6;border-radius:10px;padding:8px 10px;resize:vertical}
+.tab{font-size:14px;font-weight:600;min-height:44px;display:flex;align-items:center;padding:0 14px;text-decoration:none;color:#4A5A5E;border-bottom:3px solid transparent}
+.tab-on{color:#163F3C;border-bottom-color:#1F5F5B}
+.f{font:inherit;font-size:13px;font-weight:600;min-height:40px;padding:0 12px;border-radius:999px;border:1px solid #B9C9C6;background:#FFFFFF;color:#1B2A2F;cursor:pointer}
+.f-on{background:#1F5F5B;color:#FFFFFF;border-color:#1F5F5B}
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th{text-align:right;font-size:12px;font-weight:600;color:#4A5A5E;padding:9px 10px;border-bottom:1px solid #DDE3E1;white-space:nowrap}
+.tbl td{padding:9px 10px;border-bottom:1px solid #EDF1F0}
+.st{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;display:inline-block;white-space:nowrap}
+.ok{background:#E6F2EA;color:#22533A}.warn{background:#FFF3DC;color:#7A4B00}.bad{background:#FBE7E5;color:#7A1C15}.gray{background:#EEF0EF;color:#33464B}.info{background:#E3EFED;color:#163F3C}
+.lnk{font:inherit;font-size:13px;font-weight:600;min-height:32px;border:0;background:none;color:#1F5F5B;cursor:pointer;padding:0 6px}
+.h{margin:0;font-size:15px;font-weight:700}
+.lock{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:#FFF3DC;color:#7A4B00}
+.kpi{font-size:26px;font-weight:700}
+.chk{width:18px;height:18px;accent-color:#1F5F5B}
+.note{background:#FFF3DC;border-radius:10px;padding:10px 12px;font-size:13px;color:#5C3900;line-height:1.7}
+.row{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;align-items:start}
+</style>
+</helmet>
+<div dir="rtl" style="min-height: 900px; background: #F6F7F5; display: flex; flex-wrap: wrap">
+  <div style="flex: 1 1 220px; max-width: 260px"><dc-import name="StaffNav" role="therapist" active="alerts" hint-size="100%,900px"></dc-import></div>
+  <div style="flex: 999 1 560px; min-width: 0; padding: 20px 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px"><div><h1 style="margin: 0; font-size: 24px; font-weight: 700">تنبيهات التدهور</h1><div class="muted" style="font-size: 14px">إشارات مبكرة لا تصل لمستوى الطوارئ لكنها تحتاج انتباهك</div></div><div style="display: flex; gap: 8px; flex-wrap: wrap"></div></div><div style="display: flex; flex-wrap: wrap; gap: 8px"><button class="f f-on" type="button">الكل · 4</button><button class="f" type="button">تدهور</button><button class="f" type="button">لا تحسن</button><button class="f" type="button">انقطاع</button></div><div class="row"><section class="card" style="flex: 3 1 600px"><div style="overflow-x: auto"><table class="tbl"><thead><tr><th>المريض</th><th>المؤشر</th><th>السبب</th><th>النوع</th><th></th></tr></thead><tbody><tr><td><b>هيا</b></td><td>PHQ-9: 12 ← 15 ← 18</td><td>ارتفاع 6 نقاط خلال 4 أسابيع</td><td><span class="st bad">تدهور</span></td><td><button class="lnk" type="button">فتح</button><button class="lnk" type="button">جدولة مراجعة</button></td></tr><tr><td><b>سلمان</b></td><td>GAD-7: 14 ثابت</td><td>لا تحسن بعد 6 جلسات</td><td><span class="st warn">لا تحسن</span></td><td><button class="lnk" type="button">فتح</button><button class="lnk" type="button">طلب استشارة</button></td></tr><tr><td><b>نورة</b></td><td>المزاج اليومي</td><td>لم تسجل مزاجها 10 أيام</td><td><span class="st gray">انقطاع</span></td><td><button class="lnk" type="button">رسالة اطمئنان</button></td></tr><tr><td><b>فهد</b></td><td>حضور</td><td>غاب عن جلستين متتاليتين</td><td><span class="st gray">انقطاع</span></td><td><button class="lnk" type="button">فتح</button></td></tr></tbody></table></div></section><section class="card" style="flex: 2 1 340px"><div style="display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap"><h2 class="h">هيا · PHQ-9</h2></div><svg viewBox="0 0 320 120" width="100%" height="120" role="img" aria-label="ارتفاع درجات PHQ-9"><line x1="20" y1="100" x2="310" y2="100" stroke="#DDE3E1"/><polyline points="30,70 110,62 190,48 290,28" fill="none" stroke="#9B2C22" stroke-width="3"/><g fill="#9B2C22"><circle cx="30" cy="70" r="4"/><circle cx="110" cy="62" r="4"/><circle cx="190" cy="48" r="4"/><circle cx="290" cy="28" r="5"/></g><text x="290" y="20" font-size="12" text-anchor="middle" fill="#1B2A2F">18</text><text x="30" y="88" font-size="12" text-anchor="middle" fill="#4A5A5E">12</text></svg><ul style="margin: 0; padding-inline-start: 18px; font-size: 14px; line-height: 1.9"><li>البند 9 = 0 (لا أفكار إيذاء)</li><li>آخر جلسة قبل 9 أيام</li><li>واجبات غير مكتملة 3 من 4</li></ul><div style="display: flex; gap: 8px; flex-wrap: wrap"><button class="btn btn-primary" type="button">جدولة جلسة قريبة</button><button class="btn btn-ghost" type="button">مراجعة الخطة</button></div></section></div><div class="muted" style="font-size: 12px; line-height: 1.7">عتبات التدهور (مقدار الارتفاع، عدد الجلسات بلا تحسن، أيام الانقطاع) يضبطها المسؤول السريري من إعدادات المقاييس.</div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

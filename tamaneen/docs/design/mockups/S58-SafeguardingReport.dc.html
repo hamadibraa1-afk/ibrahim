@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>بلاغ حماية</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.card{background:#FFFFFF;border:1px solid #DDE3E1;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.btn{font:inherit;font-weight:600;font-size:14px;min-height:44px;border-radius:10px;border:0;padding:0 16px;cursor:pointer;white-space:nowrap}
+.btn-primary{background:#1F5F5B;color:#FFFFFF}
+.btn-ghost{background:#FFFFFF;color:#1F5F5B;border:1px solid #B9C9C6}
+.btn-danger{background:#FFFFFF;color:#9B2C22;border:1px solid #E8B4AE}
+.muted{color:#4A5A5E}
+.lbl{font-size:13px;font-weight:600}
+.field{font:inherit;font-size:14px;height:40px;box-sizing:border-box;width:100%;border:1px solid #B9C9C6;border-radius:10px;padding:0 10px;background:#FFFFFF}
+.ta{font:inherit;font-size:14px;line-height:1.8;box-sizing:border-box;width:100%;border:1px solid #B9C9C6;border-radius:10px;padding:8px 10px;resize:vertical}
+.tab{font-size:14px;font-weight:600;min-height:44px;display:flex;align-items:center;padding:0 14px;text-decoration:none;color:#4A5A5E;border-bottom:3px solid transparent}
+.tab-on{color:#163F3C;border-bottom-color:#1F5F5B}
+.f{font:inherit;font-size:13px;font-weight:600;min-height:40px;padding:0 12px;border-radius:999px;border:1px solid #B9C9C6;background:#FFFFFF;color:#1B2A2F;cursor:pointer}
+.f-on{background:#1F5F5B;color:#FFFFFF;border-color:#1F5F5B}
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th{text-align:right;font-size:12px;font-weight:600;color:#4A5A5E;padding:9px 10px;border-bottom:1px solid #DDE3E1;white-space:nowrap}
+.tbl td{padding:9px 10px;border-bottom:1px solid #EDF1F0}
+.st{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;display:inline-block;white-space:nowrap}
+.ok{background:#E6F2EA;color:#22533A}.warn{background:#FFF3DC;color:#7A4B00}.bad{background:#FBE7E5;color:#7A1C15}.gray{background:#EEF0EF;color:#33464B}.info{background:#E3EFED;color:#163F3C}
+.lnk{font:inherit;font-size:13px;font-weight:600;min-height:32px;border:0;background:none;color:#1F5F5B;cursor:pointer;padding:0 6px}
+.h{margin:0;font-size:15px;font-weight:700}
+.lock{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:#FFF3DC;color:#7A4B00}
+.kpi{font-size:26px;font-weight:700}
+.chk{width:18px;height:18px;accent-color:#1F5F5B}
+.note{background:#FFF3DC;border-radius:10px;padding:10px 12px;font-size:13px;color:#5C3900;line-height:1.7}
+.row{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;align-items:start}
+</style>
+</helmet>
+<div dir="rtl" style="min-height: 900px; background: #F6F7F5; display: flex; flex-wrap: wrap">
+  <div style="flex: 1 1 220px; max-width: 260px"><dc-import name="StaffNav" role="therapist" active="patients" hint-size="100%,900px"></dc-import></div>
+  <div style="flex: 999 1 560px; min-width: 0; padding: 20px 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px"><div><h1 style="margin: 0; font-size: 24px; font-weight: 700">بلاغ حماية · عبدالله</h1><div class="muted" style="font-size: 14px">واجب الإبلاغ: خطر على الآخرين أو إساءة لطفل أو شخص ضعيف</div></div><div style="display: flex; gap: 8px; flex-wrap: wrap"><button class="btn btn-ghost" type="button">حفظ كمسودة</button><button class="btn btn-primary" type="button">إرسال للمسؤول السريري</button></div></div><div style="background: #FBE7E5; border-radius: 12px; padding: 12px 14px; font-size: 14px; color: #7A1C15; line-height: 1.7"><b>بدأ هذا البلاغ تلقائيًا</b> لأن المصنّف رصد في محادثة 19 أكتوبر 13:40 عبارة تدل على نية إيذاء شخص آخر. المريض عرف مسبقًا من الموافقات حدود السرية.</div><div class="row"><section class="card" style="flex: 3 1 520px"><div style="display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap"><h2 class="h">التقييم</h2></div><div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px"><div><label class="lbl" for="m1">النوع</label><select id="m1" class="field"><option>خطر على شخص آخر</option></select></div><div><label class="lbl" for="m2">مستوى الخطر</label><select id="m2" class="field"><option>مرتفع · نية دون خطة</option></select></div><div><label class="lbl" for="m3">هل الشخص المعرّض للخطر معروف؟</label><select id="m3" class="field"><option>نعم · فرد من الأسرة</option></select></div><div><label class="lbl" for="m4">وسيلة متاحة؟</label><select id="m4" class="field"><option>غير معروف</option></select></div></div><div><label class="lbl" for="m5">ما قاله المريض (اقتباس حرفي)</label><textarea id="m5" class="ta" style="height: 70px">"…"</textarea></div><div><label class="lbl" for="m6">تقديرك السريري</label><textarea id="m6" class="ta" style="height: 90px">غضب شديد بعد خلاف عائلي، لا تاريخ عنف سابق، وافق على خطة تهدئة…</textarea></div></section><section class="card" style="flex: 2 1 360px"><div style="display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap"><h2 class="h">الإجراء المطلوب</h2></div><ol style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px"><li style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px"><span class="st ok" style="min-width: 22px; text-align: center">✓</span><div><b>التواصل مع المريض</b><div class="muted" style="font-size: 12px">اتصال خلال 15 دقيقة · تم 13:52</div></div></li><li style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px"><span class="st warn" style="min-width: 22px; text-align: center">2</span><div><b>خطة سلامة للآخرين</b><div class="muted" style="font-size: 12px">إبعاد الوسيلة، شخص داعم، موعد قريب</div></div></li><li style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px"><span class="st gray" style="min-width: 22px; text-align: center">3</span><div><b>قرار المسؤول السريري</b><div class="muted" style="font-size: 12px">هل يلزم إبلاغ جهة رسمية أو تحذير الشخص؟</div></div></li><li style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px"><span class="st gray" style="min-width: 22px; text-align: center">4</span><div><b>الإبلاغ للجهة المختصة</b><div class="muted" style="font-size: 12px">[جهة الحماية / الشرطة حسب النظام المحلي]</div></div></li><li style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px"><span class="st gray" style="min-width: 22px; text-align: center">5</span><div><b>توثيق وإغلاق</b><div class="muted" style="font-size: 12px">يُراجع في اجتماع الحالات</div></div></li></ol><div class="note">قرار الإبلاغ الرسمي لا يتخذه الأخصائي وحده. جهات الإبلاغ وأرقامها يضبطها المدير في الإعدادات.</div></section></div><div class="muted" style="font-size: 12px; line-height: 1.7">البلاغ مقفل بعد الإرسال، والتعديل يكون بإضافة ملاحظة. يظهر في ملف المريض للأخصائي المعالج والمسؤول السريري فقط.</div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

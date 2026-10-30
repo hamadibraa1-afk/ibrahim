@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>إنهاء الرعاية</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.card{background:#FFFFFF;border:1px solid #DDE3E1;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.btn{font:inherit;font-weight:600;font-size:14px;min-height:44px;border-radius:10px;border:0;padding:0 16px;cursor:pointer;white-space:nowrap}
+.btn-primary{background:#1F5F5B;color:#FFFFFF}
+.btn-ghost{background:#FFFFFF;color:#1F5F5B;border:1px solid #B9C9C6}
+.btn-danger{background:#FFFFFF;color:#9B2C22;border:1px solid #E8B4AE}
+.muted{color:#4A5A5E}
+.lbl{font-size:13px;font-weight:600}
+.field{font:inherit;font-size:14px;height:40px;box-sizing:border-box;width:100%;border:1px solid #B9C9C6;border-radius:10px;padding:0 10px;background:#FFFFFF}
+.ta{font:inherit;font-size:14px;line-height:1.8;box-sizing:border-box;width:100%;border:1px solid #B9C9C6;border-radius:10px;padding:8px 10px;resize:vertical}
+.tab{font-size:14px;font-weight:600;min-height:44px;display:flex;align-items:center;padding:0 14px;text-decoration:none;color:#4A5A5E;border-bottom:3px solid transparent}
+.tab-on{color:#163F3C;border-bottom-color:#1F5F5B}
+.f{font:inherit;font-size:13px;font-weight:600;min-height:40px;padding:0 12px;border-radius:999px;border:1px solid #B9C9C6;background:#FFFFFF;color:#1B2A2F;cursor:pointer}
+.f-on{background:#1F5F5B;color:#FFFFFF;border-color:#1F5F5B}
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th{text-align:right;font-size:12px;font-weight:600;color:#4A5A5E;padding:9px 10px;border-bottom:1px solid #DDE3E1;white-space:nowrap}
+.tbl td{padding:9px 10px;border-bottom:1px solid #EDF1F0}
+.st{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;display:inline-block;white-space:nowrap}
+.ok{background:#E6F2EA;color:#22533A}.warn{background:#FFF3DC;color:#7A4B00}.bad{background:#FBE7E5;color:#7A1C15}.gray{background:#EEF0EF;color:#33464B}.info{background:#E3EFED;color:#163F3C}
+.lnk{font:inherit;font-size:13px;font-weight:600;min-height:32px;border:0;background:none;color:#1F5F5B;cursor:pointer;padding:0 6px}
+.h{margin:0;font-size:15px;font-weight:700}
+.lock{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:#FFF3DC;color:#7A4B00}
+.kpi{font-size:26px;font-weight:700}
+.chk{width:18px;height:18px;accent-color:#1F5F5B}
+.note{background:#FFF3DC;border-radius:10px;padding:10px 12px;font-size:13px;color:#5C3900;line-height:1.7}
+.row{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;align-items:start}
+</style>
+</helmet>
+<div dir="rtl" style="min-height: 900px; background: #F6F7F5; display: flex; flex-wrap: wrap">
+  <div style="flex: 1 1 220px; max-width: 260px"><dc-import name="StaffNav" role="therapist" active="patients" hint-size="100%,900px"></dc-import></div>
+  <div style="flex: 999 1 560px; min-width: 0; padding: 20px 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px"><div><h1 style="margin: 0; font-size: 24px; font-weight: 700">إنهاء الرعاية · نورة</h1><div class="muted" style="font-size: 14px">خطوات إغلاق الحالة بشكل آمن</div></div><div style="display: flex; gap: 8px; flex-wrap: wrap"><button class="btn btn-ghost" type="button">حفظ كمسودة</button><button class="btn btn-primary" type="button">إرسال للمشرف</button></div></div><div class="row"><section class="card" style="flex: 3 1 520px"><div style="display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap"><h2 class="h">ملخص الرعاية</h2></div><div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px"><div><label class="lbl" for="e1">سبب الإغلاق</label><select id="e1" class="field"><option>تحقيق الأهداف</option></select></div><div><label class="lbl" for="e2">عدد الجلسات</label><input id="e2" class="field" value="10"></div><div><label class="lbl" for="e3">المدة</label><input id="e3" class="field" value="12 أسبوعًا"></div></div><div style="overflow-x: auto"><table class="tbl"><thead><tr><th>الاختبار</th><th>البداية</th><th>النهاية</th></tr></thead><tbody><tr><td>PHQ-9</td><td>16</td><td><b>7</b></td></tr><tr><td>GAD-7</td><td>13</td><td><b>6</b></td></tr></tbody></table></div><div><label class="lbl" for="e4">ملخص للمريض (بلغة بسيطة)</label><textarea id="e4" class="ta" style="height: 100px">خلال الأسابيع الماضية تعلمتِ ملاحظة الأفكار القاسية والرد عليها، ورجعتِ لنوم منتظم. هذا جهدك أنتِ.</textarea></div></section><section class="card" style="flex: 2 1 340px"><div style="display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap"><h2 class="h">خطة منع الانتكاس</h2></div><div><label class="lbl" for="r1">علامات الإنذار المبكر</label><input id="r1" class="field" value="قلة النوم، الانعزال عن الأصدقاء"></div><div><label class="lbl" for="r2">ماذا أفعل</label><input id="r2" class="field" value="سجل الأفكار، المشي اليومي، التواصل مع أختي"></div><div><label class="lbl" for="r3">متابعة بعد الإغلاق</label><select id="r3" class="field"><option>اختبار PHQ-9 بعد شهر و3 أشهر</option></select></div><label style="display: flex; gap: 8px; align-items: center; font-size: 14px"><input type="checkbox" class="chk" checked>إبقاء الوصول للمكتبة والمذكرات</label><label style="display: flex; gap: 8px; align-items: center; font-size: 14px"><input type="checkbox" class="chk" checked>إبقاء خطة السلامة ظاهرة</label><div class="note">لا تُغلق الحالة إن كان الفرز 3 أو 4 خلال آخر 14 يومًا، أو إن طلب المريض الاستمرار.</div></section></div><div class="muted" style="font-size: 12px; line-height: 1.7">بعد اعتماد المشرف يرى المريض شاشة الوداع وخطة الانتكاس، ويستطيع العودة في أي وقت دون إعادة التسجيل.</div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

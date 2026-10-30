@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>نوافذ التأكيد</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}
+.dlg{background:#FFFFFF;border-radius:18px;padding:24px;display:flex;flex-direction:column;gap:14px;box-shadow:0 12px 32px rgba(27,42,47,0.18);max-width:420px;width:100%;box-sizing:border-box}
+.btn{font:inherit;font-weight:600;font-size:14px;min-height:44px;border-radius:10px;border:0;padding:0 16px;cursor:pointer;white-space:nowrap}
+.btn-primary{background:#1F5F5B;color:#FFFFFF}
+.btn-ghost{background:#FFFFFF;color:#1B2A2F;border:1px solid #B9C9C6}
+.muted{color:#4A5A5E}
+.cap{font-size:12px;font-weight:700;color:#FFFFFF;background:rgba(0,0,0,0.3);padding:3px 10px;border-radius:999px;align-self:flex-start}
+.field{font:inherit;font-size:14px;height:44px;box-sizing:border-box;width:100%;border:1px solid #B9C9C6;border-radius:10px;padding:0 10px}
+</style>
+</helmet>
+<div dir="rtl" style="min-height: 900px; background: rgba(27,42,47,0.55); padding: 40px 28px; box-sizing: border-box; display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 28px; align-items: center; justify-items: center">
+  <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 420px">
+    <span class="cap">تحقق إضافي (step-up)</span>
+    <div class="dlg" role="dialog" aria-label="تحقق إضافي">
+      <h2 style="margin: 0; font-size: 19px; font-weight: 700">تأكيد هويتك</h2>
+      <div class="muted" style="font-size: 14px; line-height: 1.7">إظهار بيانات تواصل المريض يتطلب تحققًا جديدًا. سيُسجَّل هذا الإجراء مع السبب.</div>
+      <label for="o" style="font-size: 14px; font-weight: 600">رمز المصادقة</label>
+      <input id="o" class="field" dir="ltr" placeholder="000 000" style="text-align: center; font-size: 20px; letter-spacing: 6px">
+      <label for="r" style="font-size: 14px; font-weight: 600">السبب</label>
+      <select id="r" class="field"><option>حدث طوارئ CE-1042</option></select>
+      <div style="display: flex; gap: 8px; justify-content: flex-end"><button class="btn btn-ghost" type="button">إلغاء</button><button class="btn btn-primary" type="button">تحقق وإظهار</button></div>
+    </div>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 420px">
+    <span class="cap">انتهاء الجلسة</span>
+    <div class="dlg" role="alertdialog" aria-label="ستنتهي الجلسة">
+      <h2 style="margin: 0; font-size: 19px; font-weight: 700">ستنتهي جلستك بعد 0:58</h2>
+      <div class="muted" style="font-size: 14px; line-height: 1.7">لم نلاحظ نشاطًا منذ 14 دقيقة. نحفظ المسودات تلقائيًا، لكن سنخرجك لحماية بيانات المرضى.</div>
+      <div style="display: flex; gap: 8px; justify-content: flex-end"><button class="btn btn-ghost" type="button">تسجيل الخروج</button><button class="btn btn-primary" type="button">متابعة العمل</button></div>
+    </div>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 420px">
+    <span class="cap">تأكيد إجراء حساس</span>
+    <div class="dlg" role="dialog" aria-label="إيقاف أخصائي">
+      <h2 style="margin: 0; font-size: 19px; font-weight: 700">إيقاف حساب T-OLD-X؟</h2>
+      <div style="background: #FFF3DC; border-radius: 10px; padding: 10px 12px; font-size: 13px; line-height: 1.7; color: #5C3900">لديه 6 مرضى نشطين و4 مواعيد هذا الأسبوع. سيُبلَّغ المشرفون فورًا لإعادة التوزيع.</div>
+      <label for="w" style="font-size: 14px; font-weight: 600">السبب (مطلوب)</label>
+      <input id="w" class="field" value="انتهاء الترخيص">
+      <div style="display: flex; gap: 8px; justify-content: flex-end"><button class="btn btn-ghost" type="button">إلغاء</button><button class="btn" type="button" style="background: #B3261E; color: #FFFFFF">إيقاف الحساب</button></div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

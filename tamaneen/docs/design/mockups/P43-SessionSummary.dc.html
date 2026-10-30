@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>بعد الجلسة</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.card{background:#FFFFFF;border-radius:22px;box-shadow:0 1px 0 #F1E6DA}
+.btn{font:inherit;font-weight:600;font-size:16px;min-height:54px;border-radius:999px;border:0;padding:0 24px;cursor:pointer}
+.btn-primary{background:#1F5F5B;color:#FFFFFF}
+.help{font:inherit;font-weight:600;font-size:14px;min-height:44px;padding:0 14px;border-radius:999px;border:1.5px solid #B3261E;color:#B3261E;background:#FFFFFF;cursor:pointer}
+.muted{color:#4A5A5E}
+.pt{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.7;padding:6px 0}
+.d{width:8px;height:8px;border-radius:50%;background:#E07A3F;flex-shrink:0;margin-top:9px}
+.r{font:inherit;font-size:14px;font-weight:600;min-height:44px;flex:1;border-radius:999px;border:1.5px solid #E5D8CA;background:#FFFFFF;color:#1B2A2F;cursor:pointer}
+</style>
+</helmet>
+<div dir="rtl" style="width: 390px; height: 844px; box-sizing: border-box; background: #FFF8F1; display: flex; flex-direction: column; overflow: hidden">
+  <header style="display: flex; align-items: center; justify-content: space-between; height: 64px; padding: 0 20px">
+    <div style="font-weight: 700; font-size: 21px; color: #1F5F5B">طمأنينة</div>
+    <button class="help" type="button">مساعدة فورية</button>
+  </header>
+  <main style="flex: 1; display: flex; flex-direction: column; gap: 12px; padding: 0 20px 20px">
+    <h1 style="margin: 0; font-size: 23px; font-weight: 700">أحسنت، أنهيت جلستك الأولى</h1>
+    <div class="card" style="padding: 14px 16px">
+      <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 6px"><div style="width: 32px; height: 32px; border-radius: 50%; background: #E4F1EE; color: #1F5F5B; font-weight: 700; font-size: 12px; display: flex; align-items: center; justify-content: center">س م</div><div style="font-weight: 700; font-size: 15px">ملخص من أ. سارة</div></div>
+      <div class="pt"><span class="d"></span>تحدثنا عن ضغط العمل وأثره على نومك.</div>
+      <div class="pt"><span class="d"></span>اتفقنا أن نبدأ بتمرين التنفس كل ليلة هذا الأسبوع.</div>
+      <div class="pt"><span class="d"></span>جلستنا القادمة الأربعاء 28 أكتوبر، 4:00 م.</div>
+    </div>
+    <div class="card" style="padding: 14px 16px; display: flex; gap: 12px; align-items: center; background: #FFF0DD">
+      <div style="flex: 1"><div style="font-weight: 700">واجب جديد</div><div style="font-size: 13px; color: #5C3900">تمرين التنفس قبل النوم · يوميًا</div></div>
+      <a href="#" style="min-height: 40px; padding: 0 16px; border-radius: 999px; background: #FFFFFF; color: #9A5B13; font-weight: 700; font-size: 13px; display: flex; align-items: center; text-decoration: none">عرض</a>
+    </div>
+    <div class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 10px">
+      <div style="font-weight: 700; font-size: 15px">كيف كانت الجلسة بالنسبة لك؟</div>
+      <div class="muted" style="font-size: 12px">رأيك خاص ويصل للمشرف فقط</div>
+      <div style="display: flex; gap: 8px"><button class="r" type="button">لم تساعد</button><button class="r" type="button">مقبولة</button><button class="r" type="button" style="border-color: #1F5F5B; background: #E4F1EE; color: #163F3C">مفيدة</button></div>
+      <label style="display: flex; gap: 10px; align-items: center; font-size: 14px; min-height: 40px"><input type="checkbox" style="width: 20px; height: 20px; accent-color: #1F5F5B">شعرت بالارتياح مع الأخصائية</label>
+    </div>
+    <div style="flex: 1"></div>
+    <button class="btn btn-primary" type="button">حفظ والعودة للرئيسية</button>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

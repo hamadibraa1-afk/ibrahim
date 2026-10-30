@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>الواجب المنزلي</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.card{background:#FFFFFF;border:1px solid #DDE3E1;border-radius:16px}
+.btn{font:inherit;font-weight:600;font-size:16px;min-height:52px;border-radius:999px;border:0;padding:0 24px;cursor:pointer}
+.btn-primary{background:#1F5F5B;color:#FFFFFF}
+.help{font:inherit;font-weight:600;font-size:14px;min-height:44px;padding:0 14px;border-radius:999px;border:1.5px solid #B3261E;color:#B3261E;background:#FFFFFF;cursor:pointer}
+.muted{color:#4A5A5E}
+.seg{font:inherit;font-weight:600;font-size:14px;min-height:48px;border-radius:10px;border:1px solid #B9C9C6;background:#FFFFFF;color:#1B2A2F;cursor:pointer}
+</style>
+</helmet>
+<div dir="rtl" style="width: 390px; height: 844px; box-sizing: border-box; background: #FFF8F1; display: flex; flex-direction: column; overflow: hidden">
+  <header style="display: flex; align-items: center; justify-content: space-between; height: 64px; padding: 0 20px">
+    <a href="#" aria-label="رجوع" style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1B2A2F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></a>
+    <button class="help" type="button">مساعدة فورية</button>
+  </header>
+  <main style="flex: 1; display: flex; flex-direction: column; gap: 14px; padding: 0 20px 20px">
+    <div style="display: flex; flex-direction: column; gap: 4px">
+      <h1 style="margin: 0; font-size: 23px; font-weight: 700">تمرين التنفس قبل النوم</h1>
+      <div class="muted" style="font-size: 13px">من أ. سارة م. · يوميًا حتى 28 أكتوبر</div>
+    </div>
+    <div class="card" style="padding: 14px 16px; display: flex; flex-direction: column; gap: 8px">
+      <div style="font-weight: 600; font-size: 15px">التعليمات</div>
+      <ol style="margin: 0; padding-right: 20px; font-size: 14px; line-height: 1.8">
+        <li>اجلس أو استلقِ في مكان هادئ قبل النوم بنصف ساعة.</li>
+        <li>تنفس من أنفك 4 ثوانٍ، واحبس النفس 4 ثوانٍ.</li>
+        <li>أخرج النفس ببطء 6 ثوانٍ. كرر ذلك 5 دقائق.</li>
+      </ol>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <div style="font-weight: 600; font-size: 15px">كيف كان اليوم؟</div>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+        <button class="seg" type="button" style="border: 2px solid #1F5F5B; background: #E3EFED; color: #163F3C">أنجزته</button>
+        <button class="seg" type="button">جزئيًا</button>
+        <button class="seg" type="button">ليس اليوم</button>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <label for="m" style="font-weight: 600; font-size: 15px">شعورك بعد التمرين</label>
+      <input id="m" type="range" min="0" max="10" value="7" style="width: 100%; accent-color: #1F5F5B; height: 32px">
+      <div class="muted" style="display: flex; justify-content: space-between; font-size: 12px"><span>0</span><span style="font-weight: 700; color: #1F5F5B; font-size: 14px">7</span><span>10</span></div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <label for="n" style="font-weight: 600; font-size: 15px">ملاحظة لأخصائيتك (اختياري)</label>
+      <textarea id="n" style="font: inherit; font-size: 15px; height: 80px; box-sizing: border-box; border: 1px solid #B9C9C6; border-radius: 12px; padding: 10px 14px; resize: none">نمت أسرع من الأمس.</textarea>
+    </div>
+    <div style="display: flex; gap: 10px; align-items: flex-start">
+      <div style="width: 32px; height: 32px; border-radius: 50%; background: #E3EFED; color: #1F5F5B; font-weight: 700; font-size: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0">س م</div>
+      <div style="background: #FFFFFF; border: 1px solid #DDE3E1; border-radius: 4px 14px 14px 14px; padding: 10px 12px; font-size: 14px; line-height: 1.7">أحسنت في الاستمرار ثلاثة أيام. لا بأس بالأيام التي تفوتك.</div>
+    </div>
+    <div style="flex: 1"></div>
+    <button class="btn btn-primary" type="button">حفظ المتابعة</button>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

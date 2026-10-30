@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>تسجيل المزاج</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.card{background:#FFFFFF;border:1px solid #DDE3E1;border-radius:16px}
+.btn{font:inherit;font-weight:600;font-size:16px;min-height:52px;border-radius:999px;border:0;padding:0 24px;cursor:pointer}
+.btn-primary{background:#1F5F5B;color:#FFFFFF}
+.help{font:inherit;font-weight:600;font-size:14px;min-height:44px;padding:0 14px;border-radius:999px;border:1.5px solid #B3261E;color:#B3261E;background:#FFFFFF;cursor:pointer}
+.muted{color:#4A5A5E}
+.tag{font:inherit;font-size:14px;font-weight:600;min-height:44px;padding:0 14px;border-radius:999px;border:1px solid #B9C9C6;background:#FFFFFF;color:#1B2A2F;cursor:pointer}
+.bar{flex:1;border-radius:4px 4px 0 0;background:#9FC2BD}
+</style>
+</helmet>
+<div dir="rtl" style="width: 390px; height: 844px; box-sizing: border-box; background: #FFF8F1; display: flex; flex-direction: column; overflow: hidden">
+  <header style="display: flex; align-items: center; justify-content: space-between; height: 64px; padding: 0 20px">
+    <a href="#" aria-label="رجوع" style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1B2A2F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></a>
+    <button class="help" type="button">مساعدة فورية</button>
+  </header>
+  <main style="flex: 1; display: flex; flex-direction: column; gap: 16px; padding: 0 20px 20px">
+    <h1 style="margin: 0; font-size: 23px; font-weight: 700">كيف حالك اليوم؟</h1>
+    <div class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 8px">
+      <label for="m" style="font-weight: 600">مزاجك من 0 إلى 10</label>
+      <div style="font-size: 40px; font-weight: 700; color: #1F5F5B; text-align: center">6</div>
+      <input id="m" type="range" min="0" max="10" value="6" style="width: 100%; accent-color: #1F5F5B; height: 32px">
+      <div class="muted" style="display: flex; justify-content: space-between; font-size: 12px"><span>سيئ جدًا</span><span>ممتاز</span></div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <div style="font-weight: 600">ما الذي يصف يومك؟ (اختياري)</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px">
+        <button class="tag" type="button" style="background: #E3EFED; border-color: #1F5F5B">متعب</button>
+        <button class="tag" type="button">قلق</button>
+        <button class="tag" type="button" style="background: #E3EFED; border-color: #1F5F5B">نمت جيدًا</button>
+        <button class="tag" type="button">ضغط عمل</button>
+        <button class="tag" type="button">هادئ</button>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <label for="n" style="font-weight: 600">ملاحظة (اختياري)</label>
+      <textarea id="n" style="font: inherit; font-size: 15px; height: 72px; box-sizing: border-box; border: 1px solid #B9C9C6; border-radius: 12px; padding: 10px 14px; resize: none"></textarea>
+    </div>
+    <div class="card" style="padding: 14px 16px; display: flex; flex-direction: column; gap: 8px">
+      <div class="muted" style="font-size: 13px; font-weight: 600">آخر 7 أيام</div>
+      <div aria-label="مخطط المزاج لآخر 7 أيام: 4، 5، 5، 3، 6، 7، 6" role="img" style="display: flex; align-items: flex-end; gap: 8px; height: 56px">
+        <div class="bar" style="height: 40%"></div><div class="bar" style="height: 50%"></div><div class="bar" style="height: 50%"></div><div class="bar" style="height: 30%"></div><div class="bar" style="height: 60%"></div><div class="bar" style="height: 70%"></div><div class="bar" style="height: 60%; background: #1F5F5B"></div>
+      </div>
+    </div>
+    <div style="flex: 1"></div>
+    <button class="btn btn-primary" type="button">حفظ</button>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

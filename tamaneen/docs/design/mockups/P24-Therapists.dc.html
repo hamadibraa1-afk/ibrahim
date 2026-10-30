@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>تصفح الأخصائيين</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.help{font:inherit;font-weight:600;font-size:14px;min-height:44px;padding:0 14px;border-radius:999px;border:1.5px solid #B3261E;color:#B3261E;background:#FFFFFF;cursor:pointer}
+.muted{color:#4A5A5E}
+.f{font:inherit;font-size:13px;font-weight:600;min-height:40px;padding:0 12px;border-radius:999px;border:1px solid #B9C9C6;background:#FFFFFF;color:#1B2A2F;cursor:pointer;white-space:nowrap}
+.row{display:flex;gap:12px;align-items:center;padding:14px;background:#FFFFFF;border:1px solid #DDE3E1;border-radius:14px;text-decoration:none;color:#1B2A2F}
+.av{width:44px;height:44px;border-radius:50%;background:#E3EFED;color:#1F5F5B;font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+</style>
+</helmet>
+<div dir="rtl" style="width: 390px; height: 844px; box-sizing: border-box; background: #FFF8F1; display: flex; flex-direction: column; overflow: hidden">
+  <header style="display: flex; align-items: center; justify-content: space-between; height: 64px; padding: 0 20px">
+    <a href="#" aria-label="رجوع" style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1B2A2F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></a>
+    <button class="help" type="button">مساعدة فورية</button>
+  </header>
+  <main style="flex: 1; display: flex; flex-direction: column; gap: 12px; padding: 0 20px 20px">
+    <h1 style="margin: 0; font-size: 23px; font-weight: 700">جميع الأخصائيين</h1>
+    <label for="s" style="position: absolute; width: 1px; height: 1px; overflow: hidden">بحث</label>
+    <input id="s" placeholder="ابحث بالتخصص أو الاسم" style="font: inherit; font-size: 15px; height: 48px; box-sizing: border-box; border: 1px solid #B9C9C6; border-radius: 12px; padding: 0 14px; background: #FFFFFF">
+    <div style="display: flex; gap: 8px; flex-wrap: wrap">
+      <button class="f" type="button" style="background: #1F5F5B; color: #FFFFFF; border-color: #1F5F5B">القلق</button>
+      <button class="f" type="button">الاكتئاب</button>
+      <button class="f" type="button">العربية</button>
+      <button class="f" type="button">أخصائية</button>
+      <button class="f" type="button">مسائي</button>
+      <button class="f" type="button" style="color: #4A5A5E">مسح</button>
+    </div>
+    <div class="muted" style="font-size: 13px">7 أخصائيين</div>
+    <a class="row" href="#"><div class="av">س م</div><div style="flex: 1"><div style="font-weight: 700">أ. سارة م.</div><div class="muted" style="font-size: 13px">القلق · النوم · CBT</div></div><span style="font-size: 12px; font-weight: 600; color: #1F5F5B">بعد يومين</span></a>
+    <a class="row" href="#"><div class="av">خ ع</div><div style="flex: 1"><div style="font-weight: 700">أ. خالد ع.</div><div class="muted" style="font-size: 13px">القلق · اليقظة الذهنية</div></div><span style="font-size: 12px; font-weight: 600; color: #1F5F5B">غدًا</span></a>
+    <a class="row" href="#"><div class="av">ن ح</div><div style="flex: 1"><div style="font-weight: 700">أ. نورة ح.</div><div class="muted" style="font-size: 13px">الضغط المهني · التكيف</div></div><span style="font-size: 12px; font-weight: 600; color: #1F5F5B">بعد 3 أيام</span></a>
+    <a class="row" href="#"><div class="av">م ف</div><div style="flex: 1"><div style="font-weight: 700">أ. منى ف.</div><div class="muted" style="font-size: 13px">القلق الاجتماعي · CBT</div></div><span class="muted" style="font-size: 12px; font-weight: 600">الأسبوع القادم</span></a>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

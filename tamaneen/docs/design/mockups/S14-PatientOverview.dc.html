@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>نظرة عامة على المريض</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.card{background:#FFFFFF;border:1px solid #DDE3E1;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.btn{font:inherit;font-weight:600;font-size:14px;min-height:40px;border-radius:10px;border:0;padding:0 14px;cursor:pointer;white-space:nowrap}
+.btn-ghost{background:#FFFFFF;color:#1F5F5B;border:1px solid #B9C9C6}
+.muted{color:#4A5A5E}
+.tab{font-size:14px;font-weight:600;min-height:44px;display:flex;align-items:center;padding:0 14px;text-decoration:none;color:#4A5A5E;border-bottom:3px solid transparent}
+.h{margin:0;font-size:15px;font-weight:700}
+.bar{width:28px;border-radius:4px 4px 0 0;background:#9FC2BD}
+.row{display:flex;justify-content:space-between;gap:10px;font-size:14px;padding:6px 0;border-bottom:1px solid #EDF1F0}
+</style>
+</helmet>
+<div dir="rtl" style="min-height: 900px; background: #F6F7F5; display: flex; flex-wrap: wrap">
+  <div style="flex: 1 1 220px; max-width: 260px"><dc-import name="StaffNav" role="therapist" active="patients" hint-size="100%,900px"></dc-import></div>
+  <div style="flex: 999 1 560px; min-width: 0; padding: 20px 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px">
+    <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between">
+      <div><a href="#" style="font-size: 13px; font-weight: 600">مرضاي</a><div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap"><h1 style="margin: 0; font-size: 24px; font-weight: 700">P-4TT8-90AA</h1><span style="font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: #E3EFED; color: #163F3C">1 · روتيني</span><span class="muted" style="font-size: 13px">في الرعاية منذ 5 أسابيع</span></div></div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap"><button class="btn btn-ghost" type="button">رفع مستوى الخطر</button><button class="btn" type="button" style="background: #FFFFFF; color: #B3261E; border: 1px solid #E8B4AE">إطلاق تنبيه طوارئ</button><button class="btn btn-ghost" type="button" style="color: #4A5A5E">إنهاء الرعاية</button></div>
+    </div>
+    <nav aria-label="أقسام ملف المريض" style="display: flex; flex-wrap: wrap; border-bottom: 1px solid #DDE3E1"><a class="tab" href="#" style="color: #163F3C; border-bottom-color: #1F5F5B">نظرة عامة</a><a class="tab" href="#">الملف السريري</a><a class="tab" href="#">خطة العلاج</a><a class="tab" href="#">الواجبات</a><a class="tab" href="#">التقارير</a></nav>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px">
+      <section class="card">
+        <h2 class="h">PHQ-9 عبر الوقت</h2>
+        <div role="img" aria-label="PHQ-9: 14 عند البدء، ثم 12، 11، 9، 8" style="display: flex; align-items: flex-end; gap: 14px; height: 120px; border-bottom: 1px solid #DDE3E1; padding: 0 6px">
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 4px"><span style="font-size: 12px; font-weight: 600">14</span><div class="bar" style="height: 84px"></div></div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 4px"><span style="font-size: 12px; font-weight: 600">12</span><div class="bar" style="height: 72px"></div></div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 4px"><span style="font-size: 12px; font-weight: 600">11</span><div class="bar" style="height: 66px"></div></div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 4px"><span style="font-size: 12px; font-weight: 600">9</span><div class="bar" style="height: 54px"></div></div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 4px"><span style="font-size: 12px; font-weight: 700">8</span><div class="bar" style="height: 48px; background: #1F5F5B"></div></div>
+        </div>
+        <div class="muted" style="font-size: 12px">كل أسبوعين · من البدء إلى اليوم</div>
+      </section>
+      <section class="card">
+        <h2 class="h">الجلسة القادمة</h2>
+        <div style="font-size: 18px; font-weight: 700">اليوم 1:00 م · الجلسة 5</div>
+        <div class="muted" style="font-size: 14px">التقرير الأسبوعي جاهز</div>
+        <a href="#" style="font-size: 14px; font-weight: 600">فتح التقرير</a>
+      </section>
+      <section class="card">
+        <h2 class="h">أهداف الخطة الحالية (الإصدار 2)</h2>
+        <div class="row"><span>تقليل وقت بدء النوم</span><span style="color: #22533A; font-weight: 600">يتحسن</span></div>
+        <div class="row"><span>التعرف على الأفكار التلقائية</span><span class="muted" style="font-weight: 600">مستمر</span></div>
+        <div class="row" style="border-bottom: 0"><span>العودة لنشاط بدني أسبوعي</span><span class="muted" style="font-weight: 600">لم يبدأ</span></div>
+      </section>
+      <section class="card">
+        <h2 class="h">الواجبات هذا الأسبوع</h2>
+        <div class="row"><span>تمرين التنفس</span><span style="font-weight: 600">6 / 7</span></div>
+        <div class="row" style="border-bottom: 0"><span>سجل الأفكار</span><span style="font-weight: 600">2 / 2</span></div>
+        <div class="muted" style="font-size: 13px">متوسط المزاج 6.4 من 10</div>
+      </section>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

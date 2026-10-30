@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>إعدادات المنصة</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.card{background:#FFFFFF;border:1px solid #DDE3E1;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.btn{font:inherit;font-weight:600;font-size:14px;min-height:44px;border-radius:10px;border:0;padding:0 16px;cursor:pointer;white-space:nowrap}
+.btn-primary{background:#1F5F5B;color:#FFFFFF}
+.btn-ghost{background:#FFFFFF;color:#1F5F5B;border:1px solid #B9C9C6}
+.muted{color:#4A5A5E}
+.lbl{font-size:13px;font-weight:600}
+.field{font:inherit;font-size:14px;height:40px;box-sizing:border-box;width:100%;border:1px solid #B9C9C6;border-radius:10px;padding:0 10px;background:#FFFFFF}
+.tab{font-size:14px;font-weight:600;min-height:44px;display:flex;align-items:center;padding:0 14px;text-decoration:none;color:#4A5A5E;border-bottom:3px solid transparent}
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th{text-align:right;font-size:12px;font-weight:600;color:#4A5A5E;padding:8px 10px;border-bottom:1px solid #DDE3E1}
+.tbl td{padding:6px 10px;border-bottom:1px solid #EDF1F0}
+.h{margin:0;font-size:15px;font-weight:700}
+.lock{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:#FFF3DC;color:#7A4B00}
+</style>
+</helmet>
+<div dir="rtl" style="min-height: 900px; background: #F6F7F5; display: flex; flex-wrap: wrap">
+  <div style="flex: 1 1 220px; max-width: 260px"><dc-import name="StaffNav" role="admin" active="settings-platform" hint-size="100%,900px"></dc-import></div>
+  <div style="flex: 999 1 560px; min-width: 0; padding: 20px 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px">
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px"><h1 style="margin: 0; font-size: 24px; font-weight: 700">إعدادات المنصة</h1><div style="display: flex; gap: 8px"><button class="btn btn-ghost" type="button">سجل التغييرات</button><button class="btn btn-primary" type="button">حفظ التغييرات</button></div></div>
+    <nav aria-label="أقسام الإعدادات" style="display: flex; flex-wrap: wrap; border-bottom: 1px solid #DDE3E1"><a class="tab" href="#" style="color: #163F3C; border-bottom-color: #1F5F5B">عام والطوارئ</a><a class="tab" href="#">المهل الزمنية</a><a class="tab" href="#">اللغات</a><a class="tab" href="#">الحدود والسعة</a><a class="tab" href="#">الاحتفاظ بالبيانات</a><a class="tab" href="#">الذكاء الاصطناعي</a></nav>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 16px; align-items: start">
+      <section class="card">
+        <h2 class="h">منطقة التجربة</h2>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+          <div><label class="lbl" for="c">الدولة</label><select id="c" class="field"><option>[الدولة]</option></select></div>
+          <div><label class="lbl" for="t">المنطقة الزمنية</label><select id="t" class="field"><option>[المنطقة الزمنية]</option></select></div>
+          <div><label class="lbl" for="ci">المدن المسموح بها</label><input id="ci" class="field" value="[المدينة 1]، [المدينة 2]"></div>
+          <div><label class="lbl" for="a">الحد الأدنى للعمر</label><input id="a" class="field" type="number" value="18"></div>
+        </div>
+        <h2 class="h" style="margin-top: 6px">اسم المنصة والتواصل</h2>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+          <div><label class="lbl" for="n">اسم المنصة</label><input id="n" class="field" value="طمأنينة"></div>
+          <div><label class="lbl" for="s">بريد الدعم</label><input id="s" class="field" dir="ltr" value="support@[domain]"></div>
+        </div>
+      </section>
+      <section class="card">
+        <div style="display: flex; gap: 8px; align-items: center"><h2 class="h">أرقام الطوارئ</h2><span class="lock">تغييرها يحتاج موافقة المسؤول السريري</span></div>
+        <table class="tbl">
+          <thead><tr><th>الاسم الظاهر</th><th>الرقم</th><th>يظهر في</th><th></th></tr></thead>
+          <tbody>
+            <tr><td><input class="field" aria-label="الاسم" value="الطوارئ"></td><td><input class="field" aria-label="الرقم" dir="ltr" value="[000]"></td><td>كل الشاشات</td><td><a href="#" style="font-size: 13px">حذف</a></td></tr>
+            <tr><td><input class="field" aria-label="الاسم" value="خط الدعم النفسي"></td><td><input class="field" aria-label="الرقم" dir="ltr" value="[0000]"></td><td>الطوارئ، الخطة</td><td><a href="#" style="font-size: 13px">حذف</a></td></tr>
+            <tr><td><input class="field" aria-label="الاسم" value="الرقم الدولي"></td><td><input class="field" aria-label="الرقم" dir="ltr" value="112"></td><td>خارج المنطقة</td><td><a href="#" style="font-size: 13px">حذف</a></td></tr>
+          </tbody>
+        </table>
+        <button class="btn btn-ghost" type="button" style="align-self: flex-start">إضافة رقم</button>
+      </section>
+      <section class="card">
+        <div style="display: flex; gap: 8px; align-items: center"><h2 class="h">مهل الاستجابة حسب المستوى</h2><span class="lock">موافقة المسؤول السريري</span></div>
+        <table class="tbl">
+          <thead><tr><th>المستوى</th><th>الإقرار</th><th>التواصل</th><th>مراجعة الفرز</th></tr></thead>
+          <tbody>
+            <tr><td style="font-weight: 600">4 · حرج</td><td><input class="field" aria-label="الإقرار" value="2 د"></td><td><input class="field" aria-label="التواصل" value="5 د"></td><td>—</td></tr>
+            <tr><td style="font-weight: 600">3 · عالٍ</td><td><input class="field" aria-label="الإقرار" value="15 د"></td><td><input class="field" aria-label="التواصل" value="60 د"></td><td>—</td></tr>
+            <tr><td style="font-weight: 600">2 · مرتفع</td><td>—</td><td>—</td><td><input class="field" aria-label="المراجعة" value="4 س"></td></tr>
+            <tr><td style="font-weight: 600">1 · روتيني</td><td>—</td><td>—</td><td><input class="field" aria-label="المراجعة" value="24 س"></td></tr>
+          </tbody>
+        </table>
+      </section>
+      <section class="card">
+        <h2 class="h">حدود التجربة</h2>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+          <div><label class="lbl" for="mp">الحد الأقصى للمرضى</label><input id="mp" class="field" type="number" value="300"></div>
+          <div><label class="lbl" for="mt">السعة الافتراضية للأخصائي</label><input id="mt" class="field" type="number" value="25"></div>
+          <div><label class="lbl" for="sd">بداية التجربة</label><input id="sd" class="field" type="date" value="2026-10-01"></div>
+          <div><label class="lbl" for="ed">نهاية التجربة</label><input id="ed" class="field" type="date" value="2026-12-24"></div>
+        </div>
+        <label style="display: flex; gap: 8px; align-items: center; font-size: 14px"><input type="checkbox" checked style="width: 18px; height: 18px; accent-color: #1F5F5B">إيقاف التسجيل تلقائيًا عند وجود فجوة في المناوبة</label>
+      </section>
+    </div>
+    <div class="muted" style="font-size: 12px">كل حفظ يتطلب سببًا، ويُسجَّل في سجل التدقيق مع القيمة القديمة والجديدة.</div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

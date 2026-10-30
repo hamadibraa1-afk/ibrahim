@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>شاشة الطوارئ</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.muted{color:#4A5A5E}
+.call{font:inherit;font-weight:700;font-size:17px;min-height:60px;border-radius:14px;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:10px}
+</style>
+</helmet>
+<div dir="rtl" style="width: 390px; height: 844px; box-sizing: border-box; background: #FFFFFF; display: flex; flex-direction: column; overflow: hidden">
+  <div style="height: 6px; background: #B3261E"></div>
+  <main style="flex: 1; display: flex; flex-direction: column; gap: 18px; padding: 28px 20px 20px">
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <h1 style="margin: 0; font-size: 28px; font-weight: 700">أنت لست وحدك</h1>
+      <p style="margin: 0; font-size: 16px; line-height: 1.7">أحد أعضاء فريقنا السريري يتم التواصل معه الآن، وسيتصل بك خلال دقائق.</p>
+    </div>
+    <div style="border: 1px solid #DDE3E1; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 14px">
+      <div style="display: flex; gap: 12px; align-items: center">
+        <div style="width: 28px; height: 28px; border-radius: 50%; background: #2E6B45; display: flex; align-items: center; justify-content: center; flex-shrink: 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg></div>
+        <div style="font-size: 15px; font-weight: 600">تم إبلاغ الفريق</div>
+      </div>
+      <div style="width: 2px; height: 14px; background: #DDE3E1; margin-right: 13px"></div>
+      <div style="display: flex; gap: 12px; align-items: center">
+        <div style="width: 28px; height: 28px; border-radius: 50%; border: 3px solid #1F5F5B; box-sizing: border-box; flex-shrink: 0"></div>
+        <div style="display: flex; flex-direction: column"><div style="font-size: 15px; font-weight: 600">مختص يتصل بك</div><div class="muted" style="font-size: 13px">على الرقم المنتهي بـ 4521</div></div>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <div style="font-size: 15px; font-weight: 600">إذا كنت في خطر الآن، لا تنتظر:</div>
+      <a class="call" href="tel:000" style="background: #B3261E; color: #FFFFFF"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"></path></svg>اتصل بالطوارئ [رقم الطوارئ المحلي]</a>
+      <a class="call" href="tel:000" style="background: #FFFFFF; color: #B3261E; border: 2px solid #B3261E">خط الدعم النفسي [رقم الخط]</a>
+    </div>
+    <div style="background: #FFF8F1; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 6px">
+      <div style="font-size: 15px; font-weight: 600">حتى يتصل بك أحد</div>
+      <div style="font-size: 14px; line-height: 1.75">إن استطعت، ابقَ في مكان آمن، وابتعد عن أي شيء قد يؤذيك، وكن قريبًا من شخص تثق به.</div>
+    </div>
+    <div style="flex: 1"></div>
+    <div class="muted" style="font-size: 13px; line-height: 1.6; text-align: center">المحادثة متوقفة الآن، وسيعيد المختص فتحها بعد التواصل معك.</div>
+    <a href="#" style="text-align: center; font-size: 15px; font-weight: 600; min-height: 44px; display: flex; align-items: center; justify-content: center">رقمي تغيّر؟ حدّث رقم التواصل</a>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

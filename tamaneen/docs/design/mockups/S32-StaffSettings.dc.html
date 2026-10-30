@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>إعدادات الحساب</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.card{background:#FFFFFF;border:1px solid #DDE3E1;border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:4px}
+.btn{font:inherit;font-weight:600;font-size:14px;min-height:40px;border-radius:10px;border:1px solid #B9C9C6;padding:0 14px;cursor:pointer;white-space:nowrap;background:#FFFFFF;color:#1F5F5B}
+.muted{color:#4A5A5E}
+.li{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;min-height:56px;border-bottom:1px solid #EDF1F0}
+.sw{width:22px;height:22px;accent-color:#1F5F5B}
+.h{margin:0 0 6px;font-size:16px;font-weight:700}
+</style>
+</helmet>
+<div dir="rtl" style="min-height: 900px; background: #F6F7F5; display: flex; flex-wrap: wrap">
+  <div style="flex: 1 1 220px; max-width: 260px"><dc-import name="StaffNav" role="therapist" active="settings" hint-size="100%,900px"></dc-import></div>
+  <div style="flex: 999 1 560px; min-width: 0; padding: 20px 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px">
+    <h1 style="margin: 0; font-size: 24px; font-weight: 700">إعدادات الحساب</h1>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 16px; align-items: start">
+      <section class="card">
+        <h2 class="h">الأمان</h2>
+        <div class="li"><div><div style="font-weight: 600">كلمة المرور</div><div class="muted" style="font-size: 12px">غُيّرت قبل شهر</div></div><button class="btn" type="button">تغيير</button></div>
+        <div class="li"><div><div style="font-weight: 600">تطبيق المصادقة</div><div style="font-size: 12px; font-weight: 600; color: #22533A">مفعّل · إلزامي للفريق</div></div><button class="btn" type="button">نقل لجهاز آخر</button></div>
+        <div class="li"><div><div style="font-weight: 600">مفاتيح المرور</div><div class="muted" style="font-size: 12px">مفتاح واحد · حاسوب العمل</div></div><button class="btn" type="button">إضافة</button></div>
+        <div class="li" style="border-bottom: 0"><div><div style="font-weight: 600">الجلسات النشطة</div><div class="muted" style="font-size: 12px">جهازان · تنتهي الجلسة بعد 15 دقيقة خمول</div></div><button class="btn" type="button" style="color: #9B2219; border-color: #E8B4AE">إنهاء الأخرى</button></div>
+      </section>
+      <section class="card">
+        <h2 class="h">الإشعارات</h2>
+        <label class="li">تنبيهات خطر لمرضاي (رسالة + تطبيق)<input class="sw" type="checkbox" checked disabled></label>
+        <label class="li">حجز جديد أو إلغاء<input class="sw" type="checkbox" checked></label>
+        <label class="li">تقرير أسبوعي جاهز<input class="sw" type="checkbox" checked></label>
+        <label class="li" style="border-bottom: 0">ملخص يومي بالبريد<input class="sw" type="checkbox"></label>
+        <div class="muted" style="font-size: 12px; padding-top: 6px">تنبيهات الخطر لا يمكن إيقافها.</div>
+      </section>
+      <section class="card">
+        <h2 class="h">اللغة والعرض</h2>
+        <div class="li"><label for="l" style="font-weight: 600">لغة الواجهة</label><select id="l" style="font: inherit; height: 40px; border: 1px solid #B9C9C6; border-radius: 10px; padding: 0 10px"><option>العربية</option><option>English</option></select></div>
+        <div class="li" style="border-bottom: 0"><label for="t" style="font-weight: 600">المنطقة الزمنية</label><select id="t" style="font: inherit; height: 40px; border: 1px solid #B9C9C6; border-radius: 10px; padding: 0 10px"><option>[توقيت منطقة التجربة]</option></select></div>
+      </section>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

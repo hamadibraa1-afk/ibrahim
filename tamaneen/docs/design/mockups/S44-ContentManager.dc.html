@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>إدارة المحتوى</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.card{background:#FFFFFF;border:1px solid #DDE3E1;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.btn{font:inherit;font-weight:600;font-size:14px;min-height:44px;border-radius:10px;border:0;padding:0 16px;cursor:pointer;white-space:nowrap}
+.btn-primary{background:#1F5F5B;color:#FFFFFF}
+.btn-ghost{background:#FFFFFF;color:#1F5F5B;border:1px solid #B9C9C6}
+.muted{color:#4A5A5E}
+.tab{font-size:14px;font-weight:600;min-height:44px;display:flex;align-items:center;padding:0 14px;text-decoration:none;color:#4A5A5E;border-bottom:3px solid transparent}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:right;font-size:12px;font-weight:600;color:#4A5A5E;padding:8px 10px;border-bottom:1px solid #DDE3E1;white-space:nowrap}
+.tbl td{padding:9px 10px;border-bottom:1px solid #EDF1F0;white-space:nowrap}
+.st{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;display:inline-block}
+.ta{font:inherit;font-size:14px;line-height:1.8;box-sizing:border-box;width:100%;border:1px solid #B9C9C6;border-radius:10px;padding:8px 10px;resize:vertical}
+</style>
+</helmet>
+<div dir="rtl" style="min-height: 900px; background: #F6F7F5; display: flex; flex-wrap: wrap">
+  <div style="flex: 1 1 220px; max-width: 260px"><dc-import name="StaffNav" role="admin" active="content" hint-size="100%,900px"></dc-import></div>
+  <div style="flex: 999 1 560px; min-width: 0; padding: 20px 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px">
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px"><h1 style="margin: 0; font-size: 24px; font-weight: 700">إدارة المحتوى</h1><button class="btn btn-primary" type="button">إضافة محتوى</button></div>
+    <nav aria-label="أنواع المحتوى" style="display: flex; flex-wrap: wrap; border-bottom: 1px solid #DDE3E1"><a class="tab" href="#" style="color: #163F3C; border-bottom-color: #1F5F5B">نصوص الطوارئ</a><a class="tab" href="#">الموافقات والسياسات</a><a class="tab" href="#">مكتبة الواجبات</a><a class="tab" href="#">المساعدة الذاتية</a><a class="tab" href="#">الأسئلة الشائعة</a><a class="tab" href="#">رسائل النظام</a><a class="tab" href="#">الترجمات</a></nav>
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+      <section class="card" style="flex: 2 1 420px; min-width: 0; overflow-x: auto">
+        <table class="tbl">
+          <thead><tr><th>العنوان</th><th>يُستخدم في</th><th>الإصدار</th><th>الحالة</th></tr></thead>
+          <tbody>
+            <tr style="background: #F3F8F7"><td style="font-weight: 600">سكربت المستوى 4</td><td>شاشة الطوارئ</td><td>v3</td><td><span class="st" style="background: #FFF3DC; color: #7A4B00">بانتظار الاعتماد</span></td></tr>
+            <tr><td style="font-weight: 600">سكربت المستوى 3</td><td>المحادثة</td><td>v2</td><td><span class="st" style="background: #E6F2EA; color: #22533A">منشور</span></td></tr>
+            <tr><td style="font-weight: 600">سكربت تعطل النظام</td><td>كل الشاشات</td><td>v1</td><td><span class="st" style="background: #E6F2EA; color: #22533A">منشور</span></td></tr>
+            <tr><td style="font-weight: 600">مساعدة شخص آخر</td><td>الطوارئ</td><td>v1</td><td><span class="st" style="background: #E6F2EA; color: #22533A">منشور</span></td></tr>
+            <tr><td style="font-weight: 600">الإفصاح عن إساءة</td><td>المحادثة</td><td>v1</td><td><span class="st" style="background: #EEF0EF; color: #33464B">مسودة</span></td></tr>
+          </tbody>
+        </table>
+      </section>
+      <section class="card" style="flex: 3 1 520px; min-width: 0">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px"><h2 style="margin: 0; font-size: 16px; font-weight: 700">سكربت المستوى 4 · v3</h2><span class="muted" style="font-size: 12px">اقترحه: د. فهد ر. · 18 أكتوبر</span></div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px">
+          <div style="display: flex; flex-direction: column; gap: 6px"><label for="ar" style="font-size: 13px; font-weight: 600">العربية</label><textarea id="ar" class="ta" style="height: 120px">أنت لست وحدك. أحد أعضاء فريقنا السريري يتم التواصل معه الآن، وسيتصل بك خلال دقائق. إن كنت في خطر الآن، اتصل بـ {رقم_الطوارئ}.</textarea></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><label for="en" style="font-size: 13px; font-weight: 600">English</label><textarea id="en" class="ta" dir="ltr" style="height: 120px">You are not alone. A member of our clinical team is being contacted now and will call you within minutes. If you are in danger now, call {emergency_number}.</textarea></div>
+        </div>
+        <div class="muted" style="font-size: 12px">المتغيرات المتاحة: {رقم_الطوارئ} {خط_الدعم} {اسم_المنصة} · تُملأ من إعدادات المنصة</div>
+        <div style="background: #FFF3DC; border-radius: 10px; padding: 10px 12px; font-size: 13px; color: #5C3900">نصوص الطوارئ والموافقات لا تُنشر إلا بعد اعتماد المسؤول السريري. الإصدار السابق يبقى فعّالًا حتى ذلك.</div>
+        <div style="display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap"><button class="btn btn-ghost" type="button">مقارنة بالإصدار السابق</button><button class="btn btn-ghost" type="button">معاينة</button><button class="btn btn-primary" type="button">إرسال للاعتماد</button></div>
+      </section>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

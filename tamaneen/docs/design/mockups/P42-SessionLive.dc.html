@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>أثناء الجلسة</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#FFFFFF}
+.ctl{width:58px;height:58px;border-radius:50%;border:0;display:flex;align-items:center;justify-content:center;cursor:pointer;background:rgba(255,255,255,0.16)}
+</style>
+</helmet>
+<div dir="rtl" style="width: 390px; height: 844px; box-sizing: border-box; background: #173A37; display: flex; flex-direction: column; overflow: hidden; position: relative">
+  <div style="background: #FFF0DD; color: #5C3900; font-size: 12px; font-weight: 600; text-align: center; padding: 6px 12px">مرحلة لاحقة: الفيديو داخل التطبيق خارج نطاق التجربة الحالية</div>
+  <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 18px">
+    <div><div style="font-weight: 700; font-size: 16px">أ. سارة م.</div><div style="font-size: 13px; opacity: 0.85; font-variant-numeric: tabular-nums">12:48 · جلسة مشفرة</div></div>
+    <button type="button" style="font: inherit; font-weight: 600; font-size: 13px; min-height: 44px; padding: 0 12px; border-radius: 999px; border: 1.5px solid #FFB4A8; color: #FFFFFF; background: rgba(179,38,30,0.35); cursor: pointer">مساعدة فورية</button>
+  </div>
+  <div style="flex: 1; margin: 0 14px; border-radius: 28px; background: #2A5A55; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center">
+    <svg width="220" height="260" viewBox="0 0 220 260" aria-hidden="true"><circle cx="110" cy="92" r="46" fill="#F2C9A5"></circle><path d="M64 80 c 0 -40 92 -50 92 4 c -6 -18 -30 -28 -46 -26 c -20 2 -40 10 -46 22 z" fill="#3B2A22"></path><path d="M30 260 c 0 -60 40 -96 80 -96 s 80 36 80 96 z" fill="#8CC3B8"></path></svg>
+    <div style="position: absolute; bottom: 16px; left: 16px; width: 96px; height: 132px; border-radius: 18px; background: #3F726C; border: 2px solid rgba(255,255,255,0.4); display: flex; align-items: center; justify-content: center"><svg width="60" height="80" viewBox="0 0 60 80" aria-hidden="true"><circle cx="30" cy="28" r="14" fill="#E9B98F"></circle><path d="M6 80 c 0 -20 10 -32 24 -32 s 24 12 24 32 z" fill="#FFD7A8"></path></svg></div>
+    <div style="position: absolute; top: 14px; right: 14px; font-size: 12px; font-weight: 600; background: rgba(0,0,0,0.25); padding: 4px 10px; border-radius: 999px">لا يوجد تسجيل</div>
+  </div>
+  <div style="display: flex; justify-content: center; gap: 16px; padding: 22px 0 28px">
+    <button class="ctl" type="button" aria-label="كتم الميكروفون"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0"></path><path d="M12 18v3"></path></svg></button>
+    <button class="ctl" type="button" aria-label="إيقاف الكاميرا"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="3"></rect><path d="M16 10l5-3v10l-5-3"></path></svg></button>
+    <button class="ctl" type="button" aria-label="كتابة رسالة"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"></path></svg></button>
+    <button class="ctl" type="button" aria-label="إنهاء الجلسة" style="background: #C9473B"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 15c5-5 13-5 18 0l-2 3-4-2v-3a10 10 0 0 0-6 0v3l-4 2z"></path></svg></button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

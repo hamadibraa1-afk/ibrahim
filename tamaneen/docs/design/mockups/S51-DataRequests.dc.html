@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>طلبات البيانات</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.card{background:#FFFFFF;border:1px solid #DDE3E1;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.btn{font:inherit;font-weight:600;font-size:14px;min-height:44px;border-radius:10px;border:0;padding:0 16px;cursor:pointer;white-space:nowrap}
+.btn-primary{background:#1F5F5B;color:#FFFFFF}
+.btn-ghost{background:#FFFFFF;color:#1F5F5B;border:1px solid #B9C9C6}
+.btn-danger{background:#FFFFFF;color:#9B2C22;border:1px solid #E8B4AE}
+.muted{color:#4A5A5E}
+.lbl{font-size:13px;font-weight:600}
+.field{font:inherit;font-size:14px;height:40px;box-sizing:border-box;width:100%;border:1px solid #B9C9C6;border-radius:10px;padding:0 10px;background:#FFFFFF}
+.ta{font:inherit;font-size:14px;line-height:1.8;box-sizing:border-box;width:100%;border:1px solid #B9C9C6;border-radius:10px;padding:8px 10px;resize:vertical}
+.tab{font-size:14px;font-weight:600;min-height:44px;display:flex;align-items:center;padding:0 14px;text-decoration:none;color:#4A5A5E;border-bottom:3px solid transparent}
+.tab-on{color:#163F3C;border-bottom-color:#1F5F5B}
+.f{font:inherit;font-size:13px;font-weight:600;min-height:40px;padding:0 12px;border-radius:999px;border:1px solid #B9C9C6;background:#FFFFFF;color:#1B2A2F;cursor:pointer}
+.f-on{background:#1F5F5B;color:#FFFFFF;border-color:#1F5F5B}
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th{text-align:right;font-size:12px;font-weight:600;color:#4A5A5E;padding:9px 10px;border-bottom:1px solid #DDE3E1;white-space:nowrap}
+.tbl td{padding:9px 10px;border-bottom:1px solid #EDF1F0}
+.st{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;display:inline-block;white-space:nowrap}
+.ok{background:#E6F2EA;color:#22533A}.warn{background:#FFF3DC;color:#7A4B00}.bad{background:#FBE7E5;color:#7A1C15}.gray{background:#EEF0EF;color:#33464B}.info{background:#E3EFED;color:#163F3C}
+.lnk{font:inherit;font-size:13px;font-weight:600;min-height:32px;border:0;background:none;color:#1F5F5B;cursor:pointer;padding:0 6px}
+.h{margin:0;font-size:15px;font-weight:700}
+.lock{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:#FFF3DC;color:#7A4B00}
+.kpi{font-size:26px;font-weight:700}
+.chk{width:18px;height:18px;accent-color:#1F5F5B}
+.note{background:#FFF3DC;border-radius:10px;padding:10px 12px;font-size:13px;color:#5C3900;line-height:1.7}
+.row{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;align-items:start}
+</style>
+</helmet>
+<div dir="rtl" style="min-height: 900px; background: #F6F7F5; display: flex; flex-wrap: wrap">
+  <div style="flex: 1 1 220px; max-width: 260px"><dc-import name="StaffNav" role="admin" active="datareq" hint-size="100%,900px"></dc-import></div>
+  <div style="flex: 999 1 560px; min-width: 0; padding: 20px 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px"><div><h1 style="margin: 0; font-size: 24px; font-weight: 700">طلبات البيانات</h1><div class="muted" style="font-size: 14px">تصدير خلال 7 أيام · حذف خلال 30 يومًا</div></div><div style="display: flex; gap: 8px; flex-wrap: wrap"><button class="btn btn-ghost" type="button">تسجيل طلب يدوي</button></div></div><div style="display: flex; flex-wrap: wrap; gap: 8px"><button class="f f-on" type="button">الكل · 4</button><button class="f" type="button">مفتوحة</button><button class="f" type="button">قرب المهلة</button><button class="f" type="button">مكتملة</button></div><div class="row"><section class="card" style="flex: 3 1 600px"><div style="overflow-x: auto"><table class="tbl"><thead><tr><th>الرقم</th><th>النوع</th><th>صاحب الطلب</th><th>تاريخ الطلب</th><th>المهلة</th><th>الحالة</th><th></th></tr></thead><tbody><tr><td><b>DR-0042</b></td><td>تصدير نسخة من بياناتي</td><td>مريض #P-2201</td><td>15 أكتوبر</td><td><b>22 أكتوبر</b> · بعد 3 أيام</td><td><span class="st warn">قيد التجهيز</span></td><td><button class="lnk" type="button">فتح</button></td></tr><tr><td><b>DR-0041</b></td><td>حذف الحساب</td><td>مريض #P-1987</td><td>2 أكتوبر</td><td>1 نوفمبر · بعد 13 يومًا</td><td><span class="st info">بانتظار المراجعة السريرية</span></td><td><button class="lnk" type="button">فتح</button></td></tr><tr><td><b>DR-0039</b></td><td>تصحيح بيانات</td><td>مريض #P-2034</td><td>28 سبتمبر</td><td>28 أكتوبر</td><td><span class="st ok">مكتمل</span></td><td><button class="lnk" type="button">عرض</button></td></tr><tr><td><b>DR-0037</b></td><td>حذف الحساب</td><td>مريض #P-1702</td><td>20 سبتمبر</td><td>20 أكتوبر · <span style="color: #9B2C22; font-weight: 700">غدًا</span></td><td><span class="st bad">متأخر قريبًا</span></td><td><button class="lnk" type="button">فتح</button></td></tr></tbody></table></div></section><section class="card" style="flex: 2 1 360px"><div style="display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap"><h2 class="h">DR-0041 · حذف الحساب</h2></div><ol style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px"><li style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px"><span class="st ok" style="min-width: 22px; text-align: center">✓</span><div><b>التحقق من الهوية</b><div class="muted" style="font-size: 12px">عبر الدخول + رمز التحقق</div></div></li><li style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px"><span class="st ok" style="min-width: 22px; text-align: center">✓</span><div><b>فحص الحجز القانوني</b><div class="muted" style="font-size: 12px">لا يوجد حجز أو تحقيق مفتوح</div></div></li><li style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px"><span class="st warn" style="min-width: 22px; text-align: center">3</span><div><b>مراجعة سريرية</b><div class="muted" style="font-size: 12px">هل يوجد خطر نشط؟ تُحفظ سجلات الطوارئ حسب مدة الاحتفاظ</div></div></li><li style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px"><span class="st gray" style="min-width: 22px; text-align: center">4</span><div><b>الحذف الآمن</b><div class="muted" style="font-size: 12px">حذف مفتاح التشفير الخاص بالمريض (crypto-shred)</div></div></li><li style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px"><span class="st gray" style="min-width: 22px; text-align: center">5</span><div><b>إشعار المريض</b><div class="muted" style="font-size: 12px">رسالة تأكيد بالبريد</div></div></li></ol><div class="note">ما يبقى بعد الحذف: سجل التدقيق دون محتوى، وسجلات الطوارئ المطلوبة نظاميًا لمدة الاحتفاظ المحددة في الإعدادات.</div><div style="display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap"><button class="btn btn-danger" type="button">رفض مع سبب</button><button class="btn btn-primary" type="button">إحالة للمراجعة السريرية</button></div></section></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>محادثة الاستقبال</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.help{font:inherit;font-weight:600;font-size:13px;min-height:44px;padding:0 12px;border-radius:999px;border:1.5px solid #B3261E;color:#B3261E;background:#FFFFFF;cursor:pointer}
+.tool{font:inherit;font-weight:600;font-size:13px;min-height:44px;padding:0 10px;border-radius:10px;border:1px solid #B9C9C6;color:#1F5F5B;background:#FFFFFF;cursor:pointer}
+.muted{color:#4A5A5E}
+.ai{align-self:flex-start;max-width:290px;background:#FFFFFF;border:1px solid #DDE3E1;border-radius:16px 16px 16px 4px;padding:12px 14px;font-size:15px;line-height:1.7}
+.me{align-self:flex-end;max-width:270px;background:#1F5F5B;color:#FFFFFF;border-radius:16px 16px 4px 16px;padding:12px 14px;font-size:15px;line-height:1.7}
+.opt{font:inherit;font-size:15px;font-weight:500;min-height:48px;border-radius:12px;border:1px solid #B9C9C6;background:#FFFFFF;color:#1B2A2F;text-align:right;padding:0 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+</style>
+</helmet>
+<div dir="rtl" style="width: 390px; height: 844px; box-sizing: border-box; background: #FFF8F1; display: flex; flex-direction: column; overflow: hidden">
+  <header style="display: flex; flex-direction: column; gap: 10px; padding: 10px 16px 12px; background: #FFFFFF; border-bottom: 1px solid #DDE3E1">
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+      <div style="display: flex; gap: 10px; align-items: center">
+        <div style="width: 40px; height: 40px; border-radius: 50%; background: #E4F1EE; display: flex; align-items: center; justify-content: center; flex-shrink: 0"><svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="13" fill="#8CC3B8"></circle><circle cx="12" cy="14" r="1.6" fill="#163F3C"></circle><circle cx="20" cy="14" r="1.6" fill="#163F3C"></circle><path d="M12 19c2.5 2 5.5 2 8 0" stroke="#163F3C" stroke-width="1.8" fill="none" stroke-linecap="round"></path></svg></div>
+        <div style="display: flex; flex-direction: column">
+          <div style="font-weight: 700; font-size: 17px">رفيق · مساعد التعارف</div>
+          <div class="muted" style="font-size: 12px">مساعد ذكي، ويراجع كلامك مختص بشري</div>
+        </div>
+      </div>
+      <button class="help" type="button">مساعدة فورية</button>
+    </div>
+    <div style="display: flex; gap: 8px">
+      <button class="tool" type="button">إيقاف مؤقت</button>
+      <button class="tool" type="button">أريد التحدث مع شخص</button>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px">
+      <div style="flex: 1; height: 6px; border-radius: 3px; background: #DDE3E1; overflow: hidden"><div style="width: 45%; height: 6px; background: #1F5F5B"></div></div>
+      <div class="muted" style="font-size: 12px; font-weight: 600">45%</div>
+    </div>
+  </header>
+  <main style="flex: 1; display: flex; flex-direction: column; gap: 12px; padding: 16px; overflow: hidden">
+    <div class="ai">أهلًا بك. أنا هنا لأستمع وأساعد فريقنا على فهم ما تمر به. كيف كان شعورك خلال الأسبوعين الماضيين؟</div>
+    <div class="me">أشعر بضغط كبير ولا أنام جيدًا منذ فترة.</div>
+    <div class="ai">شكرًا لأنك شاركتني هذا. قلة النوم مع الضغط متعبة فعلًا. سأطرح عليك الآن سؤالًا من استبيان معتمد.</div>
+    <div style="align-self: stretch; background: #FFFFFF; border: 1.5px solid #1F5F5B; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 10px">
+      <div style="display: flex; justify-content: space-between; align-items: center">
+        <span style="font-size: 12px; font-weight: 700; color: #1F5F5B; background: #E3EFED; padding: 2px 8px; border-radius: 999px">PHQ-9 · السؤال 2 من 9</span>
+      </div>
+      <div style="font-size: 15px; font-weight: 600; line-height: 1.7">خلال الأسبوعين الماضيين، كم مرة شعرت بالحزن أو الاكتئاب أو اليأس؟</div>
+      <div style="display: flex; flex-direction: column; gap: 8px">
+        <button class="opt" type="button"><span>أبدًا</span><span class="muted" style="font-size: 13px">0</span></button>
+        <button class="opt" type="button"><span>عدة أيام</span><span class="muted" style="font-size: 13px">1</span></button>
+        <button class="opt" type="button" style="border: 2px solid #1F5F5B; background: #E3EFED"><span style="font-weight: 600">أكثر من نصف الأيام</span><span style="font-size: 13px; color: #1F5F5B; font-weight: 700">2</span></button>
+        <button class="opt" type="button"><span>تقريبًا كل يوم</span><span class="muted" style="font-size: 13px">3</span></button>
+      </div>
+    </div>
+  </main>
+  <footer style="display: flex; flex-direction: column; gap: 8px; padding: 10px 16px 14px; background: #FFFFFF; border-top: 1px solid #DDE3E1">
+    <div style="display: flex; gap: 8px; align-items: center">
+      <label for="msg" style="position: absolute; width: 1px; height: 1px; overflow: hidden">رسالتك</label>
+      <input id="msg" placeholder="اكتب رسالتك…" style="font: inherit; font-size: 15px; flex: 1; height: 48px; box-sizing: border-box; border: 1px solid #B9C9C6; border-radius: 12px; padding: 0 14px">
+      <button type="button" aria-label="إرسال" style="width: 48px; height: 48px; border-radius: 12px; border: 0; background: #1F5F5B; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12H4"></path><path d="M10 6l-6 6 6 6"></path></svg></button>
+    </div>
+    <div style="display: flex; justify-content: space-between">
+      <button type="button" style="font: inherit; font-size: 14px; font-weight: 600; min-height: 44px; border: 0; background: none; color: #1F5F5B; cursor: pointer; padding: 0">تخطي السؤال</button>
+      <button type="button" style="font: inherit; font-size: 14px; font-weight: 600; min-height: 44px; border: 0; background: none; color: #4A5A5E; cursor: pointer; padding: 0">إنهاء المحادثة</button>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

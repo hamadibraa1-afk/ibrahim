@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>حالة الطلب</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.card{background:#FFFFFF;border:1px solid #DDE3E1;border-radius:16px;padding:28px;display:flex;flex-direction:column;gap:16px}
+.btn{font:inherit;font-weight:600;font-size:15px;min-height:48px;border-radius:10px;border:0;padding:0 20px;cursor:pointer}
+.btn-primary{background:#1F5F5B;color:#FFFFFF}
+.muted{color:#4A5A5E}
+.tl{display:flex;gap:14px;align-items:flex-start}
+.c{width:24px;height:24px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
+</style>
+</helmet>
+<div dir="rtl" style="min-height: 900px; background: #F6F7F5; padding: 32px 28px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 24px">
+  <div style="width: 100%; max-width: 820px; display: flex; justify-content: space-between; align-items: center"><div style="font-weight: 700; font-size: 22px; color: #1F5F5B">طمأنينة <span class="muted" style="font-size: 14px">للفريق</span></div><a href="#" style="font-size: 14px; font-weight: 600">تسجيل الخروج</a></div>
+  <section class="card" style="width: 100%; max-width: 820px; box-sizing: border-box">
+    <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center"><h1 style="margin: 0; font-size: 22px; font-weight: 700">حالة طلبك</h1><span style="font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: #FFF3DC; color: #7A4B00">بانتظار ردك</span></div>
+    <div style="display: flex; flex-direction: column; gap: 14px">
+      <div class="tl"><span class="c" style="background: #2E6B45; color: #FFFFFF">✓</span><div><div style="font-weight: 600">قُدّم الطلب</div><div class="muted" style="font-size: 13px">17 أكتوبر 2026</div></div></div>
+      <div class="tl"><span class="c" style="background: #2E6B45; color: #FFFFFF">✓</span><div><div style="font-weight: 600">بدأت المراجعة</div><div class="muted" style="font-size: 13px">18 أكتوبر 2026</div></div></div>
+      <div class="tl"><span class="c" style="border: 3px solid #7A4B00; box-sizing: border-box"></span><div><div style="font-weight: 600">مطلوب منك معلومة إضافية</div><div class="muted" style="font-size: 13px">اليوم</div></div></div>
+      <div class="tl"><span class="c" style="border: 2px solid #B9C9C6; box-sizing: border-box"></span><div class="muted" style="font-weight: 600">القرار</div></div>
+    </div>
+    <div style="background: #F6F7F5; border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px">
+      <div style="font-size: 12px; font-weight: 700" class="muted">رسالة من فريق التحقق</div>
+      <div style="font-size: 14px; line-height: 1.7">صورة الترخيص غير واضحة في جهة تاريخ الانتهاء. نرجو رفع نسخة أوضح.</div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <label for="r" style="font-size: 14px; font-weight: 600">ردك</label>
+      <textarea id="r" style="font: inherit; font-size: 15px; height: 80px; box-sizing: border-box; border: 1px solid #B9C9C6; border-radius: 10px; padding: 10px 12px; resize: vertical"></textarea>
+    </div>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end"><a href="#" style="font-size: 14px; font-weight: 600; min-height: 48px; display: flex; align-items: center; padding: 0 10px">رفع مستند جديد</a><button class="btn btn-primary" type="button">إرسال الرد</button></div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

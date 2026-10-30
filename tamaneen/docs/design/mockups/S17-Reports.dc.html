@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>التقارير الأسبوعية</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.card{background:#FFFFFF;border:1px solid #DDE3E1;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.muted{color:#4A5A5E}
+.tab{font-size:14px;font-weight:600;min-height:44px;display:flex;align-items:center;padding:0 14px;text-decoration:none;color:#4A5A5E;border-bottom:3px solid transparent}
+.k{font-size:12px;font-weight:600;color:#4A5A5E}
+.v{font-size:22px;font-weight:700}
+.wk{display:flex;justify-content:space-between;align-items:center;min-height:48px;padding:0 12px;border-radius:10px;text-decoration:none;color:#1B2A2F;font-size:14px;font-weight:600}
+.day{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;font-size:12px}
+.b{width:100%;max-width:32px;border-radius:4px 4px 0 0;background:#9FC2BD}
+.q{font-size:14px;line-height:1.7;background:#F6F7F5;border-radius:10px;padding:10px 12px}
+</style>
+</helmet>
+<div dir="rtl" style="min-height: 900px; background: #F6F7F5; display: flex; flex-wrap: wrap">
+  <div style="flex: 1 1 220px; max-width: 260px"><dc-import name="StaffNav" role="therapist" active="patients" hint-size="100%,900px"></dc-import></div>
+  <div style="flex: 999 1 560px; min-width: 0; padding: 20px 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px">
+    <div><a href="#" style="font-size: 13px; font-weight: 600">مرضاي</a><h1 style="margin: 0; font-size: 24px; font-weight: 700">P-4TT8-90AA</h1></div>
+    <nav aria-label="أقسام ملف المريض" style="display: flex; flex-wrap: wrap; border-bottom: 1px solid #DDE3E1"><a class="tab" href="#">نظرة عامة</a><a class="tab" href="#">الملف السريري</a><a class="tab" href="#">خطة العلاج</a><a class="tab" href="#">الواجبات</a><a class="tab" href="#" style="color: #163F3C; border-bottom-color: #1F5F5B">التقارير</a></nav>
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+      <aside class="card" style="flex: 1 1 220px; max-width: 280px; gap: 4px">
+        <div class="k" style="padding: 0 12px 6px">الأسابيع</div>
+        <a class="wk" href="#" style="background: #E3EFED; color: #163F3C">12 – 18 أكتوبر<span style="font-size: 11px; background: #1F5F5B; color: #FFFFFF; padding: 1px 8px; border-radius: 999px">جديد</span></a>
+        <a class="wk" href="#">5 – 11 أكتوبر</a>
+        <a class="wk" href="#">28 سبتمبر – 4 أكتوبر</a>
+        <a class="wk" href="#">21 – 27 سبتمبر</a>
+      </aside>
+      <section class="card" style="flex: 3 1 520px; min-width: 0">
+        <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px"><h2 style="margin: 0; font-size: 17px; font-weight: 700">تقرير 12 – 18 أكتوبر</h2><span class="muted" style="font-size: 12px">أُعدّ آليًا قبل الجلسة بـ 24 ساعة · لا توجد مؤشرات خطر</span></div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px">
+          <div><div class="k">إنجاز الواجبات</div><div class="v">8 / 9</div></div>
+          <div><div class="k">متوسط المزاج</div><div class="v">6.4</div></div>
+          <div><div class="k">PHQ-9</div><div class="v">8 <span style="font-size: 13px; color: #22533A">من 9</span></div></div>
+          <div><div class="k">GAD-7</div><div class="v">7 <span style="font-size: 13px; color: #22533A">من 9</span></div></div>
+        </div>
+        <div class="k">المزاج اليومي (0 – 10)</div>
+        <div role="img" aria-label="المزاج اليومي من الأحد إلى السبت: 5، 6، 6، 7، 6، 7، 8" style="display: flex; align-items: flex-end; gap: 8px; height: 110px">
+          <div class="day"><div class="b" style="height: 50px"></div>أحد</div><div class="day"><div class="b" style="height: 60px"></div>إثنين</div><div class="day"><div class="b" style="height: 60px"></div>ثلاثاء</div><div class="day"><div class="b" style="height: 70px"></div>أربعاء</div><div class="day"><div class="b" style="height: 60px"></div>خميس</div><div class="day"><div class="b" style="height: 70px"></div>جمعة</div><div class="day"><div class="b" style="height: 80px; background: #1F5F5B"></div>سبت</div>
+        </div>
+        <div class="k">ملاحظات المريض</div>
+        <div class="q">«نمت أسرع من الأمس.» · تمرين التنفس، الإثنين</div>
+        <div class="q">«فكرت أن مديري غاضب مني، ثم لاحظت أنه لم يقل شيئًا.» · سجل الأفكار، الخميس</div>
+      </section>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

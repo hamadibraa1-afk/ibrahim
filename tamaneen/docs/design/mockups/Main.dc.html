@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>الترحيب</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.btn{font:inherit;font-weight:600;font-size:16px;min-height:54px;border-radius:999px;border:0;padding:0 24px;cursor:pointer}
+.btn-primary{background:#1F5F5B;color:#FFFFFF}
+.btn-ghost{background:#FFFFFF;color:#1F5F5B;border:1.5px solid #B9D3CE}
+.help{font:inherit;font-weight:600;font-size:14px;min-height:44px;padding:0 14px;border-radius:999px;border:1.5px solid #B3261E;color:#B3261E;background:#FFFFFF;cursor:pointer}
+.muted{color:#4A5A5E}
+.pr{display:flex;gap:12px;align-items:center;background:#FFFFFF;border-radius:20px;padding:12px 14px;box-shadow:0 1px 0 #F1E6DA}
+.ic{width:40px;height:40px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+</style>
+</helmet>
+<div dir="rtl" style="width: 390px; height: 844px; box-sizing: border-box; background: #FFF8F1; display: flex; flex-direction: column; overflow: hidden">
+  <header style="display: flex; align-items: center; justify-content: space-between; height: 64px; padding: 0 20px">
+    <div style="font-weight: 700; font-size: 21px; color: #1F5F5B">طمأنينة</div>
+    <button class="help" type="button">مساعدة فورية</button>
+  </header>
+  <main style="flex: 1; display: flex; flex-direction: column; gap: 16px; padding: 0 20px 20px">
+    <div style="position: relative; height: 190px; border-radius: 28px; background: #E4F1EE; overflow: hidden">
+      <svg width="350" height="190" viewBox="0 0 350 190" aria-hidden="true" style="position: absolute; inset: 0">
+        <circle cx="280" cy="52" r="34" fill="#FFD7A8"></circle>
+        <path d="M0 150 C 70 110, 140 170, 220 128 S 330 120, 350 140 L 350 190 L 0 190 Z" fill="#B9DCD4"></path>
+        <path d="M0 170 C 90 140, 170 190, 260 160 S 330 160, 350 168 L 350 190 L 0 190 Z" fill="#8CC3B8"></path>
+        <path d="M96 128 c -8 -26 6 -50 26 -60 c 4 22 -4 46 -26 60 z" fill="#5FA596"></path>
+        <path d="M100 130 c 22 -10 46 -4 58 14 c -22 6 -44 2 -58 -14 z" fill="#7DB8AC"></path>
+      </svg>
+      <div style="position: absolute; top: 24px; right: 22px; left: 120px; font-size: 15px; font-weight: 600; color: #163F3C; line-height: 1.7">خذ نفسًا عميقًا.<br>أنت في المكان الصحيح.</div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <h1 style="margin: 0; font-size: 27px; line-height: 1.4; font-weight: 700">نحن هنا لنسمعك، بلا أحكام</h1>
+      <p class="muted" style="margin: 0; font-size: 15px; line-height: 1.7">حدّثنا بخصوصية تامة، وسنوصلك بأخصائي يناسبك خلال 72 ساعة.</p>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <div class="pr"><div class="ic" style="background: #E4F1EE"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1F5F5B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="3"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg></div><div style="font-size: 14px"><strong>سري تمامًا</strong> · لا نطلب اسمك الحقيقي</div></div>
+      <div class="pr"><div class="ic" style="background: #FFF0DD"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9A5B13" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z"></path></svg></div><div style="font-size: 14px"><strong>إنسان يراجع ملفك</strong> · الذكاء الاصطناعي يساعد فقط</div></div>
+    </div>
+    <div style="flex: 1"></div>
+    <button class="btn btn-primary" type="button">لنبدأ معًا</button>
+    <button class="btn btn-ghost" type="button">لدي حساب</button>
+    <div style="text-align: center; font-size: 13px; line-height: 1.6; color: #7A1C15">في خطر الآن؟ اتصل بـ <strong>[رقم الطوارئ المحلي]</strong></div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

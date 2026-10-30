@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>الملف المهني</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.card{background:#FFFFFF;border:1px solid #DDE3E1;border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.btn{font:inherit;font-weight:600;font-size:14px;min-height:44px;border-radius:10px;border:0;padding:0 16px;cursor:pointer}
+.btn-primary{background:#1F5F5B;color:#FFFFFF}
+.muted{color:#4A5A5E}
+.lbl{font-size:14px;font-weight:600}
+.field{font:inherit;font-size:14px;height:44px;box-sizing:border-box;width:100%;border:1px solid #B9C9C6;border-radius:10px;padding:0 10px;background:#FFFFFF}
+.chip{font-size:13px;font-weight:600;padding:5px 12px;border-radius:999px;background:#E3EFED;color:#163F3C}
+.kv{display:flex;justify-content:space-between;font-size:14px;padding:8px 0;border-bottom:1px solid #EDF1F0}
+</style>
+</helmet>
+<div dir="rtl" style="min-height: 900px; background: #F6F7F5; display: flex; flex-wrap: wrap">
+  <div style="flex: 1 1 220px; max-width: 260px"><dc-import name="StaffNav" role="therapist" active="profile" hint-size="100%,900px"></dc-import></div>
+  <div style="flex: 999 1 560px; min-width: 0; padding: 20px 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px">
+    <h1 style="margin: 0; font-size: 24px; font-weight: 700">ملفي المهني</h1>
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+      <section class="card" style="flex: 3 1 480px; min-width: 0">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px">
+          <div style="display: flex; flex-direction: column; gap: 6px"><label class="lbl" for="n">الاسم الظاهر</label><input class="field" id="n" value="أ. سارة م."></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><label class="lbl" for="c">الحد الأقصى للمرضى</label><input class="field" id="c" type="number" value="25"><span class="muted" style="font-size: 12px">لديك 14 مريضًا حاليًا</span></div>
+        </div>
+        <div class="lbl">التخصصات</div>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px"><span class="chip">القلق</span><span class="chip">مشكلات النوم</span><span class="chip">الضغط المهني</span><span class="chip">العلاج المعرفي السلوكي</span><span class="chip">اليقظة الذهنية</span><a href="#" style="font-size: 13px; font-weight: 600; min-height: 32px; display: flex; align-items: center">تعديل</a></div>
+        <div style="display: flex; flex-direction: column; gap: 6px"><label class="lbl" for="b">النبذة الظاهرة للمرضى</label><textarea id="b" style="font: inherit; font-size: 14px; height: 110px; box-sizing: border-box; border: 1px solid #B9C9C6; border-radius: 10px; padding: 8px 10px; resize: vertical">[نبذة يكتبها الأخصائي عن أسلوبه في العلاج]</textarea></div>
+        <label style="display: flex; gap: 10px; align-items: center; font-size: 14px; min-height: 44px"><input type="checkbox" checked style="width: 20px; height: 20px; accent-color: #1F5F5B">أستقبل مرضى جددًا</label>
+        <div style="display: flex; justify-content: flex-end"><button class="btn btn-primary" type="button">حفظ</button></div>
+      </section>
+      <aside class="card" style="flex: 2 1 300px; min-width: 0">
+        <h2 style="margin: 0; font-size: 16px; font-weight: 700">الترخيص</h2>
+        <div class="kv"><span class="muted">الحالة</span><span style="font-weight: 600; color: #22533A">موثّق</span></div>
+        <div class="kv"><span class="muted">ينتهي في</span><span style="font-weight: 600">14 مارس 2028</span></div>
+        <div class="kv" style="border-bottom: 0"><span class="muted">وثّقه</span><span style="font-weight: 600">فريق التحقق · 19 أكتوبر</span></div>
+        <div class="muted" style="font-size: 12px; line-height: 1.6">تغيير بيانات الترخيص يتطلب تحققًا جديدًا. سنذكّرك قبل الانتهاء بـ 30 يومًا.</div>
+        <a href="#" style="font-size: 14px; font-weight: 600">تحديث الترخيص</a>
+      </aside>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

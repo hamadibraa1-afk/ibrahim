@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>كيف تعمل الخدمة</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.card{background:#FFFFFF;border:1px solid #DDE3E1;border-radius:16px}
+.btn{font:inherit;font-weight:600;font-size:16px;min-height:52px;border-radius:999px;border:0;padding:0 24px;cursor:pointer}
+.btn-primary{background:#1F5F5B;color:#FFFFFF}
+.help{font:inherit;font-weight:600;font-size:14px;min-height:44px;padding:0 14px;border-radius:999px;border:1.5px solid #B3261E;color:#B3261E;background:#FFFFFF;cursor:pointer}
+.muted{color:#4A5A5E}
+.step{display:flex;gap:12px;align-items:flex-start}
+.n{width:30px;height:30px;border-radius:50%;background:#1F5F5B;color:#FFFFFF;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+</style>
+</helmet>
+<div dir="rtl" style="width: 390px; height: 844px; box-sizing: border-box; background: #FFF8F1; display: flex; flex-direction: column; overflow: hidden">
+  <header style="display: flex; align-items: center; justify-content: space-between; height: 64px; padding: 0 20px">
+    <a href="#" aria-label="رجوع" style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1B2A2F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></a>
+    <button class="help" type="button">مساعدة فورية</button>
+  </header>
+  <main style="flex: 1; display: flex; flex-direction: column; gap: 14px; padding: 0 20px 20px">
+    <h1 style="margin: 0; font-size: 24px; font-weight: 700">كيف تعمل الخدمة</h1>
+    <div class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 14px">
+      <div class="step"><span class="n">1</span><div><div style="font-weight: 600">تحدّث معنا</div><div class="muted" style="font-size: 14px; line-height: 1.6">محادثة هادئة مع مساعد ذكي، 20 إلى 30 دقيقة، ويمكنك إيقافها متى شئت.</div></div></div>
+      <div class="step"><span class="n">2</span><div><div style="font-weight: 600">صحّح الملخص</div><div class="muted" style="font-size: 14px; line-height: 1.6">ترى ما فهمناه بكلمات بسيطة، وتعدّله قبل الإرسال.</div></div></div>
+      <div class="step"><span class="n">3</span><div><div style="font-weight: 600">مختص يراجع ملفك</div><div class="muted" style="font-size: 14px; line-height: 1.6">مشرف سريري يراجع كل حالة خلال 24 ساعة.</div></div></div>
+      <div class="step"><span class="n">4</span><div><div style="font-weight: 600">اختر أخصائيك واحجز</div><div class="muted" style="font-size: 14px; line-height: 1.6">نقترح ثلاثة أخصائيين ونوضح السبب، والاختيار لك.</div></div></div>
+    </div>
+    <h2 style="margin: 4px 0 0; font-size: 17px; font-weight: 700">ما يفعله الذكاء الاصطناعي وما لا يفعله</h2>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+      <div class="card" style="padding: 12px; display: flex; flex-direction: column; gap: 6px"><div style="font-weight: 700; font-size: 14px; color: #22533A">يفعل</div><div style="font-size: 13px; line-height: 1.7">يستمع ويطرح الأسئلة<br>يرتّب قصتك في ملخص<br>يذكّرك بواجباتك</div></div>
+      <div class="card" style="padding: 12px; display: flex; flex-direction: column; gap: 6px"><div style="font-weight: 700; font-size: 14px; color: #9B2219">لا يفعل</div><div style="font-size: 13px; line-height: 1.7">لا يشخّص<br>لا يصف دواء<br>لا يتخذ قرار علاجك</div></div>
+    </div>
+    <div style="flex: 1"></div>
+    <button class="btn btn-primary" type="button">ابدأ الآن</button>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

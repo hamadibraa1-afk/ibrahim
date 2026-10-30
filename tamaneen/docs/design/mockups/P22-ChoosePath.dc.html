@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>اختيار المسار</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.help{font:inherit;font-weight:600;font-size:14px;min-height:44px;padding:0 14px;border-radius:999px;border:1.5px solid #B3261E;color:#B3261E;background:#FFFFFF;cursor:pointer}
+.muted{color:#4A5A5E}
+.path{display:flex;flex-direction:column;gap:8px;padding:18px;border-radius:16px;text-decoration:none;color:#1B2A2F;background:#FFFFFF;border:1px solid #DDE3E1}
+</style>
+</helmet>
+<div dir="rtl" style="width: 390px; height: 844px; box-sizing: border-box; background: #FFF8F1; display: flex; flex-direction: column; overflow: hidden">
+  <header style="display: flex; align-items: center; justify-content: space-between; height: 64px; padding: 0 20px">
+    <div style="font-weight: 700; font-size: 20px; color: #1F5F5B">طمأنينة</div>
+    <button class="help" type="button">مساعدة فورية</button>
+  </header>
+  <main style="flex: 1; display: flex; flex-direction: column; gap: 14px; padding: 0 20px 20px">
+    <h1 style="margin: 0; font-size: 24px; font-weight: 700">كيف تحب أن تبدأ؟</h1>
+    <a class="path" href="#" style="border: 2px solid #1F5F5B">
+      <div style="display: flex; justify-content: space-between; align-items: center"><span style="font-weight: 700; font-size: 18px">محادثة تعارف</span><span style="font-size: 12px; font-weight: 700; color: #1F5F5B; background: #E3EFED; padding: 3px 8px; border-radius: 999px">ننصح به</span></div>
+      <div class="muted" style="font-size: 14px; line-height: 1.7">20 إلى 30 دقيقة. تساعدنا على اقتراح الأخصائي الأنسب، ولن تضطر لإعادة قصتك من البداية.</div>
+      <div style="font-size: 13px; font-weight: 600; color: #1F5F5B">يمكنك الإيقاف والعودة خلال 14 يومًا</div>
+    </a>
+    <a class="path" href="#">
+      <span style="font-weight: 700; font-size: 18px">أعرف ما أريد، سأحجز مباشرة</span>
+      <div class="muted" style="font-size: 14px; line-height: 1.7">تجيب على أسئلة السلامة القصيرة فقط (دقيقتان)، ثم تختار أخصائيًا من القائمة.</div>
+    </a>
+    <div style="flex: 1"></div>
+    <div style="background: #FFFFFF; border: 1px solid #DDE3E1; border-radius: 12px; padding: 12px 14px; font-size: 14px; line-height: 1.7">تفضّل الحديث مع شخص من البداية؟ <a href="#" style="font-weight: 600">اطلب التواصل مع الفريق</a></div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

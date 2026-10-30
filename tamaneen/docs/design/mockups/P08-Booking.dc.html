@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>حجز موعد</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.card{background:#FFFFFF;border:1px solid #DDE3E1;border-radius:16px}
+.btn{font:inherit;font-weight:600;font-size:16px;min-height:52px;border-radius:999px;border:0;padding:0 24px;cursor:pointer}
+.btn-primary{background:#1F5F5B;color:#FFFFFF}
+.help{font:inherit;font-weight:600;font-size:14px;min-height:44px;padding:0 14px;border-radius:999px;border:1.5px solid #B3261E;color:#B3261E;background:#FFFFFF;cursor:pointer}
+.muted{color:#4A5A5E}
+.day{font:inherit;min-height:64px;border-radius:12px;border:1px solid #DDE3E1;background:#FFFFFF;color:#1B2A2F;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer}
+.slot{font:inherit;font-size:15px;font-weight:600;min-height:48px;border-radius:10px;border:1px solid #B9C9C6;background:#FFFFFF;color:#1B2A2F;cursor:pointer}
+</style>
+</helmet>
+<div dir="rtl" style="width: 390px; height: 844px; box-sizing: border-box; background: #FFF8F1; display: flex; flex-direction: column; overflow: hidden">
+  <header style="display: flex; align-items: center; justify-content: space-between; height: 64px; padding: 0 20px">
+    <a href="#" aria-label="رجوع" style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1B2A2F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></a>
+    <button class="help" type="button">مساعدة فورية</button>
+  </header>
+  <main style="flex: 1; display: flex; flex-direction: column; gap: 16px; padding: 0 20px 20px">
+    <div class="card" style="padding: 14px; display: flex; gap: 12px; align-items: center">
+      <div style="width: 48px; height: 48px; border-radius: 50%; background: #E3EFED; color: #1F5F5B; font-weight: 700; font-size: 17px; display: flex; align-items: center; justify-content: center">س م</div>
+      <div style="flex: 1"><div style="font-weight: 700; font-size: 16px">أ. سارة م.</div><div class="muted" style="font-size: 13px">جلسة عن بُعد · 50 دقيقة · مجانية في التجربة</div></div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <div style="font-weight: 600; font-size: 15px">اختر اليوم</div>
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px">
+        <button class="day" type="button" style="border: 2px solid #1F5F5B; background: #E3EFED"><span style="font-size: 12px; color: #1F5F5B; font-weight: 600">الأربعاء</span><span style="font-size: 18px; font-weight: 700">21</span></button>
+        <button class="day" type="button"><span class="muted" style="font-size: 12px">الخميس</span><span style="font-size: 18px; font-weight: 700">22</span></button>
+        <button class="day" type="button"><span class="muted" style="font-size: 12px">الأحد</span><span style="font-size: 18px; font-weight: 700">25</span></button>
+        <button class="day" type="button"><span class="muted" style="font-size: 12px">الإثنين</span><span style="font-size: 18px; font-weight: 700">26</span></button>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <div style="font-weight: 600; font-size: 15px">الأوقات المتاحة · أكتوبر 2026</div>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+        <button class="slot" type="button">10:00 ص</button>
+        <button class="slot" type="button" disabled style="color: #8A979A; background: #F1F4F3; text-decoration: line-through">11:00 ص</button>
+        <button class="slot" type="button">1:00 م</button>
+        <button class="slot" type="button" style="border: 2px solid #1F5F5B; background: #1F5F5B; color: #FFFFFF">4:00 م</button>
+        <button class="slot" type="button">5:00 م</button>
+        <button class="slot" type="button">7:00 م</button>
+      </div>
+    </div>
+    <div style="display: flex; gap: 10px; align-items: center; background: #FFF3DC; border-radius: 12px; padding: 12px 14px">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7A4B00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+      <div style="font-size: 14px; line-height: 1.6; color: #5C3900">حجزنا لك الأربعاء 21 أكتوبر، 4:00 م لمدة <strong>4:32</strong> دقيقة. أكّد قبل انتهاء الوقت.</div>
+    </div>
+    <div class="muted" style="font-size: 13px; line-height: 1.6">ستصلك تذكيرات قبل الموعد بيوم وبساعة. رابط الجلسة يظهر قبلها بعشر دقائق.</div>
+    <div style="flex: 1"></div>
+    <button class="btn btn-primary" type="button">تأكيد الحجز</button>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

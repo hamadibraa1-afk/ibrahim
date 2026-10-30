@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>إنشاء الحساب</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.card{background:#FFFFFF;border:1px solid #DDE3E1;border-radius:16px}
+.btn{font:inherit;font-weight:600;font-size:16px;min-height:52px;border-radius:999px;border:0;padding:0 24px;cursor:pointer}
+.btn-primary{background:#1F5F5B;color:#FFFFFF}
+.btn-ghost{background:#FFFFFF;color:#1F5F5B;border:1px solid #B9C9C6}
+.help{font:inherit;font-weight:600;font-size:14px;min-height:44px;padding:0 14px;border-radius:999px;border:1.5px solid #B3261E;color:#B3261E;background:#FFFFFF;cursor:pointer}
+.muted{color:#4A5A5E}
+.lbl{font-size:14px;font-weight:600}
+.field{font:inherit;font-size:16px;height:52px;box-sizing:border-box;width:100%;border:1px solid #B9C9C6;border-radius:12px;padding:0 14px;background:#FFFFFF;color:#1B2A2F}
+</style>
+</helmet>
+<div dir="rtl" style="width: 390px; height: 844px; box-sizing: border-box; background: #FFF8F1; display: flex; flex-direction: column; overflow: hidden">
+  <header style="display: flex; align-items: center; justify-content: space-between; height: 64px; padding: 0 20px">
+    <a href="#" aria-label="رجوع" style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1B2A2F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></a>
+    <button class="help" type="button">مساعدة فورية</button>
+  </header>
+  <main style="flex: 1; display: flex; flex-direction: column; gap: 18px; padding: 0 20px 20px">
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <div class="muted" style="font-size: 13px; font-weight: 600">الخطوة 1 من 4</div>
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px">
+        <div style="height: 6px; border-radius: 3px; background: #1F5F5B"></div>
+        <div style="height: 6px; border-radius: 3px; background: #DDE3E1"></div>
+        <div style="height: 6px; border-radius: 3px; background: #DDE3E1"></div>
+        <div style="height: 6px; border-radius: 3px; background: #DDE3E1"></div>
+      </div>
+      <h1 style="margin: 4px 0 0; font-size: 26px; font-weight: 700">إنشاء حساب سري</h1>
+      <p class="muted" style="margin: 0; font-size: 15px; line-height: 1.7">اسمك المستعار هو ما سيراه الفريق. لا نطلب اسمك الحقيقي.</p>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <label class="lbl" for="alias">الاسم المستعار</label>
+      <div style="display: flex; gap: 8px">
+        <input class="field" id="alias" value="نخلة هادئة" style="flex: 1">
+        <button class="btn btn-ghost" type="button" style="font-size: 14px; padding: 0 12px; white-space: nowrap">اسم جديد</button>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <span class="lbl">طريقة التواصل للتحقق والاسترجاع</span>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; border: 1px solid #B9C9C6; border-radius: 12px; overflow: hidden">
+        <button type="button" style="font: inherit; font-weight: 600; font-size: 15px; height: 44px; border: 0; background: #1F5F5B; color: #FFFFFF">رقم الجوال</button>
+        <button type="button" style="font: inherit; font-weight: 600; font-size: 15px; height: 44px; border: 0; background: #FFFFFF; color: #1F5F5B">البريد الإلكتروني</button>
+      </div>
+      <input class="field" aria-label="رقم الجوال" value="05X XXX XXXX" dir="ltr" style="text-align: right">
+      <div class="muted" style="font-size: 13px">سنرسل رمز تحقق من 6 أرقام. لن نشاركه مع أحد.</div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <label class="lbl" for="pw">كلمة المرور</label>
+      <input class="field" id="pw" type="password" value="xxxxxxxxxxxx">
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px">
+        <div style="height: 4px; border-radius: 2px; background: #2E7D4F"></div>
+        <div style="height: 4px; border-radius: 2px; background: #2E7D4F"></div>
+        <div style="height: 4px; border-radius: 2px; background: #2E7D4F"></div>
+        <div style="height: 4px; border-radius: 2px; background: #DDE3E1"></div>
+      </div>
+      <div style="font-size: 13px; color: #2E6B45; font-weight: 600">قوية: 12 حرفًا على الأقل، وليست من كلمات المرور المسربة</div>
+    </div>
+    <div style="flex: 1"></div>
+    <button class="btn btn-primary" type="button">إنشاء الحساب</button>
+    <div style="text-align: center; font-size: 15px">لدي حساب؟ <a href="#" style="font-weight: 600">تسجيل الدخول</a></div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

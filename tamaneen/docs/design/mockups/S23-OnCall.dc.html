@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>المناوبة</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.card{background:#FFFFFF;border:1px solid #DDE3E1;border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.btn{font:inherit;font-weight:600;font-size:14px;min-height:44px;border-radius:10px;border:0;padding:0 16px;cursor:pointer;white-space:nowrap}
+.btn-primary{background:#1F5F5B;color:#FFFFFF}
+.btn-ghost{background:#FFFFFF;color:#1F5F5B;border:1px solid #B9C9C6}
+.muted{color:#4A5A5E}
+.chk{display:flex;gap:10px;align-items:center;font-size:14px;min-height:40px}
+.ok{width:22px;height:22px;border-radius:50%;background:#2E6B45;color:#FFFFFF;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.tier{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #EDF1F0;font-size:14px}
+</style>
+</helmet>
+<div dir="rtl" style="min-height: 900px; background: #F6F7F5; display: flex; flex-wrap: wrap">
+  <div style="flex: 1 1 220px; max-width: 260px"><dc-import name="StaffNav" role="supervisor" active="oncall" hint-size="100%,900px"></dc-import></div>
+  <div style="flex: 999 1 560px; min-width: 0; padding: 20px 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px">
+    <h1 style="margin: 0; font-size: 24px; font-weight: 700">المناوبة</h1>
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+      <section class="card" style="flex: 1 1 380px; min-width: 0">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px"><h2 style="margin: 0; font-size: 17px; font-weight: 700">مناوبتك: اليوم 8:00 م – 8:00 ص</h2><span style="font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: #E6F2EA; color: #22533A">بدأت</span></div>
+        <div class="chk"><span class="ok">✓</span>رسالة واتصال تجريبيان وصلا إلى جوالك</div>
+        <div class="chk"><span class="ok">✓</span>غرفة الطوارئ مفتوحة على هذا الجهاز</div>
+        <div class="chk"><span class="ok">✓</span>تحقق ثنائي حديث (قبل دقيقتين)</div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap"><button class="btn btn-ghost" type="button">إرسال تنبيه تجريبي</button><button class="btn btn-ghost" type="button" disabled style="color: #8A979A; border-color: #DDE3E1">إنهاء المناوبة</button></div>
+        <div class="muted" style="font-size: 12px">لا يمكن إنهاء المناوبة وأنت مسؤول عن حدث مفتوح.</div>
+      </section>
+      <section class="card" style="flex: 1 1 340px; min-width: 0; gap: 0">
+        <h2 style="margin: 0 0 6px; font-size: 17px; font-weight: 700">سلسلة التصعيد الآن</h2>
+        <div class="tier"><span><strong>1</strong> · المناوب الأساسي</span><span style="font-weight: 600">أنت</span></div>
+        <div class="tier"><span><strong>2</strong> · الاحتياطي</span><span style="font-weight: 600">د. فهد ر.</span></div>
+        <div class="tier" style="border-bottom: 0"><span><strong>3</strong> · المسؤول السريري</span><span style="font-weight: 600">د. ليلى ع.</span></div>
+      </section>
+    </div>
+    <section class="card">
+      <h2 style="margin: 0; font-size: 17px; font-weight: 700">تسليم المناوبة</h2>
+      <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 10px 12px; background: #F6F7F5; border-radius: 10px"><span style="flex: 1 1 260px; font-size: 14px"><strong>CE-1041</strong> · P-3HX9-14QA · قيد التواصل · المسؤول: أنت</span><button class="btn btn-ghost" type="button">تسليم لـ…</button></div>
+      <div style="display: flex; flex-direction: column; gap: 6px"><label for="h" style="font-size: 14px; font-weight: 600">ملاحظة التسليم</label><textarea id="h" style="font: inherit; font-size: 14px; height: 70px; box-sizing: border-box; border: 1px solid #B9C9C6; border-radius: 10px; padding: 8px 10px; resize: vertical"></textarea></div>
+      <div class="muted" style="font-size: 12px">يجب على المستلم قبول التسليم قبل أن ينتقل إليه الحدث.</div>
+    </section>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

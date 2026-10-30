@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>محادثة مع الأخصائية</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.help{font:inherit;font-weight:600;font-size:13px;min-height:44px;padding:0 12px;border-radius:999px;border:1.5px solid #B3261E;color:#B3261E;background:#FFFFFF;cursor:pointer}
+.muted{color:#4A5A5E}
+.them{align-self:flex-start;max-width:280px;background:#FFFFFF;border-radius:20px 20px 20px 6px;padding:10px 14px;font-size:15px;line-height:1.7;box-shadow:0 1px 0 #F1E6DA}
+.me{align-self:flex-end;max-width:270px;background:#1F5F5B;color:#FFFFFF;border-radius:20px 20px 6px 20px;padding:10px 14px;font-size:15px;line-height:1.7}
+.tm{font-size:11px;color:#6B7A7E;margin-top:2px}
+.day{align-self:center;font-size:12px;font-weight:600;color:#4A5A5E;background:#F3EADF;padding:3px 12px;border-radius:999px}
+</style>
+</helmet>
+<div dir="rtl" style="width: 390px; height: 844px; box-sizing: border-box; background: #FFF8F1; display: flex; flex-direction: column; overflow: hidden">
+  <header style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #FFFFFF; box-shadow: 0 1px 0 #F1E6DA">
+    <a href="#" aria-label="رجوع" style="display: flex; align-items: center; justify-content: center; width: 40px; height: 44px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1B2A2F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></a>
+    <div style="width: 40px; height: 40px; border-radius: 50%; background: #E4F1EE; color: #1F5F5B; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center">س م</div>
+    <div style="flex: 1"><div style="font-weight: 700">أ. سارة م.</div><div class="muted" style="font-size: 12px">ترد خلال يوم عمل عادة</div></div>
+    <button class="help" type="button">مساعدة فورية</button>
+  </header>
+  <main style="flex: 1; display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; overflow: hidden">
+    <div class="day">أمس</div>
+    <div class="me">أستاذة، سجل الأفكار صعب علي، ما أعرف أفرّق بين الفكرة والشعور.<div class="tm" style="color: #CFE6E1">9:40 م</div></div>
+    <div class="them">سؤال ممتاز، وهذا طبيعي في البداية. الشعور كلمة واحدة مثل «قلق»، والفكرة جملة مثل «مديري غاضب مني».<div class="tm">10:05 ص</div></div>
+    <div class="them" style="padding: 10px; display: flex; gap: 10px; align-items: center"><div style="width: 40px; height: 40px; border-radius: 12px; background: #FFF0DD; display: flex; align-items: center; justify-content: center; flex-shrink: 0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9A5B13" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h14v16H5z"></path><path d="M9 9h6"></path><path d="M9 13h6"></path></svg></div><div><div style="font-weight: 700; font-size: 14px">مثال محلول: سجل الأفكار</div><div class="muted" style="font-size: 12px">أضافته لواجباتك</div></div></div>
+    <div class="day">اليوم</div>
+    <div class="me">جربت المثال وصار أوضح، شكرًا</div>
+    <div class="them">أحسنت في الاستمرار هذا الأسبوع، أنا فخورة بك. نكمل يوم الأربعاء.<div class="tm">4:12 م</div></div>
+  </main>
+  <footer style="display: flex; flex-direction: column; gap: 6px; padding: 10px 14px 14px; background: #FFFFFF">
+    <div class="muted" style="font-size: 11px; text-align: center">الرسائل مشفرة · ليست للطوارئ</div>
+    <div style="display: flex; gap: 8px; align-items: center">
+      <label for="m" style="position: absolute; width: 1px; height: 1px; overflow: hidden">رسالتك</label>
+      <input id="m" placeholder="اكتب رسالة…" style="font: inherit; font-size: 15px; flex: 1; height: 48px; box-sizing: border-box; border: 0; border-radius: 999px; padding: 0 18px; background: #FFF8F1">
+      <button type="button" aria-label="إرسال" style="width: 48px; height: 48px; border-radius: 50%; border: 0; background: #1F5F5B; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12H4"></path><path d="M10 6l-6 6 6 6"></path></svg></button>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

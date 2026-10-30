@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>القائمة الجانبية</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<nav dir="rtl" aria-label="قائمة الفريق" style="width: 100%; min-height: 900px; box-sizing: border-box; background: #FFFFFF; border-left: 1px solid #DDE3E1; padding: 20px 14px; display: flex; flex-direction: column; gap: 4px; font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif; color: #1B2A2F">
+  <div style="font-weight: 700; font-size: 20px; color: #1F5F5B; padding: 0 12px">طمأنينة</div>
+  <label for="role-switch" style="font-size: 12px; font-weight: 600; color: #4A5A5E; padding: 6px 12px 0">تعمل الآن كـ</label>
+  <select id="role-switch" style="font: inherit; font-size: 13px; font-weight: 600; height: 40px; margin: 4px 12px 14px; border: 1px solid #B9C9C6; border-radius: 10px; padding: 0 8px; background: #FFFFFF; color: #1B2A2F"><option>{{roleLabel}}</option><option>بوابة الأخصائي</option><option>بوابة المشرف</option></select>
+  <sc-for list="{{items}}" as="it" hint-placeholder-count="6">
+    <sc-if value="{{it.head}}" hint-placeholder-val="{{false}}"><div style="display: flex; justify-content: space-between; align-items: center; min-height: 34px; padding: 6px 12px 0; font-size: 12px; font-weight: 700; color: {{it.headColor}}"><span>{{it.label}}</span><span aria-hidden="true">{{it.chev}}</span></div></sc-if>
+    <sc-if value="{{it.on}}" hint-placeholder-val="{{false}}"><a href="#" aria-current="page" style="display: flex; align-items: center; min-height: {{it.h}}; padding: 0 12px; border-radius: 10px; font-size: 14px; font-weight: 600; text-decoration: none; background: #E3EFED; color: #163F3C">{{it.label}}</a></sc-if>
+    <sc-if value="{{it.off}}" hint-placeholder-val="{{true}}"><a href="#" style="display: flex; align-items: center; min-height: {{it.h}}; padding: 0 12px; border-radius: 10px; font-size: 14px; font-weight: 600; text-decoration: none; color: #33464B">{{it.label}}</a></sc-if>
+  </sc-for>
+  <div style="flex: 1"></div>
+  <sc-if value="{{settingsOn}}" hint-placeholder-val="{{false}}"><a href="#" aria-current="page" style="display: flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 10px; font-size: 14px; font-weight: 600; text-decoration: none; background: #E3EFED; color: #163F3C">الإعدادات</a></sc-if>
+  <sc-if value="{{settingsOff}}" hint-placeholder-val="{{true}}"><a href="#" style="display: flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 10px; font-size: 14px; font-weight: 600; text-decoration: none; color: #33464B">الإعدادات</a></sc-if>
+  <a href="#" style="display: flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 10px; font-size: 14px; font-weight: 600; text-decoration: none; color: #4A5A5E">تسجيل الخروج</a>
+</nav>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"role":{"editor":"enum","options":["therapist","supervisor","lead","admin"],"default":"therapist"},"active":{"editor":"text","default":"dashboard"},"$preview":{"width":260,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const role = this.props.role ?? 'therapist';
+    const active = this.props.active ?? 'dashboard';
+    const menus = {
+      therapist: [
+        ['dashboard', 'لوحتي'], ['patients', 'مرضاي'], ['messages', 'المحادثات'], ['schedule', 'الجدول'],
+        ['alerts', 'التنبيهات'], ['notifications', 'الإشعارات'], ['availability', 'أوقات التوفر'], ['leave', 'وضع الإجازة'],
+        ['wellbeing', 'صحتي'], ['cpd', 'الإشراف والتطوير'], ['profile', 'ملفي المهني']
+      ],
+      supervisor: [
+        ['triage', 'قائمة الفرز'], ['crisis', 'غرفة الطوارئ'], ['reviews', 'مراجعات الأحداث'], ['noshow', 'متابعة الغياب'], ['oncall', 'المناوبة'],
+        ['rota', 'جدول المناوبات'], ['reassign', 'إعادة التوزيع'], ['qa', 'مراجعة الجودة'], ['metrics', 'المؤشرات']
+      ],
+      lead: [
+        ['rules', 'قواعد الطوارئ'], ['reporting', 'بلاغات الحماية'], ['reviews', 'مراجعات الأحداث'], ['rota', 'جدول المناوبات'],
+        ['qa', 'مراجعة الجودة'], ['metrics', 'المؤشرات']
+      ]
+    };
+    const adminGroups = [
+      ['الإعدادات', [['settings-platform', 'إعدادات المنصة'], ['ai', 'الذكاء الاصطناعي'], ['calendar', 'التقويم والإجازات'], ['integrations', 'التكاملات'], ['modules', 'الإضافات'], ['flags', 'مفاتيح الإيقاف']]],
+      ['المحتوى', [['content', 'إدارة المحتوى'], ['templates', 'القوالب'], ['tests', 'الاختبارات والمقاييس'], ['catalogs', 'القوائم والتصنيفات'], ['surveys', 'الاستبيانات'], ['announce', 'الإعلانات والصيانة']]],
+      ['المستخدمون', [['users', 'المستخدمون'], ['import', 'استيراد الأخصائيين'], ['verifications', 'التحقق من التراخيص'], ['roles', 'الأدوار والصلاحيات'], ['notifrules', 'قواعد الإشعارات']]],
+      ['التشغيل', [['capacity', 'السعة والانتظار'], ['special', 'الحالات الخاصة'], ['datareq', 'طلبات البيانات'], ['complaints', 'الشكاوى'], ['security', 'حوادث الأمان']]],
+      ['المراقبة والجودة', [['aieval', 'تقييم الذكاء الاصطناعي'], ['audit', 'سجل التدقيق'], ['rules', 'قواعد الطوارئ'], ['health', 'صحة النظام'], ['dr', 'النسخ والاستعادة'], ['metrics', 'المؤشرات'], ['reports', 'التقارير']]]
+    ];
+    const labels = { therapist: 'بوابة الأخصائي', supervisor: 'بوابة المشرف', lead: 'المسؤول السريري', admin: 'بوابة الإدارة' };
+    let items;
+    if (role === 'admin') {
+      items = [];
+      adminGroups.forEach(([g, list], i) => {
+        const open = list.some(([k]) => k === active) || (i === 0 && !adminGroups.some(([, l]) => l.some(([k]) => k === active)));
+        items.push({ head: true, on: false, off: false, label: g, chev: open ? '⌄' : '‹', headColor: open ? '#163F3C' : '#4A5A5E' });
+        if (open) list.forEach(([key, label]) => items.push({ head: false, label, h: '40px', on: key === active, off: key !== active }));
+      });
+    } else {
+      items = (menus[role] || menus.therapist).map(([key, label]) => ({ head: false, label, h: '44px', on: key === active, off: key !== active }));
+    }
+    return { items, roleLabel: labels[role] || labels.therapist, settingsOn: active === 'settings', settingsOff: active !== 'settings' };
+  }
+}
+</script>
+</body>
+</html>

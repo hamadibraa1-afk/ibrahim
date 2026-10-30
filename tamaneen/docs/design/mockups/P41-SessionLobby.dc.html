@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>قبل الجلسة</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:#1B2A2F}
+a{color:#1F5F5B}a:hover{color:#163F3C}
+.card{background:#FFFFFF;border-radius:22px;box-shadow:0 1px 0 #F1E6DA}
+.btn{font:inherit;font-weight:600;font-size:17px;min-height:58px;border-radius:999px;border:0;padding:0 24px;cursor:pointer;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:10px}
+.btn-primary{background:#1F5F5B;color:#FFFFFF}
+.help{font:inherit;font-weight:600;font-size:14px;min-height:44px;padding:0 14px;border-radius:999px;border:1.5px solid #B3261E;color:#B3261E;background:#FFFFFF;cursor:pointer}
+.muted{color:#4A5A5E}
+.ck{display:flex;gap:10px;align-items:center;font-size:14px;min-height:40px}
+.ok{width:22px;height:22px;border-radius:50%;background:#2E6B45;color:#FFFFFF;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+</style>
+</helmet>
+<div dir="rtl" style="width: 390px; height: 844px; box-sizing: border-box; background: #FFF8F1; display: flex; flex-direction: column; overflow: hidden">
+  <header style="display: flex; align-items: center; justify-content: space-between; height: 64px; padding: 0 20px">
+    <a href="#" aria-label="رجوع" style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1B2A2F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></a>
+    <button class="help" type="button">مساعدة فورية</button>
+  </header>
+  <main style="flex: 1; display: flex; flex-direction: column; gap: 14px; padding: 0 20px 20px">
+    <div class="card" style="padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; background: #E4F1EE">
+      <div style="width: 72px; height: 72px; border-radius: 50%; background: #FFFFFF; color: #1F5F5B; font-weight: 700; font-size: 22px; display: flex; align-items: center; justify-content: center">س م</div>
+      <div style="font-weight: 700; font-size: 18px">جلستك مع أ. سارة تبدأ بعد</div>
+      <div style="font-size: 40px; font-weight: 700; color: #1F5F5B; font-variant-numeric: tabular-nums">06:42</div>
+      <div class="muted" style="font-size: 13px">الجلسة الأولى · 50 دقيقة</div>
+    </div>
+    <div class="card" style="padding: 14px 16px">
+      <div style="font-weight: 700; font-size: 15px; margin-bottom: 4px">جاهز؟</div>
+      <div class="ck"><span class="ok">✓</span>الاتصال بالإنترنت جيد</div>
+      <div class="ck"><span class="ok">✓</span>الميكروفون والكاميرا يعملان</div>
+      <label class="ck"><input type="checkbox" style="width: 22px; height: 22px; accent-color: #1F5F5B">أنا في مكان هادئ وخاص</label>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <label for="t" style="font-weight: 700; font-size: 15px">عن ماذا تحب أن نتحدث اليوم؟ (اختياري)</label>
+      <textarea id="t" style="font: inherit; font-size: 15px; height: 76px; box-sizing: border-box; border: 0; border-radius: 18px; padding: 12px 14px; background: #FFFFFF; resize: none">النوم تحسن، لكن ما زلت قلقًا من اجتماع الأحد.</textarea>
+      <div class="muted" style="font-size: 12px">تصل لأخصائيتك قبل الجلسة</div>
+    </div>
+    <div style="flex: 1"></div>
+    <a class="btn btn-primary" href="#"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="3"></rect><path d="M16 10l5-3v10l-5-3"></path></svg>دخول الجلسة</a>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
