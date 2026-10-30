@@ -296,7 +296,16 @@ public sealed class ClinicalCareTests : IAsyncLifetime
         file.IsSuccessStatusCode.Should().BeTrue();
         var text = await file.Content.ReadAsStringAsync();
         text.Should().Contain("هذا جهدك أنتِ").And.NotContain("PHQ");
+        // The return asks for the short safety check first (P23 again, through the same gate).
+        var noCheck = await Problem(await patient.Me.PostAsync("/v1/me/care/return", null), 409);
+        noCheck.GetProperty("code").GetString().Should().Be(ErrorCodes.CareReturnSafetyCheckRequired);
+        noCheck.GetProperty("next").GetString().Should().Be("/care/return");
+        await Read(await patient.Me.PostAsJsonAsync("/v1/screening/cssrs", new { answers = new[] { false, false, false, false, false, false } }));
         (await Read(await patient.Me.PostAsync("/v1/me/care/return", null))).GetProperty("next").GetString().Should().Be("/matches");
+        await using (var lead = _sql.Context(StaticCurrentUser.ForStaff(Guid.NewGuid(), AppRoles.Supervisor)))
+        {
+            (await lead.AuditEntries.Where(a => a.Action == "care.return_requested" && a.PatientPseudonymId == patient.Pseudonym).Select(a => a.Reason).SingleAsync()).Should().StartWith("screening=");
+        }
         var matches = await Read(await patient.Me.GetAsync("/v1/matches"));
         matches.GetProperty("items")[0].GetProperty("therapist").GetProperty("displayName").GetString().Should().Be("أ. سارة م.", "the previous therapist comes first");
     }

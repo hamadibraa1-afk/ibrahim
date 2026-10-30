@@ -213,10 +213,28 @@ public static class CareJourneyEndpoints
         return Results.File(Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(body.ToString())).ToArray(), "text/plain; charset=utf-8", "summary.txt");
     }
 
-    /// <summary>"I need to come back": matching reopens with the previous therapist first, no new sign-up.</summary>
+    /// <summary>How recent the P23 safety check before a return (P53) must be.</summary>
+    public static readonly TimeSpan ReturnSafetyCheckWindow = TimeSpan.FromHours(1);
+
+    /// <summary>
+    /// "I need to come back": matching reopens with the previous therapist first, no new sign-up. The design asks for a
+    /// short safety check first, so the patient answers P23 again (same C-SSRS screener, same crisis gate): the return
+    /// needs a screening completed after the sign-off and within <see cref="ReturnSafetyCheckWindow"/>, below High,
+    /// and no crisis lock (409 error.care.safety_check_required otherwise). The screening is named in the audit row.
+    /// </summary>
     internal static async Task<Ok<ReturnResponse>> ReturnAsync(PatientContext p, TherapistDirectory directory, IAuditLog audit, IClock clock, CancellationToken ct)
     {
         var (closure, _) = await SignedOffAsync(p, ct).ConfigureAwait(false);
+        await p.EnsureNotLockedAsync(ct).ConfigureAwait(false);
+        var since = clock.UtcNow - ReturnSafetyCheckWindow;
+        var check = await p.Db.Screenings.AsNoTracking()
+            .Where(s => s.PatientId == p.PatientId && s.CompletedAtUtc >= since && (closure.DecidedAtUtc == null || s.CompletedAtUtc >= closure.DecidedAtUtc))
+            .OrderByDescending(s => s.CompletedAtUtc).FirstOrDefaultAsync(ct).ConfigureAwait(false);
+        if (check is null || check.Level >= RiskLevel.High)
+        {
+            throw new DomainException(ErrorCodes.CareReturnSafetyCheckRequired, "A recent safety check is needed before coming back.").With("next", "/care/return");
+        }
+
         var tracked = await p.Db.CareClosures.FirstAsync(c => c.Id == closure.Id, ct).ConfigureAwait(false);
         tracked.RequestReturn(clock);
         var available = (await directory.AvailableAsync(p.Language, ct).ConfigureAwait(false)).Select(a => a.Therapist.Id).ToHashSet();
@@ -226,7 +244,7 @@ public static class CareJourneyEndpoints
             p.Db.MatchSuggestions.Add(MatchSuggestion.Create(p.PatientId, closure.TherapistUserId, 1, [], clock));
         }
 
-        audit.Append("care.return_requested", "CareClosure", closure.Id.ToString(), (await p.AccountAsync(ct).ConfigureAwait(false)).PseudonymId);
+        audit.Append("care.return_requested", "CareClosure", closure.Id.ToString(), (await p.AccountAsync(ct).ConfigureAwait(false)).PseudonymId, $"screening={check.Id};level={(int)check.Level}");
         await p.Db.SaveChangesAsync(ct).ConfigureAwait(false);
         return TypedResults.Ok(new ReturnResponse(available.Contains(closure.TherapistUserId) ? "/matches" : "/therapists"));
     }

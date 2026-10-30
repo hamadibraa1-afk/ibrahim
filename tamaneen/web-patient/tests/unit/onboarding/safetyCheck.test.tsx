@@ -72,4 +72,30 @@ describe('P23 Safety check', () => {
     expect(apiMock).toHaveBeenLastCalledWith('screening/cssrs', { method: 'POST', body: { answers: [false, false, false, false, false, false] } });
     expect(router.replace).not.toHaveBeenCalled();
   });
+
+  it('P53 return: after the check passes it reopens matching, and a failed return retries only that step', async () => {
+    apiMock.mockImplementation(async (path: string) => {
+      if (path === 'me/care/return') throw new TypeError('Failed to fetch');
+      return { crisis: false, level: 0 } as never;
+    });
+    renderWithIntl(<SafetyCheck form={form} emergencyNumber="997" mode="careReturn" />, 'en');
+    for (let i = 0; i < 6; i++) {
+      await screen.findByRole('heading', { level: 2, name: `سؤال ${i + 1}` });
+      await userEvent.click(screen.getByRole('radio', { name: 'No' }));
+    }
+    await waitFor(() => expect(apiMock).toHaveBeenLastCalledWith('me/care/return', { method: 'POST' }));
+    expect(router.push).not.toHaveBeenCalled();
+    apiMock.mockImplementation(async () => ({ next: '/matches' }) as never);
+    await userEvent.click(await screen.findByRole('button', { name: 'Send again' }));
+    await waitFor(() => expect(router.push).toHaveBeenCalledWith('/matches'));
+    expect(apiMock.mock.calls.filter(([p]) => p === 'screening/cssrs')).toHaveLength(6);
+  });
+
+  it('P53 return: a «yes» that triggers the gate opens the crisis screen and never reopens matching', async () => {
+    apiMock.mockResolvedValue({ crisis: true, level: 3 });
+    renderWithIntl(<SafetyCheck form={form} emergencyNumber="997" mode="careReturn" />, 'en');
+    await userEvent.click(screen.getByRole('radio', { name: 'Yes' }));
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/crisis'));
+    expect(apiMock).not.toHaveBeenCalledWith('me/care/return', expect.anything());
+  });
 });
