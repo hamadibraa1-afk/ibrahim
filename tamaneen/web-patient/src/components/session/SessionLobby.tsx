@@ -14,6 +14,7 @@ import { LateNotice } from './LateNotice';
 import { LocalPreview } from './LocalPreview';
 import { PreSessionNoteField } from './PreSessionNoteField';
 import { canJoin, lobbyPhase, mmss } from './sessionClock';
+import { notHeldRoute, sessionHeld } from './sessionRoutes';
 import { useLocalMedia } from './useLocalMedia';
 import { useSessionState } from './useSessionState';
 
@@ -64,6 +65,12 @@ export function SessionLobby({ appointment, initialState, initialNote, sessionLa
     lateOptionsAfterMinutes: 15,
   };
   const phase = lobbyPhase(view, serverNow, appointment.therapistLateMinutes);
+  // P67 / P63: a cancellation by the therapist or a recorded no-show turns the lobby into its own page.
+  const leaveTo = view.status === appointment.status ? notHeldRoute(appointment) : notHeldRoute({ id: appointment.id, status: view.status, cancelledBy: view.status === 'cancelled_by_therapist' ? 'therapist' : null, missed: view.status === 'no_show' });
+  useEffect(() => {
+    if (leaveTo && leaveTo !== `/appointments/${encodeURIComponent(appointment.id)}`) router.replace(leaveTo);
+  }, [leaveTo, appointment.id, router]);
+  const held = sessionHeld({ status: view.status, startsAt: view.startsAt }, view.peer.joinedAt !== null || view.peer.present, serverNow);
   const starts = Date.parse(view.startsAt);
   const late = phase === 'late' || phase === 'lateOptions';
   const devicesText =
@@ -143,9 +150,15 @@ export function SessionLobby({ appointment, initialState, initialNote, sessionLa
       {phase === 'closed' ? (
         <div className="flex flex-col gap-2">
           <p className="text-base">{t('closed')}</p>
-          <ButtonLink href={`/appointments/${encodeURIComponent(appointment.id)}/summary`} variant="secondary" full>
-            {t('summary')}
-          </ButtonLink>
+          {held ? (
+            <ButtonLink href={`/appointments/${encodeURIComponent(appointment.id)}/summary`} variant="secondary" full>
+              {t('summary')}
+            </ButtonLink>
+          ) : (
+            <ButtonLink href={`/appointments/${encodeURIComponent(appointment.id)}`} variant="secondary" full>
+              {t('details')}
+            </ButtonLink>
+          )}
         </div>
       ) : (
         <div className="flex flex-col gap-1">

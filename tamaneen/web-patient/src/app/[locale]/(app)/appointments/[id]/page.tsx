@@ -4,6 +4,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { AppointmentActions } from '@/components/appointments/AppointmentActions';
 import { DetailRows } from '@/components/appointments/DetailRows';
 import { JoinSessionCard } from '@/components/appointments/JoinSessionCard';
+import { sessionHeld } from '@/components/session/sessionRoutes';
 import { isCancelled, sessionLabel, statusLabel } from '@/components/appointments/labels';
 import { asLocale, genderKey, timeZoneOf, type Translator } from '@/components/matching/labels';
 import { BackLink } from '@/components/ui/BackLink';
@@ -11,7 +12,7 @@ import { ButtonLink } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { redirect } from '@/i18n/navigation';
 import { getMe, serverGetOptional } from '@/lib/api/server';
-import type { AppointmentDetail } from '@/lib/api/types';
+import type { AppointmentDetail, SessionState } from '@/lib/api/types';
 import { formatDateTime, formatNumber } from '@/lib/format';
 
 type Params = Promise<{ locale: string; id: string }>;
@@ -38,6 +39,10 @@ export default async function AppointmentDetailPage({ params }: { params: Params
   if (appointment.cancelledBy === 'therapist') return redirect({ href: `/appointments/${appointment.id}/cancelled`, locale });
   if (appointment.missed) return redirect({ href: `/appointments/${appointment.id}/missed`, locale });
   const timeZone = timeZoneOf(me);
+  // P43 is linked only for a session that took place: completed, or started with the therapist in the room.
+  const started = appointment.status === 'confirmed' && Date.parse(appointment.startsAt) <= Date.now();
+  const presence = started ? await serverGetOptional<SessionState>(`appointments/${encodeURIComponent(appointment.id)}/presence`) : null;
+  const held = sessionHeld(appointment, presence !== null && (presence.peer.joinedAt !== null || presence.peer.present), presence ? Date.parse(presence.serverNow) : Date.now());
   const tl: Translator = tList;
   const { therapist } = appointment;
   const statusTone = appointment.status === 'confirmed' ? 'text-primary' : isCancelled(appointment.status) ? 'text-help' : 'text-muted';
@@ -67,7 +72,7 @@ export default async function AppointmentDetailPage({ params }: { params: Params
         </>
       ) : null}
 
-      {appointment.status === 'completed' || (appointment.status === 'confirmed' && Date.parse(appointment.startsAt) <= Date.now()) ? (
+      {held ? (
         <ButtonLink href={`/appointments/${encodeURIComponent(appointment.id)}/summary`} variant="secondary" full>
           {t('afterSession')}
         </ButtonLink>

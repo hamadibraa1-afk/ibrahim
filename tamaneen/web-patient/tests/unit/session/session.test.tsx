@@ -22,6 +22,7 @@ import { SessionRoom, safeEmbedUrl } from '@/components/session/SessionRoom';
 import { SessionSummaryView, doneHeading } from '@/components/session/SessionSummaryView';
 import { PreSessionNoteField } from '@/components/session/PreSessionNoteField';
 import { canJoin, lobbyPhase, mmss } from '@/components/session/sessionClock';
+import { notHeldRoute, sessionHeld, summaryRedirect } from '@/components/session/sessionRoutes';
 
 const START = '2026-10-21T13:00:00Z';
 const startMs = Date.parse(START);
@@ -80,6 +81,30 @@ describe('lobby states (P41, P54)', () => {
   });
 });
 
+describe('routes for sessions that did not take place (P41, P54, P43)', () => {
+  const a = appointmentDetail();
+  it('sends a therapist cancellation to P67, a no-show to P63 and other cancellations to P28', () => {
+    expect(notHeldRoute({ ...a, status: 'cancelled_by_therapist', cancelledBy: 'therapist' })).toBe('/appointments/a1/cancelled');
+    expect(notHeldRoute({ ...a, status: 'no_show', missed: true })).toBe('/appointments/a1/missed');
+    expect(notHeldRoute({ ...a, status: 'cancelled_by_patient', cancelledBy: 'patient' })).toBe('/appointments/a1');
+    expect(notHeldRoute({ ...a, status: 'cancelled_by_therapist', cancelledBy: 'care_ended' })).toBe('/appointments/a1');
+    expect(notHeldRoute(a)).toBeNull();
+  });
+
+  it('shows P43 only for a completed session or a started one the therapist joined', () => {
+    expect(sessionHeld({ ...a, status: 'completed' }, false, startMs - min)).toBe(true);
+    expect(sessionHeld(a, true, startMs + min)).toBe(true);
+    expect(sessionHeld(a, false, startMs + min)).toBe(false);
+    expect(sessionHeld(a, true, startMs - min)).toBe(false);
+    expect(summaryRedirect({ ...a, status: 'cancelled_by_therapist', cancelledBy: 'therapist' }, false, startMs)).toBe('/appointments/a1/cancelled');
+    expect(summaryRedirect({ ...a, status: 'no_show', missed: true }, false, startMs)).toBe('/appointments/a1/missed');
+    expect(summaryRedirect(a, false, startMs - 30 * min)).toBe('/appointments/a1/lobby');
+    expect(summaryRedirect(a, false, startMs + 70 * min)).toBe('/appointments/a1');
+    expect(summaryRedirect(a, true, startMs + 70 * min)).toBeNull();
+    expect(summaryRedirect({ ...a, status: 'completed' }, false, startMs + 70 * min)).toBeNull();
+  });
+});
+
 describe('SessionLobby (P41)', () => {
   it('keeps the join button disabled before the window and explains when it opens (Arabic)', () => {
     vi.useFakeTimers({ toFake: ['Date'] });
@@ -126,6 +151,38 @@ describe('SessionLobby (P41)', () => {
     renderWithIntl(<SessionLobby appointment={appointmentDetail({ therapist: khaled })} initialState={state({ serverNow: new Date().toISOString(), therapistLate: true })} initialNote="" sessionLabel="First session" />, 'en');
     expect(screen.getByTestId('late-state')).toHaveTextContent('أ. خالد ع. is running a little late');
     expect(screen.getByRole('link', { name: 'Another available therapist' })).toHaveAttribute('href', '/therapists');
+  });
+
+  it('turns into P67 when the therapist cancels and into P63 when the session is marked missed', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(startMs - 5 * min));
+    const s = state({ serverNow: new Date().toISOString(), status: 'cancelled_by_therapist' });
+    mocks.api.mockResolvedValue(s);
+    const { unmount } = renderWithIntl(<SessionLobby appointment={appointmentDetail()} initialState={s} initialNote="" sessionLabel="First session" />, 'en');
+    await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith('/appointments/a1/cancelled'));
+    expect(screen.queryByRole('link', { name: 'After the session' })).toBeNull();
+    unmount();
+
+    const m = state({ serverNow: new Date().toISOString(), status: 'no_show' });
+    mocks.api.mockResolvedValue(m);
+    renderWithIntl(<SessionLobby appointment={appointmentDetail()} initialState={m} initialNote="" sessionLabel="First session" />, 'en');
+    await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith('/appointments/a1/missed'));
+  });
+
+  it('never links a closed session the therapist did not join to P43', () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(startMs + 70 * min));
+    const s = state({ serverNow: new Date().toISOString() });
+    mocks.api.mockResolvedValue(s);
+    const { unmount } = renderWithIntl(<SessionLobby appointment={appointmentDetail()} initialState={s} initialNote="" sessionLabel="First session" />, 'en');
+    expect(screen.queryByRole('link', { name: 'After the session' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Appointment details' })).toHaveAttribute('href', '/appointments/a1');
+    unmount();
+
+    const held = state({ serverNow: new Date().toISOString(), peer: { present: false, joinedAt: START, lastSeenAt: START } });
+    mocks.api.mockResolvedValue(held);
+    renderWithIntl(<SessionLobby appointment={appointmentDetail()} initialState={held} initialNote="" sessionLabel="First session" />, 'en');
+    expect(screen.getByRole('link', { name: 'After the session' })).toHaveAttribute('href', '/appointments/a1/summary');
   });
 
   it('opens the breathing exercise as an overlay without leaving the lobby', async () => {

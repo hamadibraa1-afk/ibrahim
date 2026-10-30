@@ -4,7 +4,9 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { sessionLabel } from '@/components/appointments/labels';
 import { asLocale, type Translator } from '@/components/matching/labels';
 import { SessionLobby } from '@/components/session/SessionLobby';
+import { notHeldRoute } from '@/components/session/sessionRoutes';
 import { BackLink } from '@/components/ui/BackLink';
+import { redirect } from '@/i18n/navigation';
 import { serverGetOptional } from '@/lib/api/server';
 import type { AppointmentDetail, PreSessionNote, SessionState } from '@/lib/api/types';
 
@@ -30,6 +32,9 @@ export default async function SessionLobbyPage({ params }: { params: Params }) {
     serverGetOptional<PreSessionNote>(`${path}/pre-session-note`),
   ]);
   if (!appointment) notFound();
+  // P67 / P63: a session the therapist cancelled or marked missed has its own page, never the lobby.
+  const away = notHeldRoute(appointment);
+  if (away && (appointment.cancelledBy === 'therapist' || appointment.missed)) return redirect({ href: away, locale });
 
   return (
     <div className="flex flex-col gap-4 pt-2">

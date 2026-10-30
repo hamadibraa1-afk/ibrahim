@@ -28,6 +28,7 @@
       "joinOpensBefore": "يفتح قبل البدء بـ 10 دقائق",
       "closed": "انتهى وقت هذه الجلسة.",
       "summary": "بعد الجلسة",
+      "details": "تفاصيل الموعد",
       "peerInFemale": "{name} في غرفة الجلسة الآن",
       "peerInMale": "{name} في غرفة الجلسة الآن",
       "peerNotYetFemale": "لم تدخل {name} غرفة الجلسة بعد",
