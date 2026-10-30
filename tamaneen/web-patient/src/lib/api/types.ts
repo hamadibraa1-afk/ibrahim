@@ -308,6 +308,7 @@ export interface HomeworkItem {
   frequency: HomeworkFrequency;
   endsOn: string;
   dueToday: boolean;
+  /** Check-ins done this week (Sunday to Saturday, the patient's calendar), for every frequency. */
   doneThisPeriod: number;
   hasNewFeedback: boolean;
   completed: boolean;

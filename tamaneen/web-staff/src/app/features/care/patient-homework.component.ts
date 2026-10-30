@@ -147,7 +147,7 @@ export class PatientHomeworkComponent {
     const d = this.draft;
     const body = { title: d.title.trim(), instructions: this.lines(d.instructions), minutes: d.minutes, frequency: d.frequency, endsOn: d.endsOn };
     const editing = this.editing();
-    const request = editing ? this.api.updateHomework(editing, body) : this.api.assignHomework(data.pseudonymId, { ...body, startsOn: this.minDate, templateCode: d.templateCode });
+    const request = editing ? this.api.updateHomework(editing, body) : this.api.assignHomework(data.pseudonymId, { ...body, templateCode: d.templateCode });
     this.saving.set(true);
     this.formError.set(null);
     request.subscribe({

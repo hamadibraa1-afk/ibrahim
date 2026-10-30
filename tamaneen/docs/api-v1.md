@@ -130,17 +130,18 @@ hold the copy until they end, except crisis kinds. Copies never name the therapi
 homework; "neutral notifications" send «لديك تذكير». Staff have no readable contact, so staff notices are in-app.
 Kinds: appointment.booked, appointment.rescheduled, appointment.cancelled, appointment.cancelled_by_therapist,
 appointment.running_late, appointment.missed, appointment.reminder_24h, appointment.reminder_1h,
-session.therapist_joined, waitlist.slot_open, triage.matches_ready, homework.assigned, homework.feedback, care.ended,
+session.therapist_joined, waitlist.slot_open, triage.matches_ready, homework.assigned, homework.feedback, homework.cancelled, care.ended,
 safety_plan.updated, crisis.follow_up, security.new_sign_in (patient); staff.appointment.booked|rescheduled|cancelled,
-care.change_requested, crisis.closed, safety_plan.updated, security.new_sign_in (staff). Other modules call
+care.change_requested, crisis.closed, appointment.missed_not_ok, safety_plan.updated, security.new_sign_in (staff). Other modules call
 `INotifier.NotifyAsync(new Notification(recipientUserId, kind, data, link?))`; an unknown kind is stored with the
 generic text. A background worker (once a minute) sends the 24 h and 1 h reminders, the crisis follow-ups and the held
 copies; each reminder and follow-up has a per-recipient dedupe key, so restarts never repeat one. In Development the
 copies appear at `/dev/inbox`.
 
 P38 CrisisFollowUp: `{ state, eventId, closedAt, responder, talked, therapistInformed, therapistName,
-nextAppointmentId, nextAppointmentAt, unread }`, built from structured data only (who handled the event, whether the
-treating therapist was told, the next appointment), never the conversation, the level or the close reason.
+nextAppointmentId, nextAppointmentAt, unread, followUpCallAt, supportPerson }`, built from structured data only (who handled the event, whether the
+treating therapist was told, the next appointment, and the close steps the responder recorded: the follow-up call time and
+the support person code `family`, `friend`, `partner` or `other`), never the conversation, the level or the close reason.
 
 Waitlist (P56): the queue is ordered by risk, then by time waited. Whenever a time becomes free (a patient cancels or moves a
 session, a hold is released, a therapist records a cancellation, a patient joins), the scheduling service matches the
@@ -211,7 +212,7 @@ During scheduled maintenance (`Platform:Maintenance` true) every patient endpoin
 | POST | /v1/staff/availability/slots | { startsAt } → 201 AvailabilitySlot (one-off time, profile session length; 400 `error.slot.too_soon` within 2 h; 409 `error.slot.overlap`) | S19 |
 | PATCH | /v1/staff/availability/slots/{slotId} | { startsAt } → AvailabilitySlot (free times only: 409 `error.slot.taken` when booked or held) | S19 |
 | DELETE | /v1/staff/availability/slots/{slotId} | → 204 (free times only, 409 `error.slot.taken`) | S19 |
-| POST | /v1/staff/patients/{pseudonymId}/homework | AssignHomeworkRequest { title ≤ 120, instructions[] (≤ 2,000 in all), minutes?, frequency, startsOn, endsOn ≥ today, templateCode? } → 201 StaffHomework (therapist; notifies `homework.assigned`) | S16 |
+| POST | /v1/staff/patients/{pseudonymId}/homework | AssignHomeworkRequest { title ≤ 120, instructions[] (≤ 2,000 in all), minutes?, frequency, endsOn ≥ today, templateCode? } → 201 StaffHomework (starts on the patient's today, in their time zone; a `startsOn` sent by older clients is ignored) (therapist; notifies `homework.assigned`) | S16 |
 | POST | /v1/staff/checkins/{id}/feedback | { text ≤ 1,000 } → 204 (therapist; notifies `homework.feedback`; the patient sees it on P10 and P09) | S16 |
 | GET | /v1/staff/homework/templates | → HomeworkTemplate[] (library: behavioral_activation, thought_record, sleep_diary, breathing) | S16 |
 | GET | /v1/staff/patients/{pseudonymId}/homework | → StaffHomeworkList (current and past, check-ins with notes, `gateLevel`, replies; audited `patient.homework_viewed`) | S16 |

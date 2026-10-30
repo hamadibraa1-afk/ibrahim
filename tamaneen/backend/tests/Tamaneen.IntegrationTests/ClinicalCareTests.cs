@@ -48,11 +48,12 @@ public sealed class ClinicalCareTests : IAsyncLifetime
             instructions = breathing.GetProperty("instructions").EnumerateArray().Select(i => i.GetString()).ToArray(),
             minutes = 5,
             frequency = "daily",
-            startsOn = today,
+            startsOn = today.AddDays(1), // a therapist's browser a day ahead of the patient: ignored
             endsOn = today.AddDays(6),
             templateCode = "breathing",
         }));
         var homeworkId = created.GetProperty("id").GetGuid();
+        created.GetProperty("startsOn").GetString().Should().Be(today.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture), "the exercise starts on the patient's today");
         created.GetProperty("status").GetString().Should().Be("active");
         created.GetProperty("weeklyTarget").GetInt32().Should().Be(7);
         _hosts.Notifier.Sent.Should().Contain(n => n.Kind == "homework.assigned" && n.RecipientUserId == patient.PatientId && n.Data["homeworkId"] == homeworkId.ToString());
@@ -61,6 +62,8 @@ public sealed class ClinicalCareTests : IAsyncLifetime
         var list = await Read(await patient.Me.GetAsync("/v1/homework"));
         list.GetProperty("active").EnumerateArray().Should().Contain(h => h.GetProperty("id").GetGuid() == homeworkId);
         await Read(await patient.Me.PostAsJsonAsync($"/v1/homework/{homeworkId}/checkins", new { status = "done", feeling = 7, note = "نمت أسرع من الأمس" }));
+        (await Read(await patient.Me.GetAsync("/v1/homework"))).GetProperty("active").EnumerateArray().Single(h => h.GetProperty("id").GetGuid() == homeworkId)
+            .GetProperty("doneThisPeriod").GetInt32().Should().Be(1);
 
         // S16: the check-in with the note, then a reply.
         var staffList = await Read(await sara.GetAsync($"/v1/staff/patients/{patient.Pseudonym}/homework"));
@@ -91,7 +94,8 @@ public sealed class ClinicalCareTests : IAsyncLifetime
         (await sara.DeleteAsync($"/v1/staff/homework/{homeworkId}")).StatusCode.Should().Be(HttpStatusCode.NoContent);
         _hosts.Notifier.Sent.Should().Contain(n => n.Kind == "homework.cancelled" && n.RecipientUserId == patient.PatientId);
         list = await Read(await patient.Me.GetAsync("/v1/homework"));
-        list.GetProperty("completed").EnumerateArray().Should().Contain(h => h.GetProperty("id").GetGuid() == homeworkId);
+        list.GetProperty("completed").EnumerateArray().Single(h => h.GetProperty("id").GetGuid() == homeworkId)
+            .GetProperty("endsOn").GetString().Should().Be(today.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture), "a cancelled exercise ends the day it was cancelled");
         (await Problem(await patient.Me.PostAsJsonAsync($"/v1/homework/{homeworkId}/checkins", new { status = "done" }), 409)).GetProperty("code").GetString().Should().Be(ErrorCodes.HomeworkEnded);
         (await Read(await sara.GetAsync($"/v1/staff/patients/{patient.Pseudonym}/homework"))).GetProperty("past").EnumerateArray().Single(h => h.GetProperty("id").GetGuid() == homeworkId)
             .GetProperty("status").GetString().Should().Be("cancelled");

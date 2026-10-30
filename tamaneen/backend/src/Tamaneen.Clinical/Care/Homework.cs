@@ -103,6 +103,7 @@ public sealed class HomeworkAssignment : Entity
         UpdatedAtUtc = clock.UtcNow;
     }
 
+    /// <summary>S16 cancel: the exercise ends today (in the patient's calendar), so P10 and P29 show the real end date.</summary>
     public void Cancel(DateOnly today, IClock clock)
     {
         if (IsCompleted(today))
@@ -110,6 +111,7 @@ public sealed class HomeworkAssignment : Entity
             throw new DomainException(ErrorCodes.HomeworkEnded, $"Homework {Id} has ended.");
         }
 
+        EndsOn = today < StartsOn ? StartsOn : today;
         CancelledAtUtc = clock.UtcNow;
         UpdatedAtUtc = clock.UtcNow;
     }

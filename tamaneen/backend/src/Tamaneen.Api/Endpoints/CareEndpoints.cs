@@ -358,7 +358,7 @@ public static class CareEndpoints
                 FrequencyCode(a.Frequency),
                 a.EndsOn,
                 a.DueOn(today, doneThisWeek) && !hasToday,
-                a.Frequency == HomeworkFrequency.Daily ? doneDays : doneThisWeek,
+                doneThisWeek,
                 newFeedback,
                 a.IsCompleted(today));
             rows.Add(new HomeworkRow(item, a, doneDays));
@@ -493,11 +493,14 @@ public static class CareEndpoints
         return TypedResults.Ok(saved with { Crisis = verdict?.Crisis ?? false, Script = verdict is { Crisis: true } ? verdict.Script : null });
     }
 
-    /// <summary>Sections (up to 1500 characters each) and up to five contacts with a valid phone.</summary>
+    /// <summary>One limit for every safety-plan section, on P37, S35 and here.</summary>
+    public const int SafetyPlanSectionMax = 1000;
+
+    /// <summary>Sections (up to 1000 characters each, S35 «نصوص حتى 1000 حرف»; P37 uses the same limit) and up to five contacts with a valid phone.</summary>
     internal static (Dictionary<string, string> Sections, List<PlanContactDto> Contacts) CleanPlan(UpdateSafetyPlanRequest request)
     {
         var sections = SafetyPlan.Sections.ToDictionary(s => s, s => (request.Sections ?? []).GetValueOrDefault(s)?.Trim() ?? string.Empty);
-        if (sections.Values.Any(v => v.Length > 1500))
+        if (sections.Values.Any(v => v.Length > SafetyPlanSectionMax))
         {
             throw MeEndpoints.Invalid("sections");
         }

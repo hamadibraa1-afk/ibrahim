@@ -2,6 +2,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using Tamaneen.Api.Clinical;
+using Tamaneen.Api.Notifications;
 using Tamaneen.Api.Patients;
 using Tamaneen.Clinical.Care;
 using Tamaneen.Infrastructure.Auditing;
@@ -18,7 +19,8 @@ public static partial class StaffCareEndpoints
 
     public sealed record HomeworkTemplateDto(string Code, string Title, IReadOnlyList<string> Instructions, string Frequency, int? Minutes);
 
-    public sealed record AssignHomeworkRequest(string? Title, List<string>? Instructions, int? Minutes, string? Frequency, DateOnly StartsOn, DateOnly EndsOn, string? TemplateCode = null);
+    /// <summary><c>StartsOn</c> is ignored: the exercise starts on the patient's today, in their time zone.</summary>
+    public sealed record AssignHomeworkRequest(string? Title, List<string>? Instructions, int? Minutes, string? Frequency, DateOnly? StartsOn, DateOnly EndsOn, string? TemplateCode = null);
 
     public sealed record UpdateHomeworkRequest(string? Title, List<string>? Instructions, int? Minutes, string? Frequency, DateOnly EndsOn);
 
@@ -92,7 +94,7 @@ public static partial class StaffCareEndpoints
             await protector.EncryptAsync(patientId, Fields.HomeworkInstructions, CareRecords.Json(instructions), ct).ConfigureAwait(false),
             request.Minutes is > 0 and <= 240 ? request.Minutes : null,
             frequency,
-            request.StartsOn,
+            today,
             request.EndsOn,
             clock);
         assignment.SetTemplate(request.TemplateCode);
@@ -139,7 +141,7 @@ public static partial class StaffCareEndpoints
         assignment.Cancel(await care.TodayAsync(assignment.PatientId, clock, ct).ConfigureAwait(false), clock);
         audit.Append("homework.cancelled", "HomeworkAssignment", assignment.Id.ToString(), await PseudonymAsync(care, assignment.PatientId, ct).ConfigureAwait(false));
         await care.Db.SaveChangesAsync(ct).ConfigureAwait(false);
-        await care.NotifyAsync(assignment.PatientId, "homework.cancelled", new Dictionary<string, string> { ["homeworkId"] = assignment.Id.ToString() }, $"/homework/{assignment.Id}", ct).ConfigureAwait(false);
+        await care.NotifyAsync(assignment.PatientId, NotificationKinds.HomeworkCancelled, new Dictionary<string, string> { ["homeworkId"] = assignment.Id.ToString() }, $"/homework/{assignment.Id}", ct).ConfigureAwait(false);
         return TypedResults.NoContent();
     }
 

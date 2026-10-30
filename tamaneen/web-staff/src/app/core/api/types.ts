@@ -390,7 +390,8 @@ export interface StaffHomework {
   checkins: StaffCheckin[];
 }
 export interface StaffHomeworkList { pseudonymId: string; current: StaffHomework[]; past: StaffHomework[]; canEdit: boolean }
-export interface AssignHomeworkRequest { title: string; instructions: string[]; minutes?: number | null; frequency: HomeworkFrequency; startsOn: string; endsOn: string; templateCode?: string | null }
+/** The server starts the exercise on the patient's today (their time zone); there is no start date to send. */
+export interface AssignHomeworkRequest { title: string; instructions: string[]; minutes?: number | null; frequency: HomeworkFrequency; endsOn: string; templateCode?: string | null }
 export interface UpdateHomeworkRequest { title: string; instructions: string[]; minutes?: number | null; frequency: HomeworkFrequency; endsOn: string }
 
 export type GoalStatus = 'not_started' | 'ongoing' | 'improving';
