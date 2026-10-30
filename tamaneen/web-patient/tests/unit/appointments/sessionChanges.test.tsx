@@ -75,7 +75,9 @@ describe('P67 therapist cancelled', () => {
     await renderPage(CancelledPage, cancelled);
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('نعتذر، أ. سارة م. اعتذرت عن الجلسة');
     expect(screen.getByText('لظرف طارئ. ما يتطلب منك أي شي.')).toBeInTheDocument();
-    expect(screen.getByTestId('rebook-same')).toHaveAttribute('href', '/therapists/t-sara/book');
+    expect(screen.getByTestId('rebook-same')).toHaveAttribute('href', '/therapists/t-sara/book?reschedule=a1');
+    expect(screen.getByTestId('rebook-priority')).toHaveTextContent('موعدك الجديد له أولوية في جدولها');
+    expect(screen.queryByText(/د\. منى|substitute/i)).toBeNull();
     expect(screen.getByTestId('rebook-other')).toHaveAttribute('href', '/matches');
     expect(screen.getByText('لن ينقص هذا من عدد جلساتك.')).toBeInTheDocument();
     expect(screen.getByTestId('talk-now')).toBeInTheDocument();
@@ -84,7 +86,8 @@ describe('P67 therapist cancelled', () => {
   it('uses the male form and English', async () => {
     await renderPage(CancelledPage, appointmentDetail({ therapist: khaled, status: 'cancelled_by_therapist', cancelledBy: 'therapist' }), 'en');
     expect(screen.getByRole('heading', { level: 1 }).textContent).toContain('had to cancel your session');
-    expect(screen.getByTestId('rebook-same')).toHaveAttribute('href', '/therapists/t-khaled/book');
+    expect(screen.getByTestId('rebook-same')).toHaveAttribute('href', '/therapists/t-khaled/book?reschedule=a1');
+    expect(screen.getByTestId('rebook-priority')).toHaveTextContent('priority in his schedule');
   });
 
   it('sends anything else back to the appointment', async () => {

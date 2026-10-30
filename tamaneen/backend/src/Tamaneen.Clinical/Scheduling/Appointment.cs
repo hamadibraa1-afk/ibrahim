@@ -209,6 +209,40 @@ public sealed class Appointment : Entity
         Rescheduled = true;
     }
 
+    /// <summary>
+    /// P67 «أنتظر …»: after the therapist cancelled, the patient picks a new time with the same therapist. This is a
+    /// priority reschedule of the cancelled appointment, not a new booking: it is confirmed again with the same
+    /// sequence number, and the 24-hour limit does not apply. Not for sessions closed at the end of care.
+    /// </summary>
+    public void RebookAfterTherapistCancel(AvailabilitySlot slot, IClock clock)
+    {
+        if (CancelledBy != "therapist")
+        {
+            throw new DomainException(ErrorCodes.AppointmentNotChangeable, $"Appointment {Id} was not cancelled by the therapist.");
+        }
+
+        if (slot.TherapistUserId != TherapistUserId)
+        {
+            throw new DomainException(ErrorCodes.SlotUnavailable, "A session can only move to the same therapist's slot.");
+        }
+
+        if (slot.StartsAtUtc <= clock.UtcNow)
+        {
+            throw new DomainException(ErrorCodes.SlotUnavailable, "The slot has already started.");
+        }
+
+        SlotId = slot.Id;
+        StartsAtUtc = slot.StartsAtUtc;
+        DurationMinutes = slot.DurationMinutes;
+        Status = AppointmentStatus.Confirmed;
+        Rescheduled = true;
+        CancelledAtUtc = null;
+        CancelReason = null;
+        OutcomeRecordedAtUtc = null;
+        TherapistLateMinutes = null;
+        TherapistLateAtUtc = null;
+    }
+
     public void RecordOutcome(AppointmentStatus outcome, IClock clock)
     {
         if (outcome is not (AppointmentStatus.Completed or AppointmentStatus.NoShow or AppointmentStatus.CancelledByTherapist))

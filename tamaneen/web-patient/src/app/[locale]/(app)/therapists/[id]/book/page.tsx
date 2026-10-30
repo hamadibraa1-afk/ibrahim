@@ -31,7 +31,10 @@ async function loadSlots(therapistId: string, fallback: string): Promise<{ slots
   }
 }
 
-/** P08 Booking (and the reschedule mode reached from P28 with ?reschedule={appointmentId}). */
+/**
+ * P08 Booking (and the reschedule mode reached from P28 with ?reschedule={appointmentId}). From P67 the same mode
+ * rebooks the session the therapist cancelled, with priority: same session number, no 24-hour limit.
+ */
 export default async function BookPage({ params, searchParams }: { params: Params; searchParams: SearchParams }) {
   const { locale: rawLocale, id } = await params;
   setRequestLocale(rawLocale);
@@ -66,7 +69,13 @@ export default async function BookPage({ params, searchParams }: { params: Param
         </div>
       </header>
 
-      {reschedule ? <Notice tone="info">{t('rescheduleCurrent', { date: formatDateTime(reschedule.startsAt, locale, timeZone) })}</Notice> : null}
+      {reschedule ? (
+        <Notice tone="info">
+          {reschedule.cancelledBy === 'therapist'
+            ? t('reschedulePriority', { date: formatDateTime(reschedule.startsAt, locale, timeZone) })
+            : t('rescheduleCurrent', { date: formatDateTime(reschedule.startsAt, locale, timeZone) })}
+        </Notice>
+      ) : null}
 
       <BookingFlow therapistId={therapist.id} initialSlots={slots} timeZone={timeZone} rescheduleId={reschedule?.id ?? null} notEligible={notEligible} />
     </div>

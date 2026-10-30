@@ -4,6 +4,7 @@
     "sessionLine": "Remote session · {minutes} minutes · free during the pilot",
     "rescheduleEyebrow": "Change appointment",
     "rescheduleCurrent": "Your current appointment: {date}. Choose a new time and we'll replace the old one when you confirm.",
+    "reschedulePriority": "Your cancelled session ({date}) moves to the time you choose, with priority and the same session number. The 24-hour limit does not apply.",
     "chooseDay": "Choose a day",
     "daysLabel": "Available days",
     "times": "Available times · {month}",

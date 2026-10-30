@@ -325,11 +325,19 @@ public static class SchedulingEndpoints
             ?? throw new DomainException(ErrorCodes.SlotUnavailable, "Slot not found.");
         var old = await p.Db.AvailabilitySlots.FirstAsync(s => s.Id == appointment.SlotId, ct).ConfigureAwait(false);
 
+        // P67: after a therapist cancellation the same appointment is rebooked with priority: same sequence number, no
+        // 24-hour limit, and the cancelled time stays as the therapist left it (blocked or free).
+        var therapistCancelled = appointment.CancelledBy == "therapist";
+
         // P54: when the therapist is late, moving the session is free and not bound by the 24-hour limit.
-        var therapistLate = !appointment.CanChange(clock)
+        var therapistLate = !therapistCancelled && !appointment.CanChange(clock)
             && Tamaneen.Clinical.Sessions.SessionWindow.TherapistLate(appointment, clock.UtcNow, await room.TherapistJoinedAtAsync(appointment.Id, ct).ConfigureAwait(false));
         target.TakeFor(p.PatientId, clock);
-        if (therapistLate)
+        if (therapistCancelled)
+        {
+            appointment.RebookAfterTherapistCancel(target, clock);
+        }
+        else if (therapistLate)
         {
             appointment.MoveAfterTherapistLate(target, clock);
         }
@@ -338,9 +346,13 @@ public static class SchedulingEndpoints
             appointment.MoveTo(target, clock);
         }
 
-        old.Free();
+        if (!therapistCancelled)
+        {
+            old.Free();
+        }
+
         var pseudonym = (await p.AccountAsync(ct).ConfigureAwait(false)).PseudonymId;
-        audit.Append("appointment.rescheduled", "Appointment", appointment.Id.ToString(), pseudonym, therapistLate ? "therapist_late" : null);
+        audit.Append("appointment.rescheduled", "Appointment", appointment.Id.ToString(), pseudonym, therapistCancelled ? "therapist_cancelled" : therapistLate ? "therapist_late" : null);
         await SaveOrConflictAsync(p.Db, ct).ConfigureAwait(false);
         await NotifyBothAsync(notifier, appointment, pseudonym, NotificationKinds.AppointmentRescheduled, NotificationKinds.StaffAppointmentRescheduled, ct).ConfigureAwait(false);
         await waitlist.CheckAsync(ct).ConfigureAwait(false);

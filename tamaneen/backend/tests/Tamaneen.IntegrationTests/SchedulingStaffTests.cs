@@ -216,6 +216,30 @@ public sealed class SchedulingStaffTests : IAsyncLifetime
         (await Read(await patient.GetAsync("/v1/home"))).GetProperty("appointmentNotice").GetProperty("kind").GetString().Should().Be("cancelled");
         await Problem(await me.PostAsJsonAsync($"/v1/staff/appointments/{first.AppointmentId}/cancel", new { reasonCode = "illness" }), 409);
 
+        // P67: rebooking with the same therapist is a priority reschedule of the cancelled session, not a new booking:
+        // same sequence number, no 24-hour limit (it started in 5 minutes), and the cancelled time stays blocked.
+        var sequence = seen.GetProperty("sequenceNumber").GetInt32();
+        await Read(await me.PostAsJsonAsync("/v1/staff/availability/slots", new { startsAt = WeekdayAt(4, 14) }));
+        var newSlot = (await Read(await patient.GetAsync($"/v1/therapists/{therapistId}/slots?days=30"))).EnumerateArray().First().GetProperty("slotId").GetGuid();
+        var before = await Read(await patient.GetAsync("/v1/appointments"));
+        var countBefore = before.GetProperty("upcoming").GetArrayLength() + before.GetProperty("past").GetArrayLength();
+        var rebooked = await Read(await patient.PostAsJsonAsync($"/v1/appointments/{first.AppointmentId}/reschedule", new { slotId = newSlot }));
+        rebooked.GetProperty("id").GetGuid().Should().Be(first.AppointmentId);
+        rebooked.GetProperty("status").GetString().Should().Be("confirmed");
+        rebooked.GetProperty("cancelledBy").ValueKind.Should().Be(JsonValueKind.Null);
+        rebooked.GetProperty("rescheduled").GetBoolean().Should().BeTrue();
+        rebooked.GetProperty("sequenceNumber").GetInt32().Should().Be(sequence);
+        var all = await Read(await patient.GetAsync("/v1/appointments"));
+        (all.GetProperty("upcoming").GetArrayLength() + all.GetProperty("past").GetArrayLength()).Should().Be(countBefore, "no new appointment is created");
+        Slots(await Read(await me.GetAsync("/v1/staff/availability"))).Should().Contain(s => s.Id == first.SlotId && s.Status == "blocked");
+        (await Read(await patient.GetAsync("/v1/home"))).GetProperty("appointmentNotice").ValueKind.Should().Be(JsonValueKind.Null);
+        await using (var audits = _sql.Context(StaticCurrentUser.ForStaff(Guid.NewGuid(), AppRoles.Supervisor)))
+        {
+            var entity = first.AppointmentId.ToString();
+            (await audits.AuditEntries.CountAsync(a => a.EntityId == entity && a.Action == "appointment.rescheduled" && a.Reason == "therapist_cancelled")).Should().Be(1);
+        }
+        await Problem(await stranger.PostAsJsonAsync($"/v1/appointments/{first.AppointmentId}/reschedule", new { slotId = newSlot }), 404);
+
         // The second session is missed.
         await MoveAppointmentAsync(second.AppointmentId, DateTimeOffset.UtcNow.AddMinutes(-60));
         var schedule = await Read(await me.GetAsync($"/v1/staff/schedule?from={TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow.AddMinutes(-60), Riyadh):yyyy-MM-dd}&days=1"));

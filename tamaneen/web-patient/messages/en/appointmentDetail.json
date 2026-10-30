@@ -43,6 +43,8 @@
       "options": "Your options",
       "rebookSameFemale": "Wait for {name} · choose a new time",
       "rebookSameMale": "Wait for {name} · choose a new time",
+      "priorityFemale": "Your new time has priority in her schedule and keeps the same session number.",
+      "priorityMale": "Your new time has priority in his schedule and keeps the same session number.",
       "rebookHelp": "If no time suits you, the care team will contact you within 48 hours to help you rebook.",
       "rebookOther": "See other suggested therapists",
       "talkNow": "I need to talk to someone now",
