@@ -17,6 +17,7 @@ public sealed partial class AppointmentNotices(INotifier notifier, TamaneenDbCon
     public const string RunningLate = "appointment.running_late";
     public const string Missed = "appointment.missed";
     public const string Rescheduled = "appointment.rescheduled";
+    public const string Booked = "appointment.booked";
 
     /// <summary>EC-52: a therapist cancelled and no substitute was offered; supervisors rebook within 48 hours.</summary>
     public const string RebookNeeded = "appointment.rebook_needed";
@@ -29,6 +30,10 @@ public sealed partial class AppointmentNotices(INotifier notifier, TamaneenDbCon
         await ToPatientAsync(a, CancelledByTherapist, $"/appointments/{a.Id}/cancelled", ct).ConfigureAwait(false);
         await ToSupervisorsAsync(RebookNeeded, a, pseudonymId, $"/patients/{pseudonymId}", ct).ConfigureAwait(false);
     });
+
+    /// <summary>S33 «حجز الجلسة القادمة»: the therapist booked the next session; the patient sees it in P27.</summary>
+    public Task BookedAsync(Appointment a, CancellationToken ct) => SendAsync(() =>
+        ToPatientAsync(a, Booked, $"/appointments/{a.Id}", ct));
 
     /// <summary>S18 reschedule by the therapist: the patient sees the new time (P27 detail).</summary>
     public Task RescheduledAsync(Appointment a, CancellationToken ct) => SendAsync(() =>

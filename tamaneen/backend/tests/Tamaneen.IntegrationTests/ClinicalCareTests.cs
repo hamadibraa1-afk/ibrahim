@@ -200,6 +200,39 @@ public sealed class ClinicalCareTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Session_notes_show_the_patients_pre_session_note_and_book_the_next_session()
+    {
+        var patient = await BookedPatientAsync("أ. سارة م.");
+        await Read(await patient.Me.PutAsJsonAsync($"/v1/appointments/{patient.AppointmentId}/pre-session-note", new { text = "النوم تحسن، لكن ما زلت قلقًا من اجتماع الأحد." }));
+        await StartAppointmentNowAsync(patient.AppointmentId);
+        using var sara = _hosts.ApiClient("ar", await _hosts.StaffSignInAsync("sara@staff.tamaneen.dev"));
+        var path = $"/v1/staff/patients/{patient.Pseudonym}/sessions/{patient.AppointmentId}/note";
+        var view = await Read(await sara.GetAsync(path));
+        view.GetProperty("preSessionNote").GetString().Should().Be("النوم تحسن، لكن ما زلت قلقًا من اجتماع الأحد.");
+        view.GetProperty("nextAppointment").ValueKind.Should().Be(JsonValueKind.Null);
+
+        // «حجز الجلسة القادمة»: one of Sara's own free times; another therapist cannot book for her patient.
+        var slot = (await Read(await sara.GetAsync("/v1/staff/free-slots"))).EnumerateArray().First();
+        var slotId = slot.GetProperty("slotId").GetGuid();
+        using var noura = _hosts.ApiClient("ar", await _hosts.StaffSignInAsync("noura@staff.tamaneen.dev"));
+        await Problem(await noura.PostAsJsonAsync($"/v1/staff/patients/{patient.Pseudonym}/appointments", new { slotId }), 404);
+        await Problem(await sara.PostAsJsonAsync($"/v1/staff/patients/{patient.Pseudonym}/appointments", new { }), 400);
+        var booked = await Read(await sara.PostAsJsonAsync($"/v1/staff/patients/{patient.Pseudonym}/appointments", new { slotId }));
+        booked.GetProperty("sequenceNumber").GetInt32().Should().Be(2);
+        await Problem(await sara.PostAsJsonAsync($"/v1/staff/patients/{patient.Pseudonym}/appointments", new { slotId }), 409);
+        var nextId = booked.GetProperty("id").GetGuid();
+        (await Read(await sara.GetAsync(path))).GetProperty("nextAppointment").GetProperty("id").GetGuid().Should().Be(nextId);
+        (await Read(await patient.Me.GetAsync("/v1/appointments"))).GetProperty("upcoming").EnumerateArray().Should().Contain(a => a.GetProperty("id").GetGuid() == nextId);
+        _hosts.Notifier.Sent.Should().Contain(n => n.Kind == "appointment.booked" && n.RecipientUserId == patient.PatientId && n.Data["appointmentId"] == nextId.ToString());
+
+        // A supervisor reads the note page (with the patient's words), audited; the patient's own log shows it.
+        using var fahad = _hosts.ApiClient("ar", await _hosts.StaffSignInAsync("fahad@staff.tamaneen.dev"));
+        (await Read(await fahad.GetAsync(path))).GetProperty("canEdit").GetBoolean().Should().BeFalse();
+        await using var db = _sql.Context(StaticCurrentUser.ForStaff(Guid.NewGuid(), AppRoles.Supervisor));
+        (await db.AuditEntries.CountAsync(e => e.Action == "patient.note_opened" && e.EntityId == patient.AppointmentId.ToString() && e.Reason == "pre_session_note")).Should().Be(3, "two reads by Sara, one by the supervisor");
+    }
+
+    [Fact]
     public async Task The_safety_plan_is_shared_by_patient_and_therapist_with_one_version_number()
     {
         var patient = await BookedPatientAsync("أ. سارة م.");

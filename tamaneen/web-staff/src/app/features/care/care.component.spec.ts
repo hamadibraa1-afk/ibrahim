@@ -283,6 +283,37 @@ function noteView(overrides: Partial<SessionNoteView> = {}): SessionNoteView {
 }
 
 describe('SessionNotesComponent (S33)', () => {
+  it('quotes the patient\'s pre-session note and books the next session from the therapist\'s free times', async () => {
+    const { q, update, backend, overlay, fixture } = await renderCare(SessionNotesComponent, { id: PID, appointmentId: 'ap-5' });
+    backend.expectOne(`${PATIENT_URL}/sessions/ap-5/note`).flush(noteView({ preSessionNote: 'Sleep is better, but Sunday\'s meeting worries me.', preSessionNoteAt: '2026-10-19T18:00:00Z', nextAppointment: null }));
+    await update();
+    expect(q('pre-session-note')!.textContent).toContain('Sunday\'s meeting worries me.');
+    q('book-next')!.click();
+    await update();
+    backend.expectOne((r) => r.url === `${API}/v1/staff/free-slots`).flush([{ slotId: 's7', startsAt: '2026-10-27T07:00:00Z', durationMinutes: 50 }]);
+    await update();
+    (overlay().querySelector('[data-testid="slot-select"] .mat-mdc-select-trigger') as HTMLElement).click();
+    await update();
+    (overlay().querySelector('[data-testid="slot-s7"]') as HTMLElement).click();
+    await update();
+    (overlay().querySelector('[data-testid="slot-submit"]') as HTMLElement).click();
+    const post = backend.expectOne(`${PATIENT_URL}/appointments`);
+    expect(post.request.body).toEqual({ slotId: 's7' });
+    post.flush({ id: 'ap-6', pseudonymId: PID, startsAt: '2026-10-27T07:00:00Z', durationMinutes: 50, sequenceNumber: 6, status: 'confirmed' });
+    await update();
+    expect(q('next-session')).not.toBeNull();
+    expect(q('book-next')).toBeNull();
+    fixture.destroy();
+  });
+
+  it('says when the patient wrote nothing before the session', async () => {
+    const { q, update, backend, fixture } = await renderCare(SessionNotesComponent, { id: PID, appointmentId: 'ap-5' });
+    backend.expectOne(`${PATIENT_URL}/sessions/ap-5/note`).flush(noteView());
+    await update();
+    expect(q('no-pre-session')!.textContent).toContain('wrote nothing');
+    fixture.destroy();
+  });
+
   it('saves a SOAP draft with revision 0, then signs it after a confirmation', async () => {
     const { q, update, backend, overlay, fixture } = await renderCare(SessionNotesComponent, { id: PID, appointmentId: 'ap-5' });
     backend.expectOne(`${PATIENT_URL}/sessions/ap-5/note`).flush(noteView());

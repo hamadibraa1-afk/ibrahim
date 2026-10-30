@@ -31,3 +31,4 @@
 .preview { background: var(--tm-soft); border-radius: 14px; padding: 16px; }
 .step { display: grid; grid-template-columns: 32px 1fr; gap: 8px; align-items: start; }
 .num { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--tm-tint); color: var(--tm-primary-strong); font-weight: 700; }
+.quote { margin: 0 0 4px; padding: 8px 12px; border-inline-start: 3px solid var(--tm-line); background: var(--tm-soft); border-radius: 6px; white-space: pre-wrap; }

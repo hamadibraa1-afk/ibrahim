@@ -450,6 +450,11 @@ export interface SessionNoteView {
   lastWeek: { homeworkDone: number; homeworkTarget: number; moodAverage: number | null; alerts: number };
   canEdit: boolean;
   templates: Record<NoteTemplate, string[]>;
+  /** «ما أراد المريض الحديث عنه»: the patient's own note before this session (P41), or null. */
+  preSessionNote?: string | null;
+  preSessionNoteAt?: string | null;
+  /** The patient's next confirmed session with this therapist, if any. */
+  nextAppointment?: { id: string; startsAt: string; durationMinutes: number; sequenceNumber: number; status: string } | null;
 }
 export interface SaveNoteRequest { template: NoteTemplate; fields: Record<string, string>; summaryPoints: string[]; shareSummary: boolean }
 

@@ -1266,7 +1266,15 @@
       "alerts": "{{count}} alerts",
       "noAlerts": "no alerts",
       "quick": "Quick actions",
-      "assignHomework": "Assign homework"
+      "assignHomework": "Assign homework",
+      "preSession": "What the patient wanted to talk about",
+      "noPreSession": "The patient wrote nothing before the session.",
+      "bookNext": "Book the next session",
+      "bookNextTitle": "Book the next session",
+      "bookNextBody": "Choose one of your free times. The patient is told.",
+      "bookNextConfirm": "Book",
+      "bookNextDone": "The next session is booked and the patient was told.",
+      "nextBooked": "Next session: {{date}}"
     },
     "safety": {
       "loadError": "The safety plan can’t be loaded right now.",

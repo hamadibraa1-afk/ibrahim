@@ -47,6 +47,8 @@ public static class StaffScheduleEndpoints
 
     public sealed record TherapistRescheduleRequest(Guid? SlotId, string? ReasonCode);
 
+    public sealed record BookNextRequest(Guid? SlotId);
+
     public sealed record FreeSlotDto(Guid SlotId, DateTimeOffset StartsAt, int DurationMinutes);
 
     public const int MaxNoteLength = 500;
@@ -60,6 +62,7 @@ public static class StaffScheduleEndpoints
         g.MapPost("/appointments/{id:guid}/cancel", CancelAsync);
         g.MapPost("/appointments/{id:guid}/reschedule", RescheduleAsync);
         g.MapGet("/free-slots", FreeSlotsAsync);
+        g.MapPost("/patients/{pseudonymId}/appointments", BookNextAsync);
         return app;
     }
 
@@ -198,6 +201,37 @@ public static class StaffScheduleEndpoints
         await SchedulingEndpoints.SaveOrConflictAsync(db, ct).ConfigureAwait(false);
         await notices.RescheduledAsync(a, ct).ConfigureAwait(false);
         return TypedResults.Ok((await MapAsync(db, [a], clock, ct).ConfigureAwait(false)).Single());
+    }
+
+    /// <summary>
+    /// S33 «حجز الجلسة القادمة»: the therapist books one of their own free times for a patient they actively care for.
+    /// The patient is told (P27 lists it); audited as a booking by the therapist.
+    /// </summary>
+    internal static async Task<Ok<StaffAppointmentDto>> BookNextAsync(string pseudonymId, BookNextRequest request, ICurrentUser user, TamaneenDbContext db, AppointmentNotices notices, IAuditLog audit, IClock clock, CancellationToken ct)
+    {
+        if (request.SlotId is not { } slotId)
+        {
+            throw MeEndpoints.Invalid("slotId");
+        }
+
+        var me = user.UserId!.Value;
+        var patientId = await StaffEndpoints.PatientIdAsync(db, pseudonymId, ct).ConfigureAwait(false);
+        if (!await db.CareAssignments.AnyAsync(a => a.PatientId == patientId && a.TherapistUserId == me && a.EndedAtUtc == null, ct).ConfigureAwait(false))
+        {
+            throw new DomainException(ErrorCodes.NotFound, "Not this therapist's patient.");
+        }
+
+        var slot = await db.AvailabilitySlots.FirstOrDefaultAsync(s => s.Id == slotId && s.TherapistUserId == me, ct).ConfigureAwait(false)
+            ?? throw new DomainException(ErrorCodes.SlotUnavailable, "Slot not found.");
+        slot.TakeFor(patientId, clock);
+        var previous = await db.Appointments.CountAsync(a => a.PatientId == patientId && a.TherapistUserId == me
+            && a.Status != AppointmentStatus.CancelledByPatient && a.Status != AppointmentStatus.CancelledByTherapist, ct).ConfigureAwait(false);
+        var appointment = Appointment.Book(patientId, slot, previous + 1, Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(16)).ToLowerInvariant(), clock);
+        db.Appointments.Add(appointment);
+        audit.Append("appointment.booked", "Appointment", appointment.Id.ToString(), StaffEndpoints.Canonical(pseudonymId), "therapist");
+        await SchedulingEndpoints.SaveOrConflictAsync(db, ct).ConfigureAwait(false);
+        await notices.BookedAsync(appointment, ct).ConfigureAwait(false);
+        return TypedResults.Ok((await MapAsync(db, [appointment], clock, ct).ConfigureAwait(false)).Single());
     }
 
     // ---------- helpers ----------

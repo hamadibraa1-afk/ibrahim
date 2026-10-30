@@ -42,6 +42,11 @@ export class SchedulingApiService {
     return this.http.post<StaffAppointment>(`${this.appointment(id)}/reschedule`, { slotId, reasonCode });
   }
 
+  /** S33 «حجز الجلسة القادمة»: books one of the therapist's own free times for their patient. */
+  bookNext(pseudonymId: string, slotId: string): Observable<StaffAppointment> {
+    return this.http.post<StaffAppointment>(`${this.base}/v1/staff/patients/${encodeURIComponent(pseudonymId)}/appointments`, { slotId });
+  }
+
   /** The therapist's own free times from now on (default 28 days). */
   freeSlots(days = 28): Observable<FreeSlot[]> {
     return this.http.get<FreeSlot[]>(`${this.base}/v1/staff/free-slots`, { params: new HttpParams().set('days', days) });

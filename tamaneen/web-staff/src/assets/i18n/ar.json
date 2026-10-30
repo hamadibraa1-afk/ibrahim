@@ -1266,7 +1266,15 @@
       "alerts": "{{count}} تنبيهات",
       "noAlerts": "لا تنبيهات",
       "quick": "إجراءات سريعة",
-      "assignHomework": "إسناد واجب"
+      "assignHomework": "إسناد واجب",
+      "preSession": "ما أراد المريض الحديث عنه",
+      "noPreSession": "لم يكتب المريض شيئًا قبل الجلسة.",
+      "bookNext": "حجز الجلسة القادمة",
+      "bookNextTitle": "حجز الجلسة القادمة",
+      "bookNextBody": "اختر وقتًا من أوقات توفرك. يُبلَّغ المريض بالموعد.",
+      "bookNextConfirm": "حجز",
+      "bookNextDone": "حُجزت الجلسة القادمة وأُبلغ المريض.",
+      "nextBooked": "الجلسة القادمة: {{date}}"
     },
     "safety": {
       "loadError": "تعذر تحميل خطة الأمان الآن.",
