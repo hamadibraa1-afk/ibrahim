@@ -54,6 +54,13 @@
     "return": {
       "metaTitle": "Coming back to sessions",
       "intro": "Before we reopen matching, a few short questions about how safe you are right now. Your answers stay private."
+    },
+    "continue": {
+      "title": "Your care",
+      "submit": "I want to continue care",
+      "body": "You can ask to continue your care before it ends.",
+      "sent": "Your request to continue care is recorded. Your care cannot be closed while this request is open.",
+      "retry": "Try again"
     }
   }
 }

@@ -123,3 +123,38 @@ describe('CareCompleteView (P53)', () => {
     expect(mocks.api).not.toHaveBeenCalled();
   });
 });
+
+
+describe('ContinueCareCard', () => {
+  afterEach(() => mocks.api.mockReset());
+
+  it.each(['ar', 'en'] as const)('records the request in %s and restores its confirmation', async (locale) => {
+    mocks.api.mockResolvedValue({ requested: true, requestedAt: '2026-10-30T10:00:00Z' });
+    const { ContinueCareCard } = await import('@/components/care/ContinueCareCard');
+    const view = renderWithIntl(<ContinueCareCard initial={{ requested: false, requestedAt: null }} />, locale);
+    await userEvent.click(screen.getByTestId('continue-care-submit'));
+    expect(mocks.api).toHaveBeenCalledWith('me/care/continue', { method: 'POST' });
+    expect(await screen.findByRole('status')).toBeVisible();
+    expect(screen.queryByTestId('continue-care-submit')).toBeNull();
+    view.unmount();
+    renderWithIntl(<ContinueCareCard initial={{ requested: true, requestedAt: '2026-10-30T10:00:00Z' }} />, locale);
+    expect(screen.getByRole('status')).toBeVisible();
+    expect(screen.queryByTestId('continue-care-submit')).toBeNull();
+    expect(mocks.api).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the action pending until the server confirms, then supports retry after failure', async () => {
+    let reject!: (reason: Error) => void;
+    mocks.api.mockImplementationOnce(() => new Promise((_, fail) => { reject = fail; }));
+    const { ContinueCareCard } = await import('@/components/care/ContinueCareCard');
+    renderWithIntl(<ContinueCareCard initial={{ requested: false, requestedAt: null }} />, 'en');
+    await userEvent.click(screen.getByTestId('continue-care-submit'));
+    expect(screen.getByTestId('continue-care-submit')).toBeDisabled();
+    expect(screen.queryByRole('status')).toBeNull();
+    reject(new Error('offline'));
+    expect(await screen.findByRole('alert')).toBeVisible();
+    mocks.api.mockResolvedValue({ requested: true, requestedAt: '2026-10-30T10:00:00Z' });
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(await screen.findByRole('status')).toBeVisible();
+  });
+});

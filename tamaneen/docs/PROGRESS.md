@@ -19,9 +19,10 @@ This file is the shared memory between AI agents (Codex, Claude, any other) and 
 
 | Id | Task | Status | Owner | Branch |
 |---|---|---|---|---|
-| T-501 | Patient app button for "I want to continue care" (`POST /v1/me/care/continue`) during ongoing care. The API exists. Use the care-journey spec in `docs/design/spec`; Arabic and English text; unit test and e2e. | blocked — environment proxy denies api.github.com (HTTP 403); required draft PR cannot be opened | Codex, 2026-10-30 | codex/T-501-continue-care |
+| T-501 | Patient app button for "I want to continue care" (`POST /v1/me/care/continue`) during ongoing care. The API exists. Use the care-journey spec in `docs/design/spec`; Arabic and English text; unit test and e2e. | blocked — implementation and patient checks complete; full gate awaits CI billing unlock and T-504 | Codex, 2026-10-30 | codex/T-501-continue-care |
 | T-502 | Add the phase 5 screens (P41–P44, P46, P53, P54, P56, P63, P66, P67, S18–S22, S32, S33, S35, S41, S57, closures queue) to the bilingual test map PDF, as `docs/testmap/` source plus the generated PDF. | todo | | |
 | T-503 | Phase 5 gate: full §4 run, a design-conformance review of the new button, Docker rebuild, and owner sign-off. | todo | | |
+| T-504 | Make the S21 profile date assertion portable across supported browser Intl data (Chrome 156 adds a comma after the weekday; currently 191/192 staff tests pass). | todo | | |
 
 ### Phase 6: operations and admin
 
@@ -88,6 +89,14 @@ This file is the shared memory between AI agents (Codex, Claude, any other) and 
 ## Work log (newest first)
 
 Each entry: date, agent, task id, branch or PR, what changed, test results, notes for the next agent.
+
+### 2026-10-30 · Codex · T-501 · draft PR #1
+- Resumed `codex/T-501-continue-care`; verified `https://api.github.com` returns HTTP 200, fetched integration, and opened https://github.com/hamadibraa1-afk/ibrahim/pull/1 into `claude/brave-bardeen-3nott4` before application changes.
+- Added the ongoing-care home action using the existing `ContinueCare` contract and BFF. POST records the request, disables repeated presses while pending, shows localized confirmation, and offers retry on failure. GET restores confirmation after reload. Uses the same appointment-history/no-signed-off-closure care eligibility convention as P44; hidden before a booking and after care closure. No API, database, safety, or staff behavior changed.
+- Design review: P09 (`g1.json`, `P09-Dashboard.dc.html`) is the daily ongoing-care hub; the secondary card follows its existing cards and styling. P53/S57 and guide §10.4 require honoring the patient's wish to continue before closure. Arabic/English copy, existing touch-size buttons, logical layout and live status/error notices follow the patient UI conventions. Existing API/TS contracts are reused; updated the API contract's obsolete "API only" note.
+- Validation: backend build 0 warnings / 0 errors; backend unit 358 passed; SQL integration 114 passed; EF migration model check clean; patient TypeScript and lint clean, unit 371 passed, production build passed, full patient e2e 33 passed / 1 intentional skip (API 5180, worker 5190). Staff production build passed; staff unit 191 passed / 1 failed (T-504 below). `git diff --check` passed. Temporary source API/worker processes were stopped after testing; the isolated development database remains for reproduction.
+- Environment: the pre-existing Docker API is stale (`/v1/me/care/continue` returns 404), so the first patient e2e attempt was 32 passed / 1 failed / 1 intentional skip. Migrated a separate `TamaneenT501` development database and ran this checkout's API on 5180 plus crisis worker on 5190 for the corrected run; existing containers were not rebuilt or replaced.
+- Gate blockers: GitHub Actions run 41065794780 never started any job; check annotation explicitly says the account is locked due to a billing issue. Staff unit suite: 191 passed / 1 failed at `profile.component.spec.ts:53` because Chrome 156 renders "Monday, 19 October 2026" while the existing assertion requires no comma; tracked as T-504. PR stays draft; no ready/merge action. Staff e2e, compose smoke, Docker rebuild and owner sign-off remain for T-503.
 
 ### 2026-10-30 · Codex · T-501 · codex/T-501-continue-care
 - Pulled integration branch `claude/brave-bardeen-3nott4` at `b002fd2a723bd5e7b9ff80fe6fb3cce4e3935e5a`, read AGENTS → HANDOFF → PROGRESS, and claimed the first todo task on the required task branch. Pushed the claim.
