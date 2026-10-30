@@ -125,14 +125,14 @@ cd web-staff && npx playwright test
 cd web-patient && npx playwright test -c playwright.compose.config.ts
 ```
 
-Last full run, after merging phase 5:
+Last full run, after merging phase 5 and the patient fix list:
 
 | Suite | Passed |
 |---|---|
 | Backend unit | 353 |
-| Integration | 107 |
-| Patient app unit | 360 |
-| Staff portal unit | 174 |
+| Integration | 108 |
+| Patient app unit | 367 |
+| Staff portal unit | 176 |
 | Patient e2e | 33 (1 skipped on purpose) |
 | Staff e2e | 20 |
 | Against the containers | 3 + 20 |
@@ -186,15 +186,16 @@ Last full run, after merging phase 5:
   - video provider abstraction;
   - Docker stack.
 
-**Open: phase 5 design-review fixes.** In progress when this file was written, not merged yet:
-- **`docs/reviews/phase5-open-fixes-patient.md`:**
-  - the P41/P54 lobby must send cancelled or missed sessions to P67 or P63, and P43 must not congratulate a session that didn't happen;
-  - P63 «مو بخير» must reach the server and alert the care team;
-  - P53 «return to care» must run the safety check;
-  - P38 needs the agreed follow-up time and support person;
-  - P67 rebooking should be a priority reschedule;
-  - small homework fixes.
-- **`docs/reviews/phase5-open-fixes-staff.md`:**
+**Phase 5 design-review fixes.**
+- **Patient list: DONE and merged.** `docs/reviews/phase5-open-fixes-patient.md`:
+  - the lobby routes cancelled or missed sessions to P67 or P63, and P43 only follows a real session;
+  - P63 «مو بخير» is stored and alerts the therapist and the supervisors (`appointment.missed_not_ok`);
+  - P53 return to care runs the P23 safety check, enforced by the server;
+  - P38 shows the agreed follow-up time and support person, recorded by the responder when closing the event in S04;
+  - P67 rebooking with the same therapist is a priority reschedule;
+  - the homework fixes and one safety-plan section limit (1,000 characters).
+- **Staff list: OPEN.** It may be in progress elsewhere; check the git log for "S18", "S32" and so on before starting.
+- **Staff list, `docs/reviews/phase5-open-fixes-staff.md`:**
   - S18: "session done" opens the notes, plus a reschedule action;
   - S15: keep the draft while offline;
   - S20: history includes risk raises and no-shows;
@@ -223,7 +224,7 @@ Last full run, after merging phase 5:
 
 Do the phases in this order. Each one ends with the gate in §4, a design-conformance review of every screen (page, buttons, links, inputs: compare the code with `docs/design/spec` and the mockup), a Docker rebuild, an updated test map, and the owner's sign-off.
 
-- **Phase 5 (finish).** Apply the two open fix lists above, then update the test map with the phase 5 screens.
+- **Phase 5 (finish).** Apply the open staff fix list above, then update the test map with the phase 5 screens.
 - **Phase 6: operations and admin.**
   - S26 users and S73 importing therapists (or S07–S12 self-apply; the owner has to choose), plus S05 licence verification.
   - S27 audit log viewer, S29 system health, S30 kill switches, S43 platform settings, S72 announcements and maintenance.
