@@ -28,6 +28,7 @@
       "joinOpensBefore": "Opens 10 minutes before the start",
       "closed": "The time for this session is over.",
       "summary": "After the session",
+      "details": "Appointment details",
       "peerInFemale": "{name} is in the session room",
       "peerInMale": "{name} is in the session room",
       "peerNotYetFemale": "{name} hasn't joined yet",

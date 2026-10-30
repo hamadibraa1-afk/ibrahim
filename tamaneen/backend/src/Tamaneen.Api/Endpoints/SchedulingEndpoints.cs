@@ -42,7 +42,7 @@ public static class SchedulingEndpoints
         int? TherapistLateMinutes, string? CancelledBy, string? CancelReasonCode, bool Missed);
 
     public sealed record AppointmentDetailDto(Guid Id, TherapistSummaryDto Therapist, DateTimeOffset StartsAt, int DurationMinutes, int SequenceNumber, string Status, bool Rescheduled, bool CanChange, DateTimeOffset ChangeDeadline, string? JoinUrl, DateTimeOffset JoinAvailableAt,
-        int? TherapistLateMinutes, string? CancelledBy, string? CancelReasonCode, bool Missed);
+        int? TherapistLateMinutes, string? CancelledBy, string? CancelReasonCode, bool Missed, string? MissedCheckIn);
 
     public sealed record AppointmentListDto(IReadOnlyList<AppointmentDto> Upcoming, IReadOnlyList<AppointmentDto> Past);
 
@@ -51,6 +51,10 @@ public static class SchedulingEndpoints
     public sealed record CancelRequest(string? ReasonCode);
 
     public sealed record DismissRequest(string? Reason);
+
+    public sealed record MissedCheckInRequest(string? Feeling);
+
+    public sealed record MissedCheckInDto(string Feeling, DateTimeOffset RecordedAt);
 
     public static IEndpointRouteBuilder MapSchedulingEndpoints(this IEndpointRouteBuilder app)
     {
@@ -68,6 +72,7 @@ public static class SchedulingEndpoints
         g.MapGet("/appointments/{id:guid}/calendar", CalendarAsync);
         g.MapPost("/appointments/{id:guid}/cancel", CancelAsync);
         g.MapPost("/appointments/{id:guid}/reschedule", RescheduleAsync);
+        g.MapPost("/appointments/{id:guid}/missed-check-in", MissedCheckInAsync).WithIdempotency();
         return app;
     }
 
@@ -320,11 +325,19 @@ public static class SchedulingEndpoints
             ?? throw new DomainException(ErrorCodes.SlotUnavailable, "Slot not found.");
         var old = await p.Db.AvailabilitySlots.FirstAsync(s => s.Id == appointment.SlotId, ct).ConfigureAwait(false);
 
+        // P67: after a therapist cancellation the same appointment is rebooked with priority: same sequence number, no
+        // 24-hour limit, and the cancelled time stays as the therapist left it (blocked or free).
+        var therapistCancelled = appointment.CancelledBy == "therapist";
+
         // P54: when the therapist is late, moving the session is free and not bound by the 24-hour limit.
-        var therapistLate = !appointment.CanChange(clock)
+        var therapistLate = !therapistCancelled && !appointment.CanChange(clock)
             && Tamaneen.Clinical.Sessions.SessionWindow.TherapistLate(appointment, clock.UtcNow, await room.TherapistJoinedAtAsync(appointment.Id, ct).ConfigureAwait(false));
         target.TakeFor(p.PatientId, clock);
-        if (therapistLate)
+        if (therapistCancelled)
+        {
+            appointment.RebookAfterTherapistCancel(target, clock);
+        }
+        else if (therapistLate)
         {
             appointment.MoveAfterTherapistLate(target, clock);
         }
@@ -333,13 +346,47 @@ public static class SchedulingEndpoints
             appointment.MoveTo(target, clock);
         }
 
-        old.Free();
+        if (!therapistCancelled)
+        {
+            old.Free();
+        }
+
         var pseudonym = (await p.AccountAsync(ct).ConfigureAwait(false)).PseudonymId;
-        audit.Append("appointment.rescheduled", "Appointment", appointment.Id.ToString(), pseudonym, therapistLate ? "therapist_late" : null);
+        audit.Append("appointment.rescheduled", "Appointment", appointment.Id.ToString(), pseudonym, therapistCancelled ? "therapist_cancelled" : therapistLate ? "therapist_late" : null);
         await SaveOrConflictAsync(p.Db, ct).ConfigureAwait(false);
         await NotifyBothAsync(notifier, appointment, pseudonym, NotificationKinds.AppointmentRescheduled, NotificationKinds.StaffAppointmentRescheduled, ct).ConfigureAwait(false);
         await waitlist.CheckAsync(ct).ConfigureAwait(false);
         return TypedResults.Ok(await DetailDtoAsync(p, directory, appointment, platform, clock, ct).ConfigureAwait(false));
+    }
+
+    // ---------- P63 ----------
+
+    /// <summary>
+    /// P63 «كيف حالك الآن؟» after a missed session. The answer is stored on the appointment and audited. «مو بخير»
+    /// alerts the care team (the session's therapist and the supervisors, as the EC-53 follow-up does) once per
+    /// change; it closes no follow-up task. The patient app shows the crisis resources itself. There is no free text,
+    /// so nothing passes the crisis gate here.
+    /// </summary>
+    internal static async Task<Ok<MissedCheckInDto>> MissedCheckInAsync(Guid id, MissedCheckInRequest request, PatientContext p, AppointmentNotices notices, IAuditLog audit, IClock clock, CancellationToken ct)
+    {
+        var feeling = request.Feeling?.Trim();
+        if (string.IsNullOrEmpty(feeling) || !Appointment.MissedFeelings.Contains(feeling))
+        {
+            throw new DomainException(ErrorCodes.Validation, "Feeling missing or unknown.")
+                .With("errors", new Dictionary<string, string[]> { ["feeling"] = [string.IsNullOrEmpty(feeling) ? "required" : "invalid"] });
+        }
+
+        var appointment = await FindAsync(p, id, ct).ConfigureAwait(false);
+        var alert = appointment.RecordMissedCheckIn(feeling, clock);
+        var pseudonym = (await p.AccountAsync(ct).ConfigureAwait(false)).PseudonymId;
+        audit.Append("appointment.missed_check_in", "Appointment", appointment.Id.ToString(), pseudonym, alert ? $"{feeling};care_team_alerted" : feeling);
+        await p.Db.SaveChangesAsync(ct).ConfigureAwait(false);
+        if (alert)
+        {
+            await notices.MissedNotOkAsync(appointment, pseudonym, ct).ConfigureAwait(false);
+        }
+
+        return TypedResults.Ok(new MissedCheckInDto(feeling, appointment.MissedCheckInAtUtc!.Value));
     }
 
     // ---------- helpers ----------
@@ -373,7 +420,7 @@ public static class SchedulingEndpoints
         var therapist = (await directory.ListAsync(p.Language, [a.TherapistUserId], ct).ConfigureAwait(false)).Single();
         var join = a.JoinOpen(clock) ? $"{platform.Value.VideoBaseUrl.TrimEnd('/')}/{a.RoomId}" : null;
         return new AppointmentDetailDto(a.Id, therapist, a.StartsAtUtc, a.DurationMinutes, a.SequenceNumber, StatusCode(a.Status), a.Rescheduled, a.CanChange(clock), a.ChangeDeadlineUtc, join, a.StartsAtUtc - Appointment.JoinOpensBefore,
-            a.TherapistLateMinutes, a.CancelledBy, PatientCancelReason(a), a.Missed);
+            a.TherapistLateMinutes, a.CancelledBy, PatientCancelReason(a), a.Missed, a.MissedCheckIn);
     }
 
     /// <summary>The patient sees their own cancel reason; a therapist's real reason is never shown to them (P67).</summary>

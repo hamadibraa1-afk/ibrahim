@@ -91,20 +91,21 @@ and P01, P02, P12 and P15 show the emergency numbers instead of the start button
 | GET | /v1/appointments/{id} | → AppointmentDetail (same four fields; `cancelledBy` is `patient`, `therapist`, `care_ended` (S57 closed the care) or null; P54 reads `therapistLateMinutes`, P67 `cancelledBy: therapist`, P63 `missed`; `joinUrl` is kept for older clients, the apps now use the lobby) | P26, P28, P41, P54, P63, P67 |
 | GET | /v1/appointments/{id}/calendar | → text/calendar `appointment.ics`, neutral title «موعد» / "Appointment" with no platform, therapist or patient name (PB-42) | P26 |
 | POST | /v1/appointments/{id}/cancel | CancelRequest { reasonCode: schedule_conflict, feeling_better, unwell, therapist_fit, other } → AppointmentDetail (400 field error without a known reason; 409 within 24 h) | P28 |
-| POST | /v1/appointments/{id}/reschedule | RescheduleRequest → AppointmentDetail | P28 |
+| POST | /v1/appointments/{id}/reschedule | RescheduleRequest → AppointmentDetail (P28: 409 within 24 h; P54: free once the therapist is late; P67: an appointment the therapist cancelled is rebooked with priority: the same appointment becomes confirmed again with its sequence number, no 24-hour limit, the cancelled time is left as the therapist set it, audited with reason `therapist_cancelled`. Not for sessions closed at the end of care) | P28, P54, P67 |
+| POST | /v1/appointments/{id}/missed-check-in | `Idempotency-Key`? + { feeling: ok, tired, not_ok } → { feeling, recordedAt } (missed sessions only, else 409 `error.appointment.not_missed`; 400 field error for an unknown feeling; the latest answer is kept as `missedCheckIn` on AppointmentDetail; audited `appointment.missed_check_in`; a change to `not_ok` notifies the session's therapist and the supervisors `appointment.missed_not_ok` once and closes no follow-up task; no free text, so no gate) | P63 |
 | GET | /v1/home | → HomeSummary (`appointmentNotice`: `{ appointmentId, kind: cancelled \| missed }` for a session the therapist cancelled or marked missed in the last 7 days, until the patient books again) | P09 → P63, P67 |
 | POST | /v1/mood | MoodEntryRequest → MoodSaveResponse (note gated) | P09, P30 |
 | GET | /v1/mood?days=7 | → MoodEntry[] | P30 |
-| GET | /v1/homework | → HomeworkList | P29 |
+| GET | /v1/homework | → HomeworkList (`doneThisPeriod` counts this week, Sunday to Saturday in the patient's time zone, for every frequency; a cancelled exercise's `endsOn` is the day it was cancelled) | P29 |
 | GET | /v1/homework/{id} | → HomeworkDetail | P10 |
 | POST | /v1/homework/{id}/checkins | CheckinRequest → CheckinResponse (note gated) | P10 |
-| GET/PUT | /v1/safety-plan | SafetyPlan + `ETag` / UpdateSafetyPlanRequest (gate; sections and contact names). `contacts`: up to 5 `{ name ≤ 100, phone }`, encrypted with the patient key like the sections. `version` (also the ETag) is shared with the therapist's S35 builder: If-Match is optional here (queued offline writes), but when sent it must name the current version, else 412 `error.version.changed` | P37 |
+| GET/PUT | /v1/safety-plan | SafetyPlan + `ETag` / UpdateSafetyPlanRequest (gate; sections ≤ 1,000 characters each, the same limit as S35, and contact names). `contacts`: up to 5 `{ name ≤ 100, phone }`, encrypted with the patient key like the sections. `version` (also the ETag) is shared with the therapist's S35 builder: If-Match is optional here (queued offline writes), but when sent it must name the current version, else 412 `error.version.changed` | P37 |
 | GET | /v1/catalogs/change-reasons | → ChangeReason[] (`not_comfortable`, `schedule`, `gender`, `specialty`, `other`, labels in Accept-Language) | P44 |
 | POST | /v1/me/change-therapist-requests | CreateChangeRequest { reasonCode? } (Idempotency-Key) → 201 ChangeTherapistRequest (409 `error.change_request.open` + `current`; 409 `error.care.not_in_care` without a therapist) | P44 |
 | GET | /v1/me/change-therapist-requests/current | → ChangeTherapistRequest (`status`: requested, matching, offered, closed; 404 when none is open) | P44 |
 | GET | /v1/me/care-closure | → CareClosure (404 until a supervisor signed off the end of care) | P53 |
 | GET | /v1/me/care-closure/summary | → `text/plain` `summary.txt` (plain-language summary and relapse plan, no diagnosis or scores; audited `care.summary_downloaded`) | P53 |
-| POST | /v1/me/care/return | → { next } (`/matches` with the previous therapist suggested first, or `/therapists`) | P53 |
+| POST | /v1/me/care/return | → { next } (`/matches` with the previous therapist suggested first, or `/therapists`). Needs the short safety check first: a P23 screening (`POST /v1/screening/cssrs`, same gate) completed after the sign-off, within the last hour and below High, and no crisis lock; otherwise 409 `error.care.safety_check_required` + `next: /care/return`. The audit row names the screening | P53 |
 | GET | /v1/appointments/{id}/session-summary | → SessionSummary { points, sharedAt } (the points the therapist shared when signing the note; 404 otherwise) | P43 |
 
 Idempotency (P66 outbox, EC-01, EC-07): `POST /v1/mood`, `POST /v1/homework/{id}/checkins` and `PUT /v1/safety-plan` accept an
@@ -129,17 +130,18 @@ hold the copy until they end, except crisis kinds. Copies never name the therapi
 homework; "neutral notifications" send «لديك تذكير». Staff have no readable contact, so staff notices are in-app.
 Kinds: appointment.booked, appointment.rescheduled, appointment.cancelled, appointment.cancelled_by_therapist,
 appointment.running_late, appointment.missed, appointment.reminder_24h, appointment.reminder_1h,
-session.therapist_joined, waitlist.slot_open, triage.matches_ready, homework.assigned, homework.feedback, care.ended,
+session.therapist_joined, waitlist.slot_open, triage.matches_ready, homework.assigned, homework.feedback, homework.cancelled, care.ended,
 safety_plan.updated, crisis.follow_up, security.new_sign_in (patient); staff.appointment.booked|rescheduled|cancelled,
-care.change_requested, crisis.closed, safety_plan.updated, security.new_sign_in (staff). Other modules call
+care.change_requested, crisis.closed, appointment.missed_not_ok, safety_plan.updated, security.new_sign_in (staff). Other modules call
 `INotifier.NotifyAsync(new Notification(recipientUserId, kind, data, link?))`; an unknown kind is stored with the
 generic text. A background worker (once a minute) sends the 24 h and 1 h reminders, the crisis follow-ups and the held
 copies; each reminder and follow-up has a per-recipient dedupe key, so restarts never repeat one. In Development the
 copies appear at `/dev/inbox`.
 
 P38 CrisisFollowUp: `{ state, eventId, closedAt, responder, talked, therapistInformed, therapistName,
-nextAppointmentId, nextAppointmentAt, unread }`, built from structured data only (who handled the event, whether the
-treating therapist was told, the next appointment), never the conversation, the level or the close reason.
+nextAppointmentId, nextAppointmentAt, unread, followUpCallAt, supportPerson }`, built from structured data only (who handled the event, whether the
+treating therapist was told, the next appointment, and the close steps the responder recorded: the follow-up call time and
+the support person code `family`, `friend`, `partner` or `other`), never the conversation, the level or the close reason.
 
 Waitlist (P56): the queue is ordered by risk, then by time waited. Whenever a time becomes free (a patient cancels or moves a
 session, a hold is released, a therapist records a cancellation, a patient joins), the scheduling service matches the
@@ -210,7 +212,7 @@ During scheduled maintenance (`Platform:Maintenance` true) every patient endpoin
 | POST | /v1/staff/availability/slots | { startsAt } → 201 AvailabilitySlot (one-off time, profile session length; 400 `error.slot.too_soon` within 2 h; 409 `error.slot.overlap`) | S19 |
 | PATCH | /v1/staff/availability/slots/{slotId} | { startsAt } → AvailabilitySlot (free times only: 409 `error.slot.taken` when booked or held) | S19 |
 | DELETE | /v1/staff/availability/slots/{slotId} | → 204 (free times only, 409 `error.slot.taken`) | S19 |
-| POST | /v1/staff/patients/{pseudonymId}/homework | AssignHomeworkRequest { title ≤ 120, instructions[] (≤ 2,000 in all), minutes?, frequency, startsOn, endsOn ≥ today, templateCode? } → 201 StaffHomework (therapist; notifies `homework.assigned`) | S16 |
+| POST | /v1/staff/patients/{pseudonymId}/homework | AssignHomeworkRequest { title ≤ 120, instructions[] (≤ 2,000 in all), minutes?, frequency, endsOn ≥ today, templateCode? } → 201 StaffHomework (starts on the patient's today, in their time zone; a `startsOn` sent by older clients is ignored) (therapist; notifies `homework.assigned`) | S16 |
 | POST | /v1/staff/checkins/{id}/feedback | { text ≤ 1,000 } → 204 (therapist; notifies `homework.feedback`; the patient sees it on P10 and P09) | S16 |
 | GET | /v1/staff/homework/templates | → HomeworkTemplate[] (library: behavioral_activation, thought_record, sleep_diary, breathing) | S16 |
 | GET | /v1/staff/patients/{pseudonymId}/homework | → StaffHomeworkList (current and past, check-ins with notes, `gateLevel`, replies; audited `patient.homework_viewed`) | S16 |
@@ -253,7 +255,7 @@ During scheduled maintenance (`Platform:Maintenance` true) every patient endpoin
 | (worker) POST | /v1/crisis/events/{id}/handover | { toUserId, note? } → CrisisEventDetail (offer; the owner keeps the case) | S04 |
 | (worker) POST | /v1/crisis/events/{id}/handover/accept | → CrisisEventDetail (the colleague asked becomes the owner; otherwise 409 `error.crisis.nothing_pending`) | S04 |
 | (worker) POST | /v1/crisis/events/{id}/handover/decline | → CrisisEventDetail (the colleague declines or the owner withdraws) | S04 |
-| (worker) POST | /v1/crisis/events/{id}/close | { outcome, reason } → OpenCrisisEvent. `unreachable_referred` from a supervisor is held (status stays open, `pendingClose` on the detail) until the clinical lead co-signs | S04 |
+| (worker) POST | /v1/crisis/events/{id}/close | { outcome, reason, followUpCallAt?, supportPerson? } → OpenCrisisEvent. The two optional fields are what the patient sees on P38 «ما اتفقتما عليه» (call within the next 14 days; support person `family`, `friend`, `partner` or `other`; 400 field error otherwise). `unreachable_referred` from a supervisor is held (status stays open, `pendingClose` on the detail) until the clinical lead co-signs | S04 |
 | (worker) POST | /v1/crisis/events/{id}/close/cosign | → OpenCrisisEvent (clinical lead only; closes and sets a review 72 hours later, shown on the timeline) | S04 |
 | (worker) GET | /v1/crisis/health | → CrisisHealth | S04 |
 | (worker) hub | /hubs/crisis?lang= | crisisAlert (kind: opened, raised, escalated, acknowledged, updated, closed) | S01, S04 |
@@ -274,7 +276,8 @@ Appointment fields for the session screens: `therapistLateMinutes` (S18 running 
 (`patient`, `therapist` or null), `cancelReasonCode` (the patient sees only their own reason; staff see the therapist's) and
 `missed` (no-show recorded, P63). Notifications through `INotifier`: `appointment.running_late`,
 `appointment.cancelled_by_therapist` and `appointment.missed` to the patient; `appointment.rebook_needed` (EC-52) and
-`appointment.no_show_followup` (a second missed session in a row, EC-53, or one at risk 3–4, §11.1) to supervisors.
+`appointment.no_show_followup` (a second missed session in a row, EC-53, or one at risk 3–4, §11.1) to supervisors;
+`appointment.missed_not_ok` (P63 «مو بخير», category risk, important) to the session's therapist and the supervisors.
 
 Clinical file (S02). Statements are `concern`, `goals`, `supports`, `priorCare` and `hypotheses` (therapist only, always
 "not a diagnosis"). Each links to the patient messages it came from: the summary model cites the patient lines it used, and

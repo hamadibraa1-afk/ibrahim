@@ -50,6 +50,10 @@
       "title": "Your care has ended",
       "body": "Your plan if hard days come back, and how to return.",
       "link": "Open"
+    },
+    "return": {
+      "metaTitle": "Coming back to sessions",
+      "intro": "Before we reopen matching, a few short questions about how safe you are right now. Your answers stay private."
     }
   }
 }

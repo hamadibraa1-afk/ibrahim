@@ -77,9 +77,14 @@ describe('HomeworkListView', () => {
     expect(screen.getByText('Ended 14 October')).toBeInTheDocument();
   });
 
-  it('shows an empty state with no homework', () => {
+  it('shows an empty state with no homework, with a breathing exercise to do now (P46)', async () => {
     renderWithIntl(<HomeworkListView list={{ active: [], completed: [] }} locale="ar" timeZone="Asia/Riyadh" />, 'ar');
     expect(screen.getByText('لا توجد واجبات بعد')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'تمرين تنفس الآن' }));
+    expect(screen.getByRole('dialog', { name: 'تمرين تنفس' })).toBeInTheDocument();
+    expect(screen.getByTestId('breathing')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'إغلاق' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 });
 

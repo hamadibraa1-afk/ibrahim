@@ -4,6 +4,7 @@ import { Link } from '@/i18n/navigation';
 import type { HomeworkItem, HomeworkList } from '@/lib/api/types';
 import { formatDate } from '@/lib/format';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { BreathingNowButton } from './BreathingNowButton';
 import { pluralKey } from './plural';
 
 /** "Daily until 28 October" / "Twice a week". */
@@ -55,7 +56,7 @@ export function HomeworkListView({ list, locale, timeZone }: { list: HomeworkLis
         <p className="text-base text-muted">{t('intro')}</p>
       </div>
 
-      {list.active.length === 0 && list.completed.length === 0 ? <EmptyState title={t('empty')} body={t('emptyBody')} /> : null}
+      {list.active.length === 0 && list.completed.length === 0 ? <EmptyState title={t('empty')} body={t('emptyBody')} action={<BreathingNowButton />} /> : null}
 
       {list.active.length > 0 ? (
         <ul className="flex flex-col gap-3">

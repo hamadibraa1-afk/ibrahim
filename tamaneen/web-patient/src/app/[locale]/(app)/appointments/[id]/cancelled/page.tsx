@@ -21,8 +21,10 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 
 /**
  * P67 The therapist cancelled. An apology with no reason beyond «لظرف طارئ» (the real reason is never shown), then
- * rebooking: the same therapist's times, or the suggested therapists. No same-time substitute is offered yet (that
- * needs S65), so the care team is told to help rebook within 48 hours (EC-52). The session is not counted.
+ * rebooking: a priority reschedule of this same appointment with the same therapist (same session number, no 24-hour
+ * limit), or the suggested therapists. The same-time substitute card is deliberately absent: it needs S65 (phase 8),
+ * so the design's "no substitute" state applies and the care team helps rebook within 48 hours (EC-52). The session is
+ * not counted.
  */
 export default async function TherapistCancelledPage({ params }: { params: Params }) {
   const { locale: rawLocale, id } = await params;
@@ -51,9 +53,10 @@ export default async function TherapistCancelledPage({ params }: { params: Param
 
       <Card className="flex flex-col gap-3">
         <h2 className="text-sm font-semibold text-muted">{t('options')}</h2>
-        <ButtonLink href={`/therapists/${encodeURIComponent(therapist.id)}/book`} full data-testid="rebook-same">
+        <ButtonLink href={`/therapists/${encodeURIComponent(therapist.id)}/book?reschedule=${encodeURIComponent(appointment.id)}`} full data-testid="rebook-same">
           {t(genderKey('rebookSame', therapist.gender), { name: therapist.displayName })}
         </ButtonLink>
+        <p className="text-sm text-primary" data-testid="rebook-priority">{t(genderKey('priority', therapist.gender))}</p>
         <p className="text-xs text-muted">{t('rebookHelp')}</p>
         <ButtonLink href="/matches" variant="secondary" full data-testid="rebook-other">
           {t('rebookOther')}

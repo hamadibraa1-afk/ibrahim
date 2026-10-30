@@ -117,11 +117,9 @@ describe('CareCompleteView (P53)', () => {
     expect(screen.getByText(/You finished 10 sessions with/)).toBeInTheDocument();
   });
 
-  it('asks to come back and opens the matches', async () => {
-    mocks.api.mockResolvedValue({ next: '/matches' });
+  it('sends a return through the short safety check first', () => {
     renderWithIntl(<CareCompleteView closure={closure} />, 'en');
-    await userEvent.click(screen.getByTestId('come-back'));
-    await waitFor(() => expect(mocks.push).toHaveBeenCalledWith('/matches'));
-    expect(mocks.api).toHaveBeenCalledWith('me/care/return', { method: 'POST' });
+    expect(screen.getByTestId('come-back')).toHaveAttribute('href', '/care/return');
+    expect(mocks.api).not.toHaveBeenCalled();
   });
 });

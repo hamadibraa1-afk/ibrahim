@@ -1,5 +1,6 @@
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
+using Tamaneen.Api.Notifications;
 using Tamaneen.Clinical.Scheduling;
 using Tamaneen.Infrastructure.Persistence;
 using Tamaneen.SharedKernel;
@@ -39,6 +40,18 @@ public sealed partial class AppointmentNotices(INotifier notifier, TamaneenDbCon
         {
             await ToSupervisorsAsync(NoShowFollowUp, a, pseudonymId, $"/patients/{pseudonymId}", ct).ConfigureAwait(false);
         }
+    });
+
+    /// <summary>
+    /// P63 «مو بخير» after a missed session: the session's therapist and the supervisors are alerted (Risk,
+    /// Important). Data holds ids and times only, never the answer itself.
+    /// </summary>
+    public Task MissedNotOkAsync(Appointment a, string pseudonymId, CancellationToken ct) => SendAsync(async () =>
+    {
+        var data = Base(a);
+        data["pseudonymId"] = pseudonymId;
+        await notifier.NotifyAsync(new Notification(a.TherapistUserId, NotificationKinds.AppointmentMissedNotOk, data, $"/patients/{pseudonymId}"), ct).ConfigureAwait(false);
+        await ToSupervisorsAsync(NotificationKinds.AppointmentMissedNotOk, a, pseudonymId, $"/patients/{pseudonymId}", ct).ConfigureAwait(false);
     });
 
     private async Task ToPatientAsync(Appointment a, string kind, string link, CancellationToken ct, params (string Key, string Value)[] extra)

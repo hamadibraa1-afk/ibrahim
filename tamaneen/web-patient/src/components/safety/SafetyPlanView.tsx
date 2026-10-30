@@ -28,7 +28,8 @@ const BADGE: Record<SafetyPlanSection, string> = {
   safeEnvironment: 'bg-tint-teal text-primary-strong',
   reasonToLive: '',
 };
-const MAX_SECTION = 1500;
+/** Same limit as the server and the therapist's S35 builder («نصوص حتى 1000 حرف»). */
+const MAX_SECTION = 1000;
 const MAX_CONTACTS = 5;
 const MAX_CONTACT_NAME = 100;
 

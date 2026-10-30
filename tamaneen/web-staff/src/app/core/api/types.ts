@@ -111,7 +111,10 @@ export interface RevealRequest { totpCode: string; reason: string }
 export interface RevealedContact { contactPhone: string | null; trustedName: string | null; trustedPhone: string | null; locationConsent: boolean; hideAt: string }
 export interface Excerpt { excerpt: string; hideAt: string }
 export interface CrisisActionRequest { kind: CrisisActionKind; text?: string; outcome?: CallOutcome }
-export interface CloseCrisisRequest { outcome: 'safe_contacted' | 'emergency_services' | 'unreachable_referred' | 'false_alarm'; reason: string }
+/** P38: who stays with the patient, as a code; the patient sees a neutral phrase, never a name. */
+export type SupportPerson = 'family' | 'friend' | 'partner' | 'other';
+/** `followUpCallAt` (UTC, within 14 days) and `supportPerson` are optional patient-facing close steps shown on P38. */
+export interface CloseCrisisRequest { outcome: 'safe_contacted' | 'emergency_services' | 'unreachable_referred' | 'false_alarm'; reason: string; followUpCallAt?: string; supportPerson?: SupportPerson }
 export interface CrisisHealth { gate: 'ok' | 'degraded' | 'down'; classifier: 'ok' | 'degraded' | 'down'; comms: 'ok' | 'degraded' | 'down'; onCall: string | null; backup: string | null }
 
 /** S02 clinical file (GET /v1/staff/patients/{id}/file). `version` is also the ETag sent back as If-Match on approve. */
@@ -387,7 +390,8 @@ export interface StaffHomework {
   checkins: StaffCheckin[];
 }
 export interface StaffHomeworkList { pseudonymId: string; current: StaffHomework[]; past: StaffHomework[]; canEdit: boolean }
-export interface AssignHomeworkRequest { title: string; instructions: string[]; minutes?: number | null; frequency: HomeworkFrequency; startsOn: string; endsOn: string; templateCode?: string | null }
+/** The server starts the exercise on the patient's today (their time zone); there is no start date to send. */
+export interface AssignHomeworkRequest { title: string; instructions: string[]; minutes?: number | null; frequency: HomeworkFrequency; endsOn: string; templateCode?: string | null }
 export interface UpdateHomeworkRequest { title: string; instructions: string[]; minutes?: number | null; frequency: HomeworkFrequency; endsOn: string }
 
 export type GoalStatus = 'not_started' | 'ongoing' | 'improving';

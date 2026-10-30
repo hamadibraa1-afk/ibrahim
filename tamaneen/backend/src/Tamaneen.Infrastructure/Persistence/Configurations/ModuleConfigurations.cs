@@ -60,6 +60,7 @@ internal sealed class CrisisEventConfiguration : IEntityTypeConfiguration<Crisis
         b.Property(x => x.ExcerptCipher).HasMaxLength(8100);
         b.Property(x => x.CloseOutcome).HasMaxLength(32).IsUnicode(false);
         b.Property(x => x.PendingCloseOutcome).HasMaxLength(32).IsUnicode(false);
+        b.Property(x => x.SupportPerson).HasMaxLength(16).IsUnicode(false);
         b.Property(x => x.PendingCloseReason).HasMaxLength(1000);
         b.Ignore(x => x.IsOwned);
         b.HasIndex(x => new { x.Status, x.AckDeadlineUtc }).HasDatabaseName("IX_CrisisEvents_OpenByDeadline");

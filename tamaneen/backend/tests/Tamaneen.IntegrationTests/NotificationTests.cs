@@ -223,6 +223,7 @@ public sealed class NotificationTests : IAsyncLifetime
         {
             var evt = await db.CrisisEvents.SingleAsync(e => e.Id == eventId);
             evt.Acknowledge(supervisor, _sql.Clock);
+            evt.SetPatientPlan(_sql.Clock.UtcNow.AddDays(1), "family", _sql.Clock);
             evt.Close(supervisor, AppRoles.Supervisor, "safe_contacted", "Spoke with the patient; plan agreed.", _sql.Clock).Should().BeTrue();
             await db.SaveChangesAsync();
         }
@@ -237,6 +238,8 @@ public sealed class NotificationTests : IAsyncLifetime
         followUp.GetProperty("talked").GetBoolean().Should().BeTrue();
         followUp.GetProperty("responder").GetString().Should().Be("د. فهد ر.");
         followUp.GetProperty("therapistInformed").GetBoolean().Should().BeTrue();
+        followUp.GetProperty("followUpCallAt").GetDateTimeOffset().Should().BeAfter(_sql.Clock.UtcNow);
+        followUp.GetProperty("supportPerson").GetString().Should().Be("family");
         followUp.GetRawText().Should().NotContain("plan agreed", "the responder's close reason never reaches the patient");
 
         var inbox = await Read(await client.GetAsync("/v1/me/inbox"));

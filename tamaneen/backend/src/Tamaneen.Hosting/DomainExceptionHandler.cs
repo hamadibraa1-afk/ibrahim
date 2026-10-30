@@ -48,6 +48,8 @@ public sealed partial class DomainExceptionHandler<TResource> : IExceptionHandle
         [ErrorCodes.SlotUnavailable] = StatusCodes.Status409Conflict,
         [ErrorCodes.HoldExpired] = StatusCodes.Status409Conflict,
         [ErrorCodes.AppointmentNotChangeable] = StatusCodes.Status409Conflict,
+        [ErrorCodes.AppointmentNotMissed] = StatusCodes.Status409Conflict,
+        [ErrorCodes.CareReturnSafetyCheckRequired] = StatusCodes.Status409Conflict,
         [ErrorCodes.TriageAlreadyReviewed] = StatusCodes.Status409Conflict,
         [ErrorCodes.HomeworkEnded] = StatusCodes.Status409Conflict,
         [ErrorCodes.TotpAlreadyEnabled] = StatusCodes.Status409Conflict,

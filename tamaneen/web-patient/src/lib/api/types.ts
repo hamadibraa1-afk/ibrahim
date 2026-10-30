@@ -230,7 +230,13 @@ export interface AppointmentDetail extends Appointment {
   joinAvailableAt: string;
   /** The therapist's own "running late" notice in minutes (S18), or null. P54 also starts when the start passes without the therapist. */
   therapistLateMinutes: number | null;
+  /** P63: the patient's latest «كيف حالك الآن؟» answer on a missed session, or null. */
+  missedCheckIn: MissedFeeling | null;
 }
+/** P63 «بخير / متعب شوي / مو بخير». */
+export type MissedFeeling = 'ok' | 'tired' | 'not_ok';
+/** POST /v1/appointments/{id}/missed-check-in. */
+export interface MissedCheckInSaved { feeling: MissedFeeling; recordedAt: string }
 export interface AppointmentList { upcoming: Appointment[]; past: Appointment[] }
 export interface RescheduleRequest { slotId: string }
 /** P28 cancel reasons (PB-45). Codes only; the labels are in messages `appointmentDetail.reasons`. */
@@ -302,6 +308,7 @@ export interface HomeworkItem {
   frequency: HomeworkFrequency;
   endsOn: string;
   dueToday: boolean;
+  /** Check-ins done this week (Sunday to Saturday, the patient's calendar), for every frequency. */
   doneThisPeriod: number;
   hasNewFeedback: boolean;
   completed: boolean;
@@ -361,7 +368,12 @@ export interface CrisisFollowUp {
   nextAppointmentAt: string | null;
   /** Not seen yet: home opens P38. */
   unread: boolean;
+  /** The follow-up call the responder set when closing, or null. */
+  followUpCallAt: string | null;
+  /** Who stays with the patient, recorded by the responder (a code, never a name), or null. */
+  supportPerson: SupportPerson | null;
 }
+export type SupportPerson = 'family' | 'friend' | 'partner' | 'other';
 // ---------- Phase 5: change therapist (P44), end of care (P53), session summary ----------
 
 export type ChangeReasonCode = 'not_comfortable' | 'schedule' | 'gender' | 'specialty' | 'other';

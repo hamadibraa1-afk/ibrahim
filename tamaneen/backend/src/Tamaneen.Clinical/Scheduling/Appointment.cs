@@ -75,6 +75,15 @@ public sealed class Appointment : Entity
 
     public static readonly int MaxLateMinutes = 60;
 
+    /// <summary>P63 «كيف حالك الآن؟» after a missed session: "ok", "tired" or "not_ok"; the latest answer.</summary>
+    public string? MissedCheckIn { get; private set; }
+
+    public DateTimeOffset? MissedCheckInAtUtc { get; private set; }
+
+    public static readonly IReadOnlySet<string> MissedFeelings = new HashSet<string>(StringComparer.Ordinal) { "ok", "tired", NotOkFeeling };
+
+    public const string NotOkFeeling = "not_ok";
+
     /// <summary>"patient", "therapist", "care_ended" (closed at end of care, S57: no apology page) or null.</summary>
     public string? CancelledBy => Status switch
     {
@@ -200,6 +209,40 @@ public sealed class Appointment : Entity
         Rescheduled = true;
     }
 
+    /// <summary>
+    /// P67 «أنتظر …»: after the therapist cancelled, the patient picks a new time with the same therapist. This is a
+    /// priority reschedule of the cancelled appointment, not a new booking: it is confirmed again with the same
+    /// sequence number, and the 24-hour limit does not apply. Not for sessions closed at the end of care.
+    /// </summary>
+    public void RebookAfterTherapistCancel(AvailabilitySlot slot, IClock clock)
+    {
+        if (CancelledBy != "therapist")
+        {
+            throw new DomainException(ErrorCodes.AppointmentNotChangeable, $"Appointment {Id} was not cancelled by the therapist.");
+        }
+
+        if (slot.TherapistUserId != TherapistUserId)
+        {
+            throw new DomainException(ErrorCodes.SlotUnavailable, "A session can only move to the same therapist's slot.");
+        }
+
+        if (slot.StartsAtUtc <= clock.UtcNow)
+        {
+            throw new DomainException(ErrorCodes.SlotUnavailable, "The slot has already started.");
+        }
+
+        SlotId = slot.Id;
+        StartsAtUtc = slot.StartsAtUtc;
+        DurationMinutes = slot.DurationMinutes;
+        Status = AppointmentStatus.Confirmed;
+        Rescheduled = true;
+        CancelledAtUtc = null;
+        CancelReason = null;
+        OutcomeRecordedAtUtc = null;
+        TherapistLateMinutes = null;
+        TherapistLateAtUtc = null;
+    }
+
     public void RecordOutcome(AppointmentStatus outcome, IClock clock)
     {
         if (outcome is not (AppointmentStatus.Completed or AppointmentStatus.NoShow or AppointmentStatus.CancelledByTherapist))
@@ -218,6 +261,28 @@ public sealed class Appointment : Entity
         {
             CancelledAtUtc = clock.UtcNow;
         }
+    }
+
+    /// <summary>
+    /// P63: the patient answers «كيف حالك الآن؟» on a missed session. A new answer replaces the old one. Returns true
+    /// when the answer turns to «مو بخير», so the care team is alerted once per change rather than on every resend.
+    /// </summary>
+    public bool RecordMissedCheckIn(string feeling, IClock clock)
+    {
+        if (!MissedFeelings.Contains(feeling))
+        {
+            throw new ArgumentOutOfRangeException(nameof(feeling));
+        }
+
+        if (Status != AppointmentStatus.NoShow)
+        {
+            throw new DomainException(ErrorCodes.AppointmentNotMissed, $"Appointment {Id} is not a missed session.");
+        }
+
+        var turnedNotOk = feeling == NotOkFeeling && MissedCheckIn != NotOkFeeling;
+        MissedCheckIn = feeling;
+        MissedCheckInAtUtc = clock.UtcNow;
+        return turnedNotOk;
     }
 
     private void EnsureChangeable(IClock clock)

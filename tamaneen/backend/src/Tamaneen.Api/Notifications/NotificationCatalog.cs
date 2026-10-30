@@ -32,6 +32,10 @@ public static class NotificationKinds
     public const string StaffAppointmentRescheduled = "staff.appointment.rescheduled";
     public const string StaffAppointmentCancelled = "staff.appointment.cancelled";
     public const string CrisisClosed = "crisis.closed";
+
+    // ---- Patient-side review fixes (r5p): P63 «مو بخير», P29 homework.cancelled ----
+    public const string AppointmentMissedNotOk = "appointment.missed_not_ok";
+    public const string HomeworkCancelled = "homework.cancelled";
 }
 
 /// <summary>
@@ -98,6 +102,10 @@ public static class NotificationCatalog
         new(NotificationKinds.StaffAppointmentRescheduled, Appointments, StaffBookings: true, StaffLink: "/patients/{pseudonymId}"),
         new(NotificationKinds.StaffAppointmentCancelled, Appointments, StaffBookings: true, StaffLink: "/patients/{pseudonymId}"),
         new(NotificationKinds.CrisisClosed, Risk, StaffLink: "/alerts"),
+
+        // ---- Patient-side review fixes (r5p): P63 «مو بخير» alerts the patient's therapist and the supervisors; P29 homework.cancelled ----
+        new(NotificationKinds.AppointmentMissedNotOk, Risk, Important: true, StaffLink: "/patients/{pseudonymId}"),
+        new(NotificationKinds.HomeworkCancelled, Homework, PatientLink: "/homework/{homeworkId}"),
     ];
 
     private static readonly Dictionary<string, NotificationKind> ByCode = All.ToDictionary(k => k.Code, StringComparer.Ordinal);

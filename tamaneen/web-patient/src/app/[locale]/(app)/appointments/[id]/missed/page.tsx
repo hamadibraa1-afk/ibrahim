@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { MissedCheckIn } from '@/components/appointments/MissedCheckIn';
 import { TalkNowButton } from '@/components/appointments/TalkNowButton';
+import { CallLink } from '@/components/crisis/CallLink';
 import { asLocale, timeZoneOf } from '@/components/matching/labels';
 import { BackLink } from '@/components/ui/BackLink';
 import { ButtonLink } from '@/components/ui/Button';
@@ -10,6 +11,7 @@ import { redirect } from '@/i18n/navigation';
 import { getMe, serverGetOptional } from '@/lib/api/server';
 import type { AppointmentDetail } from '@/lib/api/types';
 import { formatDate } from '@/lib/format';
+import { loadSafetyNumbers } from '@/lib/platform-config';
 
 type Params = Promise<{ locale: string; id: string }>;
 
@@ -20,17 +22,19 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 }
 
 /**
- * P63 Missed session: no blame, nothing deducted or counted (§11.1), how are you now, and rebooking with the same
- * therapist or talking to someone at once. The therapist's note card is hidden: the API has no such note yet.
+ * P63 Missed session: no blame, nothing deducted or counted (§11.1), how are you now (sent to the server; «مو بخير»
+ * alerts the care team and shows the emergency numbers), and rebooking with the same therapist or talking to someone at once. The therapist's note card is hidden: the API has no such note yet.
  */
 export default async function MissedSessionPage({ params }: { params: Params }) {
   const { locale: rawLocale, id } = await params;
   setRequestLocale(rawLocale);
   const locale = asLocale(rawLocale);
-  const [t, me, appointment] = await Promise.all([
+  const [t, tc, me, appointment, numbers] = await Promise.all([
     getTranslations('appointmentDetail.missed'),
+    getTranslations('crisis'),
     getMe(),
     serverGetOptional<AppointmentDetail>(`appointments/${encodeURIComponent(id)}`),
+    loadSafetyNumbers(),
   ]);
   if (!appointment) notFound();
   if (!appointment.missed) return redirect({ href: `/appointments/${appointment.id}`, locale });
@@ -52,7 +56,18 @@ export default async function MissedSessionPage({ params }: { params: Params }) 
         <p className="text-base leading-relaxed text-muted">{t('reassure')}</p>
       </div>
 
-      <MissedCheckIn />
+      <MissedCheckIn
+        appointmentId={appointment.id}
+        initial={appointment.missedCheckIn ?? null}
+        resources={
+          numbers.emergencyNumber || numbers.supportLine ? (
+            <div className="flex flex-col gap-2">
+              {numbers.emergencyNumber ? <CallLink number={numbers.emergencyNumber} icon>{tc('callEmergency')}</CallLink> : null}
+              {numbers.supportLine ? <CallLink number={numbers.supportLine} variant="outline">{tc('supportLine')}</CallLink> : null}
+            </div>
+          ) : null
+        }
+      />
 
       <div className="mt-2 flex flex-col gap-3">
         <ButtonLink href={`/therapists/${encodeURIComponent(appointment.therapist.id)}/book`} full data-testid="rebook">

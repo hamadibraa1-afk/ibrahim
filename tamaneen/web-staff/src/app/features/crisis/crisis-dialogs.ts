@@ -5,10 +5,11 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatRadioModule } from '@angular/material/radio';
+import { MatSelectModule } from '@angular/material/select';
 import { TranslateModule } from '@ngx-translate/core';
 import type { Observable } from 'rxjs';
 import { type ShownError, shownError } from '../../core/api/problem';
-import type { CallOutcome, CloseCrisisRequest, CrisisEventDetail, HandoverRequest, OpenCrisisEvent, Responder } from '../../core/api/types';
+import type { CallOutcome, CloseCrisisRequest, CrisisEventDetail, HandoverRequest, OpenCrisisEvent, Responder, SupportPerson } from '../../core/api/types';
 import { ProblemMessageComponent } from '../../shared/problem-message.component';
 
 const TOTP = /^\d{6}$/;
@@ -166,6 +167,14 @@ export class NoteDialogComponent {
 }
 
 export const CLOSE_OUTCOMES: readonly CloseCrisisRequest['outcome'][] = ['safe_contacted', 'emergency_services', 'unreachable_referred', 'false_alarm'];
+export const SUPPORT_PEOPLE: readonly SupportPerson[] = ['family', 'friend', 'partner', 'other'];
+
+/** A datetime-local value ("2026-10-27T11:00", the browser's time) as UTC ISO, or undefined when empty or invalid. */
+export function localToIso(value: string): string | undefined {
+  if (!value) return undefined;
+  const at = new Date(value);
+  return Number.isNaN(at.getTime()) ? undefined : at.toISOString();
+}
 
 export interface CloseDialogData {
   /** Resolves with the event: closed, or still open while an "unreachable" close waits for the clinical lead. */
@@ -174,10 +183,13 @@ export interface CloseDialogData {
   isLead: boolean;
 }
 
-/** Close with outcome: one of four outcomes and a required reason. */
+/**
+ * Close with outcome: one of four outcomes and a required reason, plus the optional steps the patient sees on P38
+ * («ما اتفقتما عليه»): the follow-up call time and who stays with them.
+ */
 @Component({
   selector: 'tm-close-dialog',
-  imports: [ReactiveFormsModule, MatDialogModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatRadioModule, TranslateModule, ProblemMessageComponent],
+  imports: [ReactiveFormsModule, MatDialogModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatRadioModule, MatSelectModule, TranslateModule, ProblemMessageComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <h2 mat-dialog-title>{{ 'crisis.closeDialog.title' | translate }}</h2>
@@ -205,6 +217,23 @@ export interface CloseDialogData {
             <mat-error data-testid="reason-error">{{ 'common.required' | translate }}</mat-error>
           }
         </mat-form-field>
+        <fieldset class="plan">
+          <legend>{{ 'crisis.closeDialog.patientPlan' | translate }}</legend>
+          <p class="tm-muted hint">{{ 'crisis.closeDialog.patientPlanHint' | translate }}</p>
+          <mat-form-field appearance="outline" class="tm-full">
+            <mat-label>{{ 'crisis.closeDialog.followUpCall' | translate }}</mat-label>
+            <input matInput type="datetime-local" formControlName="followUpCallAt" data-testid="close-follow-up-call" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="tm-full">
+            <mat-label>{{ 'crisis.closeDialog.supportPerson' | translate }}</mat-label>
+            <mat-select formControlName="supportPerson" data-testid="close-support-person">
+              <mat-option value="">{{ 'crisis.closeDialog.supportPeople.none' | translate }}</mat-option>
+              @for (p of supportPeople; track p) {
+                <mat-option [value]="p">{{ 'crisis.closeDialog.supportPeople.' + p | translate }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </fieldset>
         <tm-problem-message [error]="error()" />
       </mat-dialog-content>
       <mat-dialog-actions class="tm-dialog-actions">
@@ -219,18 +248,23 @@ export interface CloseDialogData {
     .radios { display: flex; flex-direction: column; align-items: flex-start; }
     .error { color: var(--tm-danger); margin: 4px 0 0; font-size: 13px; }
     .hint { margin: 8px 0 0; font-size: 13px; }
+    .plan { border: 0; padding: 0; margin: 8px 0 0; }
+    .plan .hint { margin: 0 0 8px; }
   `,
 })
 export class CloseDialogComponent {
   protected readonly data = inject<CloseDialogData>(MAT_DIALOG_DATA);
   private readonly ref = inject<MatDialogRef<CloseDialogComponent, OpenCrisisEvent>>(MatDialogRef);
   protected readonly outcomes = CLOSE_OUTCOMES;
+  protected readonly supportPeople = SUPPORT_PEOPLE;
   protected readonly busy = signal(false);
   protected readonly error = signal<ShownError | null>(null);
   protected readonly submitted = signal(false);
   protected readonly form = inject(NonNullableFormBuilder).group({
     outcome: ['' as CloseCrisisRequest['outcome'] | '', Validators.required],
     reason: ['', [Validators.required, Validators.pattern(/\S/)]],
+    followUpCallAt: [''],
+    supportPerson: ['' as SupportPerson | ''],
   });
 
   protected showOutcomeError(): boolean {
@@ -243,10 +277,14 @@ export class CloseDialogComponent {
       this.form.markAllAsTouched();
       return;
     }
-    const { outcome, reason } = this.form.getRawValue();
+    const { outcome, reason, followUpCallAt, supportPerson } = this.form.getRawValue();
     this.busy.set(true);
     this.error.set(null);
-    this.data.submit({ outcome: outcome as CloseCrisisRequest['outcome'], reason: reason.trim() }).subscribe({
+    const request: CloseCrisisRequest = { outcome: outcome as CloseCrisisRequest['outcome'], reason: reason.trim() };
+    const callAt = localToIso(followUpCallAt);
+    if (callAt) request.followUpCallAt = callAt;
+    if (supportPerson) request.supportPerson = supportPerson;
+    this.data.submit(request).subscribe({
       next: (event) => this.ref.close(event),
       error: (error: unknown) => {
         this.error.set(shownError(error, 'common.error'));

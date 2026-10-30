@@ -91,6 +91,41 @@ public sealed class CrisisEvent : Entity
 
     public static readonly IReadOnlySet<string> CloseOutcomes = new HashSet<string>(StringComparer.Ordinal) { "safe_contacted", "emergency_services", "unreachable_referred", "false_alarm" };
 
+    /// <summary>
+    /// P38 «ما اتفقتما عليه», recorded by the responder when closing: when they will call the patient back. Structured,
+    /// so the patient sees a time and never the responder's notes.
+    /// </summary>
+    public DateTimeOffset? FollowUpCallAtUtc { get; private set; }
+
+    /// <summary>P38: who stays with the patient, as a code from <see cref="SupportPersons"/> (never a name).</summary>
+    public string? SupportPerson { get; private set; }
+
+    public static readonly IReadOnlySet<string> SupportPersons = new HashSet<string>(StringComparer.Ordinal) { "family", "friend", "partner", "other" };
+
+    /// <summary>The follow-up call may be set up to this far ahead.</summary>
+    public static readonly TimeSpan FollowUpCallWithin = TimeSpan.FromDays(14);
+
+    /// <summary>
+    /// The patient-facing close steps (P38): a follow-up call time in the next 14 days and the support person code.
+    /// Both optional; null leaves a value unset.
+    /// </summary>
+    public void SetPatientPlan(DateTimeOffset? followUpCallAtUtc, string? supportPerson, IClock clock)
+    {
+        EnsureNotClosed();
+        if (followUpCallAtUtc is { } at && (at <= clock.UtcNow || at > clock.UtcNow + FollowUpCallWithin))
+        {
+            throw new DomainException(ErrorCodes.Validation, "The follow-up call must be within the next 14 days.").With("errors", new Dictionary<string, string[]> { ["followUpCallAt"] = ["invalid"] });
+        }
+
+        if (supportPerson is not null && !SupportPersons.Contains(supportPerson))
+        {
+            throw new DomainException(ErrorCodes.Validation, $"Unknown support person '{supportPerson}'.").With("errors", new Dictionary<string, string[]> { ["supportPerson"] = ["invalid"] });
+        }
+
+        FollowUpCallAtUtc = followUpCallAtUtc;
+        SupportPerson = supportPerson;
+    }
+
     /// <summary>Closing as unreachable needs the clinical lead's signature and leaves a follow-up review (EC-33, SB-44).</summary>
     public const string UnreachableOutcome = "unreachable_referred";
 

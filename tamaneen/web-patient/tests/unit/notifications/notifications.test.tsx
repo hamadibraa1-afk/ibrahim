@@ -90,6 +90,7 @@ describe('NotificationBell', () => {
 describe('AfterCrisisView (P38)', () => {
   const followUp: CrisisFollowUp = {
     state: 'closed', eventId: 'e1', closedAt: now, responder: 'د. فهد ر.', talked: true, therapistInformed: true, therapistName: 'أ. سارة', nextAppointmentId: 'a1', nextAppointmentAt: '2026-10-29T13:00:00Z', unread: true,
+    followUpCallAt: '2026-10-27T08:00:00Z', supportPerson: 'family',
   };
 
   beforeEach(() => {
@@ -102,6 +103,9 @@ describe('AfterCrisisView (P38)', () => {
     renderWithIntl(<AfterCrisisView followUp={followUp} timeZone="Asia/Riyadh" resources={<p>numbers</p>} />, 'ar');
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('تحدثت اليوم مع د. فهد ر.');
     expect(screen.getByText('أ. سارة تعرف ما حدث، وستتابع معك.')).toBeInTheDocument();
+    expect(screen.getByText(/^اتصال المتابعة: .*11:00/)).toBeInTheDocument();
+    expect(screen.getByText('اتفقتما أن يكون معك أحد أفراد عائلتك.')).toBeInTheDocument();
+    expect(screen.getByText(/هذا ما اتفقتما عليه:$/)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'فتح' })).toHaveAttribute('href', '/safety-plan');
     expect(screen.getByRole('link', { name: 'سجّل الآن' })).toHaveAttribute('href', '/check-in');
     expect(screen.getByRole('button', { name: 'أحتاج التحدث مع أحد الآن' })).toBeInTheDocument();
@@ -111,8 +115,9 @@ describe('AfterCrisisView (P38)', () => {
   });
 
   it('shows only reassurance and the plan when nothing was agreed (English)', () => {
-    renderWithIntl(<AfterCrisisView followUp={{ ...followUp, talked: false, therapistInformed: false, nextAppointmentAt: null }} timeZone="Asia/Riyadh" resources={null} />, 'en');
+    renderWithIntl(<AfterCrisisView followUp={{ ...followUp, talked: false, therapistInformed: false, nextAppointmentAt: null, followUpCallAt: null, supportPerson: null }} timeZone="Asia/Riyadh" resources={null} />, 'en');
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Our team is still with you');
+    expect(screen.getByText('What you went through was hard, and asking for help was a brave step.')).toBeInTheDocument();
     expect(screen.queryByText('What you agreed')).toBeNull();
     expect(screen.getByText('Your safety plan is ready')).toBeInTheDocument();
   });

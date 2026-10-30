@@ -3,7 +3,7 @@ import type { ClosureView, PlanHistory, SessionNoteView, StaffHomeworkList, Staf
 import { API, problem } from '../../testing/fixtures';
 import { PID, PATIENT_URL, overview, renderCare, type } from './care-testing';
 import { EndOfCareComponent, HAS_NUMBERS } from './end-of-care.component';
-import { PatientHomeworkComponent, localDate } from './patient-homework.component';
+import { PatientHomeworkComponent } from './patient-homework.component';
 import { PatientOverviewComponent } from './patient-overview.component';
 import { SafetyPlanBuilderComponent } from './safety-plan-builder.component';
 import { SessionNotesComponent } from './session-notes.component';
@@ -108,7 +108,8 @@ describe('PatientHomeworkComponent (S16)', () => {
     expect(q('hw-preview')!.querySelectorAll('li').length).toBe(2);
     q('hw-save')!.click();
     const post = backend.expectOne(`${PATIENT_URL}/homework`);
-    expect(post.request.body).toEqual(jasmine.objectContaining({ title: 'Breathing before bed', instructions: ['Sit somewhere quiet.', 'Breathe in for 4 seconds.'], frequency: 'daily', templateCode: 'breathing', startsOn: localDate() }));
+    expect(post.request.body).toEqual(jasmine.objectContaining({ title: 'Breathing before bed', instructions: ['Sit somewhere quiet.', 'Breathe in for 4 seconds.'], frequency: 'daily', templateCode: 'breathing' }));
+    expect(post.request.body.startsOn).toBeUndefined();
     post.flush(homeworkList().current[0]);
     backend.expectOne(`${PATIENT_URL}/homework`).flush(homeworkList());
     await update();

@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useRouter } from '@/i18n/navigation';
 import { api } from '@/lib/api/client';
-import type { GateOutcome, ScreeningForm, ScreeningSubmit } from '@/lib/api/types';
+import type { CareReturnResponse, GateOutcome, ScreeningForm, ScreeningSubmit } from '@/lib/api/types';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Notice } from '@/components/ui/Notice';
@@ -17,8 +17,10 @@ import { problemText } from '@/components/auth/errorText';
  * P23 Safety check (C-SSRS screener) for the direct-booking path. One question at a time, no skipping and no
  * going back. Every answer goes to the crisis gate as it is given (the answers so far): a «نعم» that triggers
  * the gate opens P06 at once, even before the last question. After the last answer, the directory.
+ * In `careReturn` mode (P53 «أحتاج أرجع للجلسات») the same check comes first; once it passes, POST me/care/return
+ * reopens matching and the patient goes where the server says (the suggestions, or the directory).
  */
-export function SafetyCheck({ form, emergencyNumber }: { form: ScreeningForm; emergencyNumber: string | null }) {
+export function SafetyCheck({ form, emergencyNumber, mode = 'booking' }: { form: ScreeningForm; emergencyNumber: string | null; mode?: 'booking' | 'careReturn' }) {
   const t = useTranslations('safetyCheck');
   const tu = useTranslations('ui');
   const te = useTranslations('errors');
@@ -29,6 +31,7 @@ export function SafetyCheck({ form, emergencyNumber }: { form: ScreeningForm; em
   const [answers, setAnswers] = useState<(boolean | undefined)[]>(() => Array.from({ length: total }, () => undefined));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [passed, setPassed] = useState(false);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const firstRender = useRef(true);
 
@@ -52,11 +55,29 @@ export function SafetyCheck({ form, emergencyNumber }: { form: ScreeningForm; em
         return;
       }
       if (given.length >= total) {
+        if (mode === 'careReturn') {
+          setPassed(true);
+          await comeBack();
+          return;
+        }
         router.push('/therapists');
         return;
       }
       setIndex(given.length);
       setBusy(false);
+    } catch (e) {
+      setError(problemText(e, te('network')));
+      setBusy(false);
+    }
+  }
+
+  /** P53: the check passed, so reopen matching. Only this step is retried on an error, never the check. */
+  async function comeBack() {
+    setBusy(true);
+    setError(null);
+    try {
+      const { next } = await api<CareReturnResponse>('me/care/return', { method: 'POST' });
+      router.push(next === '/therapists' ? '/therapists' : '/matches');
     } catch (e) {
       setError(problemText(e, te('network')));
       setBusy(false);
@@ -111,7 +132,7 @@ export function SafetyCheck({ form, emergencyNumber }: { form: ScreeningForm; em
       {error ? (
         <div className="flex flex-col gap-3">
           <Notice tone="danger">{error}</Notice>
-          <Button variant="secondary" onClick={() => void submit(answers.slice(0, index + 1) as boolean[])}>
+          <Button variant="secondary" onClick={() => void (passed ? comeBack() : submit(answers.slice(0, index + 1) as boolean[]))}>
             {t('retry')}
           </Button>
         </div>

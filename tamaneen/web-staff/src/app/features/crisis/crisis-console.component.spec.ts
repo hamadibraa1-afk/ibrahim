@@ -13,6 +13,7 @@ import { API, CRISIS, eventDetail, openEvent } from '../../testing/fixtures';
 import { provideTestTranslations } from '../../testing/translate-testing';
 import { SessionService } from '../../core/session/session.service';
 import { CrisisConsoleComponent, TEL_OPENER, telHref } from './crisis-console.component';
+import { localToIso } from './crisis-dialogs';
 
 const HEALTH: CrisisHealth = { gate: 'ok', classifier: 'degraded', comms: 'down', onCall: 'Sara A.', backup: null };
 
@@ -225,6 +226,28 @@ describe('CrisisConsoleComponent', () => {
     expect(el.querySelector('[data-testid="no-events"]')).not.toBeNull();
     finish();
   }));
+
+  it('sends the patient-facing follow-up call time with the close (P38)', fakeAsync(() => {
+    render();
+    (el.querySelector('[data-testid="close-case"]') as HTMLButtonElement).click();
+    update();
+    expect(dialog()!.textContent).toContain('What you agreed with the patient (optional)');
+    (dialog()!.querySelector('[data-testid="close-safe_contacted"] input') as HTMLInputElement).click();
+    type(dialog()!.querySelector('[data-testid="close-reason"]') as HTMLTextAreaElement, 'Reached by phone, safe');
+    type(dialog()!.querySelector('[data-testid="close-follow-up-call"]') as HTMLInputElement, '2030-01-02T11:00');
+    (dialog()!.querySelector('[data-testid="close-submit"]') as HTMLButtonElement).click();
+    const close = backend.expectOne(`${CRISIS}/v1/crisis/events/ev-1/close`);
+    expect(close.request.body).toEqual({ outcome: 'safe_contacted', reason: 'Reached by phone, safe', followUpCallAt: new Date('2030-01-02T11:00').toISOString() });
+    close.flush(openEvent({ status: 'Closed', kind: 'closed' }));
+    update();
+    finish();
+  }));
+
+  it('turns a datetime-local value into UTC and ignores an empty one', () => {
+    expect(localToIso('')).toBeUndefined();
+    expect(localToIso('not a date')).toBeUndefined();
+    expect(localToIso('2030-01-02T11:00')).toBe(new Date('2030-01-02T11:00').toISOString());
+  });
 
   it('hides "close with outcome" when the event cannot be closed', fakeAsync(() => {
     render();
