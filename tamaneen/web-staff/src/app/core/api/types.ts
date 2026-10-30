@@ -459,7 +459,8 @@ export interface SessionNoteView {
 export interface SaveNoteRequest { template: NoteTemplate; fields: Record<string, string>; summaryPoints: string[]; shareSummary: boolean }
 
 export type SafetyPlanSection = 'warningSigns' | 'copingAlone' | 'distractions' | 'peopleToAsk' | 'professionals' | 'safeEnvironment' | 'reasonToLive';
-export interface PlanContact { name: string; phone: string }
+/** S35/P37 person to ask for help: the relationship (≤ 50) and the phone are optional (phone is "" when none). */
+export interface PlanContact { name: string; phone: string; relation?: string | null }
 export type AuthorRole = 'patient' | 'therapist' | 'supervisor' | 'lead' | 'admin';
 export interface StaffSafetyPlan {
   pseudonymId: string;

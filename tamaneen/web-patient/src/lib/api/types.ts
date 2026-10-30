@@ -321,7 +321,8 @@ export interface CheckinResponse extends GateOutcome { homework: HomeworkDetail 
 
 export type SafetyPlanSection = 'warningSigns' | 'copingAlone' | 'distractions' | 'peopleToAsk' | 'professionals' | 'safeEnvironment' | 'reasonToLive';
 /** A personal help contact in section 4 (P37), shown as a tel: button. Name up to 100 characters; at most 5. */
-export interface PlanContact { name: string; phone: string }
+/** `relation` (≤ 50) is set from S35; `phone` may be "" (optional since S35). */
+export interface PlanContact { name: string; phone: string; relation?: string | null }
 /** `version` is shared with the therapist's S35 builder and is the ETag (PUT may send it in If-Match; 412 when stale). */
 export interface SafetyPlan { sections: Record<SafetyPlanSection, string>; contacts: PlanContact[]; updatedAt: string | null; coAuthor: string | null; version?: number }
 export interface UpdateSafetyPlanRequest { sections: Record<SafetyPlanSection, string>; contacts: PlanContact[] }

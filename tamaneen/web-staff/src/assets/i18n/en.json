@@ -1334,7 +1334,10 @@
         "supervisor": "by a supervisor",
         "lead": "by the clinical lead",
         "admin": "by the team"
-      }
+      },
+      "contactRelation": "Relationship",
+      "contactRelationHint": "Sister, friend, colleague…",
+      "contactPhoneOptional": "Mobile number (optional)"
     },
     "close": {
       "loadError": "The end-of-care summary can’t be loaded right now.",

@@ -251,11 +251,17 @@ public sealed class ClinicalCareTests : IAsyncLifetime
         read.Body.GetProperty("updatedByRole").GetString().Should().Be("patient");
         read.Body.GetProperty("emergency").GetProperty("emergencyNumber").GetString().Should().Be("911");
 
-        var edit = new { sections = new Dictionary<string, string> { ["warningSigns"] = "أسهر كثيرًا وأنعزل في غرفتي.", ["copingAlone"] = "المشي عشر دقائق والتنفس 4-4-6.", ["reasonToLive"] = "ابنة أختي الصغيرة." }, contacts = new[] { new { name = "أختي", phone = "0551234567" }, new { name = "صديقي خالد", phone = "0559876543" } } };
+        var edit = new { sections = new Dictionary<string, string> { ["warningSigns"] = "أسهر كثيرًا وأنعزل في غرفتي.", ["copingAlone"] = "المشي عشر دقائق والتنفس 4-4-6.", ["reasonToLive"] = "ابنة أختي الصغيرة." }, contacts = new[] { new { name = "أختي", phone = "0551234567" }, new { name = "صديقي خالد", phone = "" } } };
+        // S35 «إضافة شخص»: name, relationship, and an optional phone.
+        var staffEdit = new { edit.sections, contacts = new[] { new { name = "أختي", phone = "0551234567", relation = "أخت" }, new { name = "صديقي خالد", phone = "", relation = "صديق" } } };
+        await Problem(await Send(sara, HttpMethod.Post, $"/v1/staff/patients/{patient.Pseudonym}/safety-plans", "\"1\"", new { edit.sections, contacts = new[] { new { name = "x", phone = "", relation = new string('x', 51) } } }), 400);
+        await Problem(await Send(sara, HttpMethod.Post, $"/v1/staff/patients/{patient.Pseudonym}/safety-plans", "\"1\"", new { edit.sections, contacts = new[] { new { name = "x", phone = "12", relation = "" } } }), 400);
         await Problem(await sara.PostAsJsonAsync($"/v1/staff/patients/{patient.Pseudonym}/safety-plans", edit), 428);
         (await Problem(await Send(sara, HttpMethod.Post, $"/v1/staff/patients/{patient.Pseudonym}/safety-plans", "\"0\"", edit), 412)).GetProperty("code").GetString().Should().Be(ErrorCodes.VersionChanged);
-        var saved = await Read(await Send(sara, HttpMethod.Post, $"/v1/staff/patients/{patient.Pseudonym}/safety-plans", "\"1\"", edit));
+        var saved = await Read(await Send(sara, HttpMethod.Post, $"/v1/staff/patients/{patient.Pseudonym}/safety-plans", "\"1\"", staffEdit));
         saved.GetProperty("version").GetInt32().Should().Be(2);
+        saved.GetProperty("contacts")[1].GetProperty("relation").GetString().Should().Be("صديق");
+        saved.GetProperty("contacts")[1].GetProperty("phone").GetString().Should().BeEmpty();
         _hosts.Notifier.Sent.Should().Contain(n => n.Kind == "safety_plan.updated" && n.RecipientUserId == patient.PatientId && n.Data["by"] == "therapist");
 
         // P37: the patient reads version 2; a save based on version 1 is refused, one without If-Match (offline queue) is not.
@@ -265,7 +271,11 @@ public sealed class ClinicalCareTests : IAsyncLifetime
         mineBody.GetProperty("coAuthor").GetString().Should().Be("أ. سارة م.");
         mineBody.GetProperty("contacts").GetArrayLength().Should().Be(2);
         (await Problem(await Send(patient.Me, HttpMethod.Put, "/v1/safety-plan", "\"1\"", plan), 412)).GetProperty("code").GetString().Should().Be(ErrorCodes.VersionChanged);
-        (await Read(await Send(patient.Me, HttpMethod.Put, "/v1/safety-plan", "\"2\"", edit))).GetProperty("version").GetInt32().Should().Be(3);
+        mineBody.GetProperty("contacts")[0].GetProperty("relation").GetString().Should().Be("أخت");
+        // An app that does not send the relationship keeps the one the therapist wrote.
+        var third = await Read(await Send(patient.Me, HttpMethod.Put, "/v1/safety-plan", "\"2\"", edit));
+        third.GetProperty("version").GetInt32().Should().Be(3);
+        third.GetProperty("contacts").EnumerateArray().Select(c => c.GetProperty("relation").GetString()).Should().Equal("أخت", "صديق");
 
         var versions = await Read(await sara.GetAsync($"{path}/versions"));
         versions.EnumerateArray().Select(v => v.GetProperty("version").GetInt32()).Should().Equal(3, 2, 1);

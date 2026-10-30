@@ -63,7 +63,7 @@
             @if (s === 'peopleToAsk') {
               <ul class="list" data-testid="contacts">
                 @for (c of contacts; track $index; let j = $index) {
-                  <li><span class="grow">{{ c.name }} · <bdi dir="ltr">{{ c.phone }}</bdi></span>
+                  <li><span class="grow">{{ c.name }}@if (c.relation) { ({{ c.relation }}) }@if (c.phone) { · <bdi dir="ltr">{{ c.phone }}</bdi> }</span>
                     @if (p.canEdit) { <button mat-button type="button" (click)="removeContact(j)" [attr.aria-label]="'care.safety.removeContact' | translate: { name: c.name }">{{ 'care.safety.remove' | translate }}</button> }
                   </li>
                 }
@@ -76,7 +76,11 @@
                       <input matInput maxlength="100" [(ngModel)]="newName" data-testid="contact-name" />
                     </mat-form-field>
                     <mat-form-field appearance="outline">
-                      <mat-label>{{ 'care.safety.contactPhone' | translate }}</mat-label>
+                      <mat-label>{{ 'care.safety.contactRelation' | translate }}</mat-label>
+                      <input matInput maxlength="50" [(ngModel)]="newRelation" [placeholder]="'care.safety.contactRelationHint' | translate" data-testid="contact-relation" />
+                    </mat-form-field>
+                    <mat-form-field appearance="outline">
+                      <mat-label>{{ 'care.safety.contactPhoneOptional' | translate }}</mat-label>
                       <input matInput dir="ltr" inputmode="tel" [(ngModel)]="newPhone" data-testid="contact-phone" />
                     </mat-form-field>
                     <button mat-stroked-button type="button" (click)="addContact()" [disabled]="!newName.trim() || !validPhone()" data-testid="contact-add">{{ 'care.safety.add' | translate }}</button>
@@ -98,7 +102,7 @@
           @for (s of sections; track s) {
             @if (draft[s]) { <p><strong>{{ 'care.safety.patientSections.' + s | translate }}</strong><br />{{ draft[s] }}</p> }
           }
-          @for (c of contacts; track $index) { <p>{{ c.name }} · <bdi dir="ltr">{{ c.phone }}</bdi></p> }
+          @for (c of contacts; track $index) { <p>{{ c.name }}@if (c.relation) { ({{ c.relation }}) }@if (c.phone) { · <bdi dir="ltr">{{ c.phone }}</bdi> }</p> }
         </section>
       }
       <section class="tm-card">

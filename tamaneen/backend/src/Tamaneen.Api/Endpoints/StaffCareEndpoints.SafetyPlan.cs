@@ -77,6 +77,11 @@ public static partial class StaffCareEndpoints
         {
             plan = SafetyPlan.Create(patientId);
             care.Db.SafetyPlans.Add(plan);
+            contacts = CareEndpoints.KeepRelations(contacts, null);
+        }
+        else
+        {
+            contacts = CareEndpoints.KeepRelations(contacts, CareEndpoints.ReadStoredPlan(await protector.DecryptAsync(patientId, Fields.SafetyPlan, plan.SectionsCipher, ct).ConfigureAwait(false)).Contacts);
         }
 
         // Written by the clinician with the patient: not a patient disclosure, so it does not pass the crisis gate.

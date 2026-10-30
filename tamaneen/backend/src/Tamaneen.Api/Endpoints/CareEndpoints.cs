@@ -63,7 +63,8 @@ public static class CareEndpoints
     public sealed record CheckinResponse(bool Crisis, int Level, string? Script, HomeworkDetailDto Homework);
 
     /// <summary>A personal help contact in section 4 of the safety plan (P37), shown as a tel: button.</summary>
-    public sealed record PlanContactDto(string Name, string Phone);
+    /// <summary>A person to ask for help (P37, S35): a name, the relationship (optional, ≤ 50) and an optional phone ("" when none).</summary>
+    public sealed record PlanContactDto(string Name, string Phone, string? Relation = null);
 
     public sealed record SafetyPlanDto(IReadOnlyDictionary<string, string> Sections, IReadOnlyList<PlanContactDto> Contacts, DateTimeOffset? UpdatedAt, string? CoAuthor, bool Crisis = false, string? Script = null, int Version = 0);
 
@@ -74,6 +75,7 @@ public static class CareEndpoints
 
     public const int MaxPlanContacts = 5;
     public const int MaxPlanContactName = 100;
+    public const int MaxPlanContactRelation = 50;
 
     public static IEndpointRouteBuilder MapCareEndpoints(this IEndpointRouteBuilder app)
     {
@@ -464,7 +466,7 @@ public static class CareEndpoints
         var (sections, contacts) = CleanPlan(request);
         var current = await p.Db.SafetyPlans.AsNoTracking().Where(s => s.PatientId == p.PatientId).Select(s => (int?)s.Version).FirstOrDefaultAsync(ct).ConfigureAwait(false) ?? 0;
         CareRecords.CheckVersionIfPresent(http, current.ToString(CultureInfo.InvariantCulture));
-        var all = string.Join("\n", sections.Values.Concat(contacts.Select(c => c.Name)).Where(v => v.Length > 0));
+        var all = string.Join("\n", sections.Values.Concat(contacts.Select(c => c.Name)).Concat(contacts.Select(c => c.Relation ?? string.Empty)).Where(v => v.Length > 0));
         Gate.GateVerdict? verdict = null;
         if (all.Length > 0)
         {
@@ -476,6 +478,11 @@ public static class CareEndpoints
         {
             plan = SafetyPlan.Create(p.PatientId);
             p.Db.SafetyPlans.Add(plan);
+            contacts = KeepRelations(contacts, null);
+        }
+        else
+        {
+            contacts = KeepRelations(contacts, ReadStoredPlan(await p.DecryptAsync(Fields.SafetyPlan, plan.SectionsCipher, ct).ConfigureAwait(false)).Contacts);
         }
 
         plan.Update(await p.EncryptJsonAsync(Fields.SafetyPlan, new StoredSafetyPlan(sections, contacts), ct).ConfigureAwait(false), user.UserId!.Value, user.Role!, clock);
@@ -523,7 +530,11 @@ public static class CareEndpoints
         }
     }
 
-    /// <summary>Each contact needs a name (up to 100 characters) and a valid phone number; at most five.</summary>
+    /// <summary>
+    /// Each contact needs a name (up to 100 characters); the relationship (up to 50) and the phone are optional, and a
+    /// phone given must be valid; at most five. A relationship left out (null, e.g. from an app that does not know the
+    /// field yet) stays null here and is filled from the stored plan by <see cref="KeepRelations"/>; an empty one clears it.
+    /// </summary>
     internal static List<PlanContactDto> CleanContacts(List<PlanContactDto>? contacts)
     {
         var list = contacts ?? [];
@@ -540,10 +551,24 @@ public static class CareEndpoints
                 throw MeEndpoints.Invalid($"contacts[{i}].name");
             }
 
-            var phone = MeEndpoints.CleanPhone(c!.Phone, $"contacts[{i}].phone") ?? throw MeEndpoints.Invalid($"contacts[{i}].phone");
-            return new PlanContactDto(name, phone);
+            var relation = c!.Relation?.Trim();
+            if (relation is { Length: > MaxPlanContactRelation })
+            {
+                throw MeEndpoints.Invalid($"contacts[{i}].relation");
+            }
+
+            var phone = string.IsNullOrWhiteSpace(c.Phone) ? string.Empty : MeEndpoints.CleanPhone(c.Phone, $"contacts[{i}].phone") ?? throw MeEndpoints.Invalid($"contacts[{i}].phone");
+            return new PlanContactDto(name, phone, relation);
         }).ToList();
     }
+
+    /// <summary>Contacts sent without a relationship keep the one stored for the same person (name and phone); "" clears it.</summary>
+    internal static List<PlanContactDto> KeepRelations(List<PlanContactDto> contacts, IReadOnlyList<PlanContactDto>? stored) =>
+        contacts.Select(c =>
+        {
+            var relation = c.Relation ?? stored?.FirstOrDefault(s => s.Name == c.Name && s.Phone == c.Phone)?.Relation;
+            return c with { Relation = string.IsNullOrEmpty(relation) ? null : relation };
+        }).ToList();
 
     // ---------- time helpers ----------
 

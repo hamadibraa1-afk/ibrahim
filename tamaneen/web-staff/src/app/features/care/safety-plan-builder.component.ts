@@ -61,6 +61,7 @@ export class SafetyPlanBuilderComponent {
   protected contacts: PlanContact[] = [];
   protected newName = '';
   protected newPhone = '';
+  protected newRelation = '';
   private version = 0;
 
   constructor() {
@@ -92,18 +93,22 @@ export class SafetyPlanBuilderComponent {
       });
   }
 
+  /** The phone is optional («رقم اختياري»), checked only when given. */
   protected validPhone(): boolean {
-    return PHONE.test(this.newPhone.trim());
+    const phone = this.newPhone.trim();
+    return phone === '' || PHONE.test(phone);
   }
 
   protected addContact(): void {
     const name = this.newName.trim();
-    if (!name || name.length > 100 || !this.validPhone() || this.contacts.length >= MAX_CONTACTS) {
+    const relation = this.newRelation.trim();
+    if (!name || name.length > 100 || relation.length > 50 || !this.validPhone() || this.contacts.length >= MAX_CONTACTS) {
       return;
     }
-    this.contacts = [...this.contacts, { name, phone: this.newPhone.replace(/\s/g, '') }];
+    this.contacts = [...this.contacts, { name, relation: relation || null, phone: this.newPhone.replace(/\s/g, '') }];
     this.newName = '';
     this.newPhone = '';
+    this.newRelation = '';
     this.addingContact.set(false);
   }
 

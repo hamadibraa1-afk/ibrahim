@@ -400,14 +400,32 @@ describe('SafetyPlanBuilderComponent (S35)', () => {
     q('add-person')!.click();
     await update();
     type(q('contact-name'), 'Friend Khalid');
+    type(q('contact-relation'), 'Friend');
+    type(q('contact-phone'), '12');
+    await update();
+    expect((q('contact-add') as HTMLButtonElement).disabled).toBeTrue();
     type(q('contact-phone'), '0559876543');
     await update();
+    q('contact-add')!.click();
+    await update();
+    // The phone is optional.
+    q('add-person')!.click();
+    await update();
+    type(q('contact-name'), 'Coach Ali');
+    type(q('contact-relation'), 'Coach');
+    await update();
+    expect((q('contact-add') as HTMLButtonElement).disabled).toBeFalse();
     q('contact-add')!.click();
     await update();
     q('safety-save')!.click();
     const post = backend.expectOne(`${PATIENT_URL}/safety-plans`);
     expect(post.request.headers.get('If-Match')).toBe('"2"');
-    expect(post.request.body.contacts).toEqual([{ name: 'My sister', phone: '0551234567' }, { name: 'Friend Khalid', phone: '0559876543' }]);
+    expect(post.request.body.contacts).toEqual([
+      { name: 'My sister', phone: '0551234567' },
+      { name: 'Friend Khalid', relation: 'Friend', phone: '0559876543' },
+      { name: 'Coach Ali', relation: 'Coach', phone: '' },
+    ]);
+    expect(q('contacts')!.textContent).toContain('Coach Ali (Coach)');
     const p = problem(412, 'Changed');
     post.flush(p.body, p.options);
     backend.expectOne(`${PATIENT_URL}/safety-plan`).flush(safetyPlan({ version: 3, sections: { ...safetyPlan().sections, copingAlone: 'A short walk' } }));

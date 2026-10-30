@@ -1334,7 +1334,10 @@
         "supervisor": "من المشرف",
         "lead": "من الرئيس السريري",
         "admin": "من الفريق"
-      }
+      },
+      "contactRelation": "العلاقة",
+      "contactRelationHint": "أخت، صديق، زميل…",
+      "contactPhoneOptional": "رقم الجوال (اختياري)"
     },
     "close": {
       "loadError": "تعذر تحميل ملخص نهاية الرعاية الآن.",
