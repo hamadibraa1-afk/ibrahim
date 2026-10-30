@@ -46,18 +46,36 @@ public sealed partial class CareRecords(TamaneenDbContext db, INotifier notifier
         return ((RiskLevel)Math.Max((int)(triage?.RiskLevel ?? RiskLevel.Routine), (int)floor), floor);
     }
 
-    /// <summary>S57 / §10.4: closing is refused while the level is 3–4 now, or a crisis at 3–4 opened in the last 14 days.</summary>
-    public async Task<bool> ClosureBlockedAsync(Guid patientId, IClock clock, CancellationToken ct)
+    /// <summary>Why closing is refused: the risk (<c>risk</c>).</summary>
+    public const string BlockedByRisk = "risk";
+
+    /// <summary>Why closing is refused: the patient asked to continue (<c>patient_continue</c>).</summary>
+    public const string BlockedByPatient = "patient_continue";
+
+    /// <summary>
+    /// S57 / §10.4: closing is refused while the level is 3–4 now, or a crisis at 3–4 opened in the last 14 days
+    /// (<see cref="BlockedByRisk"/>), or while the patient's request to continue care, made during the current care, is
+    /// open (<see cref="BlockedByPatient"/>). Null when closing is allowed.
+    /// </summary>
+    public async Task<string?> ClosureBlockReasonAsync(Guid patientId, IClock clock, CancellationToken ct)
     {
         var triage = await ClinicalTriageAsync(patientId, ct).ConfigureAwait(false);
-        if (triage is { RiskLevel: >= RiskLevel.High })
+        var since = clock.UtcNow.AddDays(-14);
+        if (triage is { RiskLevel: >= RiskLevel.High }
+            || await db.CrisisEvents.AsNoTracking().AnyAsync(e => e.PatientId == patientId && e.Level >= RiskLevel.High && (e.OpenedAtUtc >= since || e.Status != CrisisEventStatus.Closed), ct).ConfigureAwait(false))
         {
-            return true;
+            return BlockedByRisk;
         }
 
-        var since = clock.UtcNow.AddDays(-14);
-        return await db.CrisisEvents.AsNoTracking().AnyAsync(e => e.PatientId == patientId && e.Level >= RiskLevel.High && (e.OpenedAtUtc >= since || e.Status != CrisisEventStatus.Closed), ct).ConfigureAwait(false);
+        var careStarted = await db.CareAssignments.AsNoTracking().Where(a => a.PatientId == patientId && a.EndedAtUtc == null)
+            .Select(a => (DateTimeOffset?)a.StartedAtUtc).MinAsync(ct).ConfigureAwait(false);
+        var asked = await db.CareContinueRequests.AsNoTracking()
+            .AnyAsync(r => r.PatientId == patientId && r.WithdrawnAtUtc == null && (careStarted == null || r.RequestedAtUtc >= careStarted), ct).ConfigureAwait(false);
+        return asked ? BlockedByPatient : null;
     }
+
+    public async Task<bool> ClosureBlockedAsync(Guid patientId, IClock clock, CancellationToken ct) =>
+        await ClosureBlockReasonAsync(patientId, clock, ct).ConfigureAwait(false) is not null;
 
     /// <summary>Therapists with an active assignment to the patient (as far as the caller may see).</summary>
     public Task<List<Guid>> ActiveTherapistsAsync(Guid patientId, CancellationToken ct) =>

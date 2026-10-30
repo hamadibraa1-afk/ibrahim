@@ -44,6 +44,9 @@ public static class CareJourneyEndpoints
         g.MapGet("/me/care-closure", ClosureAsync);
         g.MapGet("/me/care-closure/summary", SummaryFileAsync);
         g.MapPost("/me/care/return", ReturnAsync);
+        g.MapGet("/me/care/continue", ContinueStatusAsync);
+        g.MapPost("/me/care/continue", ContinueAsync);
+        g.MapDelete("/me/care/continue", WithdrawContinueAsync);
         return app;
     }
 
@@ -244,10 +247,56 @@ public static class CareJourneyEndpoints
             p.Db.MatchSuggestions.Add(MatchSuggestion.Create(p.PatientId, closure.TherapistUserId, 1, [], clock));
         }
 
+        // The way back is the patient asking to continue care: stored, linked to the closure it comes back from.
+        p.Db.CareContinueRequests.Add(CareContinueRequest.ByReturn(p.PatientId, closure.Id, clock));
         audit.Append("care.return_requested", "CareClosure", closure.Id.ToString(), (await p.AccountAsync(ct).ConfigureAwait(false)).PseudonymId, $"screening={check.Id};level={(int)check.Level}");
         await p.Db.SaveChangesAsync(ct).ConfigureAwait(false);
         return TypedResults.Ok(new ReturnResponse(available.Contains(closure.TherapistUserId) ? "/matches" : "/therapists"));
     }
+
+    public sealed record ContinueCareDto(bool Requested, DateTimeOffset? RequestedAt);
+
+    /// <summary>Whether the patient's request to continue care is open.</summary>
+    internal static async Task<Ok<ContinueCareDto>> ContinueStatusAsync(PatientContext p, CancellationToken ct)
+    {
+        var open = await OpenContinueAsync(p, ct).ConfigureAwait(false);
+        return TypedResults.Ok(new ContinueCareDto(open is not null, open?.RequestedAtUtc));
+    }
+
+    /// <summary>
+    /// §10.4 / S57: "I want to continue my care". While open, the therapist cannot send the closing summary and the
+    /// supervisor cannot sign it off. Idempotent; audited. The treating therapist sees the reason on S57.
+    /// </summary>
+    internal static async Task<Ok<ContinueCareDto>> ContinueAsync(PatientContext p, IAuditLog audit, IClock clock, CancellationToken ct)
+    {
+        var open = await OpenContinueAsync(p, ct).ConfigureAwait(false);
+        if (open is null)
+        {
+            open = CareContinueRequest.ByPatient(p.PatientId, clock);
+            p.Db.CareContinueRequests.Add(open);
+            audit.Append("care.continue_requested", "CareContinueRequest", open.Id.ToString(), (await p.AccountAsync(ct).ConfigureAwait(false)).PseudonymId);
+            await p.Db.SaveChangesAsync(ct).ConfigureAwait(false);
+        }
+
+        return TypedResults.Ok(new ContinueCareDto(true, open.RequestedAtUtc));
+    }
+
+    internal static async Task<Ok<ContinueCareDto>> WithdrawContinueAsync(PatientContext p, IAuditLog audit, IClock clock, CancellationToken ct)
+    {
+        var open = await p.Db.CareContinueRequests.Where(r => r.PatientId == p.PatientId && r.Source == CareContinueRequest.FromPatient && r.WithdrawnAtUtc == null).ToListAsync(ct).ConfigureAwait(false);
+        foreach (var r in open)
+        {
+            r.Withdraw(clock);
+            audit.Append("care.continue_withdrawn", "CareContinueRequest", r.Id.ToString(), (await p.AccountAsync(ct).ConfigureAwait(false)).PseudonymId);
+        }
+
+        await p.Db.SaveChangesAsync(ct).ConfigureAwait(false);
+        return TypedResults.Ok(new ContinueCareDto(false, null));
+    }
+
+    private static Task<CareContinueRequest?> OpenContinueAsync(PatientContext p, CancellationToken ct) =>
+        p.Db.CareContinueRequests.Where(r => r.PatientId == p.PatientId && r.Source == CareContinueRequest.FromPatient && r.WithdrawnAtUtc == null)
+            .OrderByDescending(r => r.RequestedAtUtc).FirstOrDefaultAsync(ct);
 
     /// <summary>The latest closure a supervisor signed off, while the patient has no active therapist (404 otherwise).</summary>
     internal static async Task<CareClosure?> LatestSignedOffAsync(TamaneenDbContext db, Guid patientId, CancellationToken ct)

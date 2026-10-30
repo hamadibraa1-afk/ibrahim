@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { API_BASE_URL } from '../api';
 import type { ChallengeResponse, RecoverCompleteRequest, RecoverStartRequest, StaffLoginRequest, StaffLoginResponse, StaffMe, StaffMfaRequest, StaffMfaResponse, StaffSession } from '../api/types';
 import { SessionService } from '../session/session.service';
+import { setDisplayTimeZone } from '../i18n/format';
 
 /** Marks requests the auth interceptor must not retry after refreshing (the auth calls themselves). */
 export const SKIP_AUTH_RETRY = new HttpContextToken<boolean>(() => false);
@@ -121,6 +122,22 @@ export class AuthService implements OnDestroy {
     await this.router.navigateByUrl('/login');
   }
 
+  /**
+   * S32: 15 minutes without input. The session ends on the server as on sign-out, and sign-in brings the person
+   * back to the page they were on (returnUrl), with a note saying why.
+   */
+  async idleSignOut(): Promise<void> {
+    const url = this.router.url;
+    try {
+      await firstValueFrom(this.http.post<void>(`${this.apiBase}/v1/auth/logout`, {}, this.authOptions()));
+    } catch {
+      // Signed out locally regardless.
+    }
+    this.clearLocal();
+    const returnUrl = url && url !== '/' && !url.startsWith('/login') ? url : null;
+    await this.router.navigate(['/login'], { queryParams: { reason: 'idle', ...(returnUrl ? { returnUrl } : {}) } });
+  }
+
   /** The session ended on the server (refresh refused): clear it and go to sign-in, coming back here afterwards. */
   expire(): void {
     this.clearLocal();
@@ -139,6 +156,7 @@ export class AuthService implements OnDestroy {
     const me = await firstValueFrom(this.http.get<StaffMe>(`${this.apiBase}/v1/staff/me`));
     this.session.setRoles([me.role]);
     this.session.setProfile({ displayName: me.displayName, onCall: me.onCall });
+    setDisplayTimeZone(me.timeZone);
     this.profile.set(me);
     return me;
   }

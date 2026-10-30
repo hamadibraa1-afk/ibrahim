@@ -107,6 +107,21 @@ internal sealed class CareClosureConfiguration : IEntityTypeConfiguration<CareCl
     }
 }
 
+internal sealed class CareContinueRequestConfiguration : IEntityTypeConfiguration<CareContinueRequest>
+{
+    public void Configure(EntityTypeBuilder<CareContinueRequest> b)
+    {
+        b.ToTable("CareContinueRequests", Schemas.Clinical);
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).ValueGeneratedNever();
+        b.Property(x => x.Source).HasMaxLength(16).IsUnicode(false).IsRequired();
+        b.Ignore(x => x.IsOpen);
+        b.HasIndex(x => new { x.PatientId, x.WithdrawnAtUtc });
+        b.HasOne<UserAccount>().WithMany().HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<CareClosure>().WithMany().HasForeignKey(x => x.ClosureId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
 internal sealed class ChangeTherapistRequestConfiguration : IEntityTypeConfiguration<ChangeTherapistRequest>
 {
     public void Configure(EntityTypeBuilder<ChangeTherapistRequest> b)

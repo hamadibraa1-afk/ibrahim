@@ -92,6 +92,15 @@
     </section>
 
     <aside class="side">
+      <section class="tm-card" data-testid="pre-session">
+        <h2 class="tm-card-title">{{ 'care.notes.preSession' | translate }}</h2>
+        @if (v.preSessionNote) {
+          <blockquote class="quote" data-testid="pre-session-note">{{ v.preSessionNote }}</blockquote>
+          @if (v.preSessionNoteAt) { <p class="tm-muted small">{{ v.preSessionNoteAt | tmDate: 'dayTime' : language.language() }}</p> }
+        } @else {
+          <p class="tm-muted small" data-testid="no-pre-session">{{ 'care.notes.noPreSession' | translate }}</p>
+        }
+      </section>
       <section class="tm-card" data-testid="last-week">
         <h2 class="tm-card-title">{{ 'care.notes.lastWeek' | translate }}</h2>
         <p class="small">
@@ -103,6 +112,11 @@
       <section class="tm-card">
         <h2 class="tm-card-title">{{ 'care.notes.quick' | translate }}</h2>
         <div class="form">
+          @if (v.nextAppointment; as n) {
+            <p class="small" data-testid="next-session">{{ 'care.notes.nextBooked' | translate: { date: (n.startsAt | tmDate: 'dayTime' : language.language()) } }}</p>
+          } @else if (v.canEdit) {
+            <button mat-stroked-button type="button" (click)="bookNext()" data-testid="book-next">{{ 'care.notes.bookNext' | translate }}</button>
+          }
           <a mat-stroked-button [routerLink]="['/patients', v.pseudonymId, 'homework']" data-testid="quick-homework">{{ 'care.notes.assignHomework' | translate }}</a>
           <a mat-stroked-button [routerLink]="['/patients', v.pseudonymId, 'safety-plan']">{{ 'care.overview.openSafetyPlan' | translate }}</a>
           <a mat-stroked-button [routerLink]="['/patients', v.pseudonymId]">{{ 'care.tabs.overview' | translate }}</a>

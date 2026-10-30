@@ -230,12 +230,15 @@ public static class SchedulingEndpoints
             return true;
         }).ConfigureAwait(false);
 
-        await NotifyBothAsync(notifier, appointment, profile.PseudonymId, NotificationKinds.AppointmentBooked, NotificationKinds.StaffAppointmentBooked, ct).ConfigureAwait(false);
+        // S41: while the clinical file waits for the therapist's approval, the notice opens it (/patients/:id/file).
+        var filePending = await StaffScheduleEndpoints.FilePendingAsync(p.Db, [patientId], ct).ConfigureAwait(false);
+        var staffLink = filePending.GetValueOrDefault(patientId) ? $"/patients/{profile.PseudonymId}/file" : null;
+        await NotifyBothAsync(notifier, appointment, profile.PseudonymId, NotificationKinds.AppointmentBooked, NotificationKinds.StaffAppointmentBooked, ct, staffLink).ConfigureAwait(false);
         return TypedResults.Ok(await DetailDtoAsync(p, directory, appointment, platform, clock, ct).ConfigureAwait(false));
     }
 
     /// <summary>The patient and the therapist hear about a booking, a move or a cancellation (in-app; the patient may get a neutral copy).</summary>
-    internal static async Task NotifyBothAsync(INotifier notifier, Appointment a, string pseudonymId, string patientKind, string staffKind, CancellationToken ct)
+    internal static async Task NotifyBothAsync(INotifier notifier, Appointment a, string pseudonymId, string patientKind, string staffKind, CancellationToken ct, string? staffLink = null)
     {
         var data = new Dictionary<string, string>
         {
@@ -244,7 +247,7 @@ public static class SchedulingEndpoints
             ["therapistId"] = a.TherapistUserId.ToString(),
         };
         await notifier.NotifyAsync(new Notification(a.PatientId, patientKind, data), ct).ConfigureAwait(false);
-        await notifier.NotifyAsync(new Notification(a.TherapistUserId, staffKind, new Dictionary<string, string>(data) { ["pseudonymId"] = pseudonymId }), ct).ConfigureAwait(false);
+        await notifier.NotifyAsync(new Notification(a.TherapistUserId, staffKind, new Dictionary<string, string>(data) { ["pseudonymId"] = pseudonymId }, staffLink), ct).ConfigureAwait(false);
     }
 
     // ---------- P27, P28, P26 ----------

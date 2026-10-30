@@ -133,7 +133,8 @@
     "remainingAttempts": "Attempts left before the account is locked: {{count}}.",
     "locked": "The account is locked for safety. Try again in {{minutes}} minutes.",
     "contactTooLong": "The email is longer than 254 characters",
-    "forgot": "Forgot your password?"
+    "forgot": "Forgot your password?",
+    "idleSignedOut": "You were signed out after 15 minutes without activity, to protect patient data. Sign in again to return to the same page."
   },
   "dashboard": {
     "greeting": {
@@ -804,7 +805,16 @@
       "attended": "Recorded as attended.",
       "noShow": "Recorded as not attended. The patient gets a gentle message.",
       "late": "The patient has been told.",
-      "cancelled": "Session cancelled. The patient has been told."
+      "cancelled": "Session cancelled. The patient has been told.",
+      "rescheduled": "The session moved and the patient was told."
+    },
+    "notes": "Session notes",
+    "reschedule": {
+      "button": "Reschedule",
+      "title": "Reschedule this session",
+      "body": "Choose a new time from your free times. The patient is told the new time without your reason, and the old time leaves your calendar.",
+      "reason": "Reason",
+      "confirm": "Move the session"
     }
   },
   "availability": {
@@ -936,7 +946,25 @@
     "referTitle": "Hand to on-call",
     "referBody": "The event stays with the on-call. Write what they need to know.",
     "referNote": "Note for the on-call",
-    "referConfirm": "Hand over"
+    "referConfirm": "Hand over",
+    "kind": {
+      "crisis": "Crisis event",
+      "risk_raised": "Risk raised",
+      "no_show": "No-show"
+    },
+    "detail": {
+      "crisis": "{{number}}",
+      "risk_raised": "{{name}} raised it from level {{from}} to level {{to}}",
+      "repeated": "Missed twice in a row",
+      "high_risk": "Missed at risk 3–4",
+      "missed": "Missed a session"
+    },
+    "final": {
+      "raised": "Level raised",
+      "rebooked": "Rebooked",
+      "not_rebooked": "Not rebooked yet"
+    },
+    "someone": "A team member"
   },
   "profile": {
     "title": "Professional profile",
@@ -967,7 +995,10 @@
     "unverified": "Awaiting verification",
     "licenseNote": "Changing license details needs a new verification.",
     "loadError": "Your profile can’t be loaded.",
-    "saveError": "Couldn’t save."
+    "saveError": "Couldn’t save.",
+    "licenseExpires": "Expires on {{date}}",
+    "licenseVerifiedBy": "Verified by {{name}} · {{date}}",
+    "licenseExpiring": "Your licence expires on {{date}}. Renew it before then so new bookings don’t stop."
   },
   "account": {
     "title": "Account settings",
@@ -1015,9 +1046,14 @@
     "display": "Language and display",
     "language": "Interface language",
     "timeZone": "Time zone",
-    "timeZoneNote": "The pilot region’s time, for the whole team.",
+    "timeZoneNote": "Every time on the portal, the schedule included, shows in this zone.",
     "loadError": "Settings can’t be loaded.",
-    "saveError": "Couldn’t save. Nothing changed."
+    "saveError": "Couldn’t save. Nothing changed.",
+    "timeZoneSaved": "Time zone saved. Times now show in it.",
+    "endConfirmTitle": "End this session?",
+    "endConfirmBody": "That device will have to sign in again.",
+    "endOthersTitle": "End the other sessions?",
+    "endOthersBody": "Every session except this one ends, and the other devices will have to sign in again."
   },
   "specialties": {
     "anxiety": "Anxiety",
@@ -1131,7 +1167,9 @@
       "view": "View",
       "none": "No versions yet.",
       "neverDeleted": "Every save creates a new version; old versions can’t be deleted.",
-      "readOnly": "Read-only"
+      "readOnly": "Read-only",
+      "waiting": "Connection lost. The draft is kept on this page for this session and is saved again as soon as the connection returns.",
+      "restored": "This is your unsaved draft from this session."
     },
     "homework": {
       "loadError": "Homework can’t be loaded right now.",
@@ -1239,7 +1277,15 @@
       "alerts": "{{count}} alerts",
       "noAlerts": "no alerts",
       "quick": "Quick actions",
-      "assignHomework": "Assign homework"
+      "assignHomework": "Assign homework",
+      "preSession": "What the patient wanted to talk about",
+      "noPreSession": "The patient wrote nothing before the session.",
+      "bookNext": "Book the next session",
+      "bookNextTitle": "Book the next session",
+      "bookNextBody": "Choose one of your free times. The patient is told.",
+      "bookNextConfirm": "Book",
+      "bookNextDone": "The next session is booked and the patient was told.",
+      "nextBooked": "Next session: {{date}}"
     },
     "safety": {
       "loadError": "The safety plan can’t be loaded right now.",
@@ -1299,7 +1345,10 @@
         "supervisor": "by a supervisor",
         "lead": "by the clinical lead",
         "admin": "by the team"
-      }
+      },
+      "contactRelation": "Relationship",
+      "contactRelationHint": "Sister, friend, colleague…",
+      "contactPhoneOptional": "Mobile number (optional)"
     },
     "close": {
       "loadError": "The end-of-care summary can’t be loaded right now.",
@@ -1353,13 +1402,19 @@
       "rejectTitle": "Send it back to the therapist?",
       "rejectBody": "The therapist sees your reason and edits the summary.",
       "rejectReason": "Reason",
-      "rejected": "Sent back to the therapist."
+      "rejected": "Sent back to the therapist.",
+      "blockedByPatient": "Care can’t be closed now: the patient asked to continue care. Talk it through first; sending opens again if they withdraw the request."
     },
     "closures": {
       "title": "End-of-care sign-off",
       "loadError": "The list can’t be loaded right now.",
       "empty": "Nothing is waiting for sign-off.",
-      "blocked": "Risk 3–4 in 14 days"
+      "blocked": "Risk 3–4 in 14 days",
+      "blockedByPatient": "Patient asked to continue"
     }
+  },
+  "slotPicker": {
+    "time": "New time",
+    "empty": "You have no free times in the coming weeks. Add some on the availability page."
   }
 }

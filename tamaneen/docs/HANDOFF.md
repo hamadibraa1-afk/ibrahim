@@ -125,14 +125,14 @@ cd web-staff && npx playwright test
 cd web-patient && npx playwright test -c playwright.compose.config.ts
 ```
 
-Last full run, after merging phase 5 and the patient fix list:
+Last full run, after merging phase 5 and both review fix lists:
 
 | Suite | Passed |
 |---|---|
-| Backend unit | 353 |
-| Integration | 108 |
-| Patient app unit | 367 |
-| Staff portal unit | 176 |
+| Backend unit | 358 |
+| Integration | 114 |
+| Patient app unit | 368 |
+| Staff portal unit | 192 |
 | Patient e2e | 33 (1 skipped on purpose) |
 | Staff e2e | 20 |
 | Against the containers | 3 + 20 |
@@ -194,18 +194,20 @@ Last full run, after merging phase 5 and the patient fix list:
   - P38 shows the agreed follow-up time and support person, recorded by the responder when closing the event in S04;
   - P67 rebooking with the same therapist is a priority reschedule;
   - the homework fixes and one safety-plan section limit (1,000 characters).
-- **Staff list: OPEN.** It may be in progress elsewhere; check the git log for "S18", "S32" and so on before starting.
-- **Staff list, `docs/reviews/phase5-open-fixes-staff.md`:**
-  - S18: "session done" opens the notes, plus a reschedule action;
-  - S15: keep the draft while offline;
+- **Staff list: DONE and merged.** `docs/reviews/phase5-open-fixes-staff.md`:
+  - S18: "session done" opens S33, past sessions link to their notes, and the therapist can reschedule to their own free time;
+  - S15: the draft is kept in tab memory and resent on reconnect;
   - S20: history includes risk raises and no-shows;
-  - S21: licence expiry and verification;
-  - S32: enforce the 15-minute idle timeout, time zone, confirmation;
-  - S33: the patient's pre-session note and booking the next session;
-  - S35: relationship field;
-  - S41: link to the pending file;
+  - S21: licence expiry, verifier and a 30-day warning;
+  - S32: 15-minute idle sign-out, time zone choice, confirmations;
+  - S33: the patient's pre-session note and «حجز الجلسة القادمة»;
+  - S35: relationship field, optional phone;
+  - S41: links to the pending file;
   - EC-52/EC-53 supervisor alerts;
-  - S57: block closure when the patient asked to continue.
+  - S57: blocked while the patient asked to continue.
+- **Still open, small:**
+  - The patient app has no button for `POST /v1/me/care/continue` ("I want to continue care") during ongoing care. The API exists; P53's way back already records a request.
+  - The test map PDF does not cover the phase 5 screens yet.
 - **Full findings, with file:line evidence:** `docs/reviews/phase5-review-patient.md` and `phase5-review-staff.md`.
 
 **Deferred on purpose:**
@@ -224,7 +226,7 @@ Last full run, after merging phase 5 and the patient fix list:
 
 Do the phases in this order. Each one ends with the gate in §4, a design-conformance review of every screen (page, buttons, links, inputs: compare the code with `docs/design/spec` and the mockup), a Docker rebuild, an updated test map, and the owner's sign-off.
 
-- **Phase 5 (finish).** Apply the open staff fix list above, then update the test map with the phase 5 screens.
+- **Phase 5 (finish).** Add the small open items above, then update the test map with the phase 5 screens.
 - **Phase 6: operations and admin.**
   - S26 users and S73 importing therapists (or S07–S12 self-apply; the owner has to choose), plus S05 licence verification.
   - S27 audit log viewer, S29 system health, S30 kill switches, S43 platform settings, S72 announcements and maintenance.

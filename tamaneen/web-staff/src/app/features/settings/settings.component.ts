@@ -5,19 +5,22 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { ActivatedRoute } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import type { Observable } from 'rxjs';
 import { AccountApiService } from '../../core/api/account-api.service';
 import { type ShownError, shownError } from '../../core/api/problem';
-import type { StaffNotificationPrefs, StaffSecurity, TotpMove } from '../../core/api/types';
+import type { StaffNotificationPrefs, StaffPreferences, StaffSecurity, TotpMove } from '../../core/api/types';
 import type { Language } from '../../core/i18n/language';
 import { LanguageService } from '../../core/i18n/language.service';
+import { setDisplayTimeZone } from '../../core/i18n/format';
+import { careUi } from '../care/care-dialogs';
 import { LocalDatePipe } from '../../shared/local-date.pipe';
 import { ProblemMessageComponent } from '../../shared/problem-message.component';
 
-/** The pilot's zone (Platform:TimeZone on the API); staff times are shown in it. Read only for now. */
+/** The pilot's zone (Platform:TimeZone on the API), until the staff member picks another. */
 export const PILOT_TIME_ZONE = 'Asia/Riyadh';
 
 export type SecurityPanel = 'password' | 'move' | 'codes' | null;
@@ -27,12 +30,13 @@ export type PrefKey = 'bookings' | 'weeklyReport' | 'dailyDigest';
  * S32 «إعدادات الحساب». Security changes need the password and a current authenticator code and are recorded.
  * Two-step verification cannot be turned off, only moved: the old device keeps working until a code from the new
  * one is checked. Sessions end after 15 minutes idle. Risk alerts are locked on. The three other switches save at
- * once and go back if the save fails. The language switch flips the direction at once. Passkeys (WebAuthn) are not
- * built yet, so they are not offered.
+ * once and go back if the save fails. The language switch flips the direction at once; the time zone is chosen
+ * from a list and every time on the portal follows it. Ending other sessions asks first. Passkeys (WebAuthn) are
+ * not built yet, so they are not offered.
  */
 @Component({
   selector: 'tm-settings',
-  imports: [FormsModule, MatButtonModule, MatButtonToggleModule, MatFormFieldModule, MatInputModule, MatSlideToggleModule, TranslateModule, LocalDatePipe, ProblemMessageComponent],
+  imports: [FormsModule, MatButtonModule, MatButtonToggleModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatSlideToggleModule, TranslateModule, LocalDatePipe, ProblemMessageComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <h1 class="title">{{ 'account.title' | translate }}</h1>
@@ -131,7 +135,12 @@ export type PrefKey = 'bookings' | 'weeklyReport' | 'dailyDigest';
         <mat-button-toggle value="ar" lang="ar" data-testid="lang-ar">العربية</mat-button-toggle>
         <mat-button-toggle value="en" lang="en" data-testid="lang-en">English</mat-button-toggle>
       </mat-button-toggle-group>
-      <p><strong>{{ 'account.timeZone' | translate }}</strong>: <span dir="ltr">{{ timeZone }}</span></p>
+      <mat-form-field appearance="outline" class="zone">
+        <mat-label>{{ 'account.timeZone' | translate }}</mat-label>
+        <mat-select [value]="timeZone()" (selectionChange)="setTimeZone($event.value)" [disabled]="!zones().length" data-testid="time-zone">
+          @for (z of zones(); track z) { <mat-option [value]="z" [attr.data-testid]="'zone-' + z"><span dir="ltr">{{ z }}</span></mat-option> }
+        </mat-select>
+      </mat-form-field>
       <p class="tm-muted hint">{{ 'account.timeZoneNote' | translate }}</p>
     </section>
   `,
@@ -151,6 +160,7 @@ export type PrefKey = 'bookings' | 'weeklyReport' | 'dailyDigest';
     .notice { margin: 0; padding: 10px 14px; border-radius: 10px; background: var(--tm-ok-tint); color: var(--tm-ok-ink); }
     .hint { font-size: 13px; }
     mat-slide-toggle { display: block; margin-block: 8px; }
+    .zone { display: block; max-width: 320px; margin-block-start: 12px; }
   `,
 })
 export class SettingsComponent {
@@ -158,7 +168,9 @@ export class SettingsComponent {
   private readonly destroyRef = inject(DestroyRef);
   protected readonly language = inject(LanguageService);
   protected readonly prefKeys: PrefKey[] = ['bookings', 'weeklyReport', 'dailyDigest'];
-  protected readonly timeZone = PILOT_TIME_ZONE;
+  private readonly ui = careUi();
+  protected readonly timeZone = signal(PILOT_TIME_ZONE);
+  protected readonly zones = signal<string[]>([]);
   protected readonly security = signal<StaffSecurity | null>(null);
   protected readonly prefs = signal<StaffNotificationPrefs | null>(null);
   protected readonly panel = signal<SecurityPanel>(null);
@@ -181,6 +193,26 @@ export class SettingsComponent {
       .notificationPrefs()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({ next: (p) => this.prefs.set(p), error: (e: unknown) => this.error.set(shownError(e, 'account.loadError')) });
+    this.api
+      .preferences()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({ next: (p) => this.applyPreferences(p), error: (e: unknown) => this.error.set(shownError(e, 'account.loadError')) });
+  }
+
+  /** PUT /v1/staff/me/preferences; every time on the portal follows the new zone at once. */
+  setTimeZone(timeZone: string): void {
+    const before = this.timeZone();
+    this.timeZone.set(timeZone);
+    this.run(this.api.savePreferences(timeZone), (p) => {
+      this.applyPreferences(p);
+      this.notice.set('account.timeZoneSaved');
+    }, () => this.timeZone.set(before));
+  }
+
+  private applyPreferences(p: StaffPreferences): void {
+    this.zones.set(p.timeZones);
+    this.timeZone.set(p.timeZone);
+    setDisplayTimeZone(p.timeZone);
   }
 
   openPanel(panel: SecurityPanel): void {
@@ -224,17 +256,23 @@ export class SettingsComponent {
     });
   }
 
+  /** S41 «بعد تأكيد»: asks first, then ends that session. */
   endSession(id: string): void {
-    this.run(this.api.revokeSession(id), () => {
-      this.notice.set('account.sessionEnded');
-      this.loadSecurity();
+    this.ui.confirm('account.endConfirmTitle', 'account.endConfirmBody', 'account.end', true, () => this.api.revokeSession(id)).subscribe((done) => {
+      if (done) {
+        this.notice.set('account.sessionEnded');
+        this.loadSecurity();
+      }
     });
   }
 
+  /** «إنهاء الأخرى»: asks first, then ends every session except this one. */
   endOthers(): void {
-    this.run(this.api.revokeOtherSessions(), () => {
-      this.notice.set('account.othersEnded');
-      this.loadSecurity();
+    this.ui.confirm('account.endOthersTitle', 'account.endOthersBody', 'account.endOthers', true, () => this.api.revokeOtherSessions()).subscribe((done) => {
+      if (done) {
+        this.notice.set('account.othersEnded');
+        this.loadSecurity();
+      }
     });
   }
 
@@ -269,7 +307,7 @@ export class SettingsComponent {
       .subscribe({ next: (s) => this.security.set(s), error: (e: unknown) => this.error.set(shownError(e, 'account.loadError')) });
   }
 
-  private run<T>(request: Observable<T>, done: (value: T) => void): void {
+  private run<T>(request: Observable<T>, done: (value: T) => void, failed?: () => void): void {
     this.busy.set(true);
     this.error.set(null);
     this.notice.set(null);
@@ -280,6 +318,7 @@ export class SettingsComponent {
       },
       error: (e: unknown) => {
         this.busy.set(false);
+        failed?.();
         this.error.set(shownError(e, 'account.saveError'));
       },
     });

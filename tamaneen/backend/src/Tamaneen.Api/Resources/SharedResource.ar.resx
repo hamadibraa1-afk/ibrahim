@@ -150,6 +150,10 @@
   <data name="notify.staff.appointment.rescheduled.plain" xml:space="preserve"><value>تغيّر موعد في جدولك.</value></data>
   <data name="notify.staff.appointment.cancelled" xml:space="preserve"><value>ألغى {patient} موعد {time}.</value></data>
   <data name="notify.staff.appointment.cancelled.plain" xml:space="preserve"><value>أُلغي موعد في جدولك.</value></data>
+  <data name="notify.appointment.rebook_needed" xml:space="preserve"><value>مطلوب إعادة حجز: أُلغيت جلسة {patient} يوم {time} من جهة الأخصائي. أعد حجزها خلال 48 ساعة.</value></data>
+  <data name="notify.appointment.rebook_needed.plain" xml:space="preserve"><value>مطلوب إعادة حجز: أُلغيت جلسة من جهة الأخصائي. أعد حجزها خلال 48 ساعة.</value></data>
+  <data name="notify.appointment.no_show_followup" xml:space="preserve"><value>متابعة غياب: لم يحضر {patient} جلسة {time}، وهو غياب متكرر أو مع خطر مرتفع. تواصل معه اليوم.</value></data>
+  <data name="notify.appointment.no_show_followup.plain" xml:space="preserve"><value>متابعة غياب: مريض لم يحضر جلسته، وهو غياب متكرر أو مع خطر مرتفع. تواصل معه اليوم.</value></data>
   <data name="notify.crisis.closed" xml:space="preserve"><value>أُغلق حدث الأزمة {number} لـ {patient}. راجع المتابعة وقدّم موعده إن لزم.</value></data>
   <data name="notify.crisis.closed.plain" xml:space="preserve"><value>أُغلق حدث أزمة لأحد مرضاك.</value></data>
   <data name="notify.crisis.alert" xml:space="preserve"><value>تنبيه خطر {0} · {1} · لم يُقَرّ بعد</value></data>
@@ -178,6 +182,7 @@
   <data name="error.closure.locked" xml:space="preserve"><value>ملخص نهاية الرعاية بانتظار المشرف أو معتمد، ولا يمكن تعديله الآن.</value></data>
   <data name="error.closure.not_submitted" xml:space="preserve"><value>لم يُرسل هذا الملخص للاعتماد.</value></data>
   <data name="error.closure.signoff_not_allowed" xml:space="preserve"><value>لا يمكنك اعتماد ملخص كتبته بنفسك.</value></data>
+  <data name="error.closure.patient_continue" xml:space="preserve"><value>لا يمكن إنهاء الرعاية الآن: طلب المريض الاستمرار في الرعاية.</value></data>
   <data name="error.closure.blocked" xml:space="preserve"><value>لا يمكن إنهاء الرعاية الآن: كان مستوى الخطر 3 أو 4 خلال آخر 14 يومًا.</value></data>
   <data name="error.change_request.open" xml:space="preserve"><value>لديك طلب تغيير مفتوح، وسنرسل لك الاقتراحات قريبًا.</value></data>
   <data name="error.care.not_in_care" xml:space="preserve"><value>لا يوجد أخصائي متابع لك الآن.</value></data>

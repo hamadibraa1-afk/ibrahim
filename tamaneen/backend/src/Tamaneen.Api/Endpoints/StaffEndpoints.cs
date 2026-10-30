@@ -26,7 +26,7 @@ namespace Tamaneen.Api.Endpoints;
 /// </summary>
 public static class StaffEndpoints
 {
-    public sealed record StaffMeDto(Guid UserId, string DisplayName, string Role, string Language, bool OnCall);
+    public sealed record StaffMeDto(Guid UserId, string DisplayName, string Role, string Language, bool OnCall, string TimeZone = StaffProfile.DefaultTimeZone);
 
     public sealed record PendingProfileDto(string PseudonymId, int RiskLevel, int? Phq9, int? Gad7, DateTimeOffset? FirstSessionAt);
 
@@ -70,7 +70,7 @@ public static class StaffEndpoints
     {
         var account = await db.UserAccounts.AsNoTracking().FirstAsync(a => a.Id == user.UserId, ct).ConfigureAwait(false);
         var profile = await db.StaffProfiles.AsNoTracking().FirstOrDefaultAsync(s => s.UserId == account.Id, ct).ConfigureAwait(false);
-        return TypedResults.Ok(new StaffMeDto(account.Id, profile?.DisplayName(user.Language) ?? account.PseudonymId, RoleCode(account.Role), account.PreferredLanguage, profile?.OnCallTier is not null));
+        return TypedResults.Ok(new StaffMeDto(account.Id, profile?.DisplayName(user.Language) ?? account.PseudonymId, RoleCode(account.Role), account.PreferredLanguage, profile?.OnCallTier is not null, profile?.TimeZone ?? StaffProfile.DefaultTimeZone));
     }
 
     internal static string RoleCode(string role) => role switch
@@ -249,7 +249,7 @@ public static class StaffEndpoints
                             && (a.Status == AppointmentStatus.Completed || a.Status == AppointmentStatus.NoShow))
                 .OrderByDescending(a => a.StartsAtUtc).Select(a => (AppointmentStatus?)a.Status).FirstOrDefaultAsync(ct).ConfigureAwait(false);
             var risk = (await StaffScheduleEndpoints.RiskAsync(db, [appointment.PatientId], clock, ct).ConfigureAwait(false))[appointment.PatientId];
-            await notices.MissedAsync(appointment, pseudonym, previous == AppointmentStatus.NoShow || risk >= 3, ct).ConfigureAwait(false);
+            await notices.MissedAsync(appointment, pseudonym, previous == AppointmentStatus.NoShow ? "repeated" : risk >= 3 ? "high_risk" : null, ct).ConfigureAwait(false);
         }
 
         return TypedResults.NoContent();

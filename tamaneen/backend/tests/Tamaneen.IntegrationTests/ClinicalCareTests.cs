@@ -204,6 +204,39 @@ public sealed class ClinicalCareTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Session_notes_show_the_patients_pre_session_note_and_book_the_next_session()
+    {
+        var patient = await BookedPatientAsync("أ. سارة م.");
+        await Read(await patient.Me.PutAsJsonAsync($"/v1/appointments/{patient.AppointmentId}/pre-session-note", new { text = "النوم تحسن، لكن ما زلت قلقًا من اجتماع الأحد." }));
+        await StartAppointmentNowAsync(patient.AppointmentId);
+        using var sara = _hosts.ApiClient("ar", await _hosts.StaffSignInAsync("sara@staff.tamaneen.dev"));
+        var path = $"/v1/staff/patients/{patient.Pseudonym}/sessions/{patient.AppointmentId}/note";
+        var view = await Read(await sara.GetAsync(path));
+        view.GetProperty("preSessionNote").GetString().Should().Be("النوم تحسن، لكن ما زلت قلقًا من اجتماع الأحد.");
+        view.GetProperty("nextAppointment").ValueKind.Should().Be(JsonValueKind.Null);
+
+        // «حجز الجلسة القادمة»: one of Sara's own free times; another therapist cannot book for her patient.
+        var slot = (await Read(await sara.GetAsync("/v1/staff/free-slots"))).EnumerateArray().First();
+        var slotId = slot.GetProperty("slotId").GetGuid();
+        using var noura = _hosts.ApiClient("ar", await _hosts.StaffSignInAsync("noura@staff.tamaneen.dev"));
+        await Problem(await noura.PostAsJsonAsync($"/v1/staff/patients/{patient.Pseudonym}/appointments", new { slotId }), 404);
+        await Problem(await sara.PostAsJsonAsync($"/v1/staff/patients/{patient.Pseudonym}/appointments", new { }), 400);
+        var booked = await Read(await sara.PostAsJsonAsync($"/v1/staff/patients/{patient.Pseudonym}/appointments", new { slotId }));
+        booked.GetProperty("sequenceNumber").GetInt32().Should().Be(2);
+        await Problem(await sara.PostAsJsonAsync($"/v1/staff/patients/{patient.Pseudonym}/appointments", new { slotId }), 409);
+        var nextId = booked.GetProperty("id").GetGuid();
+        (await Read(await sara.GetAsync(path))).GetProperty("nextAppointment").GetProperty("id").GetGuid().Should().Be(nextId);
+        (await Read(await patient.Me.GetAsync("/v1/appointments"))).GetProperty("upcoming").EnumerateArray().Should().Contain(a => a.GetProperty("id").GetGuid() == nextId);
+        _hosts.Notifier.Sent.Should().Contain(n => n.Kind == "appointment.booked" && n.RecipientUserId == patient.PatientId && n.Data["appointmentId"] == nextId.ToString());
+
+        // A supervisor reads the note page (with the patient's words), audited; the patient's own log shows it.
+        using var fahad = _hosts.ApiClient("ar", await _hosts.StaffSignInAsync("fahad@staff.tamaneen.dev"));
+        (await Read(await fahad.GetAsync(path))).GetProperty("canEdit").GetBoolean().Should().BeFalse();
+        await using var db = _sql.Context(StaticCurrentUser.ForStaff(Guid.NewGuid(), AppRoles.Supervisor));
+        (await db.AuditEntries.CountAsync(e => e.Action == "patient.note_opened" && e.EntityId == patient.AppointmentId.ToString() && e.Reason == "pre_session_note")).Should().Be(3, "two reads by Sara, one by the supervisor");
+    }
+
+    [Fact]
     public async Task The_safety_plan_is_shared_by_patient_and_therapist_with_one_version_number()
     {
         var patient = await BookedPatientAsync("أ. سارة م.");
@@ -222,11 +255,17 @@ public sealed class ClinicalCareTests : IAsyncLifetime
         read.Body.GetProperty("updatedByRole").GetString().Should().Be("patient");
         read.Body.GetProperty("emergency").GetProperty("emergencyNumber").GetString().Should().Be("911");
 
-        var edit = new { sections = new Dictionary<string, string> { ["warningSigns"] = "أسهر كثيرًا وأنعزل في غرفتي.", ["copingAlone"] = "المشي عشر دقائق والتنفس 4-4-6.", ["reasonToLive"] = "ابنة أختي الصغيرة." }, contacts = new[] { new { name = "أختي", phone = "0551234567" }, new { name = "صديقي خالد", phone = "0559876543" } } };
+        var edit = new { sections = new Dictionary<string, string> { ["warningSigns"] = "أسهر كثيرًا وأنعزل في غرفتي.", ["copingAlone"] = "المشي عشر دقائق والتنفس 4-4-6.", ["reasonToLive"] = "ابنة أختي الصغيرة." }, contacts = new[] { new { name = "أختي", phone = "0551234567" }, new { name = "صديقي خالد", phone = "" } } };
+        // S35 «إضافة شخص»: name, relationship, and an optional phone.
+        var staffEdit = new { edit.sections, contacts = new[] { new { name = "أختي", phone = "0551234567", relation = "أخت" }, new { name = "صديقي خالد", phone = "", relation = "صديق" } } };
+        await Problem(await Send(sara, HttpMethod.Post, $"/v1/staff/patients/{patient.Pseudonym}/safety-plans", "\"1\"", new { edit.sections, contacts = new[] { new { name = "x", phone = "", relation = new string('x', 51) } } }), 400);
+        await Problem(await Send(sara, HttpMethod.Post, $"/v1/staff/patients/{patient.Pseudonym}/safety-plans", "\"1\"", new { edit.sections, contacts = new[] { new { name = "x", phone = "12", relation = "" } } }), 400);
         await Problem(await sara.PostAsJsonAsync($"/v1/staff/patients/{patient.Pseudonym}/safety-plans", edit), 428);
         (await Problem(await Send(sara, HttpMethod.Post, $"/v1/staff/patients/{patient.Pseudonym}/safety-plans", "\"0\"", edit), 412)).GetProperty("code").GetString().Should().Be(ErrorCodes.VersionChanged);
-        var saved = await Read(await Send(sara, HttpMethod.Post, $"/v1/staff/patients/{patient.Pseudonym}/safety-plans", "\"1\"", edit));
+        var saved = await Read(await Send(sara, HttpMethod.Post, $"/v1/staff/patients/{patient.Pseudonym}/safety-plans", "\"1\"", staffEdit));
         saved.GetProperty("version").GetInt32().Should().Be(2);
+        saved.GetProperty("contacts")[1].GetProperty("relation").GetString().Should().Be("صديق");
+        saved.GetProperty("contacts")[1].GetProperty("phone").GetString().Should().BeEmpty();
         _hosts.Notifier.Sent.Should().Contain(n => n.Kind == "safety_plan.updated" && n.RecipientUserId == patient.PatientId && n.Data["by"] == "therapist");
 
         // P37: the patient reads version 2; a save based on version 1 is refused, one without If-Match (offline queue) is not.
@@ -236,7 +275,11 @@ public sealed class ClinicalCareTests : IAsyncLifetime
         mineBody.GetProperty("coAuthor").GetString().Should().Be("أ. سارة م.");
         mineBody.GetProperty("contacts").GetArrayLength().Should().Be(2);
         (await Problem(await Send(patient.Me, HttpMethod.Put, "/v1/safety-plan", "\"1\"", plan), 412)).GetProperty("code").GetString().Should().Be(ErrorCodes.VersionChanged);
-        (await Read(await Send(patient.Me, HttpMethod.Put, "/v1/safety-plan", "\"2\"", edit))).GetProperty("version").GetInt32().Should().Be(3);
+        mineBody.GetProperty("contacts")[0].GetProperty("relation").GetString().Should().Be("أخت");
+        // An app that does not send the relationship keeps the one the therapist wrote.
+        var third = await Read(await Send(patient.Me, HttpMethod.Put, "/v1/safety-plan", "\"2\"", edit));
+        third.GetProperty("version").GetInt32().Should().Be(3);
+        third.GetProperty("contacts").EnumerateArray().Select(c => c.GetProperty("relation").GetString()).Should().Equal("أخت", "صديق");
 
         var versions = await Read(await sara.GetAsync($"{path}/versions"));
         versions.EnumerateArray().Select(v => v.GetProperty("version").GetInt32()).Should().Equal(3, 2, 1);
@@ -312,6 +355,58 @@ public sealed class ClinicalCareTests : IAsyncLifetime
         }
         var matches = await Read(await patient.Me.GetAsync("/v1/matches"));
         matches.GetProperty("items")[0].GetProperty("therapist").GetProperty("displayName").GetString().Should().Be("أ. سارة م.", "the previous therapist comes first");
+
+        // P53's way back is stored as the patient's request to continue, linked to the closure.
+        await using var asPatient = _sql.Context(StaticCurrentUser.ForPatient(patient.PatientId));
+        (await asPatient.CareContinueRequests.SingleAsync()).Should().Match<Tamaneen.Clinical.Care.CareContinueRequest>(r => r.Source == "return" && r.ClosureId == id);
+    }
+
+    [Fact]
+    public async Task Closing_is_refused_while_the_patient_asks_to_continue_and_the_banner_says_so()
+    {
+        var patient = await BookedPatientAsync("أ. سارة م.");
+        using var sara = _hosts.ApiClient("en", await _hosts.StaffSignInAsync("sara@staff.tamaneen.dev"));
+        var path = $"/v1/staff/patients/{patient.Pseudonym}/closure";
+        (await Read(await sara.GetAsync(path))).GetProperty("blockedReason").ValueKind.Should().Be(JsonValueKind.Null);
+
+        (await Read(await patient.Me.PostAsync("/v1/me/care/continue", null))).GetProperty("requested").GetBoolean().Should().BeTrue();
+        (await Read(await patient.Me.PostAsync("/v1/me/care/continue", null))).GetProperty("requested").GetBoolean().Should().BeTrue();
+        var view = await Read(await sara.GetAsync(path));
+        view.GetProperty("blocked").GetBoolean().Should().BeTrue();
+        view.GetProperty("blockedReason").GetString().Should().Be("patient_continue");
+        var body = new { reasonCode = "goals_met", patientSummary = "ملخص.", warningSigns = "قلة النوم", whatToDo = "المشي", submit = true };
+        var refused = await Problem(await Send(sara, HttpMethod.Put, path, "\"0\"", body), 409);
+        refused.GetProperty("code").GetString().Should().Be(ErrorCodes.ClosureBlockedByPatient);
+        refused.GetProperty("reason").GetString().Should().Be("patient_continue");
+        refused.GetProperty("detail").GetString().Should().Contain("asked to continue");
+
+        // Row-level security: the patient, the treating therapist and supervisors see the request; another therapist does not.
+        var saraId = await SaraIdAsync();
+        await using (var other = _sql.Context(StaticCurrentUser.ForStaff(Guid.NewGuid(), AppRoles.Therapist)))
+        {
+            (await other.CareContinueRequests.CountAsync(r => r.PatientId == patient.PatientId)).Should().Be(0);
+        }
+
+        await using (var treating = _sql.Context(StaticCurrentUser.ForStaff(saraId, AppRoles.Therapist)))
+        {
+            (await treating.CareContinueRequests.CountAsync(r => r.PatientId == patient.PatientId)).Should().Be(1);
+        }
+
+        await using (var supervisor = _sql.Context(StaticCurrentUser.ForStaff(Guid.NewGuid(), AppRoles.Supervisor)))
+        {
+            (await supervisor.CareContinueRequests.CountAsync(r => r.PatientId == patient.PatientId)).Should().Be(1);
+        }
+
+        var stranger = await _sql.CreatePatientAsync("س");
+        await using (var asStranger = _sql.Context(StaticCurrentUser.ForPatient(stranger.Id)))
+        {
+            (await asStranger.CareContinueRequests.CountAsync()).Should().Be(0);
+        }
+
+        // Withdrawn: closing may go ahead.
+        (await Read(await patient.Me.DeleteAsync("/v1/me/care/continue"))).GetProperty("requested").GetBoolean().Should().BeFalse();
+        (await Read(await sara.GetAsync(path))).GetProperty("blocked").GetBoolean().Should().BeFalse();
+        (await Read(await Send(sara, HttpMethod.Put, path, "\"0\"", body))).GetProperty("closure").GetProperty("status").GetString().Should().Be("submitted");
     }
 
     [Fact]
@@ -323,7 +418,41 @@ public sealed class ClinicalCareTests : IAsyncLifetime
         var path = $"/v1/staff/patients/{patient.Pseudonym}/closure";
         (await Read(await sara.GetAsync(path))).GetProperty("blocked").GetBoolean().Should().BeTrue();
         var body = new { reasonCode = "goals_met", patientSummary = "ملخص.", warningSigns = "قلة النوم", whatToDo = "المشي", submit = true };
-        (await Problem(await Send(sara, HttpMethod.Put, path, "\"0\"", body), 409)).GetProperty("code").GetString().Should().Be(ErrorCodes.ClosureBlocked);
+        var refused = await Problem(await Send(sara, HttpMethod.Put, path, "\"0\"", body), 409);
+        refused.GetProperty("code").GetString().Should().Be(ErrorCodes.ClosureBlocked);
+        refused.GetProperty("reason").GetString().Should().Be("risk");
+        (await Read(await sara.GetAsync(path))).GetProperty("blockedReason").GetString().Should().Be("risk");
+    }
+
+    [Fact]
+    public async Task The_alert_history_has_risk_raises_and_missed_sessions_for_the_readers_patients_only()
+    {
+        var patient = await BookedPatientAsync("أ. سارة م.");
+        using var sara = _hosts.ApiClient("en", await _hosts.StaffSignInAsync("sara@staff.tamaneen.dev"));
+        await Read(await sara.PostAsJsonAsync($"/v1/staff/patients/{patient.Pseudonym}/risk-flag", new { riskLevel = 3, reason = "Private clinical reason" }));
+        await StartAppointmentNowAsync(patient.AppointmentId);
+        (await sara.PostAsJsonAsync($"/v1/staff/appointments/{patient.AppointmentId}/outcome", new { outcome = "no_show" })).StatusCode.Should().Be(HttpStatusCode.NoContent);
+        _hosts.Notifier.Sent.Should().Contain(n => n.Kind == "appointment.no_show_followup" && n.Data["pseudonymId"] == patient.Pseudonym && n.Data["reason"] == "high_risk", "EC-53: a missed session at risk 3–4 goes to the supervisors");
+
+        using var response = await sara.GetAsync("/v1/staff/alerts?status=handled");
+        var raw = await response.Content.ReadAsStringAsync();
+        raw.Should().NotContain("Private clinical reason", "the reason a clinician typed never leaves the ledger");
+        var history = (await Read(response)).GetProperty("history").EnumerateArray().Where(h => h.GetProperty("pseudonymId").GetString() == patient.Pseudonym).ToList();
+        var raised = history.Single(h => h.GetProperty("kind").GetString() == "risk_raised");
+        raised.GetProperty("level").GetInt32().Should().Be(3);
+        raised.GetProperty("params").GetProperty("to").GetString().Should().Be("3");
+        raised.GetProperty("by").GetString().Should().Be("Sara M.");
+        var missed = history.Single(h => h.GetProperty("kind").GetString() == "no_show");
+        missed.GetProperty("detail").GetString().Should().Be("high_risk");
+        missed.GetProperty("final").GetString().Should().Be("not_rebooked");
+
+        // Another therapist sees none of it; a supervisor sees it all.
+        using var noura = _hosts.ApiClient("en", await _hosts.StaffSignInAsync("noura@staff.tamaneen.dev"));
+        (await Read(await noura.GetAsync("/v1/staff/alerts?status=handled"))).GetProperty("history").EnumerateArray()
+            .Should().NotContain(h => h.GetProperty("pseudonymId").GetString() == patient.Pseudonym);
+        using var fahad = _hosts.ApiClient("en", await _hosts.StaffSignInAsync("fahad@staff.tamaneen.dev"));
+        (await Read(await fahad.GetAsync("/v1/staff/alerts?status=handled"))).GetProperty("history").EnumerateArray()
+            .Count(h => h.GetProperty("pseudonymId").GetString() == patient.Pseudonym).Should().Be(2);
     }
 
     [Fact]

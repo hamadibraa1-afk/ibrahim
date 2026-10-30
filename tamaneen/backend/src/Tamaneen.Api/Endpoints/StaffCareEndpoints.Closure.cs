@@ -41,11 +41,12 @@ public static partial class StaffCareEndpoints
 
     public sealed record ClosurePrefillDto(int SessionCount, int DurationWeeks);
 
-    public sealed record ClosureViewDto(string PseudonymId, ClosureDto? Closure, ClosurePrefillDto Prefill, IReadOnlyList<MeasureDto> Measures, bool Blocked, bool CanEdit, bool CanSignOff, string TherapistName);
+    /// <summary><paramref name="BlockedReason"/>: why closing is refused, <c>risk</c> or <c>patient_continue</c> (S57 banner), or null.</summary>
+    public sealed record ClosureViewDto(string PseudonymId, ClosureDto? Closure, ClosurePrefillDto Prefill, IReadOnlyList<MeasureDto> Measures, bool Blocked, bool CanEdit, bool CanSignOff, string TherapistName, string? BlockedReason = null);
 
     public sealed record SaveClosureRequest(string? ReasonCode, int? SessionCount, int? DurationWeeks, string? PatientSummary, string? WarningSigns, string? WhatToDo, string? FollowUp, bool? KeepLibrary, bool Submit);
 
-    public sealed record ClosureQueueItemDto(Guid Id, string PseudonymId, string TherapistName, string ReasonCode, int SessionCount, DateTimeOffset SubmittedAt, bool Blocked);
+    public sealed record ClosureQueueItemDto(Guid Id, string PseudonymId, string TherapistName, string ReasonCode, int SessionCount, DateTimeOffset SubmittedAt, bool Blocked, string? BlockedReason = null);
 
     public sealed record SignOffRequest(bool Approve, string? Reason);
 
@@ -138,11 +139,7 @@ public static partial class StaffCareEndpoints
             clock);
         if (request.Submit)
         {
-            if (await care.ClosureBlockedAsync(patientId, clock, ct).ConfigureAwait(false))
-            {
-                throw new DomainException(ErrorCodes.ClosureBlocked, "Risk 3–4 in the last 14 days.");
-            }
-
+            ThrowIfBlocked(await care.ClosureBlockReasonAsync(patientId, clock, ct).ConfigureAwait(false));
             closure.Submit(clock);
         }
 
@@ -183,8 +180,9 @@ public static partial class StaffCareEndpoints
         var items = new List<ClosureQueueItemDto>();
         foreach (var r in rows)
         {
+            var blockedBy = await care.ClosureBlockReasonAsync(r.PatientId, clock, ct).ConfigureAwait(false);
             items.Add(new ClosureQueueItemDto(r.Id, pseudonyms.GetValueOrDefault(r.PatientId, string.Empty), names.GetValueOrDefault(r.TherapistUserId, string.Empty), r.ReasonCode, r.SessionCount, r.SubmittedAtUtc!.Value,
-                await care.ClosureBlockedAsync(r.PatientId, clock, ct).ConfigureAwait(false)));
+                blockedBy is not null, blockedBy));
         }
 
         return TypedResults.Ok(items);
@@ -203,11 +201,7 @@ public static partial class StaffCareEndpoints
         var freedSlots = false;
         if (request.Approve)
         {
-            if (await care.ClosureBlockedAsync(closure.PatientId, clock, ct).ConfigureAwait(false))
-            {
-                throw new DomainException(ErrorCodes.ClosureBlocked, "Risk 3–4 in the last 14 days.");
-            }
-
+            ThrowIfBlocked(await care.ClosureBlockReasonAsync(closure.PatientId, clock, ct).ConfigureAwait(false));
             closure.SignOff(me, clock);
             foreach (var assignment in await care.Db.CareAssignments.Where(a => a.PatientId == closure.PatientId && a.TherapistUserId == closure.TherapistUserId && a.EndedAtUtc == null).ToListAsync(ct).ConfigureAwait(false))
             {
@@ -289,15 +283,31 @@ public static partial class StaffCareEndpoints
         var dto = closure is null ? null : await ClosureDtoAsync(closure, user, care, protector, ct).ConfigureAwait(false);
         CareRecords.SendVersion(http, (closure is { Status: not CareClosureStatus.SignedOff } ? closure.Revision : 0).ToString(CultureInfo.InvariantCulture));
         var therapist = closure?.TherapistUserId ?? (user.Role == AppRoles.Therapist ? user.UserId : (await care.ActiveTherapistsAsync(patientId, ct).ConfigureAwait(false)).FirstOrDefault());
+        var blockedBy = await care.ClosureBlockReasonAsync(patientId, clock, ct).ConfigureAwait(false);
         return new ClosureViewDto(
             StaffEndpoints.Canonical(pseudonymId),
             dto,
             await PrefillAsync(care, patientId, clock, ct).ConfigureAwait(false),
             measures,
-            await care.ClosureBlockedAsync(patientId, clock, ct).ConfigureAwait(false),
+            blockedBy is not null,
             user.Role == AppRoles.Therapist,
             user.Role is AppRoles.Supervisor or AppRoles.ClinicalLead && closure is { Status: CareClosureStatus.Submitted } && closure.TherapistUserId != user.UserId,
-            await care.StaffNameAsync(therapist, user.Language, ct).ConfigureAwait(false));
+            await care.StaffNameAsync(therapist, user.Language, ct).ConfigureAwait(false),
+            blockedBy);
+    }
+
+    /// <summary>409 with the reason: the risk rule (<c>error.closure.blocked</c>) or the patient's request to continue (<c>error.closure.patient_continue</c>).</summary>
+    private static void ThrowIfBlocked(string? reason)
+    {
+        if (reason == CareRecords.BlockedByPatient)
+        {
+            throw new DomainException(ErrorCodes.ClosureBlockedByPatient, "The patient asked to continue care.").With("reason", reason);
+        }
+
+        if (reason is not null)
+        {
+            throw new DomainException(ErrorCodes.ClosureBlocked, "Risk 3–4 in the last 14 days.").With("reason", reason);
+        }
     }
 
     private static async Task<ClosureDto> ClosureDtoAsync(CareClosure c, ICurrentUser user, CareRecords care, IPatientDataProtector protector, CancellationToken ct)

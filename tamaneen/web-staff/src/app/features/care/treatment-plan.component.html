@@ -30,7 +30,12 @@
     <section class="tm-card" data-testid="plan-editor">
       <h2 class="tm-card-title">{{ 'care.plan.versionDraft' | translate: { version: (h.current?.version ?? 0) + 1 } }}</h2>
       <p class="tm-muted small">{{ 'care.plan.writtenByYou' | translate }}</p>
-      <fieldset class="form" [disabled]="!h.canEdit">
+      @if (waiting()) {
+        <p class="banner" role="status" data-testid="plan-waiting">{{ 'care.plan.waiting' | translate }}</p>
+      } @else if (restored()) {
+        <p class="tm-muted small" data-testid="plan-restored">{{ 'care.plan.restored' | translate }}</p>
+      }
+      <fieldset class="form" [disabled]="!h.canEdit" (input)="remember()">
         <mat-form-field appearance="outline" class="tm-full">
           <mat-label>{{ 'care.plan.goals' | translate }}</mat-label>
           <textarea matInput rows="5" maxlength="4000" [(ngModel)]="draft.goals" [placeholder]="'care.plan.goalsPlaceholder' | translate" data-testid="plan-goals"></textarea>
@@ -58,7 +63,7 @@
         <div class="row">
           <mat-form-field appearance="outline">
             <mat-label>{{ 'care.plan.frequency' | translate }}</mat-label>
-            <mat-select [(ngModel)]="draft.frequency" data-testid="plan-frequency">
+            <mat-select [(ngModel)]="draft.frequency" (selectionChange)="remember()" data-testid="plan-frequency">
               @for (f of frequencies; track f) { <mat-option [value]="f">{{ 'care.plan.frequencyOption.' + f | translate }}</mat-option> }
             </mat-select>
           </mat-form-field>
@@ -106,6 +111,8 @@
             @for (g of v.goals; track $index) { <li><span class="grow">{{ g.text }}</span><span class="chip">{{ 'care.plan.goalStatus.' + g.status | translate }}</span></li> }
           </ul>
           <p class="pre">{{ v.interventions }}</p>
+          <p class="small" data-testid="viewing-frequency">{{ 'care.plan.frequency' | translate }}: {{ 'care.plan.frequencyOption.' + v.frequency | translate }} · {{ 'care.plan.reviewOn' | translate }}: {{ v.reviewOn | tmDate: 'longDate' : language.language() }}</p>
+          @if (v.followUpNotes) { <p class="pre">{{ v.followUpNotes }}</p> }
           <button mat-button type="button" (click)="viewing.set(null)">{{ 'common.close' | translate }}</button>
         </section>
       }

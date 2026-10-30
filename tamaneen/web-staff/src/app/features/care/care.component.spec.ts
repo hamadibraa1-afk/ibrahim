@@ -7,7 +7,9 @@ import { PatientHomeworkComponent } from './patient-homework.component';
 import { PatientOverviewComponent } from './patient-overview.component';
 import { SafetyPlanBuilderComponent } from './safety-plan-builder.component';
 import { SessionNotesComponent } from './session-notes.component';
-import { TreatmentPlanComponent } from './treatment-plan.component';
+import { TreatmentPlanComponent, planDraftKey } from './treatment-plan.component';
+import { TestBed } from '@angular/core/testing';
+import { SessionService } from '../../core/session/session.service';
 
 afterEach(() => {
   document.querySelector('.cdk-overlay-container')?.replaceChildren();
@@ -208,6 +210,54 @@ describe('TreatmentPlanComponent (S15)', () => {
     expect(q('no-plan')!.textContent).toContain('لا إصدارات بعد');
   });
 
+  it('keeps the draft in memory when the connection drops and saves it again when it returns', async () => {
+    const first = await renderCare(TreatmentPlanComponent, { id: PID });
+    first.backend.expectOne(`${PATIENT_URL}/plans`).flush(planHistory());
+    await first.update();
+    type(first.q('plan-goals'), 'Sleep better\nWalk weekly');
+    await first.update();
+    first.q('plan-save')!.click();
+    first.backend.expectOne(`${PATIENT_URL}/plans`).error(new ProgressEvent('error'));
+    await first.update();
+    expect(first.q('plan-waiting')!.textContent).toContain('Connection lost');
+
+    // Leaving and coming back keeps it (memory only: nothing is written to browser storage).
+    first.fixture.destroy();
+    expect(JSON.stringify({ ...localStorage })).not.toContain('Walk weekly');
+    expect(JSON.stringify({ ...sessionStorage })).not.toContain('Walk weekly');
+    const again = TestBed.createComponent(TreatmentPlanComponent);
+    again.componentRef.setInput('id', PID);
+    again.detectChanges();
+    const el = again.nativeElement as HTMLElement;
+    first.backend.expectOne(`${PATIENT_URL}/plans`).flush(planHistory());
+    // Back online in the meantime: the waiting save is sent at once, based on the version it started from.
+    const resent = first.backend.expectOne(`${PATIENT_URL}/plans`);
+    expect(resent.request.headers.get('If-Match')).toBe('"2"');
+    expect(resent.request.body.goals.length).toBe(2);
+    resent.flush({});
+    first.backend.expectOne(`${PATIENT_URL}/plans`).flush(planHistory({ current: { ...planHistory().current!, version: 3 } }));
+    again.detectChanges();
+    await first.update();
+    again.detectChanges();
+    expect(el.querySelector('[data-testid="plan-waiting"]')).toBeNull();
+    expect(TestBed.inject(SessionService).draft(planDraftKey(PID))).toBeNull();
+  });
+
+  it('sends a waiting save when the browser reports it is online again', async () => {
+    const { q, update, backend } = await renderCare(TreatmentPlanComponent, { id: PID });
+    backend.expectOne(`${PATIENT_URL}/plans`).flush(planHistory());
+    await update();
+    type(q('plan-interventions'), 'CBT-I, breathing');
+    q('plan-save')!.click();
+    backend.expectOne(`${PATIENT_URL}/plans`).error(new ProgressEvent('error'));
+    await update();
+    window.dispatchEvent(new Event('online'));
+    const resent = backend.expectOne(`${PATIENT_URL}/plans`);
+    expect(resent.request.body.interventions).toBe('CBT-I, breathing');
+    resent.flush({});
+    backend.expectOne(`${PATIENT_URL}/plans`).flush(planHistory());
+  });
+
   it('opens an older version read-only', async () => {
     const { q, update, backend } = await renderCare(TreatmentPlanComponent, { id: PID });
     backend.expectOne(`${PATIENT_URL}/plans`).flush(planHistory());
@@ -217,6 +267,7 @@ describe('TreatmentPlanComponent (S15)', () => {
     await update();
     expect(q('plan-viewing')!.textContent).toContain('Breathing');
     expect(q('plan-viewing')!.textContent).toContain('Read-only');
+    expect(q('viewing-frequency')!.textContent).toContain('Weekly');
   });
 });
 
@@ -233,6 +284,37 @@ function noteView(overrides: Partial<SessionNoteView> = {}): SessionNoteView {
 }
 
 describe('SessionNotesComponent (S33)', () => {
+  it('quotes the patient\'s pre-session note and books the next session from the therapist\'s free times', async () => {
+    const { q, update, backend, overlay, fixture } = await renderCare(SessionNotesComponent, { id: PID, appointmentId: 'ap-5' });
+    backend.expectOne(`${PATIENT_URL}/sessions/ap-5/note`).flush(noteView({ preSessionNote: 'Sleep is better, but Sunday\'s meeting worries me.', preSessionNoteAt: '2026-10-19T18:00:00Z', nextAppointment: null }));
+    await update();
+    expect(q('pre-session-note')!.textContent).toContain('Sunday\'s meeting worries me.');
+    q('book-next')!.click();
+    await update();
+    backend.expectOne((r) => r.url === `${API}/v1/staff/free-slots`).flush([{ slotId: 's7', startsAt: '2026-10-27T07:00:00Z', durationMinutes: 50 }]);
+    await update();
+    (overlay().querySelector('[data-testid="slot-select"] .mat-mdc-select-trigger') as HTMLElement).click();
+    await update();
+    (overlay().querySelector('[data-testid="slot-s7"]') as HTMLElement).click();
+    await update();
+    (overlay().querySelector('[data-testid="slot-submit"]') as HTMLElement).click();
+    const post = backend.expectOne(`${PATIENT_URL}/appointments`);
+    expect(post.request.body).toEqual({ slotId: 's7' });
+    post.flush({ id: 'ap-6', pseudonymId: PID, startsAt: '2026-10-27T07:00:00Z', durationMinutes: 50, sequenceNumber: 6, status: 'confirmed' });
+    await update();
+    expect(q('next-session')).not.toBeNull();
+    expect(q('book-next')).toBeNull();
+    fixture.destroy();
+  });
+
+  it('says when the patient wrote nothing before the session', async () => {
+    const { q, update, backend, fixture } = await renderCare(SessionNotesComponent, { id: PID, appointmentId: 'ap-5' });
+    backend.expectOne(`${PATIENT_URL}/sessions/ap-5/note`).flush(noteView());
+    await update();
+    expect(q('no-pre-session')!.textContent).toContain('wrote nothing');
+    fixture.destroy();
+  });
+
   it('saves a SOAP draft with revision 0, then signs it after a confirmation', async () => {
     const { q, update, backend, overlay, fixture } = await renderCare(SessionNotesComponent, { id: PID, appointmentId: 'ap-5' });
     backend.expectOne(`${PATIENT_URL}/sessions/ap-5/note`).flush(noteView());
@@ -319,14 +401,32 @@ describe('SafetyPlanBuilderComponent (S35)', () => {
     q('add-person')!.click();
     await update();
     type(q('contact-name'), 'Friend Khalid');
+    type(q('contact-relation'), 'Friend');
+    type(q('contact-phone'), '12');
+    await update();
+    expect((q('contact-add') as HTMLButtonElement).disabled).toBeTrue();
     type(q('contact-phone'), '0559876543');
     await update();
+    q('contact-add')!.click();
+    await update();
+    // The phone is optional.
+    q('add-person')!.click();
+    await update();
+    type(q('contact-name'), 'Coach Ali');
+    type(q('contact-relation'), 'Coach');
+    await update();
+    expect((q('contact-add') as HTMLButtonElement).disabled).toBeFalse();
     q('contact-add')!.click();
     await update();
     q('safety-save')!.click();
     const post = backend.expectOne(`${PATIENT_URL}/safety-plans`);
     expect(post.request.headers.get('If-Match')).toBe('"2"');
-    expect(post.request.body.contacts).toEqual([{ name: 'My sister', phone: '0551234567' }, { name: 'Friend Khalid', phone: '0559876543' }]);
+    expect(post.request.body.contacts).toEqual([
+      { name: 'My sister', phone: '0551234567' },
+      { name: 'Friend Khalid', relation: 'Friend', phone: '0559876543' },
+      { name: 'Coach Ali', relation: 'Coach', phone: '' },
+    ]);
+    expect(q('contacts')!.textContent).toContain('Coach Ali (Coach)');
     const p = problem(412, 'Changed');
     post.flush(p.body, p.options);
     backend.expectOne(`${PATIENT_URL}/safety-plan`).flush(safetyPlan({ version: 3, sections: { ...safetyPlan().sections, copingAlone: 'A short walk' } }));
@@ -354,9 +454,18 @@ function closureView(overrides: Partial<ClosureView> = {}): ClosureView {
 describe('EndOfCareComponent (S57)', () => {
   it('blocks sending at high risk and explains why', async () => {
     const { q, update, backend } = await renderCare(EndOfCareComponent, { id: PID }, { language: 'ar' });
-    backend.expectOne(`${PATIENT_URL}/closure`).flush(closureView({ blocked: true }), { headers: new HttpHeaders({ ETag: '"0"' }) });
+    backend.expectOne(`${PATIENT_URL}/closure`).flush(closureView({ blocked: true, blockedReason: 'risk' }), { headers: new HttpHeaders({ ETag: '"0"' }) });
     await update();
     expect(q('close-blocked')!.textContent).toContain('3 أو 4');
+    expect((q('close-submit') as HTMLButtonElement).disabled).toBeTrue();
+  });
+
+  it('says when the patient asked to continue care', async () => {
+    const { q, update, backend } = await renderCare(EndOfCareComponent, { id: PID }, { language: 'ar' });
+    backend.expectOne(`${PATIENT_URL}/closure`).flush(closureView({ blocked: true, blockedReason: 'patient_continue' }), { headers: new HttpHeaders({ ETag: '"0"' }) });
+    await update();
+    expect(q('close-blocked')!.textContent).toContain('طلب المريض الاستمرار');
+    expect(q('close-blocked')!.textContent).not.toContain('3 أو 4');
     expect((q('close-submit') as HTMLButtonElement).disabled).toBeTrue();
   });
 

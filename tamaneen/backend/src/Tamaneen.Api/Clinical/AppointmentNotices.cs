@@ -17,12 +17,14 @@ public sealed partial class AppointmentNotices(INotifier notifier, TamaneenDbCon
     public const string CancelledByTherapist = "appointment.cancelled_by_therapist";
     public const string RunningLate = "appointment.running_late";
     public const string Missed = "appointment.missed";
+    public const string Rescheduled = "appointment.rescheduled";
+    public const string Booked = "appointment.booked";
 
     /// <summary>EC-52: a therapist cancelled and no substitute was offered; supervisors rebook within 48 hours.</summary>
-    public const string RebookNeeded = "appointment.rebook_needed";
+    public const string RebookNeeded = Notifications.NotificationKinds.AppointmentRebookNeeded;
 
     /// <summary>EC-53 and §11.1: a second missed session in a row, or a missed session at risk 3–4.</summary>
-    public const string NoShowFollowUp = "appointment.no_show_followup";
+    public const string NoShowFollowUp = Notifications.NotificationKinds.AppointmentNoShowFollowUp;
 
     public Task CancelledAsync(Appointment a, string pseudonymId, CancellationToken ct) => SendAsync(async () =>
     {
@@ -30,15 +32,24 @@ public sealed partial class AppointmentNotices(INotifier notifier, TamaneenDbCon
         await ToSupervisorsAsync(RebookNeeded, a, pseudonymId, $"/patients/{pseudonymId}", ct).ConfigureAwait(false);
     });
 
+    /// <summary>S33 «حجز الجلسة القادمة»: the therapist booked the next session; the patient sees it in P27.</summary>
+    public Task BookedAsync(Appointment a, CancellationToken ct) => SendAsync(() =>
+        ToPatientAsync(a, Booked, $"/appointments/{a.Id}", ct));
+
+    /// <summary>S18 reschedule by the therapist: the patient sees the new time (P27 detail).</summary>
+    public Task RescheduledAsync(Appointment a, CancellationToken ct) => SendAsync(() =>
+        ToPatientAsync(a, Rescheduled, $"/appointments/{a.Id}", ct));
+
     public Task LateAsync(Appointment a, CancellationToken ct) => SendAsync(() =>
         ToPatientAsync(a, RunningLate, $"/appointments/{a.Id}/lobby", ct, ("minutes", a.TherapistLateMinutes!.Value.ToString(CultureInfo.InvariantCulture))));
 
-    public Task MissedAsync(Appointment a, string pseudonymId, bool followUp, CancellationToken ct) => SendAsync(async () =>
+    /// <summary><paramref name="followUpReason"/>: "repeated" or "high_risk" when supervisors follow up (EC-53), else null.</summary>
+    public Task MissedAsync(Appointment a, string pseudonymId, string? followUpReason, CancellationToken ct) => SendAsync(async () =>
     {
         await ToPatientAsync(a, Missed, $"/appointments/{a.Id}/missed", ct).ConfigureAwait(false);
-        if (followUp)
+        if (followUpReason is not null)
         {
-            await ToSupervisorsAsync(NoShowFollowUp, a, pseudonymId, $"/patients/{pseudonymId}", ct).ConfigureAwait(false);
+            await ToSupervisorsAsync(NoShowFollowUp, a, pseudonymId, $"/patients/{pseudonymId}", ct, ("reason", followUpReason)).ConfigureAwait(false);
         }
     });
 
@@ -68,12 +79,17 @@ public sealed partial class AppointmentNotices(INotifier notifier, TamaneenDbCon
         await notifier.NotifyAsync(new Notification(a.PatientId, kind, data, link), ct).ConfigureAwait(false);
     }
 
-    private async Task ToSupervisorsAsync(string kind, Appointment a, string pseudonymId, string link, CancellationToken ct)
+    private async Task ToSupervisorsAsync(string kind, Appointment a, string pseudonymId, string link, CancellationToken ct, params (string Key, string Value)[] extra)
     {
         var supervisors = await db.UserAccounts.AsNoTracking().Where(u => u.Role == AppRoles.Supervisor).Select(u => u.Id).ToListAsync(ct).ConfigureAwait(false);
         var data = Base(a);
         data["pseudonymId"] = pseudonymId;
         data["therapistUserId"] = a.TherapistUserId.ToString();
+        foreach (var (key, value) in extra)
+        {
+            data[key] = value;
+        }
+
         foreach (var id in supervisors)
         {
             await notifier.NotifyAsync(new Notification(id, kind, data, link), ct).ConfigureAwait(false);

@@ -29,7 +29,7 @@ import { ProblemMessageComponent } from '../../shared/problem-message.component'
               <a [routerLink]="['/patients', c.pseudonymId, 'close']" dir="ltr" class="pseudonym">{{ c.pseudonymId }}</a>
               <span>{{ c.therapistName }}</span>
               <span class="tm-muted">{{ 'care.close.reasons.' + c.reasonCode | translate }} · {{ c.submittedAt | tmDate: 'dayTime' : language.language() }}</span>
-              @if (c.blocked) { <span class="tm-tag tm-risk-3" data-testid="closure-blocked">{{ 'care.closures.blocked' | translate }}</span> }
+              @if (c.blocked) { <span class="tm-tag tm-risk-3" data-testid="closure-blocked">{{ (c.blockedReason === 'patient_continue' ? 'care.closures.blockedByPatient' : 'care.closures.blocked') | translate }}</span> }
             </li>
           }
         </ul>

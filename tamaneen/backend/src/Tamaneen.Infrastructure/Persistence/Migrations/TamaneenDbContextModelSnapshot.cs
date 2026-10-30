@@ -163,6 +163,38 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                     b.ToTable("CareClosures", "clinical");
                 });
 
+            modelBuilder.Entity("Tamaneen.Clinical.Care.CareContinueRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("ClosureId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("RequestedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(16)");
+
+                    b.Property<DateTimeOffset?>("WithdrawnAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClosureId");
+
+                    b.HasIndex("PatientId", "WithdrawnAtUtc");
+
+                    b.ToTable("CareContinueRequests", "clinical");
+                });
+
             modelBuilder.Entity("Tamaneen.Clinical.Care.CareRequest", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1166,8 +1198,17 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                         .IsUnicode(false)
                         .HasColumnType("varchar(16)");
 
+                    b.Property<DateOnly?>("LicenseExpiresOn")
+                        .HasColumnType("date");
+
                     b.Property<bool>("LicenseVerified")
                         .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("LicenseVerifiedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("LicenseVerifiedByUserId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("SessionMinutes")
                         .HasColumnType("int");
@@ -2103,6 +2144,14 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                     b.Property<byte?>("OnCallTier")
                         .HasColumnType("tinyint");
 
+                    b.Property<string>("TimeZone")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(64)")
+                        .HasDefaultValue("Asia/Riyadh");
+
                     b.HasKey("UserId");
 
                     b.ToTable("StaffProfiles", "identity");
@@ -2290,6 +2339,20 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Tamaneen.Clinical.Care.CareClosure", b =>
                 {
+                    b.HasOne("Tamaneen.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Tamaneen.Clinical.Care.CareContinueRequest", b =>
+                {
+                    b.HasOne("Tamaneen.Clinical.Care.CareClosure", null)
+                        .WithMany()
+                        .HasForeignKey("ClosureId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Tamaneen.Identity.UserAccount", null)
                         .WithMany()
                         .HasForeignKey("PatientId")

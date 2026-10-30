@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { API_BASE_URL } from '../api';
 import type {
   Availability,
+  FreeSlot,
   AvailabilityPreview,
   AvailabilitySlot,
   SaveAvailabilityRequest,
@@ -34,6 +35,21 @@ export class SchedulingApiService {
 
   cancel(id: string, reasonCode: TherapistCancelReason, note?: string): Observable<StaffAppointment> {
     return this.http.post<StaffAppointment>(`${this.appointment(id)}/cancel`, { reasonCode, note: note || undefined });
+  }
+
+  /** SB-26: moves the session to another of the therapist's own free times; the reason is required, the patient is told. */
+  reschedule(id: string, slotId: string, reasonCode: TherapistCancelReason): Observable<StaffAppointment> {
+    return this.http.post<StaffAppointment>(`${this.appointment(id)}/reschedule`, { slotId, reasonCode });
+  }
+
+  /** S33 «حجز الجلسة القادمة»: books one of the therapist's own free times for their patient. */
+  bookNext(pseudonymId: string, slotId: string): Observable<StaffAppointment> {
+    return this.http.post<StaffAppointment>(`${this.base}/v1/staff/patients/${encodeURIComponent(pseudonymId)}/appointments`, { slotId });
+  }
+
+  /** The therapist's own free times from now on (default 28 days). */
+  freeSlots(days = 28): Observable<FreeSlot[]> {
+    return this.http.get<FreeSlot[]>(`${this.base}/v1/staff/free-slots`, { params: new HttpParams().set('days', days) });
   }
 
   availability(): Observable<Availability> {

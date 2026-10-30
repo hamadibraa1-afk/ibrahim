@@ -32,7 +32,13 @@ public static partial class StaffCareEndpoints
 
     public sealed record LastWeekDto(int HomeworkDone, int HomeworkTarget, double? MoodAverage, int Alerts);
 
-    public sealed record SessionNoteViewDto(string PseudonymId, NoteAppointmentDto Appointment, SessionNoteDto? Note, LastWeekDto LastWeek, bool CanEdit, IReadOnlyDictionary<string, string[]> Templates);
+    /// <summary>
+    /// <paramref name="PreSessionNote"/>: «ما أراد المريض الحديث عنه», the patient's own note before this session
+    /// (P41 SessionPrep), decrypted for the clinician. <paramref name="NextAppointment"/>: the patient's next confirmed
+    /// session with this therapist, if any, for «حجز الجلسة القادمة».
+    /// </summary>
+    public sealed record SessionNoteViewDto(string PseudonymId, NoteAppointmentDto Appointment, SessionNoteDto? Note, LastWeekDto LastWeek, bool CanEdit, IReadOnlyDictionary<string, string[]> Templates,
+        string? PreSessionNote = null, DateTimeOffset? PreSessionNoteAt = null, NoteAppointmentDto? NextAppointment = null);
 
     public sealed record SaveNoteRequest(string? Template, Dictionary<string, string>? Fields, List<string>? SummaryPoints, bool ShareSummary);
 
@@ -42,7 +48,8 @@ public static partial class StaffCareEndpoints
     {
         var (patientId, appointment) = await NoteAppointmentAsync(care, pseudonymId, appointmentId, ct).ConfigureAwait(false);
         var note = await care.Db.SessionNotes.AsNoTracking().FirstOrDefaultAsync(n => n.AppointmentId == appointmentId, ct).ConfigureAwait(false);
-        audit.Append("patient.note_opened", "Appointment", appointmentId.ToString(), StaffEndpoints.Canonical(pseudonymId));
+        var hasPrep = await care.Db.SessionPrep.AsNoTracking().AnyAsync(s => s.AppointmentId == appointmentId, ct).ConfigureAwait(false);
+        audit.Append("patient.note_opened", "Appointment", appointmentId.ToString(), StaffEndpoints.Canonical(pseudonymId), hasPrep ? "pre_session_note" : null);
         await care.Db.SaveChangesAsync(ct).ConfigureAwait(false);
         return TypedResults.Ok(await NoteViewAsync(http, pseudonymId, patientId, appointment, note, user, care, protector, clock, ct).ConfigureAwait(false));
     }
@@ -206,13 +213,22 @@ public static partial class StaffCareEndpoints
         }
 
         CareRecords.SendVersion(http, (note?.Revision ?? 0).ToString(CultureInfo.InvariantCulture));
+        var prep = await care.Db.SessionPrep.AsNoTracking().FirstOrDefaultAsync(s => s.AppointmentId == a.Id, ct).ConfigureAwait(false);
+        var prepNote = prep is null ? null : await protector.DecryptAsync(patientId, Fields.PreSessionNote, prep.NoteCipher, ct).ConfigureAwait(false);
+        var now = clock.UtcNow;
+        var next = await care.Db.Appointments.AsNoTracking()
+            .Where(x => x.PatientId == patientId && x.TherapistUserId == a.TherapistUserId && x.Status == AppointmentStatus.Confirmed && x.StartsAtUtc > now && x.Id != a.Id)
+            .OrderBy(x => x.StartsAtUtc).FirstOrDefaultAsync(ct).ConfigureAwait(false);
         return new SessionNoteViewDto(
             StaffEndpoints.Canonical(pseudonymId),
             new NoteAppointmentDto(a.Id, a.StartsAtUtc, a.DurationMinutes, a.SequenceNumber, SchedulingEndpoints.StatusCode(a.Status)),
             dto,
             await LastWeekAsync(care, patientId, clock, ct).ConfigureAwait(false),
             user.Role == AppRoles.Therapist && a.TherapistUserId == user.UserId,
-            SessionNote.Templates);
+            SessionNote.Templates,
+            prepNote,
+            prep?.UpdatedAtUtc,
+            next is null ? null : new NoteAppointmentDto(next.Id, next.StartsAtUtc, next.DurationMinutes, next.SequenceNumber, SchedulingEndpoints.StatusCode(next.Status)));
     }
 
     /// <summary>"Last week" panel: homework done against the target, the mood average and crisis alerts of the last 7 days.</summary>

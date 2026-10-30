@@ -120,6 +120,7 @@ public static class ErrorCodes
     public const string ClosureNotSubmitted = "error.closure.not_submitted";
     public const string ClosureSignOffNotAllowed = "error.closure.signoff_not_allowed";
     public const string ClosureBlocked = "error.closure.blocked";
+    public const string ClosureBlockedByPatient = "error.closure.patient_continue";
     public const string ChangeRequestOpen = "error.change_request.open";
     public const string NotInCare = "error.care.not_in_care";
 }

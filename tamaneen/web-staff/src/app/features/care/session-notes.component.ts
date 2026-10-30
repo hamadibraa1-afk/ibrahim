@@ -14,6 +14,11 @@ import { type ShownError, shownError, statusOf } from '../../core/api/problem';
 import { StaffApiService } from '../../core/api/staff-api.service';
 import type { NoteTemplate, SessionNoteView } from '../../core/api/types';
 import { LanguageService } from '../../core/i18n/language.service';
+import { SchedulingApiService } from '../../core/api/scheduling-api.service';
+import { getDisplayTimeZone } from '../../core/i18n/format';
+import { MatDialog } from '@angular/material/dialog';
+import type { StaffAppointment } from '../../core/api/types';
+import { SlotPickerDialogComponent, type SlotPickerDialogData } from '../../shared/slot-picker-dialog.component';
 import { LocalDatePipe } from '../../shared/local-date.pipe';
 import { ProblemMessageComponent } from '../../shared/problem-message.component';
 import { careUi } from './care-dialogs';
@@ -44,6 +49,8 @@ export class SessionNotesComponent implements OnDestroy {
   private readonly api = inject(StaffApiService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly ui = careUi();
+  private readonly scheduling = inject(SchedulingApiService);
+  private readonly dialog = inject(MatDialog);
   protected readonly language = inject(LanguageService);
 
   protected readonly templates = NOTE_TEMPLATES;
@@ -75,6 +82,30 @@ export class SessionNotesComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     clearInterval(this.timer);
+  }
+
+  /** «حجز الجلسة القادمة»: one of the therapist's own free times; the patient is told. */
+  protected bookNext(): void {
+    const v = this.view();
+    if (!v) {
+      return;
+    }
+    const data: SlotPickerDialogData<StaffAppointment> = {
+      titleKey: 'care.notes.bookNextTitle',
+      bodyKey: 'care.notes.bookNextBody',
+      confirmKey: 'care.notes.bookNextConfirm',
+      timeZone: getDisplayTimeZone() ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
+      submit: (slotId) => this.scheduling.bookNext(v.pseudonymId, slotId),
+    };
+    this.dialog
+      .open<SlotPickerDialogComponent<StaffAppointment>, SlotPickerDialogData<StaffAppointment>, StaffAppointment>(SlotPickerDialogComponent, { data, width: '460px', direction: this.language.direction() })
+      .afterClosed()
+      .subscribe((booked) => {
+        if (booked) {
+          this.view.update((current) => (current ? { ...current, nextAppointment: { id: booked.id, startsAt: booked.startsAt, durationMinutes: booked.durationMinutes, sequenceNumber: booked.sequenceNumber, status: booked.status } } : current));
+          this.ui.notify('care.notes.bookNextDone');
+        }
+      });
   }
 
   protected keys(): string[] {

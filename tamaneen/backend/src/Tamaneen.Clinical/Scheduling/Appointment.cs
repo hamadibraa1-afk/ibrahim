@@ -188,6 +188,30 @@ public sealed class Appointment : Entity
     }
 
     /// <summary>
+    /// S18 "reschedule" by the therapist (SB-26): a confirmed session that has not ended moves to another of the
+    /// same therapist's free times. Not bound by the patient's 24-hour limit; the patient is told.
+    /// </summary>
+    public void MoveByTherapist(AvailabilitySlot slot, IClock clock)
+    {
+        if (Status != AppointmentStatus.Confirmed || clock.UtcNow >= StartsAtUtc.AddMinutes(DurationMinutes))
+        {
+            throw new DomainException(ErrorCodes.AppointmentNotChangeable, $"Appointment {Id} is not confirmed or already over.");
+        }
+
+        if (slot.TherapistUserId != TherapistUserId)
+        {
+            throw new DomainException(ErrorCodes.SlotUnavailable, "A session can only move to the same therapist's slot.");
+        }
+
+        SlotId = slot.Id;
+        StartsAtUtc = slot.StartsAtUtc;
+        DurationMinutes = slot.DurationMinutes;
+        Rescheduled = true;
+        TherapistLateMinutes = null;
+        TherapistLateAtUtc = null;
+    }
+
+    /// <summary>
     /// P54: the therapist has not joined after the start time. Moving the session is then free and not bound by the
     /// 24-hour limit; the caller has checked that the therapist is late.
     /// </summary>

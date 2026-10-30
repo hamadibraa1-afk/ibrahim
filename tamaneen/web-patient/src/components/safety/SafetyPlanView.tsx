@@ -319,9 +319,16 @@ export function SafetyPlanView({ numbers }: { numbers: ReactNode }) {
                       <ul className="flex flex-wrap gap-2" data-testid="plan-contacts">
                         {(view.contacts ?? []).map((contact) => (
                           <li key={`${contact.name}-${contact.phone}`}>
-                            <CallLink number={contact.phone} variant="chip">
-                              <bdi dir="auto">{contact.name}</bdi>
-                            </CallLink>
+                            {contact.phone ? (
+                              <CallLink number={contact.phone} variant="chip">
+                                <bdi dir="auto">{contact.name}</bdi>
+                              </CallLink>
+                            ) : (
+                              // S35 allows a person without a phone: shown, but not as a call button.
+                              <span dir="auto" className="inline-flex min-h-touch items-center rounded-full bg-tint-teal px-4 py-2 text-sm font-semibold text-primary-strong" data-testid="plan-contact-no-phone">
+                                {contact.name}
+                              </span>
+                            )}
                           </li>
                         ))}
                       </ul>

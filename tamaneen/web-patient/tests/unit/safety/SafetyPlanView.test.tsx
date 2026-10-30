@@ -55,6 +55,15 @@ beforeEach(() => {
 });
 
 describe('SafetyPlanView (P37)', () => {
+  it('shows a person added without a phone (S35) by name, without a call link', async () => {
+    routeApi({ 'GET safety-plan': () => ({ ...plan, contacts: [{ name: 'جاري أبو فهد', phone: '' }, ...plan.contacts] }) });
+    renderWithIntl(<SafetyPlanView numbers={numbers} />, 'ar');
+    expect(await screen.findByTestId('plan-contact-no-phone')).toHaveTextContent('جاري أبو فهد');
+    const contacts = screen.getByTestId('plan-contacts');
+    expect(contacts.querySelectorAll('a[href^="tel:"]')).toHaveLength(1);
+    expect(contacts.querySelector('a[href="tel:"]')).toBeNull();
+  });
+
   it('renders the fetched plan and stores it on the device with the locale', async () => {
     routeApi({ 'GET safety-plan': () => plan });
     renderWithIntl(<SafetyPlanView numbers={numbers} />, 'ar');

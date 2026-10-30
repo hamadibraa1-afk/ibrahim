@@ -20,7 +20,9 @@ export interface RecoverStartRequest { contact: string }
 export interface ChallengeResponse { challengeId: string; maskedContact: string; resendAfterSeconds: number; expiresInSeconds: number }
 export interface RecoverCompleteRequest { challengeId: string; code: string; newPassword: string }
 
-export interface StaffMe { userId: string; displayName: string; role: StaffRole; language: Lang; onCall: boolean }
+export interface StaffMe { userId: string; displayName: string; role: StaffRole; language: Lang; onCall: boolean; /** S32: the zone the portal shows times in. */ timeZone?: string }
+/** GET/PUT /v1/staff/me/preferences (S32). */
+export interface StaffPreferences { timeZone: string; timeZones: string[] }
 
 export type RiskLevel = 1 | 2 | 3 | 4;
 export interface PendingProfile { pseudonymId: string; riskLevel: RiskLevel; phq9: number | null; gad7: number | null; firstSessionAt: string | null }
@@ -268,6 +270,9 @@ export interface StaffAppointment {
 }
 export interface Schedule { from: string; to: string; timeZone: string; items: StaffAppointment[] }
 
+/** One of the therapist's own free times (GET /v1/staff/free-slots): S18 reschedule, S33 book the next session. */
+export interface FreeSlot { slotId: string; startsAt: string; durationMinutes: number }
+
 export type SlotStatus = 'open' | 'held' | 'booked' | 'blocked';
 export interface AvailabilitySlot { slotId: string; startsAt: string; endsAt: string; status: SlotStatus; source: 'template' | 'manual' }
 /** day: 0 Sunday … 6 Saturday; start and end "HH:mm" in the therapist's time zone. */
@@ -318,7 +323,24 @@ export interface Alert {
   closedAt: string | null;
   closeOutcome: string | null;
 }
-export interface Alerts { items: Alert[]; openCount: number; handledCount: number }
+export type AlertHistoryKind = 'crisis' | 'risk_raised' | 'no_show';
+/** One row of the S20 30-day history: ids, levels and codes only (never a clinician's typed reason). */
+export interface AlertHistoryItem {
+  kind: AlertHistoryKind;
+  id: string;
+  pseudonymId: string;
+  level: RiskLevel;
+  at: string;
+  /** crisis · risk_raised · repeated, high_risk or missed (no_show). */
+  detail: string;
+  /** crisis: { number }; risk_raised: { from, to }. */
+  params: Record<string, string>;
+  /** crisis: the close outcome; risk_raised: raised; no_show: rebooked or not_rebooked. */
+  final: string;
+  by: string | null;
+  eventId: string | null;
+}
+export interface Alerts { items: Alert[]; openCount: number; handledCount: number; history: AlertHistoryItem[] }
 
 export interface StaffProfile {
   displayNameAr: string;
@@ -337,7 +359,16 @@ export interface StaffProfile {
   acceptingNewPatients: boolean;
   licenseVerified: boolean;
   specialtyCatalog: string[];
+  /** yyyy-MM-dd, set when the licence is verified. */
+  licenseExpiresOn: string | null;
+  /** Display name of the admin or lead who last changed the verification. */
+  licenseVerifiedBy: string | null;
+  licenseVerifiedAt: string | null;
+  /** Verified and expiring within 30 days (or past): the S21 warning banner. */
+  licenseExpiringSoon: boolean;
 }
+/** PUT /v1/staff/therapists/{userId}/license (admin or clinical lead). */
+export interface LicenseVerification { userId: string; verified: boolean; expiresOn: string | null; verifiedBy: string | null; verifiedAt: string | null; expiringSoon: boolean }
 export interface UpdateStaffProfileRequest {
   displayNameAr: string;
   displayNameEn: string;
@@ -423,11 +454,17 @@ export interface SessionNoteView {
   lastWeek: { homeworkDone: number; homeworkTarget: number; moodAverage: number | null; alerts: number };
   canEdit: boolean;
   templates: Record<NoteTemplate, string[]>;
+  /** «ما أراد المريض الحديث عنه»: the patient's own note before this session (P41), or null. */
+  preSessionNote?: string | null;
+  preSessionNoteAt?: string | null;
+  /** The patient's next confirmed session with this therapist, if any. */
+  nextAppointment?: { id: string; startsAt: string; durationMinutes: number; sequenceNumber: number; status: string } | null;
 }
 export interface SaveNoteRequest { template: NoteTemplate; fields: Record<string, string>; summaryPoints: string[]; shareSummary: boolean }
 
 export type SafetyPlanSection = 'warningSigns' | 'copingAlone' | 'distractions' | 'peopleToAsk' | 'professionals' | 'safeEnvironment' | 'reasonToLive';
-export interface PlanContact { name: string; phone: string }
+/** S35/P37 person to ask for help: the relationship (≤ 50) and the phone are optional (phone is "" when none). */
+export interface PlanContact { name: string; phone: string; relation?: string | null }
 export type AuthorRole = 'patient' | 'therapist' | 'supervisor' | 'lead' | 'admin';
 export interface StaffSafetyPlan {
   pseudonymId: string;
@@ -469,14 +506,17 @@ export interface ClosureView {
   closure: Closure | null;
   prefill: { sessionCount: number; durationWeeks: number };
   measures: { instrument: string; start: number | null; end: number | null }[];
-  /** Risk 3–4 in the last 14 days: sending and signing off are refused. */
+  /** Sending and signing off are refused (§10.4): see blockedReason. */
   blocked: boolean;
   canEdit: boolean;
   canSignOff: boolean;
   therapistName: string;
+  /** risk: level 3–4 in the last 14 days; patient_continue: the patient asked to continue care. */
+  blockedReason?: ClosureBlockReason | null;
 }
+export type ClosureBlockReason = 'risk' | 'patient_continue';
 export interface SaveClosureRequest { reasonCode: ClosureReason | ''; sessionCount: number; durationWeeks: number; patientSummary: string; warningSigns: string; whatToDo: string; followUp: ClosureFollowUp; keepLibrary: boolean; submit: boolean }
-export interface ClosureQueueItem { id: string; pseudonymId: string; therapistName: string; reasonCode: ClosureReason; sessionCount: number; submittedAt: string; blocked: boolean }
+export interface ClosureQueueItem { id: string; pseudonymId: string; therapistName: string; reasonCode: ClosureReason; sessionCount: number; submittedAt: string; blocked: boolean; blockedReason?: ClosureBlockReason | null }
 
 export interface OverviewAppointment { id: string; startsAt: string; durationMinutes: number; sequenceNumber: number; status: string; noteStatus: 'none' | 'draft' | 'signed' }
 export interface PatientOverview {

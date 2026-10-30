@@ -11,6 +11,9 @@
 
     @if (step() === 'credentials') {
       <h1 #heading tabindex="-1">{{ 'auth.title' | translate }}</h1>
+      @if (idle) {
+        <p class="tm-muted" role="status" data-testid="idle-note">{{ 'auth.idleSignedOut' | translate }}</p>
+      }
       <form [formGroup]="credentials" (ngSubmit)="submitCredentials()" novalidate>
         <mat-form-field appearance="outline" class="tm-full">
           <mat-label>{{ 'auth.contact' | translate }}</mat-label>

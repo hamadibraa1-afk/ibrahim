@@ -16,6 +16,17 @@ const OPTIONS: Record<DateStyle, Intl.DateTimeFormatOptions> = {
 
 const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
 
+/** S32: the zone the staff member chose; undefined shows the browser's. Set at sign-in and when it changes. */
+let displayTimeZone: string | undefined;
+
+export function setDisplayTimeZone(timeZone: string | null | undefined): void {
+  displayTimeZone = timeZone || undefined;
+}
+
+export function getDisplayTimeZone(): string | undefined {
+  return displayTimeZone;
+}
+
 /** Formats an ISO-8601 value in the portal language. A date without a time ("2026-10-19") is a calendar date, not a UTC instant. */
 export function formatDate(value: string | null | undefined, style: DateStyle, language: Language): string {
   if (!value) {
@@ -26,7 +37,7 @@ export function formatDate(value: string | null | undefined, style: DateStyle, l
   if (Number.isNaN(date.getTime())) {
     return '';
   }
-  return new Intl.DateTimeFormat(intlLocale(language), { ...OPTIONS[style], ...(dateOnly ? { timeZone: 'UTC' } : {}) }).format(date);
+  return new Intl.DateTimeFormat(intlLocale(language), { ...OPTIONS[style], ...(dateOnly ? { timeZone: 'UTC' } : displayTimeZone ? { timeZone: displayTimeZone } : {}) }).format(date);
 }
 
 /** "mm:ss" for a remaining duration; minutes keep counting past 59, and an elapsed deadline shows 00:00. */

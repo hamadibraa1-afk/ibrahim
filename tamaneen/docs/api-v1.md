@@ -99,13 +99,14 @@ and P01, P02, P12 and P15 show the emergency numbers instead of the start button
 | GET | /v1/homework | → HomeworkList (`doneThisPeriod` counts this week, Sunday to Saturday in the patient's time zone, for every frequency; a cancelled exercise's `endsOn` is the day it was cancelled) | P29 |
 | GET | /v1/homework/{id} | → HomeworkDetail | P10 |
 | POST | /v1/homework/{id}/checkins | CheckinRequest → CheckinResponse (note gated) | P10 |
-| GET/PUT | /v1/safety-plan | SafetyPlan + `ETag` / UpdateSafetyPlanRequest (gate; sections ≤ 1,000 characters each, the same limit as S35, and contact names). `contacts`: up to 5 `{ name ≤ 100, phone }`, encrypted with the patient key like the sections. `version` (also the ETag) is shared with the therapist's S35 builder: If-Match is optional here (queued offline writes), but when sent it must name the current version, else 412 `error.version.changed` | P37 |
+| GET/PUT | /v1/safety-plan | SafetyPlan + `ETag` / UpdateSafetyPlanRequest (gate; sections ≤ 1,000 characters each, the same limit as S35, and contact names). `contacts`: up to 5 `{ name ≤ 100, relation? ≤ 50, phone (optional: "" when none; checked when given) }` (S35 «إضافة شخص»; a contact sent without `relation` keeps the one stored for the same name and phone, so an app that does not send it loses nothing; `""` clears it), encrypted with the patient key like the sections. `version` (also the ETag) is shared with the therapist's S35 builder: If-Match is optional here (queued offline writes), but when sent it must name the current version, else 412 `error.version.changed` | P37 |
 | GET | /v1/catalogs/change-reasons | → ChangeReason[] (`not_comfortable`, `schedule`, `gender`, `specialty`, `other`, labels in Accept-Language) | P44 |
 | POST | /v1/me/change-therapist-requests | CreateChangeRequest { reasonCode? } (Idempotency-Key) → 201 ChangeTherapistRequest (409 `error.change_request.open` + `current`; 409 `error.care.not_in_care` without a therapist) | P44 |
 | GET | /v1/me/change-therapist-requests/current | → ChangeTherapistRequest (`status`: requested, matching, offered, closed; 404 when none is open) | P44 |
 | GET | /v1/me/care-closure | → CareClosure (404 until a supervisor signed off the end of care) | P53 |
 | GET | /v1/me/care-closure/summary | → `text/plain` `summary.txt` (plain-language summary and relapse plan, no diagnosis or scores; audited `care.summary_downloaded`) | P53 |
-| POST | /v1/me/care/return | → { next } (`/matches` with the previous therapist suggested first, or `/therapists`). Needs the short safety check first: a P23 screening (`POST /v1/screening/cssrs`, same gate) completed after the sign-off, within the last hour and below High, and no crisis lock; otherwise 409 `error.care.safety_check_required` + `next: /care/return`. The audit row names the screening | P53 |
+| POST | /v1/me/care/return | → { next } (`/matches` with the previous therapist suggested first, or `/therapists`). Needs the short safety check first: a P23 screening (`POST /v1/screening/cssrs`, same gate) completed after the sign-off, within the last hour and below High, and no crisis lock; otherwise 409 `error.care.safety_check_required` + `next: /care/return`. The audit row names the screening | P53 ; also stores a CareContinueRequest `return` linked to the closure)| POST | /v1/me/care/return | → { next } (`/matches` with the previous therapist suggested first, or `/therapists`). Needs the short safety check first: a P23 screening (`POST /v1/screening/cssrs`, same gate) completed after the sign-off, within the last hour and below High, and no crisis lock; otherwise 409 `error.care.safety_check_required` + `next: /care/return`. The audit row names the screening. It also stores a CareContinueRequest `return` linked to the closure, which blocks S57 sign-off while open. | P53 |
+| GET · POST · DELETE | /v1/me/care/continue | → ContinueCare { requested, requestedAt } (§10.4 «طلب المريض الاستمرار»: POST records the patient's request to continue care (idempotent; audited `care.continue_requested`), DELETE withdraws it (`care.continue_withdrawn`). While a request made during the current care is open, S57 sending and sign-off are refused with 409 `error.closure.patient_continue`. Table `clinical.CareContinueRequests`, under `PatientDataPolicy` with `fn_patient_access`. API only: the patient-app entry point belongs to the patient side) | S57 rule (patient) |
 | GET | /v1/appointments/{id}/session-summary | → SessionSummary { points, sharedAt } (the points the therapist shared when signing the note; 404 otherwise) | P43 |
 
 Idempotency (P66 outbox, EC-01, EC-07): `POST /v1/mood`, `POST /v1/homework/{id}/checkins` and `PUT /v1/safety-plan` accept an
@@ -132,7 +133,10 @@ Kinds: appointment.booked, appointment.rescheduled, appointment.cancelled, appoi
 appointment.running_late, appointment.missed, appointment.reminder_24h, appointment.reminder_1h,
 session.therapist_joined, waitlist.slot_open, triage.matches_ready, homework.assigned, homework.feedback, homework.cancelled, care.ended,
 safety_plan.updated, crisis.follow_up, security.new_sign_in (patient); staff.appointment.booked|rescheduled|cancelled,
-care.change_requested, crisis.closed, appointment.missed_not_ok, safety_plan.updated, security.new_sign_in (staff). Other modules call
+care.change_requested, crisis.closed, appointment.missed_not_ok, safety_plan.updated, security.new_sign_in (staff); appointment.rebook_needed
+(Appointments, important) and appointment.no_show_followup (Risk, important, `reason` repeated|high_risk) (supervisors,
+each with its own text and a link to `/patients/{pseudonymId}`). `staff.appointment.booked` links to
+`/patients/{pseudonymId}/file` while the clinical file waits for approval, else to the overview. Other modules call
 `INotifier.NotifyAsync(new Notification(recipientUserId, kind, data, link?))`; an unknown kind is stored with the
 generic text. A background worker (once a minute) sends the 24 h and 1 h reminders, the crisis follow-ups and the held
 copies; each reminder and follow-up has a per-recipient dedupe key, so restarts never repeat one. In Development the
@@ -184,21 +188,23 @@ During scheduled maintenance (`Platform:Maintenance` true) every patient endpoin
 
 | Method | Path | Body → Response | Screen |
 |---|---|---|---|
-| GET | /v1/staff/me | → StaffMe | shell |
+| GET | /v1/staff/me | → StaffMe { userId, displayName, role, language, onCall, timeZone } | shell |
 | POST | /v1/staff/access-denied | { path } → 204 (audit `staff.access_denied`, the refused portal path as the reason) | S06 /forbidden |
 | GET | /v1/staff/dashboard | → TherapistDashboard | S01 |
 | GET | /v1/staff/inbox?category=all\|risk\|appointments\|messages\|system&cursor= | → Inbox (unacknowledged crisis events the reader may see come first with `pinned: true`; a therapist's are their own patients') | S41 |
 | GET | /v1/staff/inbox/unread-count | → { unreadCount } (stored unread + pinned alerts) | shell bell |
 | POST | /v1/staff/inbox/{id}/read · /v1/staff/inbox/read-all | → 204 (pinned alerts stay until acknowledged) | S41 |
-| GET | /v1/staff/alerts?status=open\|handled\|all | → Alerts { items: Alert[], openCount, handledCount } (open events and those closed in the last 30 days; a therapist sees their own patients only; audited `staff.alerts_viewed`). Acknowledge and hand to on-call use the worker's acknowledge and `actions` (kind refer) | S20 |
-| GET/PUT | /v1/staff/profile | → StaffProfile / UpdateStaffProfileRequest → StaffProfile (therapist; 400 `error.profile.capacity_below_caseload`, 400 `error.profile.contact_details` for phones, e-mails or links in the text, 400 field errors) | S21 |
+| GET | /v1/staff/alerts?status=open\|handled\|all | → Alerts { items: Alert[], openCount, handledCount, history: AlertHistoryItem[] } (open events and those closed in the last 30 days; `history` is the 30-day log, newest first, of closed crisis events, risk raises (SB-17, read from the audit ledger: levels and who, never the typed reason) and missed sessions, each { kind: crisis\|risk_raised\|no_show, id, pseudonymId, level, at, detail, params, final, by, eventId }; `handledCount` counts it; a therapist sees their own patients only, others what row-level security shows; audited `staff.alerts_viewed`). Acknowledge and hand to on-call use the worker's acknowledge and `actions` (kind refer) | S20 |
+| GET/PUT | /v1/staff/profile | → StaffProfile / UpdateStaffProfileRequest → StaffProfile (therapist; the licence card fields `licenseVerified`, `licenseExpiresOn` (date), `licenseVerifiedBy` (name), `licenseVerifiedAt`, `licenseExpiringSoon` (verified and ≤ 30 days to expiry) are read-only here; 400 `error.profile.capacity_below_caseload`, 400 `error.profile.contact_details` for phones, e-mails or links in the text, 400 field errors) | S21 |
+| PUT | /v1/staff/therapists/{userId}/license | { verified, expiresOn? (a future date, required when verified) } → LicenseVerification { userId, verified, expiresOn, verifiedBy, verifiedAt, expiringSoon } (admin or clinical lead only, else 403; records who and when; audited `therapist.license_verified` / `therapist.license_unverified`). The minimum S05/S09 will build on | S21 (data) |
 | GET | /v1/staff/me/security | → StaffSecurity { passwordChangedAt, totpEnabled, recoveryCodesRemaining, idleTimeoutMinutes: 15, sessions } | S32 |
 | PUT | /v1/staff/me/password | { currentPassword, newPassword, code } → 204 (the other sessions end) | S32 |
 | POST | /v1/staff/me/totp/move | { password, code } → { secret, otpauthUri, moveToken, expiresAt } (nothing changes yet) | S32 |
 | POST | /v1/staff/me/totp/move/confirm | { moveToken, code from the new device } → 204 (410 `error.totp.move_expired` after 10 minutes) | S32 |
 | POST | /v1/staff/me/recovery-codes | { password, code } → RecoveryCodes | S32 |
-| DELETE | /v1/staff/me/sessions/{id} · POST /v1/staff/me/sessions/revoke-others | → 204 | S32, S41 |
+| DELETE | /v1/staff/me/sessions/{id} · POST /v1/staff/me/sessions/revoke-others | → 204 (the portal asks for confirmation first) | S32, S41 |
 | GET/PUT | /v1/staff/me/notifications | StaffNotificationPrefs { riskAlerts (always true), bookings, weeklyReport, dailyDigest } | S32 |
+| GET/PUT | /v1/staff/me/preferences | → StaffPreferences { timeZone, timeZones[] } / { timeZone } (S32 «المنطقة الزمنية»; the spec's PUT /v1/me/preferences, under /v1/staff/me like the other staff settings; one of `timeZones`, else 400 `error.timezone.invalid`; audited `staff.time_zone_changed`; the portal shows every time and the S18 schedule days in it) | S32 |
 | GET | /v1/staff/patients/{pseudonymId}/intake | → StaffIntakeView (audited) | S01 |
 | POST | /v1/staff/patients/{pseudonymId}/intake/approve | → 204 | S01 |
 | POST | /v1/staff/appointments/{id}/outcome | { outcome: attended, no_show, cancelled } → 204 | S01, S18 |
@@ -206,6 +212,8 @@ During scheduled maintenance (`Platform:Maintenance` true) every patient endpoin
 | GET | /v1/staff/appointments/{id} | → StaffAppointment (audited `appointment.viewed`; therapist, own sessions only) | S18, session page |
 | POST | /v1/staff/appointments/{id}/running-late | { minutes 1–60 } → StaffAppointment (from 10 minutes before until the planned end, else 409 `error.appointment.not_lateable`; a new value replaces the old; notifies the patient) | S18 → P54 |
 | POST | /v1/staff/appointments/{id}/cancel | { reasonCode: emergency, illness, schedule_conflict, technical, other; note? ≤ 500 } → StaffAppointment (400 field error without a known reason; 409 once over or not confirmed; takes the time out of the calendar (`blocked`; the therapist can reopen it from S19), notifies the patient and the supervisors) | S18 → P67 |
+| POST | /v1/staff/appointments/{id}/reschedule | { slotId, reasonCode (as cancel) } → StaffAppointment (SB-26: the therapist's own free time only, else 409 `error.slot.unavailable`; 409 once over or not confirmed; not bound by the patient's 24-hour limit; the old time is taken out of the calendar (`blocked`); notifies the patient `appointment.rescheduled`; audited `appointment.rescheduled` with `therapist:<reason>`) | S18 → P27 |
+| GET | /v1/staff/free-slots?days=1–60 (default 28) | → FreeSlot[] { slotId, startsAt, durationMinutes } (the therapist's own open times from now on) | S18 reschedule, S33 book next |
 | GET | /v1/staff/availability?therapistId= | → Availability (own; supervisors and the lead may pass `therapistId` and read any therapist's, a therapist asking for another gets 404) | S19 |
 | PUT | /v1/staff/availability | SaveAvailabilityRequest { sessionMinutes, bufferMinutes, weekly: { day 0–6, start, end "HH:mm" }[], exceptions: { id?, kind: leave\|absence, startsAt, endsAt }[] } → SaveAvailabilityResult { added, removed, affected, availability } (400 field errors `weekly.N`: overlap, end_before_start, invalid; therapist) | S19 |
 | POST | /v1/staff/availability/preview | SaveAvailabilityRequest → { added, removed, affected } (nothing saved) | S19 |
@@ -221,13 +229,14 @@ During scheduled maintenance (`Platform:Maintenance` true) every patient endpoin
 | GET | /v1/staff/patients/{pseudonymId}/plans | → PlanHistory + `ETag` (current version, "0" before the first; audited) | S15 |
 | GET | /v1/staff/patients/{pseudonymId}/plans/{version} | → PlanVersion (read-only, audited) | S15 |
 | POST | /v1/staff/patients/{pseudonymId}/plans | `If-Match` + SavePlanRequest → 201 PlanVersion + `ETag` (428 `error.version.required`, 412 `error.version.changed`, 409 `error.plan.file_not_approved`; therapist) | S15 |
-| GET | /v1/staff/patients/{pseudonymId}/sessions/{appointmentId}/note | → SessionNoteView + `ETag` (note revision, "0" before the first save; audited `patient.note_opened`) | S33 |
+| GET | /v1/staff/patients/{pseudonymId}/sessions/{appointmentId}/note | → SessionNoteView + `ETag` (note revision, "0" before the first save; SessionNoteView also carries `preSessionNote` and `preSessionNoteAt` («ما أراد المريض الحديث عنه», the patient's P41 note, decrypted for clinicians; the audit row says `pre_session_note` when there is one) and `nextAppointment` (the patient's next confirmed session with this therapist, or null); audited `patient.note_opened`) | S33 |
+| POST | /v1/staff/patients/{pseudonymId}/appointments | { slotId } → StaffAppointment (S33 «حجز الجلسة القادمة»: therapist only, for a patient they actively care for, else 404; one of their own free times, else 409 `error.slot.unavailable`; notifies the patient `appointment.booked`; audited `appointment.booked` with `therapist`) | S33 |
 | PUT | /v1/staff/patients/{pseudonymId}/sessions/{appointmentId}/note | `If-Match` + SaveNoteRequest { template soap/dap/free, fields ≤ 4,000 each, summaryPoints ≤ 3 × 300, shareSummary } → SessionNoteView (the session's therapist, from its start; 409 `error.note.signed`) | S33 |
 | POST | …/note/sign · …/note/addenda | `If-Match` → SessionNoteView (locks; shares the points → `session.summary_shared`) · { text } → SessionNoteView (signed notes only) | S33 |
 | GET | /v1/staff/patients/{pseudonymId}/safety-plan | → StaffSafetyPlan + `ETag` (version; audited) | S35 |
 | GET | /v1/staff/patients/{pseudonymId}/safety-plan/versions · /versions/{n} | → SafetyPlanVersionSummary[] · SafetyPlanVersion | S35 |
 | POST | /v1/staff/patients/{pseudonymId}/safety-plans | `If-Match` + UpdateSafetyPlanRequest → 201 StaffSafetyPlan (therapist; 428/412; notifies `safety_plan.updated` to the patient) | S35 |
-| GET · PUT | /v1/staff/patients/{pseudonymId}/closure | → ClosureView + `ETag` · `If-Match` + SaveClosureRequest → ClosureView (`submit: true` sends it for sign-off: required fields as field errors, 409 `error.closure.blocked` at risk 3–4 in 14 days; notifies `care.closure_submitted`) | S57 |
+| GET · PUT | /v1/staff/patients/{pseudonymId}/closure | → ClosureView + `ETag` · `If-Match` + SaveClosureRequest → ClosureView (`submit: true` sends it for sign-off: required fields as field errors, 409 `error.closure.blocked` at risk 3–4 in 14 days, 409 `error.closure.patient_continue` while the patient asks to continue, each with `reason` (`risk` / `patient_continue`); ClosureView and the `/v1/staff/closures` queue items carry `blockedReason` for the banner; notifies `care.closure_submitted`) | S57 |
 | POST | /v1/staff/patients/{pseudonymId}/closure/withdraw | → ClosureView | S57 |
 | GET | /v1/staff/closures | → ClosureQueueItem[] (submitted; supervisor, lead) | S57 |
 | POST | /v1/staff/closures/{id}/sign-off | { approve, reason? } → Closure (approve: ends the care assignment, cancels the remaining sessions with that therapist, notifies `care.ended`; refuse: reason required, notifies `care.closure_rejected`; not the author, 403) | S57 |
@@ -321,3 +330,5 @@ Staff refresh and sign-out send `{}`; the refresh token is the HttpOnly cookie `
   `session.summary_shared` (patient); `safety_plan.updated` (patient when the therapist saves, the treating therapist when the
   patient saves); `care.closure_submitted` (supervisors, lead); `care.closure_rejected` (therapist); `care.ended` (patient);
   `care.change_requested` (supervisors, lead); `care.transferred` (the former therapist).
+
+**Staff sessions (S32).** The portal signs a staff member out after 15 minutes without input (keyboard, pointer, scroll), on the server as well (`/v1/auth/logout`), and sign-in returns to the page (`/login?reason=idle&returnUrl=…`). A live video session (`/sessions/:id`) is never interrupted. The guide sets no server-side idle rule; the staff refresh-token lifetime is the guide's 8 hours (was 12).

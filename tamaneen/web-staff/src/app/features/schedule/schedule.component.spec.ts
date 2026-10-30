@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { API_BASE_URL } from '../../core/api';
 import type { Schedule, StaffAppointment } from '../../core/api/types';
 import { LanguageService } from '../../core/i18n/language.service';
@@ -100,8 +100,9 @@ describe('ScheduleComponent', () => {
     backend.expectOne((r) => r.url === `${API}/v1/staff/schedule` && r.params.get('from') === next).flush({ from: next, to: addDays(next, 6), timeZone: TZ, items: [] });
   });
 
-  it('records the outcome of a session that has started', async () => {
+  it('records «تمت الجلسة» and goes on to the session notes (S33)', async () => {
     const { el, update } = await render([appointment()]);
+    const navigate = spyOn(TestBed.inject(Router), 'navigate').and.resolveTo(true);
     (el.querySelector('[data-testid="appointment-a1"]') as HTMLButtonElement).click();
     await update();
     expect(el.querySelector('[data-testid="appointment-state"]')!.textContent).toContain('The session has ended. Record the outcome.');
@@ -110,7 +111,59 @@ describe('ScheduleComponent', () => {
     expect(req.request.body).toEqual({ outcome: 'attended' });
     req.flush(null);
     await update();
-    backend.expectOne((r) => r.url === `${API}/v1/staff/schedule`).flush({ from: '', to: '', timeZone: TZ, items: [appointment({ status: 'completed', outcomeRecorded: true })] });
+    expect(navigate).toHaveBeenCalledWith(['/patients', 'P-9KD2-07LM', 'sessions', 'a1', 'notes']);
+  });
+
+  it('records a no-show and stays on the schedule', async () => {
+    const { el, update } = await render([appointment()]);
+    (el.querySelector('[data-testid="appointment-a1"]') as HTMLButtonElement).click();
+    await update();
+    (el.querySelector('[data-testid="outcome-no-show"]') as HTMLButtonElement).click();
+    backend.expectOne(`${API}/v1/staff/appointments/a1/outcome`).flush(null);
+    await update();
+    backend.expectOne((r) => r.url === `${API}/v1/staff/schedule`).flush({ from: '', to: '', timeZone: TZ, items: [appointment({ status: 'no_show', missed: true })] });
+  });
+
+  it('links a past session to its notes, and not a cancelled one', async () => {
+    const { el, update } = await render([
+      appointment({ status: 'completed', outcomeRecorded: true, canRecordOutcome: false }),
+      appointment({ id: 'a2', startsAt: zonedToUtc(today(TZ), '13:00', TZ), status: 'cancelled_by_patient', cancelledBy: 'patient' }),
+    ]);
+    (el.querySelector('[data-testid="appointment-a1"]') as HTMLButtonElement).click();
+    await update();
+    expect(el.querySelector('[data-testid="session-notes"]')!.getAttribute('href')).toBe('/patients/P-9KD2-07LM/sessions/a1/notes');
+    (el.querySelector('[data-testid="appointment-a2"]') as HTMLButtonElement).click();
+    await update();
+    expect(el.querySelector('[data-testid="session-notes"]')).toBeNull();
+  });
+
+  it('reschedules to one of the therapist\'s free times with a reason', async () => {
+    const future = zonedToUtc(addDays(today(TZ), 1), '11:00', TZ);
+    const { el, update } = await render([appointment({ startsAt: future, canRecordOutcome: false, canCancel: true })]);
+    (el.querySelector('[data-testid="appointment-a1"]') as HTMLButtonElement).click();
+    await update();
+    (el.querySelector('[data-testid="reschedule"]') as HTMLButtonElement).click();
+    await update();
+    backend.expectOne((r) => r.url === `${API}/v1/staff/free-slots`).flush([{ slotId: 's9', startsAt: zonedToUtc(addDays(today(TZ), 2), '10:00', TZ), durationMinutes: 50 }]);
+    await update();
+    const dialog = document.querySelector('tm-slot-picker-dialog') as HTMLElement;
+    (dialog.querySelector('[data-testid="slot-submit"]') as HTMLButtonElement).click();
+    await update();
+    backend.expectNone(`${API}/v1/staff/appointments/a1/reschedule`);
+    (dialog.querySelector('[data-testid="slot-select"] .mat-mdc-select-trigger') as HTMLElement).click();
+    await update();
+    (document.querySelector('[data-testid="slot-s9"]') as HTMLElement).click();
+    await update();
+    (dialog.querySelector('[data-testid="slot-reason"] .mat-mdc-select-trigger') as HTMLElement).click();
+    await update();
+    (document.querySelector('[data-testid="reason-illness"]') as HTMLElement).click();
+    await update();
+    (dialog.querySelector('[data-testid="slot-submit"]') as HTMLButtonElement).click();
+    const req = backend.expectOne(`${API}/v1/staff/appointments/a1/reschedule`);
+    expect(req.request.body).toEqual({ slotId: 's9', reasonCode: 'illness' });
+    req.flush(appointment({ id: 'a1' }));
+    await update();
+    backend.expectOne((r) => r.url === `${API}/v1/staff/schedule`).flush({ from: '', to: '', timeZone: TZ, items: [] });
   });
 
   it('keeps outcome buttons disabled before the start, and offers late, cancel and start while the session is on', async () => {

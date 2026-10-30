@@ -10,6 +10,7 @@ import type {
   Lang,
   StaffNotificationPrefs,
   StaffPasswordRequest,
+  StaffPreferences,
   StaffProfile,
   StaffSecurity,
   StepUpRequest,
@@ -89,6 +90,14 @@ export class AccountApiService {
 
   saveNotificationPrefs(prefs: StaffNotificationPrefs): Observable<StaffNotificationPrefs> {
     return this.http.put<StaffNotificationPrefs>(`${this.base}/v1/staff/me/notifications`, prefs);
+  }
+
+  preferences(): Observable<StaffPreferences> {
+    return this.http.get<StaffPreferences>(`${this.base}/v1/staff/me/preferences`);
+  }
+
+  savePreferences(timeZone: string): Observable<StaffPreferences> {
+    return this.http.put<StaffPreferences>(`${this.base}/v1/staff/me/preferences`, { timeZone });
   }
 
   /** The server writes notifications and messages in this language. */

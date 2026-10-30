@@ -116,6 +116,7 @@ internal sealed class StaffProfileConfiguration : IEntityTypeConfiguration<Staff
         b.HasKey(x => x.UserId);
         b.Property(x => x.DisplayNameAr).HasMaxLength(100).IsRequired();
         b.Property(x => x.DisplayNameEn).HasMaxLength(100).IsRequired();
+        b.Property(x => x.TimeZone).HasMaxLength(64).IsUnicode(false).IsRequired().HasDefaultValue(StaffProfile.DefaultTimeZone);
         b.HasOne<UserAccount>().WithOne().HasForeignKey<StaffProfile>(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
     }
 }

@@ -36,6 +36,12 @@ public static class NotificationKinds
     // ---- Patient-side review fixes (r5p): P63 «مو بخير», P29 homework.cancelled ----
     public const string AppointmentMissedNotOk = "appointment.missed_not_ok";
     public const string HomeworkCancelled = "homework.cancelled";
+    // Supervisors
+    /// <summary>EC-52: a therapist cancelled a session; supervisors rebook it within 48 hours.</summary>
+    public const string AppointmentRebookNeeded = "appointment.rebook_needed";
+
+    /// <summary>EC-53 and §11.1: a second missed session in a row, or one missed at risk 3–4.</summary>
+    public const string AppointmentNoShowFollowUp = "appointment.no_show_followup";
 }
 
 /// <summary>
@@ -106,6 +112,8 @@ public static class NotificationCatalog
         // ---- Patient-side review fixes (r5p): P63 «مو بخير» alerts the patient's therapist and the supervisors; P29 homework.cancelled ----
         new(NotificationKinds.AppointmentMissedNotOk, Risk, Important: true, StaffLink: "/patients/{pseudonymId}"),
         new(NotificationKinds.HomeworkCancelled, Homework, PatientLink: "/homework/{homeworkId}"),
+        new(NotificationKinds.AppointmentRebookNeeded, Appointments, Important: true, StaffLink: "/patients/{pseudonymId}"),
+        new(NotificationKinds.AppointmentNoShowFollowUp, Risk, Important: true, StaffLink: "/patients/{pseudonymId}"),
     ];
 
     private static readonly Dictionary<string, NotificationKind> ByCode = All.ToDictionary(k => k.Code, StringComparer.Ordinal);
