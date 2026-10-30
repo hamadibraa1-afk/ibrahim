@@ -150,6 +150,10 @@
   <data name="notify.staff.appointment.rescheduled.plain" xml:space="preserve"><value>An appointment in your schedule moved.</value></data>
   <data name="notify.staff.appointment.cancelled" xml:space="preserve"><value>{patient} cancelled the appointment on {time}.</value></data>
   <data name="notify.staff.appointment.cancelled.plain" xml:space="preserve"><value>An appointment in your schedule was cancelled.</value></data>
+  <data name="notify.appointment.rebook_needed" xml:space="preserve"><value>Rebook needed: the therapist cancelled {patient}'s session on {time}. Rebook it within 48 hours.</value></data>
+  <data name="notify.appointment.rebook_needed.plain" xml:space="preserve"><value>Rebook needed: a therapist cancelled a session. Rebook it within 48 hours.</value></data>
+  <data name="notify.appointment.no_show_followup" xml:space="preserve"><value>No-show follow-up: {patient} missed the session on {time}, a repeated or high-risk no-show. Reach out today.</value></data>
+  <data name="notify.appointment.no_show_followup.plain" xml:space="preserve"><value>No-show follow-up: a patient missed a session, a repeated or high-risk no-show. Reach out today.</value></data>
   <data name="notify.crisis.closed" xml:space="preserve"><value>Crisis event {number} for {patient} was closed. Review the follow-up and bring the next session forward if needed.</value></data>
   <data name="notify.crisis.closed.plain" xml:space="preserve"><value>A crisis event for one of your patients was closed.</value></data>
   <data name="notify.crisis.alert" xml:space="preserve"><value>{0} risk alert · {1} · not acknowledged yet</value></data>

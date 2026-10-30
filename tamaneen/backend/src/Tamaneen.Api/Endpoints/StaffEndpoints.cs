@@ -249,7 +249,7 @@ public static class StaffEndpoints
                             && (a.Status == AppointmentStatus.Completed || a.Status == AppointmentStatus.NoShow))
                 .OrderByDescending(a => a.StartsAtUtc).Select(a => (AppointmentStatus?)a.Status).FirstOrDefaultAsync(ct).ConfigureAwait(false);
             var risk = (await StaffScheduleEndpoints.RiskAsync(db, [appointment.PatientId], clock, ct).ConfigureAwait(false))[appointment.PatientId];
-            await notices.MissedAsync(appointment, pseudonym, previous == AppointmentStatus.NoShow || risk >= 3, ct).ConfigureAwait(false);
+            await notices.MissedAsync(appointment, pseudonym, previous == AppointmentStatus.NoShow ? "repeated" : risk >= 3 ? "high_risk" : null, ct).ConfigureAwait(false);
         }
 
         return TypedResults.NoContent();

@@ -33,7 +33,23 @@ public sealed class NotificationUnitTests
     [InlineData("care.ended")]
     [InlineData("care.change_requested")]
     [InlineData("safety_plan.updated")]
+    [InlineData("appointment.rebook_needed")]
+    [InlineData("appointment.no_show_followup")]
+    [InlineData("appointment.rescheduled")]
+    [InlineData("appointment.booked")]
     public void Kinds_other_modules_emit_are_in_the_catalog(string kind) => NotificationCatalog.IsKnown(kind).Should().BeTrue();
+
+    [Fact]
+    public void Supervisor_follow_ups_are_important_and_open_the_patient()
+    {
+        var rebook = NotificationCatalog.Find(NotificationKinds.AppointmentRebookNeeded);
+        rebook.Important.Should().BeTrue();
+        rebook.Category.Should().Be(NotificationCatalog.Appointments);
+        var noShow = NotificationCatalog.Find(NotificationKinds.AppointmentNoShowFollowUp);
+        noShow.Important.Should().BeTrue();
+        noShow.Category.Should().Be(NotificationCatalog.Risk);
+        noShow.DefaultLink(new Dictionary<string, string> { ["pseudonymId"] = "P-AAAA-1111" }, staff: true).Should().Be("/patients/P-AAAA-1111");
+    }
 
     [Fact]
     public void Unknown_kinds_are_stored_as_system_notices_and_crisis_ones_as_crisis()

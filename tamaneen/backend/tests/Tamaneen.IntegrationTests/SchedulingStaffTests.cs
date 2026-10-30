@@ -210,7 +210,7 @@ public sealed class SchedulingStaffTests : IAsyncLifetime
         seen.GetProperty("cancelledBy").GetString().Should().Be("therapist");
         seen.GetProperty("cancelReasonCode").ValueKind.Should().Be(JsonValueKind.Null, "the therapist's real reason is not shown to the patient");
         Notices.For(patientId).Should().Contain(n => n.Kind == "appointment.cancelled_by_therapist" && n.Link == $"/appointments/{first.AppointmentId}/cancelled");
-        Notices.All.Should().Contain(n => n.Kind == "appointment.rebook_needed" && n.RecipientUserId != patientId);
+        Notices.All.Should().Contain(n => n.Kind == "appointment.rebook_needed" && n.RecipientUserId != patientId && n.Link == $"/patients/{pseudonym}");
         Notices.All.SelectMany(n => n.Data.Values).Should().NotContain(v => v.Contains("Flu", StringComparison.Ordinal));
         Slots(await Read(await me.GetAsync("/v1/staff/availability"))).Should().Contain(s => s.Id == first.SlotId && s.Status == "blocked", "the therapist said they cannot make that time");
         (await Read(await patient.GetAsync("/v1/home"))).GetProperty("appointmentNotice").GetProperty("kind").GetString().Should().Be("cancelled");
@@ -227,6 +227,7 @@ public sealed class SchedulingStaffTests : IAsyncLifetime
         missed.GetProperty("missed").GetBoolean().Should().BeTrue();
         missed.GetProperty("status").GetString().Should().Be("no_show");
         Notices.For(patientId).Should().Contain(n => n.Kind == "appointment.missed" && n.Link == $"/appointments/{second.AppointmentId}/missed");
+        Notices.All.Should().NotContain(n => n.Kind == "appointment.no_show_followup", "a first missed session at low risk needs no supervisor");
         (await Read(await patient.GetAsync("/v1/home"))).GetProperty("appointmentNotice").GetProperty("kind").GetString().Should().Be("missed");
     }
 
@@ -240,6 +241,10 @@ public sealed class SchedulingStaffTests : IAsyncLifetime
         await Read(await me.PostAsJsonAsync("/v1/staff/availability/slots", new { startsAt = WeekdayAt(3, 14) }));
         var otherSlot = await Read(await other.PostAsJsonAsync("/v1/staff/availability/slots", new { startsAt = WeekdayAt(3, 15) }));
         var booking = await BookAsync(patient, therapistId);
+        var pseudonym = (await Read(await patient.GetAsync("/v1/me"))).GetProperty("pseudonymId").GetString();
+
+        // S41: the new booking's notice opens the clinical file waiting for approval.
+        Notices.For(therapistId).Should().Contain(n => n.Kind == "staff.appointment.booked" && n.Link == $"/patients/{pseudonym}/file");
 
         // Only the therapist's own free times are offered.
         var free = (await Read(await me.GetAsync("/v1/staff/free-slots"))).EnumerateArray().Select(s => s.GetProperty("slotId").GetGuid()).ToList();

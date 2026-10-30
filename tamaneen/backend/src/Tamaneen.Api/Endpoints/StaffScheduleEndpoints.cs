@@ -255,19 +255,25 @@ public static class StaffScheduleEndpoints
         return patients.Distinct().ToDictionary(p => p, p => Math.Max(triage.GetValueOrDefault(p, (int)RiskLevel.Routine), crisis.GetValueOrDefault(p)));
     }
 
-    internal static async Task<List<StaffAppointmentDto>> MapAsync(TamaneenDbContext db, IReadOnlyList<Appointment> list, IClock clock, CancellationToken ct)
+    /// <summary>The file waits for approval: a submitted intake not yet approved, or a direct booking whose triage is unreviewed.</summary>
+    internal static async Task<Dictionary<Guid, bool>> FilePendingAsync(TamaneenDbContext db, IReadOnlyCollection<Guid> patients, CancellationToken ct)
     {
-        var patients = list.Select(a => a.PatientId).Distinct().ToList();
-        var pseudonyms = await db.UserAccounts.AsNoTracking().Where(a => patients.Contains(a.Id)).ToDictionaryAsync(a => a.Id, a => a.PseudonymId, ct).ConfigureAwait(false);
-        var risk = await RiskAsync(db, patients, clock, ct).ConfigureAwait(false);
-
-        // The file waits for approval: a submitted intake not yet approved, or a direct booking whose triage is unreviewed.
         var intakes = (await db.IntakeSessions.AsNoTracking().Where(i => patients.Contains(i.PatientId) && i.Status == IntakeStatus.Submitted)
             .Select(i => new { i.PatientId, i.SubmittedAtUtc, i.TherapistApprovedAtUtc }).ToListAsync(ct).ConfigureAwait(false))
             .GroupBy(i => i.PatientId).ToDictionary(g => g.Key, g => g.OrderByDescending(i => i.SubmittedAtUtc).First().TherapistApprovedAtUtc is null);
         var direct = (await db.TriageCases.AsNoTracking().Where(t => patients.Contains(t.PatientId))
             .Select(t => new { t.PatientId, t.Path, t.ReviewedAtUtc, t.SubmittedAtUtc }).ToListAsync(ct).ConfigureAwait(false))
             .GroupBy(t => t.PatientId).ToDictionary(g => g.Key, g => g.OrderByDescending(t => t.SubmittedAtUtc).First() is var t && t.Path == "direct" && t.ReviewedAtUtc is null);
+        return patients.Distinct().ToDictionary(p => p, p => intakes.TryGetValue(p, out var pending) ? pending : direct.GetValueOrDefault(p));
+    }
+
+    internal static async Task<List<StaffAppointmentDto>> MapAsync(TamaneenDbContext db, IReadOnlyList<Appointment> list, IClock clock, CancellationToken ct)
+    {
+        var patients = list.Select(a => a.PatientId).Distinct().ToList();
+        var pseudonyms = await db.UserAccounts.AsNoTracking().Where(a => patients.Contains(a.Id)).ToDictionaryAsync(a => a.Id, a => a.PseudonymId, ct).ConfigureAwait(false);
+        var risk = await RiskAsync(db, patients, clock, ct).ConfigureAwait(false);
+
+        var pending = await FilePendingAsync(db, patients, ct).ConfigureAwait(false);
         var now = clock.UtcNow;
         return list.Select(a =>
         {
@@ -281,7 +287,7 @@ public static class StaffScheduleEndpoints
                 a.SequenceNumber,
                 SchedulingEndpoints.StatusCode(a.Status),
                 risk.GetValueOrDefault(a.PatientId, 1),
-                intakes.TryGetValue(a.PatientId, out var pending) ? pending : direct.GetValueOrDefault(a.PatientId),
+                pending.GetValueOrDefault(a.PatientId),
                 a.OutcomeRecordedAtUtc is not null,
                 confirmed && now >= a.StartsAtUtc - Appointment.JoinOpensBefore,
                 confirmed && now < ends,

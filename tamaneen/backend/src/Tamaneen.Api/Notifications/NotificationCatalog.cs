@@ -32,6 +32,13 @@ public static class NotificationKinds
     public const string StaffAppointmentRescheduled = "staff.appointment.rescheduled";
     public const string StaffAppointmentCancelled = "staff.appointment.cancelled";
     public const string CrisisClosed = "crisis.closed";
+
+    // Supervisors
+    /// <summary>EC-52: a therapist cancelled a session; supervisors rebook it within 48 hours.</summary>
+    public const string AppointmentRebookNeeded = "appointment.rebook_needed";
+
+    /// <summary>EC-53 and §11.1: a second missed session in a row, or one missed at risk 3–4.</summary>
+    public const string AppointmentNoShowFollowUp = "appointment.no_show_followup";
 }
 
 /// <summary>
@@ -98,6 +105,8 @@ public static class NotificationCatalog
         new(NotificationKinds.StaffAppointmentRescheduled, Appointments, StaffBookings: true, StaffLink: "/patients/{pseudonymId}"),
         new(NotificationKinds.StaffAppointmentCancelled, Appointments, StaffBookings: true, StaffLink: "/patients/{pseudonymId}"),
         new(NotificationKinds.CrisisClosed, Risk, StaffLink: "/alerts"),
+        new(NotificationKinds.AppointmentRebookNeeded, Appointments, Important: true, StaffLink: "/patients/{pseudonymId}"),
+        new(NotificationKinds.AppointmentNoShowFollowUp, Risk, Important: true, StaffLink: "/patients/{pseudonymId}"),
     ];
 
     private static readonly Dictionary<string, NotificationKind> ByCode = All.ToDictionary(k => k.Code, StringComparer.Ordinal);

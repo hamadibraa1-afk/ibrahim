@@ -196,6 +196,18 @@ public sealed class NotificationTests : IAsyncLifetime
                 texts.InApp(kind.Code, data, language, "Asia/Riyadh").Should().NotContain("{", $"{kind.Code} in-app ({language})");
             }
         }
+
+        // EC-52 and EC-53 reach supervisors with their own text, never the generic «لديك إشعار جديد.».
+        var generic = texts.InApp("no.such.kind", data, "ar", "Asia/Riyadh");
+        foreach (var kind in new[] { NotificationKinds.AppointmentRebookNeeded, NotificationKinds.AppointmentNoShowFollowUp })
+        {
+            foreach (var language in new[] { "ar", "en" })
+            {
+                var text = texts.InApp(kind, data, language, "Asia/Riyadh");
+                text.Should().NotBe(generic).And.NotBe(texts.InApp("no.such.kind", data, language, "Asia/Riyadh")).And.Contain("P-ABCD-1234", kind);
+                texts.InApp(kind, new Dictionary<string, string>(), language, "Asia/Riyadh").Should().NotBe(texts.InApp("no.such.kind", data, language, "Asia/Riyadh"), "the plain line stands in without data");
+            }
+        }
     }
 
     [Fact]

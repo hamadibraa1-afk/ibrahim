@@ -131,7 +131,10 @@ Kinds: appointment.booked, appointment.rescheduled, appointment.cancelled, appoi
 appointment.running_late, appointment.missed, appointment.reminder_24h, appointment.reminder_1h,
 session.therapist_joined, waitlist.slot_open, triage.matches_ready, homework.assigned, homework.feedback, care.ended,
 safety_plan.updated, crisis.follow_up, security.new_sign_in (patient); staff.appointment.booked|rescheduled|cancelled,
-care.change_requested, crisis.closed, safety_plan.updated, security.new_sign_in (staff). Other modules call
+care.change_requested, crisis.closed, safety_plan.updated, security.new_sign_in (staff); appointment.rebook_needed
+(Appointments, important) and appointment.no_show_followup (Risk, important, `reason` repeated|high_risk) (supervisors,
+each with its own text and a link to `/patients/{pseudonymId}`). `staff.appointment.booked` links to
+`/patients/{pseudonymId}/file` while the clinical file waits for approval, else to the overview. Other modules call
 `INotifier.NotifyAsync(new Notification(recipientUserId, kind, data, link?))`; an unknown kind is stored with the
 generic text. A background worker (once a minute) sends the 24 h and 1 h reminders, the crisis follow-ups and the held
 copies; each reminder and follow-up has a per-recipient dedupe key, so restarts never repeat one. In Development the

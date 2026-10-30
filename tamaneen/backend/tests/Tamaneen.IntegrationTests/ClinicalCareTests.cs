@@ -364,6 +364,7 @@ public sealed class ClinicalCareTests : IAsyncLifetime
         await Read(await sara.PostAsJsonAsync($"/v1/staff/patients/{patient.Pseudonym}/risk-flag", new { riskLevel = 3, reason = "Private clinical reason" }));
         await StartAppointmentNowAsync(patient.AppointmentId);
         (await sara.PostAsJsonAsync($"/v1/staff/appointments/{patient.AppointmentId}/outcome", new { outcome = "no_show" })).StatusCode.Should().Be(HttpStatusCode.NoContent);
+        _hosts.Notifier.Sent.Should().Contain(n => n.Kind == "appointment.no_show_followup" && n.Data["pseudonymId"] == patient.Pseudonym && n.Data["reason"] == "high_risk", "EC-53: a missed session at risk 3–4 goes to the supervisors");
 
         using var response = await sara.GetAsync("/v1/staff/alerts?status=handled");
         var raw = await response.Content.ReadAsStringAsync();
