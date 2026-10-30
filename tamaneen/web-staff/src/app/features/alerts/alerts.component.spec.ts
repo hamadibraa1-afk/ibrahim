@@ -15,7 +15,16 @@ const open: Alert = {
   openedAt: '2026-10-25T10:00:00Z', ackDeadline: '2026-10-25T10:02:00Z', acknowledgedBy: null, acknowledgedAt: null, closedAt: null, closeOutcome: null,
 };
 const closed: Alert = { ...open, eventId: 'e2', number: 'CE-1000', pseudonymId: 'P-5RT3-20MN', status: 'Closed', closedAt: '2026-10-03T10:00:00Z', closeOutcome: 'false_alarm' };
-const alerts: Alerts = { items: [open, closed], openCount: 1, handledCount: 1 };
+const alerts: Alerts = {
+  items: [open, closed],
+  openCount: 1,
+  handledCount: 3,
+  history: [
+    { kind: 'risk_raised', id: '71', pseudonymId: 'P-3HX9-14QA', level: 2, at: '2026-10-20T10:00:00Z', detail: 'risk_raised', params: { from: '1', to: '2' }, final: 'raised', by: 'Fahad K.', eventId: null },
+    { kind: 'no_show', id: 'ap-9', pseudonymId: 'P-8KD2-33LM', level: 1, at: '2026-10-12T10:00:00Z', detail: 'repeated', params: {}, final: 'not_rebooked', by: null, eventId: null },
+    { kind: 'crisis', id: 'e2', pseudonymId: 'P-5RT3-20MN', level: 3, at: '2026-10-03T10:00:00Z', detail: 'crisis', params: { number: 'CE-1000' }, final: 'false_alarm', by: null, eventId: 'e2' },
+  ],
+};
 
 describe('AlertsComponent (S20)', () => {
   let backend: HttpTestingController;
@@ -59,7 +68,15 @@ describe('AlertsComponent (S20)', () => {
     (el.querySelector('[data-testid="status-handled"] button') as HTMLButtonElement).click();
     fixture.detectChanges();
     expect(el.querySelector('[data-testid="open-alert"]')).toBeNull();
-    expect(el.querySelector('[data-testid="history-alert"]')!.textContent).toContain('إنذار خاطئ');
+    const rows = Array.from(el.querySelectorAll('[data-testid="history-alert"]')).map((r) => r.textContent ?? '');
+    expect(rows.length).toBe(3);
+    expect(rows[0]).toContain('رفع مستوى');
+    expect(rows[0]).toContain('رفعه Fahad K. من المستوى 1 إلى المستوى 2');
+    expect(rows[1]).toContain('لا حضور');
+    expect(rows[1]).toContain('غياب مرتين متتاليتين');
+    expect(rows[1]).toContain('لم يُعَد الحجز بعد');
+    expect(rows[2]).toContain('CE-1000');
+    expect(rows[2]).toContain('إنذار خاطئ');
     expect(outcomeKey(open)).toBe('alerts.outcome.closed');
   });
 });

@@ -10,7 +10,7 @@ import { interval } from 'rxjs';
 import { AccountApiService } from '../../core/api/account-api.service';
 import { CrisisApiService } from '../../core/api/crisis-api.service';
 import { type ShownError, shownError } from '../../core/api/problem';
-import type { Alert, AlertStatusFilter, CrisisEventDetail } from '../../core/api/types';
+import type { Alert, AlertHistoryItem, AlertStatusFilter, CrisisEventDetail } from '../../core/api/types';
 import { LanguageService } from '../../core/i18n/language.service';
 import { LocalDatePipe } from '../../shared/local-date.pipe';
 import { ProblemMessageComponent } from '../../shared/problem-message.component';
@@ -24,6 +24,11 @@ export const REFER_MAX_LENGTH = 1000;
 /** History label of a closed event: false alarm, contacted, emergency services, unreachable. */
 export function outcomeKey(alert: Alert): string {
   return alert.closeOutcome ? `alerts.outcome.${alert.closeOutcome}` : 'alerts.outcome.closed';
+}
+
+/** The final state of a history row: a crisis close outcome, a raise, or whether a missed session was rebooked. */
+export function finalKey(item: AlertHistoryItem): string {
+  return item.kind === 'crisis' ? `alerts.outcome.${item.final}` : `alerts.final.${item.final}`;
 }
 
 /**
@@ -83,12 +88,15 @@ export function outcomeKey(alert: Alert): string {
       <section class="block tm-card" aria-labelledby="history-title">
         <h2 id="history-title" class="tm-card-title">{{ 'alerts.history' | translate }}</h2>
         <ul class="list">
-          @for (a of handled(); track a.eventId) {
-            <li class="row" data-testid="history-alert">
-              <tm-risk-tag [level]="a.level" />
-              <span dir="ltr" class="pseudonym">{{ a.pseudonymId }}</span>
-              <span class="tm-muted">{{ a.number }} · {{ a.closedAt | tmDate: 'longDate' : language.language() }}</span>
-              <span class="final">{{ outcomeKey(a) | translate }}</span>
+          @for (h of history(); track h.kind + h.id) {
+            <li class="row" data-testid="history-alert" [attr.data-kind]="h.kind">
+              <span class="kind">{{ 'alerts.kind.' + h.kind | translate }}</span>
+              <tm-risk-tag [level]="h.level" />
+              <span dir="ltr" class="pseudonym">{{ h.pseudonymId }}</span>
+              <span class="detail">{{ 'alerts.detail.' + h.detail | translate: { number: h.params['number'], from: h.params['from'], to: h.params['to'], name: h.by ?? ('alerts.someone' | translate) } }}</span>
+              <span class="tm-muted">{{ h.at | tmDate: 'longDate' : language.language() }}</span>
+              <span class="final">{{ finalKey(h) | translate }}</span>
+              @if (h.eventId) { <a mat-button [routerLink]="['/crisis', h.eventId]">{{ 'alerts.openEvent' | translate }}</a> }
             </li>
           } @empty {
             <li class="tm-muted">{{ 'alerts.noHistory' | translate }}</li>
@@ -110,6 +118,7 @@ export function outcomeKey(alert: Alert): string {
     .list { list-style: none; margin: 0; padding: 0; }
     .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding-block: 10px; border-block-end: 1px solid var(--tm-line); }
     .final { margin-inline-start: auto; font-weight: 600; }
+    .kind { font-weight: 700; }
   `,
 })
 export class AlertsComponent {
@@ -119,6 +128,8 @@ export class AlertsComponent {
   private readonly destroyRef = inject(DestroyRef);
   protected readonly language = inject(LanguageService);
   protected readonly outcomeKey = outcomeKey;
+  protected readonly finalKey = finalKey;
+  protected readonly history = signal<AlertHistoryItem[]>([]);
   protected readonly status = signal<AlertStatusFilter>('open');
   protected readonly open = signal<Alert[]>([]);
   protected readonly handled = signal<Alert[]>([]);
@@ -142,6 +153,7 @@ export class AlertsComponent {
         next: (alerts) => {
           this.open.set(alerts.items.filter((a) => a.status !== 'Closed'));
           this.handled.set(alerts.items.filter((a) => a.status === 'Closed'));
+          this.history.set(alerts.history ?? []);
           this.openCount.set(alerts.openCount);
           this.error.set(null);
           this.loading.set(false);

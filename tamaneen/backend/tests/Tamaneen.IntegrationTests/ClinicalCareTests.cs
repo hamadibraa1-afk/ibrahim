@@ -314,6 +314,36 @@ public sealed class ClinicalCareTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task The_alert_history_has_risk_raises_and_missed_sessions_for_the_readers_patients_only()
+    {
+        var patient = await BookedPatientAsync("أ. سارة م.");
+        using var sara = _hosts.ApiClient("en", await _hosts.StaffSignInAsync("sara@staff.tamaneen.dev"));
+        await Read(await sara.PostAsJsonAsync($"/v1/staff/patients/{patient.Pseudonym}/risk-flag", new { riskLevel = 3, reason = "Private clinical reason" }));
+        await StartAppointmentNowAsync(patient.AppointmentId);
+        (await sara.PostAsJsonAsync($"/v1/staff/appointments/{patient.AppointmentId}/outcome", new { outcome = "no_show" })).StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        using var response = await sara.GetAsync("/v1/staff/alerts?status=handled");
+        var raw = await response.Content.ReadAsStringAsync();
+        raw.Should().NotContain("Private clinical reason", "the reason a clinician typed never leaves the ledger");
+        var history = (await Read(response)).GetProperty("history").EnumerateArray().Where(h => h.GetProperty("pseudonymId").GetString() == patient.Pseudonym).ToList();
+        var raised = history.Single(h => h.GetProperty("kind").GetString() == "risk_raised");
+        raised.GetProperty("level").GetInt32().Should().Be(3);
+        raised.GetProperty("params").GetProperty("to").GetString().Should().Be("3");
+        raised.GetProperty("by").GetString().Should().Be("Sara M.");
+        var missed = history.Single(h => h.GetProperty("kind").GetString() == "no_show");
+        missed.GetProperty("detail").GetString().Should().Be("high_risk");
+        missed.GetProperty("final").GetString().Should().Be("not_rebooked");
+
+        // Another therapist sees none of it; a supervisor sees it all.
+        using var noura = _hosts.ApiClient("en", await _hosts.StaffSignInAsync("noura@staff.tamaneen.dev"));
+        (await Read(await noura.GetAsync("/v1/staff/alerts?status=handled"))).GetProperty("history").EnumerateArray()
+            .Should().NotContain(h => h.GetProperty("pseudonymId").GetString() == patient.Pseudonym);
+        using var fahad = _hosts.ApiClient("en", await _hosts.StaffSignInAsync("fahad@staff.tamaneen.dev"));
+        (await Read(await fahad.GetAsync("/v1/staff/alerts?status=handled"))).GetProperty("history").EnumerateArray()
+            .Count(h => h.GetProperty("pseudonymId").GetString() == patient.Pseudonym).Should().Be(2);
+    }
+
+    [Fact]
     public async Task Changing_therapist_goes_through_the_supervisor_and_the_new_booking_ends_the_old_assignment()
     {
         var patient = await BookedPatientAsync("أ. سارة م.");

@@ -934,7 +934,25 @@
     "referTitle": "Hand to on-call",
     "referBody": "The event stays with the on-call. Write what they need to know.",
     "referNote": "Note for the on-call",
-    "referConfirm": "Hand over"
+    "referConfirm": "Hand over",
+    "kind": {
+      "crisis": "Crisis event",
+      "risk_raised": "Risk raised",
+      "no_show": "No-show"
+    },
+    "detail": {
+      "crisis": "{{number}}",
+      "risk_raised": "{{name}} raised it from level {{from}} to level {{to}}",
+      "repeated": "Missed twice in a row",
+      "high_risk": "Missed at risk 3–4",
+      "missed": "Missed a session"
+    },
+    "final": {
+      "raised": "Level raised",
+      "rebooked": "Rebooked",
+      "not_rebooked": "Not rebooked yet"
+    },
+    "someone": "A team member"
   },
   "profile": {
     "title": "Professional profile",

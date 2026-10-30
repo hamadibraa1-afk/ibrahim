@@ -318,7 +318,24 @@ export interface Alert {
   closedAt: string | null;
   closeOutcome: string | null;
 }
-export interface Alerts { items: Alert[]; openCount: number; handledCount: number }
+export type AlertHistoryKind = 'crisis' | 'risk_raised' | 'no_show';
+/** One row of the S20 30-day history: ids, levels and codes only (never a clinician's typed reason). */
+export interface AlertHistoryItem {
+  kind: AlertHistoryKind;
+  id: string;
+  pseudonymId: string;
+  level: RiskLevel;
+  at: string;
+  /** crisis · risk_raised · repeated, high_risk or missed (no_show). */
+  detail: string;
+  /** crisis: { number }; risk_raised: { from, to }. */
+  params: Record<string, string>;
+  /** crisis: the close outcome; risk_raised: raised; no_show: rebooked or not_rebooked. */
+  final: string;
+  by: string | null;
+  eventId: string | null;
+}
+export interface Alerts { items: Alert[]; openCount: number; handledCount: number; history: AlertHistoryItem[] }
 
 export interface StaffProfile {
   displayNameAr: string;
