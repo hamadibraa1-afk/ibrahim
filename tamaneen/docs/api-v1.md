@@ -182,7 +182,7 @@ During scheduled maintenance (`Platform:Maintenance` true) every patient endpoin
 
 | Method | Path | Body → Response | Screen |
 |---|---|---|---|
-| GET | /v1/staff/me | → StaffMe | shell |
+| GET | /v1/staff/me | → StaffMe { userId, displayName, role, language, onCall, timeZone } | shell |
 | POST | /v1/staff/access-denied | { path } → 204 (audit `staff.access_denied`, the refused portal path as the reason) | S06 /forbidden |
 | GET | /v1/staff/dashboard | → TherapistDashboard | S01 |
 | GET | /v1/staff/inbox?category=all\|risk\|appointments\|messages\|system&cursor= | → Inbox (unacknowledged crisis events the reader may see come first with `pinned: true`; a therapist's are their own patients') | S41 |
@@ -196,8 +196,9 @@ During scheduled maintenance (`Platform:Maintenance` true) every patient endpoin
 | POST | /v1/staff/me/totp/move | { password, code } → { secret, otpauthUri, moveToken, expiresAt } (nothing changes yet) | S32 |
 | POST | /v1/staff/me/totp/move/confirm | { moveToken, code from the new device } → 204 (410 `error.totp.move_expired` after 10 minutes) | S32 |
 | POST | /v1/staff/me/recovery-codes | { password, code } → RecoveryCodes | S32 |
-| DELETE | /v1/staff/me/sessions/{id} · POST /v1/staff/me/sessions/revoke-others | → 204 | S32, S41 |
+| DELETE | /v1/staff/me/sessions/{id} · POST /v1/staff/me/sessions/revoke-others | → 204 (the portal asks for confirmation first) | S32, S41 |
 | GET/PUT | /v1/staff/me/notifications | StaffNotificationPrefs { riskAlerts (always true), bookings, weeklyReport, dailyDigest } | S32 |
+| GET/PUT | /v1/staff/me/preferences | → StaffPreferences { timeZone, timeZones[] } / { timeZone } (S32 «المنطقة الزمنية»; the spec's PUT /v1/me/preferences, under /v1/staff/me like the other staff settings; one of `timeZones`, else 400 `error.timezone.invalid`; audited `staff.time_zone_changed`; the portal shows every time and the S18 schedule days in it) | S32 |
 | GET | /v1/staff/patients/{pseudonymId}/intake | → StaffIntakeView (audited) | S01 |
 | POST | /v1/staff/patients/{pseudonymId}/intake/approve | → 204 | S01 |
 | POST | /v1/staff/appointments/{id}/outcome | { outcome: attended, no_show, cancelled } → 204 | S01, S18 |
@@ -321,3 +322,5 @@ Staff refresh and sign-out send `{}`; the refresh token is the HttpOnly cookie `
   `session.summary_shared` (patient); `safety_plan.updated` (patient when the therapist saves, the treating therapist when the
   patient saves); `care.closure_submitted` (supervisors, lead); `care.closure_rejected` (therapist); `care.ended` (patient);
   `care.change_requested` (supervisors, lead); `care.transferred` (the former therapist).
+
+**Staff sessions (S32).** The portal signs a staff member out after 15 minutes without input (keyboard, pointer, scroll), on the server as well (`/v1/auth/logout`), and sign-in returns to the page (`/login?reason=idle&returnUrl=…`). A live video session (`/sessions/:id`) is never interrupted. The guide sets no server-side idle rule; the staff refresh-token lifetime is the guide's 8 hours (was 12).

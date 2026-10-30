@@ -192,6 +192,6 @@ public class AuthDomainTests
         session.RefreshTokenHash.Should().Equal(2);
         session.Revoke(_clock);
         session.IsActive(_clock).Should().BeFalse();
-        AuthSession.Start(Guid.NewGuid(), "staff", "x", [1], _clock).ExpiresAtUtc.Should().Be(_clock.UtcNow.AddHours(12));
+        AuthSession.Start(Guid.NewGuid(), "staff", "x", [1], _clock).ExpiresAtUtc.Should().Be(_clock.UtcNow.AddHours(8));
     }
 }

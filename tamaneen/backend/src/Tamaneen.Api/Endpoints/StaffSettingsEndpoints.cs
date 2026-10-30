@@ -39,6 +39,10 @@ public static class StaffSettingsEndpoints
 
     public sealed record StaffNotificationPrefsDto(bool RiskAlerts, bool Bookings, bool WeeklyReport, bool DailyDigest);
 
+    public sealed record StaffPreferencesDto(string TimeZone, IReadOnlyList<string> TimeZones);
+
+    public sealed record StaffPreferencesRequest(string? TimeZone);
+
     private sealed record MoveTicket(Guid UserId, string Secret, DateTimeOffset ExpiresAt);
 
     public static IEndpointRouteBuilder MapStaffSettingsEndpoints(this IEndpointRouteBuilder app)
@@ -53,7 +57,26 @@ public static class StaffSettingsEndpoints
         g.MapPost("/sessions/revoke-others", RevokeOthersAsync);
         g.MapGet("/notifications", GetPrefsAsync);
         g.MapPut("/notifications", UpdatePrefsAsync);
+        g.MapGet("/preferences", PreferencesAsync);
+        g.MapPut("/preferences", UpdatePreferencesAsync);
         return app;
+    }
+
+    /// <summary>S32 «المنطقة الزمنية»: the zone the portal shows times in, from a short list.</summary>
+    internal static async Task<Ok<StaffPreferencesDto>> PreferencesAsync(ICurrentUser user, TamaneenDbContext db, CancellationToken ct)
+    {
+        var profile = await db.StaffProfiles.AsNoTracking().FirstOrDefaultAsync(s => s.UserId == user.UserId, ct).ConfigureAwait(false);
+        return TypedResults.Ok(new StaffPreferencesDto(profile?.TimeZone ?? StaffProfile.DefaultTimeZone, StaffProfile.TimeZones));
+    }
+
+    internal static async Task<Ok<StaffPreferencesDto>> UpdatePreferencesAsync(StaffPreferencesRequest request, ICurrentUser user, TamaneenDbContext db, IAuditLog audit, CancellationToken ct)
+    {
+        var profile = await db.StaffProfiles.FirstOrDefaultAsync(s => s.UserId == user.UserId, ct).ConfigureAwait(false)
+            ?? throw new DomainException(ErrorCodes.NotFound, "No staff profile.");
+        profile.SetTimeZone(request.TimeZone?.Trim() ?? string.Empty);
+        audit.Append("staff.time_zone_changed", "StaffProfile", profile.UserId.ToString(), null, profile.TimeZone);
+        await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        return TypedResults.Ok(new StaffPreferencesDto(profile.TimeZone, StaffProfile.TimeZones));
     }
 
     internal static async Task<Ok<StaffSecurityDto>> SecurityAsync(HttpContext http, ICurrentUser user, TamaneenDbContext db, IClock clock, CancellationToken ct)

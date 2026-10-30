@@ -133,7 +133,8 @@
     "remainingAttempts": "Attempts left before the account is locked: {{count}}.",
     "locked": "The account is locked for safety. Try again in {{minutes}} minutes.",
     "contactTooLong": "The email is longer than 254 characters",
-    "forgot": "Forgot your password?"
+    "forgot": "Forgot your password?",
+    "idleSignedOut": "You were signed out after 15 minutes without activity, to protect patient data. Sign in again to return to the same page."
   },
   "dashboard": {
     "greeting": {
@@ -1034,9 +1035,14 @@
     "display": "Language and display",
     "language": "Interface language",
     "timeZone": "Time zone",
-    "timeZoneNote": "The pilot region’s time, for the whole team.",
+    "timeZoneNote": "Every time on the portal, the schedule included, shows in this zone.",
     "loadError": "Settings can’t be loaded.",
-    "saveError": "Couldn’t save. Nothing changed."
+    "saveError": "Couldn’t save. Nothing changed.",
+    "timeZoneSaved": "Time zone saved. Times now show in it.",
+    "endConfirmTitle": "End this session?",
+    "endConfirmBody": "That device will have to sign in again.",
+    "endOthersTitle": "End the other sessions?",
+    "endOthersBody": "Every session except this one ends, and the other devices will have to sign in again."
   },
   "specialties": {
     "anxiety": "Anxiety",

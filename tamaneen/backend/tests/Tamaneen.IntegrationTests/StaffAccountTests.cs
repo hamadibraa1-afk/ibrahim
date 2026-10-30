@@ -111,6 +111,20 @@ public sealed class StaffAccountTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task The_time_zone_is_chosen_from_the_list_and_the_schedule_follows_it()
+    {
+        var t = await TherapistAsync();
+        using var staff = _hosts.ApiClient("en", await SignInAsync(t));
+        var prefs = await Read(await staff.GetAsync("/v1/staff/me/preferences"));
+        prefs.GetProperty("timeZone").GetString().Should().Be("Asia/Riyadh");
+        prefs.GetProperty("timeZones").EnumerateArray().Select(z => z.GetString()).Should().Contain(["Asia/Dubai", "UTC"]);
+        (await Problem(await staff.PutAsJsonAsync("/v1/staff/me/preferences", new { timeZone = "Mars/Olympus" }), 400)).GetProperty("code").GetString().Should().Be(ErrorCodes.InvalidTimeZone);
+        (await Read(await staff.PutAsJsonAsync("/v1/staff/me/preferences", new { timeZone = "Asia/Dubai" }))).GetProperty("timeZone").GetString().Should().Be("Asia/Dubai");
+        (await Read(await staff.GetAsync("/v1/staff/me"))).GetProperty("timeZone").GetString().Should().Be("Asia/Dubai");
+        (await Read(await staff.GetAsync("/v1/staff/schedule?days=1"))).GetProperty("timeZone").GetString().Should().Be("Asia/Dubai");
+    }
+
+    [Fact]
     public async Task Alerts_and_the_inbox_show_my_patients_events_and_keep_unacknowledged_risk_on_top()
     {
         var t = await TherapistAsync();

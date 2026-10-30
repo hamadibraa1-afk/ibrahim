@@ -149,6 +149,25 @@ describe('AuthService', () => {
     expect(session.role()).toBeNull();
     expect(TestBed.inject(Router).url).toBe('/login');
   });
+  it('signs out after the idle timeout, keeping the page to return to and a drafted plan out of memory', async () => {
+    const { auth, backend, session } = setup();
+    void auth.restore();
+    backend.expectOne(`${API}/v1/auth/refresh`).flush(tokens('access-1'));
+    await settle();
+    backend.expectOne(`${API}/v1/staff/me`).flush(ME);
+    await settle();
+    session.keepDraft('plan:P-1', { draft: 'x' });
+    const router = TestBed.inject(Router);
+    spyOnProperty(router, 'url').and.returnValue('/patients/P-1/plan');
+    const navigate = spyOn(router, 'navigate').and.resolveTo(true);
+
+    const out = auth.idleSignOut();
+    backend.expectOne(`${API}/v1/auth/logout`).flush(null, { status: 204, statusText: 'No Content' });
+    await out;
+    expect(auth.signedIn()).toBeFalse();
+    expect(session.draft('plan:P-1')).toBeNull();
+    expect(navigate).toHaveBeenCalledWith(['/login'], { queryParams: { reason: 'idle', returnUrl: '/patients/P-1/plan' } });
+  });
 });
 
 describe('authInterceptor', () => {

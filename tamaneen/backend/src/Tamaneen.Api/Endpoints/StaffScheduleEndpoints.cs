@@ -66,19 +66,27 @@ public static class StaffScheduleEndpoints
     /// <summary>?from=yyyy-MM-dd (local, default today) and days=1 or 7 (default 7).</summary>
     internal static async Task<Ok<ScheduleDto>> ScheduleAsync(HttpContext http, ICurrentUser user, TamaneenDbContext db, IAuditLog audit, IOptions<PlatformOptions> platform, IClock clock, CancellationToken ct)
     {
-        var zone = AvailabilityEndpoints.Zone(platform.Value);
+        var me = user.UserId!.Value;
+
+        // S32: days run in the time zone the therapist chose (the platform's by default).
+        var zoneId = await db.StaffProfiles.AsNoTracking().Where(p => p.UserId == me).Select(p => p.TimeZone).FirstOrDefaultAsync(ct).ConfigureAwait(false) ?? platform.Value.TimeZone;
+        if (!TimeZoneInfo.TryFindSystemTimeZoneById(zoneId, out var zone))
+        {
+            zoneId = platform.Value.TimeZone;
+            zone = AvailabilityEndpoints.Zone(platform.Value);
+        }
+
         var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(clock.UtcNow, zone).DateTime);
         var from = DateOnly.TryParseExact(http.Request.Query["from"], "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var f) ? f : today;
         var days = int.TryParse(http.Request.Query["days"], NumberStyles.None, CultureInfo.InvariantCulture, out var d) ? Math.Clamp(d, 1, 14) : 7;
-        var start = CareEndpoints.DayStartUtc(from, platform.Value.TimeZone);
-        var end = CareEndpoints.DayStartUtc(from.AddDays(days), platform.Value.TimeZone);
-        var me = user.UserId!.Value;
+        var start = CareEndpoints.DayStartUtc(from, zoneId);
+        var end = CareEndpoints.DayStartUtc(from.AddDays(days), zoneId);
         var list = await db.Appointments.AsNoTracking().Where(a => a.TherapistUserId == me && a.StartsAtUtc >= start && a.StartsAtUtc < end)
             .OrderBy(a => a.StartsAtUtc).ToListAsync(ct).ConfigureAwait(false);
         var items = await MapAsync(db, list, clock, ct).ConfigureAwait(false);
         audit.Append("schedule.viewed", "Appointment", null, null, $"{from:yyyy-MM-dd}+{days}");
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
-        return TypedResults.Ok(new ScheduleDto(from.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), from.AddDays(days - 1).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), platform.Value.TimeZone, items));
+        return TypedResults.Ok(new ScheduleDto(from.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), from.AddDays(days - 1).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), zoneId, items));
     }
 
     internal static async Task<Ok<StaffAppointmentDto>> DetailAsync(Guid id, ICurrentUser user, TamaneenDbContext db, IAuditLog audit, IClock clock, CancellationToken ct)

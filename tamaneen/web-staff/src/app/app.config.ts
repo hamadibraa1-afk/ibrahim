@@ -7,6 +7,7 @@ import { provideTranslateHttpLoader } from '@ngx-translate/http-loader';
 import { routes } from './app.routes';
 import { authInterceptor } from './core/auth/auth.interceptor';
 import { AuthService } from './core/auth/auth.service';
+import { IdleService } from './core/auth/idle.service';
 import { acceptLanguageInterceptor } from './core/i18n/accept-language.interceptor';
 import { DEFAULT_LANGUAGE } from './core/i18n/language';
 import { LanguageService } from './core/i18n/language.service';
@@ -28,6 +29,8 @@ export const appConfig: ApplicationConfig = {
       const auth = inject(AuthService);
       await inject(LanguageService).init();
       await auth.restore();
+      // S32: 15-minute idle sign-out for every staff session.
+      inject(IdleService);
     }),
   ],
 };

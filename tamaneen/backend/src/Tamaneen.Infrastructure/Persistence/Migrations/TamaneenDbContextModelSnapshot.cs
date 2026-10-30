@@ -2096,6 +2096,14 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                     b.Property<byte?>("OnCallTier")
                         .HasColumnType("tinyint");
 
+                    b.Property<string>("TimeZone")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(64)")
+                        .HasDefaultValue("Asia/Riyadh");
+
                     b.HasKey("UserId");
 
                     b.ToTable("StaffProfiles", "identity");

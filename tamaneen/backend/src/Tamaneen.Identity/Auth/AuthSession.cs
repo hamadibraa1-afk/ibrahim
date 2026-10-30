@@ -9,7 +9,8 @@ namespace Tamaneen.Identity.Auth;
 public sealed class AuthSession : Entity
 {
     public static readonly TimeSpan PatientLifetime = TimeSpan.FromDays(30);
-    public static readonly TimeSpan StaffLifetime = TimeSpan.FromHours(12);
+    /// <summary>Guide §security: refresh tokens last 8 hours for staff. Idle sign-out after 15 minutes is the portal's (S32).</summary>
+    public static readonly TimeSpan StaffLifetime = TimeSpan.FromHours(8);
 
     private AuthSession(Guid id, Guid userId, string client, string deviceLabel, byte[] refreshHash, DateTimeOffset now, TimeSpan lifetime)
         : base(id)

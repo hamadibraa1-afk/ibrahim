@@ -56,6 +56,8 @@ export class LoginComponent {
   private readonly session = inject(SessionService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  /** Signed out after 15 minutes without activity (S32). */
+  protected readonly idle = this.route.snapshot.queryParamMap.get('reason') === 'idle';
   private readonly injector = inject(Injector);
   private readonly fb = inject(NonNullableFormBuilder);
   protected readonly language = inject(LanguageService);

@@ -20,7 +20,9 @@ export interface RecoverStartRequest { contact: string }
 export interface ChallengeResponse { challengeId: string; maskedContact: string; resendAfterSeconds: number; expiresInSeconds: number }
 export interface RecoverCompleteRequest { challengeId: string; code: string; newPassword: string }
 
-export interface StaffMe { userId: string; displayName: string; role: StaffRole; language: Lang; onCall: boolean }
+export interface StaffMe { userId: string; displayName: string; role: StaffRole; language: Lang; onCall: boolean; /** S32: the zone the portal shows times in. */ timeZone?: string }
+/** GET/PUT /v1/staff/me/preferences (S32). */
+export interface StaffPreferences { timeZone: string; timeZones: string[] }
 
 export type RiskLevel = 1 | 2 | 3 | 4;
 export interface PendingProfile { pseudonymId: string; riskLevel: RiskLevel; phq9: number | null; gad7: number | null; firstSessionAt: string | null }
