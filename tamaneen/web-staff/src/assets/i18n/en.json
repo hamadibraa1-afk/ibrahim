@@ -365,7 +365,18 @@
       "closed": "Event closed.",
       "unreachableCoSign": "Closing as unreachable needs the clinical lead's co-sign, and a follow-up review is set for 72 hours later.",
       "unreachableLead": "Your signature is enough for this close; a follow-up review is set for 72 hours later.",
-      "waitingForLead": "The close was sent to the clinical lead to co-sign."
+      "waitingForLead": "The close was sent to the clinical lead to co-sign.",
+      "patientPlan": "What you agreed with the patient (optional)",
+      "patientPlanHint": "The patient sees these on their follow-up screen, in plain words. Never write names or notes here.",
+      "followUpCall": "Follow-up call",
+      "supportPerson": "Who stays with the patient",
+      "supportPeople": {
+        "none": "Not set",
+        "family": "Family member",
+        "friend": "Friend",
+        "partner": "Partner",
+        "other": "Someone they trust"
+      }
     },
     "readOnly": "Already acknowledged by {{name}}. You can read this case; actions are for the owner, a supervisor or the clinical lead.",
     "handover": {

@@ -1493,6 +1493,9 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                         .HasMaxLength(8100)
                         .HasColumnType("varbinary(max)");
 
+                    b.Property<DateTimeOffset?>("FollowUpCallAtUtc")
+                        .HasColumnType("datetimeoffset");
+
                     b.Property<Guid?>("HandoverFromUserId")
                         .HasColumnType("uniqueidentifier");
 
@@ -1566,6 +1569,11 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
 
                     b.Property<byte>("Status")
                         .HasColumnType("tinyint");
+
+                    b.Property<string>("SupportPerson")
+                        .HasMaxLength(16)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(16)");
 
                     b.Property<string>("TriggerRuleIds")
                         .IsRequired()

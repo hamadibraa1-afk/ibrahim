@@ -219,11 +219,18 @@ public sealed class CrisisWorkerTests : IAsyncLifetime
         noReason.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await noReason.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("detail").GetString().Should().Be("Please write a reason.");
 
-        (await asSupervisor.PostAsJsonAsync($"/v1/crisis/events/{eventId}/close", new { reason = "Reached by phone, safe with family, safety plan reviewed" })).StatusCode.Should().Be(HttpStatusCode.OK);
+        // P38 close steps: a follow-up call in the next 14 days and a support person code, nothing else.
+        (await asSupervisor.PostAsJsonAsync($"/v1/crisis/events/{eventId}/close", new { reason = "ok", supportPerson = "sister Huda" })).StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await asSupervisor.PostAsJsonAsync($"/v1/crisis/events/{eventId}/close", new { reason = "ok", followUpCallAt = DateTimeOffset.UtcNow.AddDays(20) })).StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var callAt = DateTimeOffset.UtcNow.AddDays(1);
+        (await asSupervisor.PostAsJsonAsync($"/v1/crisis/events/{eventId}/close", new { reason = "Reached by phone, safe with family, safety plan reviewed", followUpCallAt = callAt, supportPerson = "family" })).StatusCode.Should().Be(HttpStatusCode.OK);
 
         (await EvaluateAsync(patient.Id, "شكرًا، أحس أحسن")).GetProperty("decision").GetString().Should().Be("pass");
         await using var db = _sql.Context(StaticCurrentUser.ForStaff(Guid.NewGuid(), AppRoles.Supervisor));
         (await db.ChatLocks.SingleAsync(l => l.CrisisEventId == eventId)).ReleasedByUserId.Should().Be(supervisor.Id);
+        var closed = await db.CrisisEvents.SingleAsync(e => e.Id == eventId);
+        closed.SupportPerson.Should().Be("family");
+        closed.FollowUpCallAtUtc.Should().BeCloseTo(callAt, TimeSpan.FromSeconds(1));
     }
 
     [Fact]

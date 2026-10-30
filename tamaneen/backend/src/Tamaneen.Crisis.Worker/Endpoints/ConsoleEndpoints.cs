@@ -35,7 +35,8 @@ public static class ConsoleEndpoints
     private const string ContactField = "identity.contact";
     private const string ActionTextField = "crisis.action_text";
 
-    public sealed record CloseRequest(string? Outcome, string? Reason);
+    /// <summary>P38: the optional follow-up call time and support person code are what the patient sees afterwards.</summary>
+    public sealed record CloseRequest(string? Outcome, string? Reason, DateTimeOffset? FollowUpCallAt = null, string? SupportPerson = null);
 
     public sealed record StepUpRequest(string? TotpCode, string? Reason);
 
@@ -326,6 +327,7 @@ public static class ConsoleEndpoints
         CancellationToken cancellationToken)
     {
         var evt = await FindAsync(db, id, cancellationToken).ConfigureAwait(false);
+        evt.SetPatientPlan(request.FollowUpCallAt, string.IsNullOrWhiteSpace(request.SupportPerson) ? null : request.SupportPerson.Trim(), clock);
         if (request.Outcome is null)
         {
             evt.Close(user.UserId!.Value, user.Role!, request.Reason ?? string.Empty, clock);

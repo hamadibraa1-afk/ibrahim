@@ -14,7 +14,8 @@ namespace Tamaneen.Api.Endpoints;
 /// P38 «ما بعد الأزمة». After a clinician closes the patient's crisis event, the notification worker leaves a
 /// crisis.follow_up notice; while it is unread, home sends the patient here. Everything shown comes from
 /// structured data, never from the conversation, the risk level or a diagnosis: who handled the event, whether the
-/// treating therapist has been told (the server tells them, crisis.closed), and the next appointment. While an event
+/// treating therapist has been told (the server tells them, crisis.closed), the next appointment, and the close
+/// steps the responder recorded for the patient (the follow-up call time and the support person code). While an event
 /// is still open the screen shows "we are contacting you now" instead (state open). Each read is audited.
 /// </summary>
 public static class CrisisFollowUpEndpoints
@@ -32,7 +33,9 @@ public static class CrisisFollowUpEndpoints
         string? TherapistName,
         Guid? NextAppointmentId,
         DateTimeOffset? NextAppointmentAt,
-        bool Unread);
+        bool Unread,
+        DateTimeOffset? FollowUpCallAt = null,
+        string? SupportPerson = null);
 
     public static IEndpointRouteBuilder MapCrisisFollowUpEndpoints(this IEndpointRouteBuilder app)
     {
@@ -82,7 +85,9 @@ public static class CrisisFollowUpEndpoints
             therapistId is { } t ? names.GetValueOrDefault(t) : null,
             next?.Id,
             next?.StartsAtUtc,
-            unread));
+            unread,
+            closed.FollowUpCallAtUtc,
+            closed.SupportPerson));
     }
 
     /// <summary>«العودة للرئيسية»: the follow-up notices are read, so home stops sending the patient here.</summary>

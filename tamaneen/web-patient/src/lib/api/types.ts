@@ -367,7 +367,12 @@ export interface CrisisFollowUp {
   nextAppointmentAt: string | null;
   /** Not seen yet: home opens P38. */
   unread: boolean;
+  /** The follow-up call the responder set when closing, or null. */
+  followUpCallAt: string | null;
+  /** Who stays with the patient, recorded by the responder (a code, never a name), or null. */
+  supportPerson: SupportPerson | null;
 }
+export type SupportPerson = 'family' | 'friend' | 'partner' | 'other';
 // ---------- Phase 5: change therapist (P44), end of care (P53), session summary ----------
 
 export type ChangeReasonCode = 'not_comfortable' | 'schedule' | 'gender' | 'specialty' | 'other';

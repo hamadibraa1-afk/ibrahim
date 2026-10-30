@@ -254,7 +254,7 @@ During scheduled maintenance (`Platform:Maintenance` true) every patient endpoin
 | (worker) POST | /v1/crisis/events/{id}/handover | { toUserId, note? } → CrisisEventDetail (offer; the owner keeps the case) | S04 |
 | (worker) POST | /v1/crisis/events/{id}/handover/accept | → CrisisEventDetail (the colleague asked becomes the owner; otherwise 409 `error.crisis.nothing_pending`) | S04 |
 | (worker) POST | /v1/crisis/events/{id}/handover/decline | → CrisisEventDetail (the colleague declines or the owner withdraws) | S04 |
-| (worker) POST | /v1/crisis/events/{id}/close | { outcome, reason } → OpenCrisisEvent. `unreachable_referred` from a supervisor is held (status stays open, `pendingClose` on the detail) until the clinical lead co-signs | S04 |
+| (worker) POST | /v1/crisis/events/{id}/close | { outcome, reason, followUpCallAt?, supportPerson? } → OpenCrisisEvent. The two optional fields are what the patient sees on P38 «ما اتفقتما عليه» (call within the next 14 days; support person `family`, `friend`, `partner` or `other`; 400 field error otherwise). `unreachable_referred` from a supervisor is held (status stays open, `pendingClose` on the detail) until the clinical lead co-signs | S04 |
 | (worker) POST | /v1/crisis/events/{id}/close/cosign | → OpenCrisisEvent (clinical lead only; closes and sets a review 72 hours later, shown on the timeline) | S04 |
 | (worker) GET | /v1/crisis/health | → CrisisHealth | S04 |
 | (worker) hub | /hubs/crisis?lang= | crisisAlert (kind: opened, raised, escalated, acknowledged, updated, closed) | S01, S04 |

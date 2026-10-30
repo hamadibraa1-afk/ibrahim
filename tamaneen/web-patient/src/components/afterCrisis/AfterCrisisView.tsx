@@ -22,7 +22,7 @@ function Item({ children }: { children: ReactNode }) {
 
 /**
  * P38 after a crisis. Warm, without the conversation, the risk level or any diagnostic word: who the patient spoke
- * with, what follows (the therapist knows, the next appointment), a check-in, the safety plan, and a way to reach a
+ * with, what was agreed (the follow-up call, the therapist knows, the next appointment, the support person), a check-in, the safety plan, and a way to reach a
  * person now (the same Help now request, joined to an open episode by the server). «العودة للرئيسية» marks it seen.
  */
 export function AfterCrisisView({ followUp, timeZone, resources }: { followUp: CrisisFollowUp; timeZone: string; resources: ReactNode }) {
@@ -43,11 +43,17 @@ export function AfterCrisisView({ followUp, timeZone, resources }: { followUp: C
   }
 
   const items: ReactNode[] = [];
+  if (followUp.followUpCallAt) {
+    items.push(t('followUpCall', { when: formatDateTime(followUp.followUpCallAt, locale, timeZone) }));
+  }
   if (followUp.therapistInformed) {
     items.push(followUp.therapistName ? t('therapistInformed', { name: followUp.therapistName }) : t('therapistInformedPlain'));
   }
   if (followUp.nextAppointmentAt) {
     items.push(t('nextAppointment', { when: formatDateTime(followUp.nextAppointmentAt, locale, timeZone) }));
+  }
+  if (followUp.supportPerson) {
+    items.push(t('supportPerson', { who: t(`supportPeople.${followUp.supportPerson}`) }));
   }
 
   return (
@@ -60,7 +66,7 @@ export function AfterCrisisView({ followUp, timeZone, resources }: { followUp: C
         </span>
         <p className="text-lg font-semibold text-primary">{t('glad')}</p>
         <h1 className="text-2xl font-bold leading-snug">{followUp.talked && followUp.responder ? t('talkedWith', { name: followUp.responder }) : t('teamWithYou')}</h1>
-        <p className="leading-relaxed text-muted">{t('brave')}</p>
+        <p className="leading-relaxed text-muted">{items.length > 0 ? `${t('brave')} ${t('braveAgreed')}` : t('brave')}</p>
       </div>
 
       {items.length > 0 ? (
