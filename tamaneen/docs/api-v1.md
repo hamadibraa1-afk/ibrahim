@@ -91,20 +91,21 @@ and P01, P02, P12 and P15 show the emergency numbers instead of the start button
 | GET | /v1/appointments/{id} | → AppointmentDetail (same four fields; `cancelledBy` is `patient`, `therapist`, `care_ended` (S57 closed the care) or null; P54 reads `therapistLateMinutes`, P67 `cancelledBy: therapist`, P63 `missed`; `joinUrl` is kept for older clients, the apps now use the lobby) | P26, P28, P41, P54, P63, P67 |
 | GET | /v1/appointments/{id}/calendar | → text/calendar `appointment.ics`, neutral title «موعد» / "Appointment" with no platform, therapist or patient name (PB-42) | P26 |
 | POST | /v1/appointments/{id}/cancel | CancelRequest { reasonCode: schedule_conflict, feeling_better, unwell, therapist_fit, other } → AppointmentDetail (400 field error without a known reason; 409 within 24 h) | P28 |
-| POST | /v1/appointments/{id}/reschedule | RescheduleRequest → AppointmentDetail | P28 |
+| POST | /v1/appointments/{id}/reschedule | RescheduleRequest → AppointmentDetail (P28: 409 within 24 h; P54: free once the therapist is late; P67: an appointment the therapist cancelled is rebooked with priority: the same appointment becomes confirmed again with its sequence number, no 24-hour limit, the cancelled time is left as the therapist set it, audited with reason `therapist_cancelled`. Not for sessions closed at the end of care) | P28, P54, P67 |
+| POST | /v1/appointments/{id}/missed-check-in | `Idempotency-Key`? + { feeling: ok, tired, not_ok } → { feeling, recordedAt } (missed sessions only, else 409 `error.appointment.not_missed`; 400 field error for an unknown feeling; the latest answer is kept as `missedCheckIn` on AppointmentDetail; audited `appointment.missed_check_in`; a change to `not_ok` notifies the session's therapist and the supervisors `appointment.missed_not_ok` once and closes no follow-up task; no free text, so no gate) | P63 |
 | GET | /v1/home | → HomeSummary (`appointmentNotice`: `{ appointmentId, kind: cancelled \| missed }` for a session the therapist cancelled or marked missed in the last 7 days, until the patient books again) | P09 → P63, P67 |
 | POST | /v1/mood | MoodEntryRequest → MoodSaveResponse (note gated) | P09, P30 |
 | GET | /v1/mood?days=7 | → MoodEntry[] | P30 |
-| GET | /v1/homework | → HomeworkList | P29 |
+| GET | /v1/homework | → HomeworkList (`doneThisPeriod` counts this week, Sunday to Saturday in the patient's time zone, for every frequency; a cancelled exercise's `endsOn` is the day it was cancelled) | P29 |
 | GET | /v1/homework/{id} | → HomeworkDetail | P10 |
 | POST | /v1/homework/{id}/checkins | CheckinRequest → CheckinResponse (note gated) | P10 |
-| GET/PUT | /v1/safety-plan | SafetyPlan + `ETag` / UpdateSafetyPlanRequest (gate; sections and contact names). `contacts`: up to 5 `{ name ≤ 100, phone }`, encrypted with the patient key like the sections. `version` (also the ETag) is shared with the therapist's S35 builder: If-Match is optional here (queued offline writes), but when sent it must name the current version, else 412 `error.version.changed` | P37 |
+| GET/PUT | /v1/safety-plan | SafetyPlan + `ETag` / UpdateSafetyPlanRequest (gate; sections ≤ 1,000 characters each, the same limit as S35, and contact names). `contacts`: up to 5 `{ name ≤ 100, phone }`, encrypted with the patient key like the sections. `version` (also the ETag) is shared with the therapist's S35 builder: If-Match is optional here (queued offline writes), but when sent it must name the current version, else 412 `error.version.changed` | P37 |
 | GET | /v1/catalogs/change-reasons | → ChangeReason[] (`not_comfortable`, `schedule`, `gender`, `specialty`, `other`, labels in Accept-Language) | P44 |
 | POST | /v1/me/change-therapist-requests | CreateChangeRequest { reasonCode? } (Idempotency-Key) → 201 ChangeTherapistRequest (409 `error.change_request.open` + `current`; 409 `error.care.not_in_care` without a therapist) | P44 |
 | GET | /v1/me/change-therapist-requests/current | → ChangeTherapistRequest (`status`: requested, matching, offered, closed; 404 when none is open) | P44 |
 | GET | /v1/me/care-closure | → CareClosure (404 until a supervisor signed off the end of care) | P53 |
 | GET | /v1/me/care-closure/summary | → `text/plain` `summary.txt` (plain-language summary and relapse plan, no diagnosis or scores; audited `care.summary_downloaded`) | P53 |
-| POST | /v1/me/care/return | → { next } (`/matches` with the previous therapist suggested first, or `/therapists`) | P53 |
+| POST | /v1/me/care/return | → { next } (`/matches` with the previous therapist suggested first, or `/therapists`). Needs the short safety check first: a P23 screening (`POST /v1/screening/cssrs`, same gate) completed after the sign-off, within the last hour and below High, and no crisis lock; otherwise 409 `error.care.safety_check_required` + `next: /care/return`. The audit row names the screening | P53 |
 | GET | /v1/appointments/{id}/session-summary | → SessionSummary { points, sharedAt } (the points the therapist shared when signing the note; 404 otherwise) | P43 |
 
 Idempotency (P66 outbox, EC-01, EC-07): `POST /v1/mood`, `POST /v1/homework/{id}/checkins` and `PUT /v1/safety-plan` accept an
@@ -274,7 +275,8 @@ Appointment fields for the session screens: `therapistLateMinutes` (S18 running 
 (`patient`, `therapist` or null), `cancelReasonCode` (the patient sees only their own reason; staff see the therapist's) and
 `missed` (no-show recorded, P63). Notifications through `INotifier`: `appointment.running_late`,
 `appointment.cancelled_by_therapist` and `appointment.missed` to the patient; `appointment.rebook_needed` (EC-52) and
-`appointment.no_show_followup` (a second missed session in a row, EC-53, or one at risk 3–4, §11.1) to supervisors.
+`appointment.no_show_followup` (a second missed session in a row, EC-53, or one at risk 3–4, §11.1) to supervisors;
+`appointment.missed_not_ok` (P63 «مو بخير», category risk, important) to the session's therapist and the supervisors.
 
 Clinical file (S02). Statements are `concern`, `goals`, `supports`, `priorCare` and `hypotheses` (therapist only, always
 "not a diagnosis"). Each links to the patient messages it came from: the summary model cites the patient lines it used, and

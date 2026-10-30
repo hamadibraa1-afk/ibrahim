@@ -192,4 +192,9 @@
   <data name="closure.summary.signs" xml:space="preserve"><value>علاماتي: {0}</value></data>
   <data name="closure.summary.do" xml:space="preserve"><value>ما أفعله: {0}</value></data>
   <data name="closure.summary.return" xml:space="preserve"><value>تقدر ترجع في أي وقت دون تسجيل جديد.</value></data>
+  <data name="error.appointment.not_missed" xml:space="preserve"><value>هذا الموعد غير مسجل كجلسة فائتة.</value></data>
+  <data name="notify.appointment.missed_not_ok" xml:space="preserve"><value>{patient} فاتته جلسة {time} ويقول إنه ليس بخير. تواصل معه للاطمئنان.</value></data>
+  <data name="notify.appointment.missed_not_ok.plain" xml:space="preserve"><value>مريض فاتته جلسة يقول إنه ليس بخير. تواصل معه للاطمئنان.</value></data>
+  <data name="error.care.safety_check_required" xml:space="preserve"><value>قبل العودة، أجب عن فحص السلامة القصير.</value></data>
+  <data name="notify.homework.cancelled" xml:space="preserve"><value>انتهى أحد تمارينك، وتجده في «المكتملة».</value></data>
 </root>

@@ -64,7 +64,9 @@
       "notOkBody": "Thank you for telling us. You don't have to wait for a session: someone can talk with you now.",
       "resources": "Emergency numbers and support",
       "rebook": "Book a new appointment",
-      "talkNow": "I need to talk to someone now"
+      "talkNow": "I need to talk to someone now",
+      "sendError": "Your answer didn't reach us. Try again.",
+      "retry": "Try again"
     }
   }
 }

@@ -956,6 +956,14 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                     b.Property<int>("DurationMinutes")
                         .HasColumnType("int");
 
+                    b.Property<string>("MissedCheckIn")
+                        .HasMaxLength(8)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(8)");
+
+                    b.Property<DateTimeOffset?>("MissedCheckInAtUtc")
+                        .HasColumnType("datetimeoffset");
+
                     b.Property<DateTimeOffset?>("OutcomeRecordedAtUtc")
                         .HasColumnType("datetimeoffset");
 

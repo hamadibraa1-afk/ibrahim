@@ -230,6 +230,52 @@ public sealed class SchedulingStaffTests : IAsyncLifetime
         (await Read(await patient.GetAsync("/v1/home"))).GetProperty("appointmentNotice").GetProperty("kind").GetString().Should().Be("missed");
     }
 
+    [Fact]
+    public async Task P63_the_missed_session_check_in_is_stored_and_not_ok_alerts_the_therapist_and_the_supervisors_once()
+    {
+        var (therapistId, me) = await NewTherapistAsync();
+        var (patient, _) = await BookablePatientAsync();
+        var (stranger, _) = await BookablePatientAsync();
+        await Read(await me.PostAsJsonAsync("/v1/staff/availability/slots", new { startsAt = WeekdayAt(2, 15) }));
+        var booking = await BookAsync(patient, therapistId);
+        var pseudonym = (await Read(await patient.GetAsync("/v1/me"))).GetProperty("pseudonymId").GetString();
+
+        // Only a missed session takes the check-in.
+        (await Problem(await patient.PostAsJsonAsync($"/v1/appointments/{booking.AppointmentId}/missed-check-in", new { feeling = "ok" }), 409))
+            .GetProperty("code").GetString().Should().Be(ErrorCodes.AppointmentNotMissed);
+        await MoveAppointmentAsync(booking.AppointmentId, DateTimeOffset.UtcNow.AddMinutes(-60));
+        await Read(await me.PostAsJsonAsync($"/v1/staff/appointments/{booking.AppointmentId}/outcome", new { outcome = "no_show" }));
+
+        (await Problem(await patient.PostAsJsonAsync($"/v1/appointments/{booking.AppointmentId}/missed-check-in", new { feeling = "meh" }), 400))
+            .GetProperty("errors").TryGetProperty("feeling", out _).Should().BeTrue();
+        await Problem(await stranger.PostAsJsonAsync($"/v1/appointments/{booking.AppointmentId}/missed-check-in", new { feeling = "ok" }), 404);
+
+        var tired = await Read(await patient.PostAsJsonAsync($"/v1/appointments/{booking.AppointmentId}/missed-check-in", new { feeling = "tired" }));
+        tired.GetProperty("feeling").GetString().Should().Be("tired");
+        Notices.All.Should().NotContain(n => n.Kind == "appointment.missed_not_ok");
+
+        var notOk = await Read(await patient.PostAsJsonAsync($"/v1/appointments/{booking.AppointmentId}/missed-check-in", new { feeling = "not_ok" }));
+        notOk.GetProperty("feeling").GetString().Should().Be("not_ok");
+        (await Read(await patient.GetAsync($"/v1/appointments/{booking.AppointmentId}"))).GetProperty("missedCheckIn").GetString().Should().Be("not_ok");
+        var alerts = Notices.All.Where(n => n.Kind == "appointment.missed_not_ok").ToList();
+        alerts.Should().Contain(n => n.RecipientUserId == therapistId && n.Link == $"/patients/{pseudonym}");
+        List<Guid> supervisors;
+        await using (var db = _sql.Context(StaticCurrentUser.ForStaff(Guid.NewGuid(), AppRoles.Supervisor)))
+        {
+            supervisors = await db.UserAccounts.Where(u => u.Role == AppRoles.Supervisor).Select(u => u.Id).ToListAsync();
+            var entity = booking.AppointmentId.ToString();
+            (await db.AuditEntries.CountAsync(a => a.EntityId == entity && a.Action == "appointment.missed_check_in")).Should().Be(2);
+        }
+
+        supervisors.Should().NotBeEmpty();
+        alerts.Select(n => n.RecipientUserId).Should().Contain(supervisors);
+        alerts.SelectMany(n => n.Data.Values).Should().NotContain("not_ok", "the answer itself is not in the notice");
+
+        // A resend of «مو بخير» does not alert again.
+        await Read(await patient.PostAsJsonAsync($"/v1/appointments/{booking.AppointmentId}/missed-check-in", new { feeling = "not_ok" }));
+        Notices.All.Count(n => n.Kind == "appointment.missed_not_ok").Should().Be(alerts.Count);
+    }
+
     // ---------- helpers ----------
 
     private sealed record SlotRow(Guid Id, DateTimeOffset Start, DateTimeOffset End, int Minutes, string Status);

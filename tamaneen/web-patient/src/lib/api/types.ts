@@ -230,7 +230,13 @@ export interface AppointmentDetail extends Appointment {
   joinAvailableAt: string;
   /** The therapist's own "running late" notice in minutes (S18), or null. P54 also starts when the start passes without the therapist. */
   therapistLateMinutes: number | null;
+  /** P63: the patient's latest «كيف حالك الآن؟» answer on a missed session, or null. */
+  missedCheckIn: MissedFeeling | null;
 }
+/** P63 «بخير / متعب شوي / مو بخير». */
+export type MissedFeeling = 'ok' | 'tired' | 'not_ok';
+/** POST /v1/appointments/{id}/missed-check-in. */
+export interface MissedCheckInSaved { feeling: MissedFeeling; recordedAt: string }
 export interface AppointmentList { upcoming: Appointment[]; past: Appointment[] }
 export interface RescheduleRequest { slotId: string }
 /** P28 cancel reasons (PB-45). Codes only; the labels are in messages `appointmentDetail.reasons`. */

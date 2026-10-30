@@ -71,6 +71,8 @@ public static class ErrorCodes
     public const string HoldExpired = "error.slot.hold_expired";
     public const string AppointmentNotChangeable = "error.appointment.not_changeable";
     public const string AppointmentNotStarted = "error.appointment.not_started";
+    public const string AppointmentNotMissed = "error.appointment.not_missed";
+    public const string CareReturnSafetyCheckRequired = "error.care.safety_check_required";
     public const string BookingNotEligible = "error.booking.not_eligible";
     public const string QuestionNotPending = "error.intake.question_not_pending";
     public const string IntakeNotFinished = "error.intake.not_finished";

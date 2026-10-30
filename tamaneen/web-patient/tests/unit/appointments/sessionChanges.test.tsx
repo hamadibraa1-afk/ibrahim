@@ -17,6 +17,7 @@ const mocks = vi.hoisted(() => ({
 }));
 vi.mock('@/lib/api/server', () => ({ getMe: mocks.getMe, serverGetOptional: mocks.serverGetOptional }));
 vi.mock('@/lib/api/client', () => ({ api: mocks.api }));
+vi.mock('@/lib/platform-config', () => ({ loadSafetyNumbers: async () => ({ emergencyNumber: '997', supportLine: '920033360' }) }));
 vi.mock('next/navigation', () => ({ notFound: () => { throw new Error('not found'); } }));
 vi.mock('next-intl/server', () => ({
   setRequestLocale: () => undefined,
@@ -106,19 +107,35 @@ describe('P63 missed session', () => {
     expect(mocks.redirect).toHaveBeenCalledWith('/appointments/a1');
   });
 
-  it('shows the crisis resources and the talk-now option for «مو بخير»', async () => {
-    renderWithIntl(<MissedCheckIn />, 'ar');
+  it('sends each answer and shows the crisis resources and the talk-now option for «مو بخير»', async () => {
+    mocks.api.mockResolvedValue({ feeling: 'ok', recordedAt: '2026-10-21T14:00:00Z' });
+    renderWithIntl(<MissedCheckIn appointmentId="a1" resources={<a href="tel:997">997</a>} />, 'ar');
     await userEvent.click(screen.getByRole('button', { name: 'بخير' }));
     expect(screen.queryByTestId('not-ok-support')).toBeNull();
+    expect(mocks.api).toHaveBeenLastCalledWith('appointments/a1/missed-check-in', expect.objectContaining({ method: 'POST', body: { feeling: 'ok' }, idempotencyKey: expect.any(String) }));
     await userEvent.click(screen.getByRole('button', { name: 'مو بخير' }));
+    expect(mocks.api).toHaveBeenLastCalledWith('appointments/a1/missed-check-in', expect.objectContaining({ body: { feeling: 'not_ok' } }));
     expect(screen.getByRole('button', { name: 'مو بخير' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByTestId('not-ok-support')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '997' })).toHaveAttribute('href', 'tel:997');
     expect(screen.getByRole('link', { name: 'أرقام الطوارئ والدعم' })).toHaveAttribute('href', '/crisis-resources');
   });
 
-  it('labels the feelings in English', () => {
-    renderWithIntl(<MissedCheckIn />, 'en');
-    expect(screen.getByRole('button', { name: 'Not okay' })).toBeInTheDocument();
+  it('keeps the support visible and offers a retry with the same key when the answer fails to send (English)', async () => {
+    mocks.api.mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce({ feeling: 'not_ok', recordedAt: '2026-10-21T14:00:00Z' });
+    renderWithIntl(<MissedCheckIn appointmentId="a1" />, 'en');
+    await userEvent.click(screen.getByRole('button', { name: 'Not okay' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent("Your answer didn't reach us.");
+    expect(screen.getByTestId('not-ok-support')).toBeInTheDocument();
+    const firstKey = mocks.api.mock.calls[0]?.[1]?.idempotencyKey;
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
+    expect(mocks.api.mock.calls[1]?.[1]?.idempotencyKey).toBe(firstKey);
+  });
+
+  it('shows the answer already given', () => {
+    renderWithIntl(<MissedCheckIn appointmentId="a1" initial="tired" />, 'en');
+    expect(screen.getByRole('button', { name: 'A bit tired' })).toHaveAttribute('aria-pressed', 'true');
   });
 });
 

@@ -181,6 +181,7 @@ internal sealed class AppointmentConfiguration : IEntityTypeConfiguration<Appoin
         b.Property(x => x.RoomId).HasMaxLength(64).IsUnicode(false).IsRequired();
         b.Property(x => x.CancelReason).HasMaxLength(CancelReasons.MaxLength).IsUnicode(false);
         b.Property(x => x.TherapistCancelNoteCipher).HasMaxLength(4096);
+        b.Property(x => x.MissedCheckIn).HasMaxLength(8).IsUnicode(false);
         b.Ignore(x => x.CancelledBy);
         b.Ignore(x => x.Missed);
         b.HasIndex(x => new { x.PatientId, x.StartsAtUtc });
