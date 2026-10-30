@@ -136,10 +136,18 @@ test.describe('Arabic patient journey', () => {
     await expect(next).toBeVisible();
     await expect(next.getByRole('link', { name: `تفاصيل جلستك مع ${name}` })).toBeVisible();
 
+    // T-501: persist the wish to continue through the real BFF/API and a reload.
+    await page.getByTestId('continue-care-submit').click();
+    await expect(page.getByTestId('continue-care').getByRole('status')).toBeVisible();
+    await page.reload();
+    await expect(page.getByTestId('continue-care').getByRole('status')).toBeVisible();
+    await expect(page.getByTestId('continue-care-submit')).toHaveCount(0);
+
     // Language switch on P09: same page and query, English and left-to-right
     await page.getByTestId('language-toggle').click();
     await expect(page).toHaveURL(/\/en\/home\?from=e2e$/);
     await expectDirection(page, 'en');
+    await expect(page.getByTestId('continue-care').getByRole('status')).toContainText('Your request to continue care is recorded.');
     await expect(page.getByRole('region', { name: /^Your session with / })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Browse specialists' })).toHaveCount(0);
     await expect(page.getByTestId('help-now')).toHaveText('Help now');

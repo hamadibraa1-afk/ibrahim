@@ -1,12 +1,13 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { ContinueCareCard } from '@/components/care/ContinueCareCard';
 import { CareEndedCard } from '@/components/care/CareEndedCard';
 import { HomeView } from '@/components/home/HomeView';
 import { Link, redirect } from '@/i18n/navigation';
 import { BottomNav, BottomNavSpacer } from '@/components/ui/BottomNav';
 import { isLocale, routing } from '@/i18n/routing';
 import { getMe, serverGet, serverGetOptional } from '@/lib/api/server';
-import type { AppointmentDetail, CrisisFollowUp, HomeSummary } from '@/lib/api/types';
+import type { AppointmentDetail, AppointmentList, ContinueCare, CrisisFollowUp, HomeSummary } from '@/lib/api/types';
 import { DEFAULT_TIME_ZONE } from '@/lib/format';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
@@ -33,6 +34,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const now = new Date();
   const next = home.nextAppointment;
   const join = next && Date.parse(next.startsAt) - now.getTime() <= JOIN_LOOKAHEAD_MS ? await serverGetOptional<AppointmentDetail>(`appointments/${next.id}`).catch(() => null) : null;
+  const appointments = !me.careClosedAt ? await serverGet<AppointmentList>('appointments') : null;
+  const inCare = Boolean(appointments && (appointments.upcoming.length || appointments.past.length));
+  const continuation = inCare ? await serverGet<ContinueCare>('me/care/continue') : null;
   return (
     <>
       {followUp?.state === 'closed' ? (
@@ -50,6 +54,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         intakeStatus={me.onboarding.intakeStatus}
         join={join}
       />
+      {continuation ? <ContinueCareCard initial={continuation} /> : null}
       <BottomNavSpacer />
       <BottomNav active="home" />
     </>
