@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, input, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, HostListener, effect, inject, input, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -13,6 +13,7 @@ import { type ShownError, shownError, statusOf } from '../../core/api/problem';
 import { StaffApiService } from '../../core/api/staff-api.service';
 import type { GoalStatus, PlanFrequency, PlanHistory, PlanVersion, SavePlanRequest } from '../../core/api/types';
 import { LanguageService } from '../../core/i18n/language.service';
+import { SessionService } from '../../core/session/session.service';
 import { LocalDatePipe } from '../../shared/local-date.pipe';
 import { ProblemMessageComponent } from '../../shared/problem-message.component';
 import { careUi } from './care-dialogs';
@@ -21,6 +22,15 @@ import { PatientTabsComponent } from './patient-tabs.component';
 
 export const GOAL_STATUSES: readonly GoalStatus[] = ['not_started', 'ongoing', 'improving'];
 export const PLAN_FREQUENCIES: readonly PlanFrequency[] = ['weekly', 'biweekly', 'monthly'];
+
+/** What is kept while the therapist edits: the draft, the version it is based on, and whether a save is waiting for the connection. */
+export interface KeptPlanDraft {
+  draft: PlanDraft;
+  basedOn: number;
+  waiting: boolean;
+}
+
+export const planDraftKey = (pseudonymId: string) => `plan:${pseudonymId.toUpperCase()}`;
 
 interface PlanDraft {
   goals: string;
@@ -36,6 +46,11 @@ interface PlanDraft {
  * interventions, session frequency, review date and follow-up notes. "Save as a new version" sends the version the
  * draft started from (If-Match); a 412 shows the newer version beside the draft to merge (EC-50). Saving is disabled
  * until the clinical file is approved (SB-15). Older versions open read-only (SB-20) and are never deleted.
+ *
+ * Lost connection («المسودة محفوظة محليًا ويُعاد الحفظ»): every edit is kept in memory for the session
+ * (SessionService.keepDraft), so leaving the page or a failed save loses nothing; a save that failed for the
+ * connection is sent again when the browser is back online. Clinical text is never written to browser storage
+ * (see SessionService); closing the tab with an unsent draft asks first.
  */
 @Component({
   selector: 'tm-treatment-plan',
@@ -50,6 +65,7 @@ export class TreatmentPlanComponent {
   private readonly api = inject(StaffApiService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly ui = careUi();
+  private readonly session = inject(SessionService);
   protected readonly language = inject(LanguageService);
 
   protected readonly statuses = GOAL_STATUSES;
@@ -68,6 +84,11 @@ export class TreatmentPlanComponent {
   protected basedOn = 0;
   protected draft: PlanDraft = this.fromVersion(null);
   protected readonly minDate = localDate(1);
+  /** A save failed for the connection and is sent again when it returns. */
+  protected readonly waiting = signal(false);
+  /** The draft shown was kept from earlier in this session, not loaded from the server. */
+  protected readonly restored = signal(false);
+  private dirty = false;
 
   constructor() {
     effect(() => {
@@ -86,8 +107,22 @@ export class TreatmentPlanComponent {
           this.history.set(h);
           this.loading.set(false);
           if (!keepDraft) {
-            this.basedOn = h.current?.version ?? 0;
-            this.draft = this.fromVersion(h.current);
+            const kept = this.session.draft<KeptPlanDraft>(planDraftKey(h.pseudonymId));
+            if (kept) {
+              this.basedOn = kept.basedOn;
+              this.draft = { ...kept.draft, statuses: [...kept.draft.statuses] };
+              this.dirty = true;
+              this.restored.set(true);
+              this.waiting.set(kept.waiting);
+              if (kept.waiting && this.online()) {
+                this.save();
+              }
+            } else {
+              this.basedOn = h.current?.version ?? 0;
+              this.draft = this.fromVersion(h.current);
+              this.dirty = false;
+              this.restored.set(false);
+            }
           }
         },
         error: (e: unknown) => {
@@ -113,6 +148,33 @@ export class TreatmentPlanComponent {
     const next = [...this.draft.statuses];
     next[i] = status;
     this.draft.statuses = next;
+    this.remember();
+  }
+
+  /** Keeps the draft in memory after every edit. */
+  protected remember(): void {
+    const h = this.history();
+    if (!h?.canEdit) {
+      return;
+    }
+    this.dirty = true;
+    this.session.keepDraft(planDraftKey(h.pseudonymId), { draft: { ...this.draft, statuses: [...this.draft.statuses] }, basedOn: this.basedOn, waiting: this.waiting() } satisfies KeptPlanDraft);
+  }
+
+  /** Back online: send the save that was waiting. */
+  @HostListener('window:online')
+  protected reconnected(): void {
+    if (this.waiting() && !this.saving()) {
+      this.save();
+    }
+  }
+
+  /** Closing the tab loses the in-memory draft: ask first. */
+  @HostListener('window:beforeunload', ['$event'])
+  protected beforeUnload(event: BeforeUnloadEvent): void {
+    if (this.dirty) {
+      event.preventDefault();
+    }
   }
 
   protected valid(): boolean {
@@ -138,17 +200,23 @@ export class TreatmentPlanComponent {
       next: () => {
         this.saving.set(false);
         this.conflict.set(null);
+        this.forget(h.pseudonymId);
         this.ui.notify('care.plan.saved');
         this.load();
       },
       error: (e: unknown) => {
         this.saving.set(false);
-        if (statusOf(e) === 412) {
+        if (statusOf(e) === 0 || !this.online()) {
+          // Lost connection: the draft stays in memory and is sent again when the connection returns.
+          this.waiting.set(true);
+          this.remember();
+        } else if (statusOf(e) === 412) {
           // Keep the draft; show the newer version and base the next save on it.
           this.api.plans(h.pseudonymId).subscribe((latest) => {
             this.history.set(latest);
             this.conflict.set(latest.current);
             this.basedOn = latest.current?.version ?? 0;
+            this.remember();
           });
         } else {
           this.saveError.set(shownError(e, 'care.plan.saveError'));
@@ -162,6 +230,7 @@ export class TreatmentPlanComponent {
     this.ui.confirm('care.plan.discardTitle', 'care.plan.discardBody', 'care.plan.discardConfirm', false, () => of(true)).subscribe((r) => {
       if (r) {
         this.conflict.set(null);
+        this.forget(this.history()?.pseudonymId ?? this.id());
         this.load();
       }
     });
@@ -176,6 +245,17 @@ export class TreatmentPlanComponent {
 
   protected asText(v: PlanVersion): string {
     return v.goals.map((g) => g.text).join('\n');
+  }
+
+  private forget(pseudonymId: string): void {
+    this.session.dropDraft(planDraftKey(pseudonymId));
+    this.dirty = false;
+    this.waiting.set(false);
+    this.restored.set(false);
+  }
+
+  private online(): boolean {
+    return typeof navigator === 'undefined' || navigator.onLine !== false;
   }
 
   private fromVersion(v: PlanVersion | null): PlanDraft {

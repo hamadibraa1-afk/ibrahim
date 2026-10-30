@@ -12,6 +12,12 @@ export class SessionService {
   private readonly activeRole = signal<StaffRole | null>(null);
   private readonly onCallNow = signal(false);
   private readonly name = signal<string | null>(null);
+  /**
+   * Unsaved clinical drafts (S15 plan), by key. Kept in this tab's memory only, never in browser storage: the
+   * portal runs on shared clinic computers, and a copy on disk (even encrypted under a key stored beside it)
+   * would outlive the sign-out. Cleared with the session.
+   */
+  private readonly drafts = new Map<string, unknown>();
 
   readonly roles = this.heldRoles.asReadonly();
   readonly role = this.activeRole.asReadonly();
@@ -44,7 +50,20 @@ export class SessionService {
     this.activeRole.set(role);
   }
 
+  keepDraft(key: string, value: unknown): void {
+    this.drafts.set(key, value);
+  }
+
+  draft<T>(key: string): T | null {
+    return (this.drafts.get(key) as T | undefined) ?? null;
+  }
+
+  dropDraft(key: string): void {
+    this.drafts.delete(key);
+  }
+
   clear(): void {
+    this.drafts.clear();
     this.heldRoles.set([]);
     this.activeRole.set(null);
     this.onCallNow.set(false);

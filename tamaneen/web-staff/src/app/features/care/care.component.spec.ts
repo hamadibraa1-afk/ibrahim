@@ -7,7 +7,9 @@ import { PatientHomeworkComponent, localDate } from './patient-homework.componen
 import { PatientOverviewComponent } from './patient-overview.component';
 import { SafetyPlanBuilderComponent } from './safety-plan-builder.component';
 import { SessionNotesComponent } from './session-notes.component';
-import { TreatmentPlanComponent } from './treatment-plan.component';
+import { TreatmentPlanComponent, planDraftKey } from './treatment-plan.component';
+import { TestBed } from '@angular/core/testing';
+import { SessionService } from '../../core/session/session.service';
 
 afterEach(() => {
   document.querySelector('.cdk-overlay-container')?.replaceChildren();
@@ -207,6 +209,54 @@ describe('TreatmentPlanComponent (S15)', () => {
     expect(q('no-plan')!.textContent).toContain('لا إصدارات بعد');
   });
 
+  it('keeps the draft in memory when the connection drops and saves it again when it returns', async () => {
+    const first = await renderCare(TreatmentPlanComponent, { id: PID });
+    first.backend.expectOne(`${PATIENT_URL}/plans`).flush(planHistory());
+    await first.update();
+    type(first.q('plan-goals'), 'Sleep better\nWalk weekly');
+    await first.update();
+    first.q('plan-save')!.click();
+    first.backend.expectOne(`${PATIENT_URL}/plans`).error(new ProgressEvent('error'));
+    await first.update();
+    expect(first.q('plan-waiting')!.textContent).toContain('Connection lost');
+
+    // Leaving and coming back keeps it (memory only: nothing is written to browser storage).
+    first.fixture.destroy();
+    expect(JSON.stringify({ ...localStorage })).not.toContain('Walk weekly');
+    expect(JSON.stringify({ ...sessionStorage })).not.toContain('Walk weekly');
+    const again = TestBed.createComponent(TreatmentPlanComponent);
+    again.componentRef.setInput('id', PID);
+    again.detectChanges();
+    const el = again.nativeElement as HTMLElement;
+    first.backend.expectOne(`${PATIENT_URL}/plans`).flush(planHistory());
+    // Back online in the meantime: the waiting save is sent at once, based on the version it started from.
+    const resent = first.backend.expectOne(`${PATIENT_URL}/plans`);
+    expect(resent.request.headers.get('If-Match')).toBe('"2"');
+    expect(resent.request.body.goals.length).toBe(2);
+    resent.flush({});
+    first.backend.expectOne(`${PATIENT_URL}/plans`).flush(planHistory({ current: { ...planHistory().current!, version: 3 } }));
+    again.detectChanges();
+    await first.update();
+    again.detectChanges();
+    expect(el.querySelector('[data-testid="plan-waiting"]')).toBeNull();
+    expect(TestBed.inject(SessionService).draft(planDraftKey(PID))).toBeNull();
+  });
+
+  it('sends a waiting save when the browser reports it is online again', async () => {
+    const { q, update, backend } = await renderCare(TreatmentPlanComponent, { id: PID });
+    backend.expectOne(`${PATIENT_URL}/plans`).flush(planHistory());
+    await update();
+    type(q('plan-interventions'), 'CBT-I, breathing');
+    q('plan-save')!.click();
+    backend.expectOne(`${PATIENT_URL}/plans`).error(new ProgressEvent('error'));
+    await update();
+    window.dispatchEvent(new Event('online'));
+    const resent = backend.expectOne(`${PATIENT_URL}/plans`);
+    expect(resent.request.body.interventions).toBe('CBT-I, breathing');
+    resent.flush({});
+    backend.expectOne(`${PATIENT_URL}/plans`).flush(planHistory());
+  });
+
   it('opens an older version read-only', async () => {
     const { q, update, backend } = await renderCare(TreatmentPlanComponent, { id: PID });
     backend.expectOne(`${PATIENT_URL}/plans`).flush(planHistory());
@@ -216,6 +266,7 @@ describe('TreatmentPlanComponent (S15)', () => {
     await update();
     expect(q('plan-viewing')!.textContent).toContain('Breathing');
     expect(q('plan-viewing')!.textContent).toContain('Read-only');
+    expect(q('viewing-frequency')!.textContent).toContain('Weekly');
   });
 });
 

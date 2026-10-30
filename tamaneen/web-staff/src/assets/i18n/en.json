@@ -1129,7 +1129,9 @@
       "view": "View",
       "none": "No versions yet.",
       "neverDeleted": "Every save creates a new version; old versions can’t be deleted.",
-      "readOnly": "Read-only"
+      "readOnly": "Read-only",
+      "waiting": "Connection lost. The draft is kept on this page for this session and is saved again as soon as the connection returns.",
+      "restored": "This is your unsaved draft from this session."
     },
     "homework": {
       "loadError": "Homework can’t be loaded right now.",
