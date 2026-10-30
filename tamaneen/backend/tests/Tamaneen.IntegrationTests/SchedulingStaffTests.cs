@@ -230,6 +230,42 @@ public sealed class SchedulingStaffTests : IAsyncLifetime
         (await Read(await patient.GetAsync("/v1/home"))).GetProperty("appointmentNotice").GetProperty("kind").GetString().Should().Be("missed");
     }
 
+    [Fact]
+    public async Task The_therapist_reschedules_to_one_of_their_own_free_times_and_the_patient_is_told()
+    {
+        var (therapistId, me) = await NewTherapistAsync();
+        var (_, other) = await NewTherapistAsync();
+        var (patient, _) = await BookablePatientAsync();
+        await Read(await me.PostAsJsonAsync("/v1/staff/availability/slots", new { startsAt = WeekdayAt(2, 14) }));
+        await Read(await me.PostAsJsonAsync("/v1/staff/availability/slots", new { startsAt = WeekdayAt(3, 14) }));
+        var otherSlot = await Read(await other.PostAsJsonAsync("/v1/staff/availability/slots", new { startsAt = WeekdayAt(3, 15) }));
+        var booking = await BookAsync(patient, therapistId);
+
+        // Only the therapist's own free times are offered.
+        var free = (await Read(await me.GetAsync("/v1/staff/free-slots"))).EnumerateArray().Select(s => s.GetProperty("slotId").GetGuid()).ToList();
+        free.Should().NotContain(booking.SlotId).And.NotContain(otherSlot.GetProperty("slotId").GetGuid()).And.HaveCount(1);
+        var target = free.Single();
+
+        // A reason is required, another therapist's time is refused, another therapist cannot move it.
+        (await Problem(await me.PostAsJsonAsync($"/v1/staff/appointments/{booking.AppointmentId}/reschedule", new { slotId = target }), 400))
+            .GetProperty("errors").TryGetProperty("reasonCode", out _).Should().BeTrue();
+        await Problem(await me.PostAsJsonAsync($"/v1/staff/appointments/{booking.AppointmentId}/reschedule", new { slotId = otherSlot.GetProperty("slotId").GetGuid(), reasonCode = "illness" }), 409);
+        await Problem(await other.PostAsJsonAsync($"/v1/staff/appointments/{booking.AppointmentId}/reschedule", new { slotId = target, reasonCode = "illness" }), 404);
+
+        var moved = await Read(await me.PostAsJsonAsync($"/v1/staff/appointments/{booking.AppointmentId}/reschedule", new { slotId = target, reasonCode = "schedule_conflict" }));
+        moved.GetProperty("startsAt").GetDateTimeOffset().Should().Be(WeekdayAt(3, 14));
+        var seen = await Read(await patient.GetAsync($"/v1/appointments/{booking.AppointmentId}"));
+        seen.GetProperty("rescheduled").GetBoolean().Should().BeTrue();
+        seen.GetProperty("startsAt").GetDateTimeOffset().Should().Be(WeekdayAt(3, 14));
+        Notices.All.Should().Contain(n => n.Kind == "appointment.rescheduled" && n.Link == $"/appointments/{booking.AppointmentId}" && n.Data.ContainsKey("therapistName"));
+        Slots(await Read(await me.GetAsync("/v1/staff/availability"))).Should().Contain(s => s.Id == booking.SlotId && s.Status == "blocked");
+        (await Read(await me.GetAsync("/v1/staff/free-slots"))).GetArrayLength().Should().Be(0);
+
+        await using var db = _sql.Context(StaticCurrentUser.ForStaff(Guid.NewGuid(), AppRoles.Supervisor));
+        (await db.AuditEntries.AnyAsync(e => e.Action == "appointment.rescheduled" && e.EntityId == booking.AppointmentId.ToString() && e.ActorUserId == therapistId && e.Reason!.StartsWith("therapist:schedule_conflict")))
+            .Should().BeTrue();
+    }
+
     // ---------- helpers ----------
 
     private sealed record SlotRow(Guid Id, DateTimeOffset Start, DateTimeOffset End, int Minutes, string Status);

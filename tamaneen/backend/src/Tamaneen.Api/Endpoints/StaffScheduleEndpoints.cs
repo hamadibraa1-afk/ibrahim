@@ -45,6 +45,10 @@ public static class StaffScheduleEndpoints
 
     public sealed record TherapistCancelRequest(string? ReasonCode, string? Note);
 
+    public sealed record TherapistRescheduleRequest(Guid? SlotId, string? ReasonCode);
+
+    public sealed record FreeSlotDto(Guid SlotId, DateTimeOffset StartsAt, int DurationMinutes);
+
     public const int MaxNoteLength = 500;
 
     public static IEndpointRouteBuilder MapStaffScheduleEndpoints(this IEndpointRouteBuilder app)
@@ -54,6 +58,8 @@ public static class StaffScheduleEndpoints
         g.MapGet("/appointments/{id:guid}", DetailAsync);
         g.MapPost("/appointments/{id:guid}/running-late", RunningLateAsync);
         g.MapPost("/appointments/{id:guid}/cancel", CancelAsync);
+        g.MapPost("/appointments/{id:guid}/reschedule", RescheduleAsync);
+        g.MapGet("/free-slots", FreeSlotsAsync);
         return app;
     }
 
@@ -130,6 +136,59 @@ public static class StaffScheduleEndpoints
         await SchedulingEndpoints.SaveOrConflictAsync(db, ct).ConfigureAwait(false);
 
         await notices.CancelledAsync(a, pseudonym, ct).ConfigureAwait(false);
+        return TypedResults.Ok((await MapAsync(db, [a], clock, ct).ConfigureAwait(false)).Single());
+    }
+
+    /// <summary>The therapist's own free times from now on (?days=1..60, default 28): for S18 reschedule and S33 "book the next session".</summary>
+    internal static async Task<Ok<List<FreeSlotDto>>> FreeSlotsAsync(HttpContext http, ICurrentUser user, TamaneenDbContext db, IClock clock, CancellationToken ct)
+    {
+        var days = int.TryParse(http.Request.Query["days"], NumberStyles.None, CultureInfo.InvariantCulture, out var d) ? Math.Clamp(d, 1, 60) : 28;
+        var now = clock.UtcNow;
+        var until = now.AddDays(days);
+        var me = user.UserId!.Value;
+        var slots = await db.AvailabilitySlots.AsNoTracking()
+            .Where(s => s.TherapistUserId == me && s.StartsAtUtc > now && s.StartsAtUtc <= until
+                        && (s.Status == SlotStatus.Open || (s.Status == SlotStatus.Held && s.HeldUntilUtc <= now)))
+            .OrderBy(s => s.StartsAtUtc).Select(s => new FreeSlotDto(s.Id, s.StartsAtUtc, s.DurationMinutes)).Take(200).ToListAsync(ct).ConfigureAwait(false);
+        return TypedResults.Ok(slots);
+    }
+
+    /// <summary>
+    /// SB-26 reschedule by the therapist: a reason code is required and the new time must be one of the therapist's
+    /// own free times. The old time is taken out of the calendar, as on a cancel (the therapist said they cannot make
+    /// it; S19 can reopen it). The patient is told; the move is audited.
+    /// </summary>
+    internal static async Task<Ok<StaffAppointmentDto>> RescheduleAsync(Guid id, TherapistRescheduleRequest request, ICurrentUser user, TamaneenDbContext db, AppointmentNotices notices, IAuditLog audit, IClock clock, CancellationToken ct)
+    {
+        var reason = request.ReasonCode?.Trim();
+        var errors = new Dictionary<string, string[]>();
+        if (string.IsNullOrEmpty(reason) || !CancelReasons.Therapist.Contains(reason))
+        {
+            errors["reasonCode"] = [string.IsNullOrEmpty(reason) ? "required" : "invalid"];
+        }
+
+        if (request.SlotId is null)
+        {
+            errors["slotId"] = ["required"];
+        }
+
+        if (errors.Count > 0)
+        {
+            throw new DomainException(ErrorCodes.Validation, "Reschedule request invalid.").With("errors", errors);
+        }
+
+        var a = await FindAsync(db, user, id, ct).ConfigureAwait(false);
+        var target = await db.AvailabilitySlots.FirstOrDefaultAsync(s => s.Id == request.SlotId && s.TherapistUserId == a.TherapistUserId, ct).ConfigureAwait(false)
+            ?? throw new DomainException(ErrorCodes.SlotUnavailable, "Slot not found.");
+        var old = await db.AvailabilitySlots.FirstAsync(s => s.Id == a.SlotId, ct).ConfigureAwait(false);
+        var from = a.StartsAtUtc;
+        target.TakeFor(a.PatientId, clock);
+        a.MoveByTherapist(target, clock);
+        old.CloseAfterTherapistCancel();
+        var pseudonym = await PseudonymAsync(db, a.PatientId, ct).ConfigureAwait(false);
+        audit.Append("appointment.rescheduled", "Appointment", a.Id.ToString(), pseudonym, $"therapist:{reason};from={from:O}");
+        await SchedulingEndpoints.SaveOrConflictAsync(db, ct).ConfigureAwait(false);
+        await notices.RescheduledAsync(a, ct).ConfigureAwait(false);
         return TypedResults.Ok((await MapAsync(db, [a], clock, ct).ConfigureAwait(false)).Single());
     }
 

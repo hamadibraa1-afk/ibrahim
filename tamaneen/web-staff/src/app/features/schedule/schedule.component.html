@@ -66,11 +66,19 @@
           @if (a.canReportLate) {
             <button mat-stroked-button type="button" [disabled]="busy()" (click)="runningLate(a)" data-testid="running-late">{{ 'schedule.late.button' | translate }}</button>
           }
+          @if (hasNotes(a)) {
+            <a mat-stroked-button [routerLink]="notesLink(a)" data-testid="session-notes">{{ 'schedule.notes' | translate }}</a>
+          }
           @if (a.canCancel) {
+            <button mat-stroked-button type="button" [disabled]="busy()" (click)="reschedule(a)" data-testid="reschedule">{{ 'schedule.reschedule.button' | translate }}</button>
             <button mat-stroked-button type="button" class="tm-danger-outline" [disabled]="busy()" (click)="cancel(a)" data-testid="cancel">{{ 'schedule.cancel.button' | translate }}</button>
           }
         </div>
         @if (!a.canRecordOutcome) { <p class="tm-muted hint">{{ 'schedule.outcomeLater' | translate }}</p> }
+      } @else if (hasNotes(a)) {
+        <div class="actions">
+          <a mat-flat-button [routerLink]="notesLink(a)" data-testid="session-notes">{{ 'schedule.notes' | translate }}</a>
+        </div>
       }
     </section>
   }

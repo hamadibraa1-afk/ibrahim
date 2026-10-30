@@ -265,6 +265,9 @@ export interface StaffAppointment {
 }
 export interface Schedule { from: string; to: string; timeZone: string; items: StaffAppointment[] }
 
+/** One of the therapist's own free times (GET /v1/staff/free-slots): S18 reschedule, S33 book the next session. */
+export interface FreeSlot { slotId: string; startsAt: string; durationMinutes: number }
+
 export type SlotStatus = 'open' | 'held' | 'booked' | 'blocked';
 export interface AvailabilitySlot { slotId: string; startsAt: string; endsAt: string; status: SlotStatus; source: 'template' | 'manual' }
 /** day: 0 Sunday … 6 Saturday; start and end "HH:mm" in the therapist's time zone. */

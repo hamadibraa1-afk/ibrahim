@@ -5,7 +5,7 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatDialog } from '@angular/material/dialog';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import type { Observable } from 'rxjs';
 import { type ShownError, shownError } from '../../core/api/problem';
@@ -16,6 +16,7 @@ import { intlLocale } from '../../core/i18n/format';
 import { LanguageService } from '../../core/i18n/language.service';
 import { ProblemMessageComponent } from '../../shared/problem-message.component';
 import { ReasonDialogComponent, type ReasonDialogData, type ReasonDialogResult } from '../../shared/reason-dialog.component';
+import { SlotPickerDialogComponent, type SlotPickerDialogData } from '../../shared/slot-picker-dialog.component';
 import { DEFAULT_TIME_ZONE, addDays, dayOfWeek, today, weekStart, zonedParts } from './zoned-time';
 
 export const CANCEL_REASONS: readonly TherapistCancelReason[] = ['emergency', 'illness', 'schedule_conflict', 'technical', 'other'];
@@ -31,6 +32,11 @@ export function badgeOf(a: StaffAppointment): 'cancelled' | 'missed' | 'outcome'
   if (a.filePending) return 'file';
   if (a.therapistLateMinutes !== null && a.status === 'confirmed') return 'late';
   return null;
+}
+
+/** S33 session notes of one appointment. */
+export function notesLink(a: StaffAppointment): string[] {
+  return ['/patients', a.pseudonymId, 'sessions', a.id, 'notes'];
 }
 
 /**
@@ -49,6 +55,7 @@ export class ScheduleComponent {
   private readonly api = inject(SchedulingApiService);
   private readonly staff = inject(StaffApiService);
   private readonly dialog = inject(MatDialog);
+  private readonly router = inject(Router);
   private readonly snackBar = inject(MatSnackBar);
   private readonly translate = inject(TranslateService);
   private readonly destroyRef = inject(DestroyRef);
@@ -186,8 +193,41 @@ export class ScheduleComponent {
     return new Intl.DateTimeFormat(intlLocale(this.language.language()), { timeZone: 'UTC', hour: 'numeric', minute: '2-digit' }).format(new Date(Date.UTC(2000, 0, 1, hour)));
   }
 
+  /** «تمت الجلسة» goes on to the session notes (S33); «لم يحضر» stays on the schedule. */
   protected record(a: StaffAppointment, outcome: 'attended' | 'no_show'): void {
-    this.run(this.staff.recordOutcome(a.id, outcome), outcome === 'attended' ? 'schedule.done.attended' : 'schedule.done.noShow');
+    this.run(this.staff.recordOutcome(a.id, outcome), outcome === 'attended' ? 'schedule.done.attended' : 'schedule.done.noShow', outcome === 'attended' ? notesLink(a) : null);
+  }
+
+  /** A session that has started (and was not cancelled or missed) has notes to write or read. */
+  protected hasNotes(a: StaffAppointment): boolean {
+    return a.status === 'completed' || (a.status === 'confirmed' && Date.parse(a.startsAt) <= Date.now());
+  }
+
+  protected notesLink(a: StaffAppointment): string[] {
+    return notesLink(a);
+  }
+
+  /** SB-26: another of the therapist's own free times, with a required reason; the patient is told. */
+  protected reschedule(a: StaffAppointment): void {
+    const data: SlotPickerDialogData<StaffAppointment> = {
+      titleKey: 'schedule.reschedule.title',
+      bodyKey: 'schedule.reschedule.body',
+      confirmKey: 'schedule.reschedule.confirm',
+      timeZone: this.timeZone(),
+      reasons: CANCEL_REASONS,
+      reasonLabelKey: 'schedule.reschedule.reason',
+      reasonOptionKey: (r) => `schedule.reasons.${r}`,
+      submit: (slotId, reason) => this.api.reschedule(a.id, slotId, reason as TherapistCancelReason),
+    };
+    this.dialog
+      .open<SlotPickerDialogComponent<StaffAppointment>, SlotPickerDialogData<StaffAppointment>, StaffAppointment>(SlotPickerDialogComponent, { data, width: '460px', direction: this.language.direction() })
+      .afterClosed()
+      .subscribe((moved) => {
+        if (moved) {
+          this.snackBar.open(this.translate.instant('schedule.done.rescheduled'), undefined, { duration: 4000 });
+          this.load();
+        }
+      });
   }
 
   protected runningLate(a: StaffAppointment): void {
@@ -237,13 +277,17 @@ export class ScheduleComponent {
       });
   }
 
-  private run(call: Observable<unknown>, doneKey: string): void {
+  private run(call: Observable<unknown>, doneKey: string, then: string[] | null = null): void {
     this.busy.set(true);
     this.actionError.set(null);
     call.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.busy.set(false);
         this.snackBar.open(this.translate.instant(doneKey), undefined, { duration: 4000 });
+        if (then) {
+          void this.router.navigate(then);
+          return;
+        }
         this.load();
       },
       error: (error: unknown) => {

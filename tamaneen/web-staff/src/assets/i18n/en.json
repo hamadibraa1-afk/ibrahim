@@ -793,7 +793,16 @@
       "attended": "Recorded as attended.",
       "noShow": "Recorded as not attended. The patient gets a gentle message.",
       "late": "The patient has been told.",
-      "cancelled": "Session cancelled. The patient has been told."
+      "cancelled": "Session cancelled. The patient has been told.",
+      "rescheduled": "The session moved and the patient was told."
+    },
+    "notes": "Session notes",
+    "reschedule": {
+      "button": "Reschedule",
+      "title": "Reschedule this session",
+      "body": "Choose a new time from your free times. The patient is told the new time without your reason, and the old time leaves your calendar.",
+      "reason": "Reason",
+      "confirm": "Move the session"
     }
   },
   "availability": {
@@ -1350,5 +1359,9 @@
       "empty": "Nothing is waiting for sign-off.",
       "blocked": "Risk 3–4 in 14 days"
     }
+  },
+  "slotPicker": {
+    "time": "New time",
+    "empty": "You have no free times in the coming weeks. Add some on the availability page."
   }
 }
