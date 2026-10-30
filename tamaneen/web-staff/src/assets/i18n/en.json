@@ -983,7 +983,10 @@
     "unverified": "Awaiting verification",
     "licenseNote": "Changing license details needs a new verification.",
     "loadError": "Your profile can’t be loaded.",
-    "saveError": "Couldn’t save."
+    "saveError": "Couldn’t save.",
+    "licenseExpires": "Expires on {{date}}",
+    "licenseVerifiedBy": "Verified by {{name}} · {{date}}",
+    "licenseExpiring": "Your licence expires on {{date}}. Renew it before then so new bookings don’t stop."
   },
   "account": {
     "title": "Account settings",

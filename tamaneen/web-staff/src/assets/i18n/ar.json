@@ -983,7 +983,10 @@
     "unverified": "بانتظار التحقق",
     "licenseNote": "تغيير بيانات الترخيص يتطلب تحققًا جديدًا.",
     "loadError": "تعذّر تحميل ملفك المهني.",
-    "saveError": "تعذّر الحفظ."
+    "saveError": "تعذّر الحفظ.",
+    "licenseExpires": "ينتهي في {{date}}",
+    "licenseVerifiedBy": "وثّقه {{name}} · {{date}}",
+    "licenseExpiring": "ينتهي ترخيصك في {{date}}. جدّده قبل ذلك حتى لا تتوقف الحجوزات الجديدة."
   },
   "account": {
     "title": "إعدادات الحساب",

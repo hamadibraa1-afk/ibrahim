@@ -14,6 +14,8 @@ import { AccountApiService } from '../../core/api/account-api.service';
 import { type ShownError, shownError } from '../../core/api/problem';
 import type { Lang, StaffProfile } from '../../core/api/types';
 import { ProblemMessageComponent } from '../../shared/problem-message.component';
+import { LocalDatePipe } from '../../shared/local-date.pipe';
+import { LanguageService } from '../../core/i18n/language.service';
 
 export const MAX_DISPLAY_NAME = 60;
 export const MAX_TITLE = 80;
@@ -35,7 +37,7 @@ export function fieldErrors(error: unknown): Record<string, string[]> {
  */
 @Component({
   selector: 'tm-profile',
-  imports: [ReactiveFormsModule, MatButtonModule, MatCheckboxModule, MatChipsModule, MatFormFieldModule, MatInputModule, MatProgressBarModule, MatSlideToggleModule, TranslateModule, ProblemMessageComponent],
+  imports: [ReactiveFormsModule, MatButtonModule, MatCheckboxModule, MatChipsModule, MatFormFieldModule, MatInputModule, MatProgressBarModule, MatSlideToggleModule, TranslateModule, ProblemMessageComponent, LocalDatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (loading()) {
@@ -114,9 +116,18 @@ export function fieldErrors(error: unknown): Record<string, string[]> {
           </div>
         </section>
 
-        <aside class="tm-card">
+        <aside class="tm-card" data-testid="license-card">
           <h2 class="tm-card-title">{{ 'profile.license' | translate }}</h2>
+          @if (p.licenseExpiringSoon) {
+            <p class="warn" role="alert" data-testid="license-expiring">{{ 'profile.licenseExpiring' | translate: { date: (p.licenseExpiresOn | tmDate: 'longDate' : lang.language()) } }}</p>
+          }
           <p>{{ 'profile.status' | translate }}: <strong data-testid="license-status">{{ (p.licenseVerified ? 'profile.verified' : 'profile.unverified') | translate }}</strong></p>
+          @if (p.licenseExpiresOn) {
+            <p data-testid="license-expires">{{ 'profile.licenseExpires' | translate: { date: (p.licenseExpiresOn | tmDate: 'longDate' : lang.language()) } }}</p>
+          }
+          @if (p.licenseVerifiedBy && p.licenseVerifiedAt) {
+            <p class="tm-muted" data-testid="license-verified-by">{{ 'profile.licenseVerifiedBy' | translate: { name: p.licenseVerifiedBy, date: (p.licenseVerifiedAt | tmDate: 'longDate' : lang.language()) } }}</p>
+          }
           <p class="tm-muted hint">{{ 'profile.licenseNote' | translate }}</p>
         </aside>
       </form>
@@ -124,6 +135,7 @@ export function fieldErrors(error: unknown): Record<string, string[]> {
   `,
   styles: `
     .title { margin: 0 0 16px; font-size: 24px; font-weight: 700; }
+    .warn { background: var(--tm-danger-tint); border: 1px solid var(--tm-danger-line); color: var(--tm-danger-ink); border-radius: 10px; padding: 8px 12px; }
     .layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 16px; align-items: start; }
     @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
     .fields { display: flex; flex-direction: column; gap: 8px; }
@@ -147,6 +159,7 @@ export class ProfileComponent {
   protected readonly profile = signal<StaffProfile | null>(null);
   protected readonly specialties = signal<string[]>([]);
   protected readonly languages = signal<Lang[]>([]);
+  protected readonly lang = inject(LanguageService);
   protected readonly loading = signal(true);
   protected readonly saving = signal(false);
   protected readonly saved = signal(false);

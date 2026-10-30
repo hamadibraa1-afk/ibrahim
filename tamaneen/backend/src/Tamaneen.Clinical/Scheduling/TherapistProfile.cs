@@ -47,6 +47,17 @@ public sealed class TherapistProfile
 
     public bool LicenseVerified { get; private set; }
 
+    /// <summary>S21: the licence's expiry date, set when it is verified.</summary>
+    public DateOnly? LicenseExpiresOn { get; private set; }
+
+    /// <summary>Who last changed the verification (an admin or the clinical lead), and when.</summary>
+    public Guid? LicenseVerifiedByUserId { get; private set; }
+
+    public DateTimeOffset? LicenseVerifiedAtUtc { get; private set; }
+
+    /// <summary>S21 warning: «شريط تحذير قبل 30 يومًا».</summary>
+    public static readonly int LicenseWarningDays = 30;
+
     public bool AcceptingNewPatients { get; private set; } = true;
 
     public int Capacity { get; private set; } = 25;
@@ -88,6 +99,27 @@ public sealed class TherapistProfile
         Specialties = string.Join(',', spec);
         Languages = string.Join(',', langs);
     }
+
+    /// <summary>
+    /// Verification of the licence by an admin or the clinical lead (the caller checks the role). Verifying needs an
+    /// expiry date after <paramref name="today"/>; withdrawing it keeps the last expiry date for the record.
+    /// </summary>
+    public void SetLicenseVerification(bool verified, DateOnly? expiresOn, DateOnly today, Guid byUserId, IClock clock)
+    {
+        if (verified && (expiresOn is null || expiresOn <= today))
+        {
+            throw new ArgumentOutOfRangeException(nameof(expiresOn));
+        }
+
+        LicenseVerified = verified;
+        LicenseExpiresOn = expiresOn ?? LicenseExpiresOn;
+        LicenseVerifiedByUserId = byUserId;
+        LicenseVerifiedAtUtc = clock.UtcNow;
+    }
+
+    /// <summary>Verified, and the expiry is within <see cref="LicenseWarningDays"/> days (or already past).</summary>
+    public bool LicenseExpiringSoon(DateOnly today) =>
+        LicenseVerified && LicenseExpiresOn is { } expires && expires.DayNumber - today.DayNumber <= LicenseWarningDays;
 
     /// <summary>Session lengths S19 offers.</summary>
     public static readonly IReadOnlyList<int> SessionLengths = [30, 45, 50, 60, 90];

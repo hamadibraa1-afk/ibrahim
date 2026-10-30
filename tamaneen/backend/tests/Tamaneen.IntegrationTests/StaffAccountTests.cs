@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Tamaneen.Api.Auth;
 using Tamaneen.Api.Notifications;
@@ -74,6 +75,39 @@ public sealed class StaffAccountTests : IAsyncLifetime
         // Not accepting new patients: gone from the directory.
         await Read(await staff.PutAsJsonAsync("/v1/staff/profile", Body(capacity: 12, accepting: false)));
         (await Read(await reader.GetAsync("/v1/therapists"))).EnumerateArray().Should().NotContain(c => c.GetProperty("id").GetGuid() == t.Id);
+    }
+
+    [Fact]
+    public async Task Only_an_admin_or_the_lead_verifies_the_licence_and_the_card_warns_30_days_before_expiry()
+    {
+        var t = await TherapistAsync();
+        using var staff = _hosts.ApiClient("en", await SignInAsync(t));
+        var path = $"/v1/staff/therapists/{t.Id}/license";
+        var soon = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(3)).AddDays(20);
+
+        // The therapist and a supervisor may not; the lead may, with a future expiry date.
+        (await staff.PutAsJsonAsync(path, new { verified = true, expiresOn = soon })).StatusCode.Should().Be(System.Net.HttpStatusCode.Forbidden);
+        using var fahad = _hosts.ApiClient("en", await _hosts.StaffSignInAsync("fahad@staff.tamaneen.dev"));
+        (await fahad.PutAsJsonAsync(path, new { verified = true, expiresOn = soon })).StatusCode.Should().Be(System.Net.HttpStatusCode.Forbidden);
+        using var lead = _hosts.ApiClient("en", await _hosts.StaffSignInAsync("lead@staff.tamaneen.dev"));
+        await Problem(await lead.PutAsJsonAsync(path, new { verified = true }), 400);
+        await Problem(await lead.PutAsJsonAsync(path, new { verified = true, expiresOn = soon.AddDays(-30) }), 400);
+        var set = await Read(await lead.PutAsJsonAsync(path, new { verified = true, expiresOn = soon }));
+        set.GetProperty("verifiedBy").GetString().Should().Be("Dr. Hind S.");
+        set.GetProperty("expiringSoon").GetBoolean().Should().BeTrue();
+
+        var profile = await Read(await staff.GetAsync("/v1/staff/profile"));
+        profile.GetProperty("licenseVerified").GetBoolean().Should().BeTrue();
+        profile.GetProperty("licenseExpiresOn").GetString().Should().Be(soon.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture));
+        profile.GetProperty("licenseVerifiedBy").GetString().Should().Be("Dr. Hind S.");
+        profile.GetProperty("licenseVerifiedAt").GetDateTimeOffset().Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromMinutes(2));
+        profile.GetProperty("licenseExpiringSoon").GetBoolean().Should().BeTrue();
+
+        await Read(await lead.PutAsJsonAsync(path, new { verified = true, expiresOn = soon.AddDays(400) }));
+        (await Read(await staff.GetAsync("/v1/staff/profile"))).GetProperty("licenseExpiringSoon").GetBoolean().Should().BeFalse();
+
+        await using var db = _sql.Context(StaticCurrentUser.ForStaff(Guid.NewGuid(), AppRoles.Supervisor));
+        (await db.AuditEntries.CountAsync(e => e.Action == "therapist.license_verified" && e.EntityId == t.Id.ToString())).Should().Be(2);
     }
 
     [Fact]

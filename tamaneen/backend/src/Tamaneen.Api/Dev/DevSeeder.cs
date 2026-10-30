@@ -122,6 +122,29 @@ public sealed partial class DevSeeder(IServiceScopeFactory scopes, IHostEnvironm
         }
 
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
+
+        // S21: verified licences carry an expiry date and who verified them (the clinical lead). Mona's runs out
+        // within 30 days, so the warning shows in development.
+        var leadLookup = hasher.Hash("lead@staff.tamaneen.dev");
+        var leadId = await db.UserAccounts.Where(a => a.ContactLookupHash == leadLookup).Select(a => (Guid?)a.Id).FirstOrDefaultAsync(ct).ConfigureAwait(false);
+        if (leadId is { } lead)
+        {
+            var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(clock.UtcNow, zone).DateTime);
+            foreach (var s in Staff.Where(x => x.Therapist is not null))
+            {
+                var lookup = hasher.Hash(s.Email);
+                var id = await db.UserAccounts.Where(a => a.ContactLookupHash == lookup).Select(a => a.Id).FirstAsync(ct).ConfigureAwait(false);
+                var profile = await db.TherapistProfiles.FirstAsync(t => t.UserId == id, ct).ConfigureAwait(false);
+                if (profile.LicenseVerified && profile.LicenseExpiresOn is null)
+                {
+                    var expires = s.Email.StartsWith("mona@", StringComparison.Ordinal) ? today.AddDays(20) : new DateOnly(2028, 3, 14);
+                    profile.SetLicenseVerification(true, expires, today, lead, clock);
+                }
+            }
+
+            await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        }
+
         LogSeeded(logger, created);
     }
 

@@ -354,7 +354,16 @@ export interface StaffProfile {
   acceptingNewPatients: boolean;
   licenseVerified: boolean;
   specialtyCatalog: string[];
+  /** yyyy-MM-dd, set when the licence is verified. */
+  licenseExpiresOn: string | null;
+  /** Display name of the admin or lead who last changed the verification. */
+  licenseVerifiedBy: string | null;
+  licenseVerifiedAt: string | null;
+  /** Verified and expiring within 30 days (or past): the S21 warning banner. */
+  licenseExpiringSoon: boolean;
 }
+/** PUT /v1/staff/therapists/{userId}/license (admin or clinical lead). */
+export interface LicenseVerification { userId: string; verified: boolean; expiresOn: string | null; verifiedBy: string | null; verifiedAt: string | null; expiringSoon: boolean }
 export interface UpdateStaffProfileRequest {
   displayNameAr: string;
   displayNameEn: string;

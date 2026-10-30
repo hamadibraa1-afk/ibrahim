@@ -1158,8 +1158,17 @@ namespace Tamaneen.Infrastructure.Persistence.Migrations
                         .IsUnicode(false)
                         .HasColumnType("varchar(16)");
 
+                    b.Property<DateOnly?>("LicenseExpiresOn")
+                        .HasColumnType("date");
+
                     b.Property<bool>("LicenseVerified")
                         .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("LicenseVerifiedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("LicenseVerifiedByUserId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("SessionMinutes")
                         .HasColumnType("int");

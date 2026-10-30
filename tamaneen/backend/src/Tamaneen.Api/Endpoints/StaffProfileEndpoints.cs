@@ -1,7 +1,9 @@
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Tamaneen.Clinical.Scheduling;
+using Tamaneen.Hosting;
 using Tamaneen.Infrastructure.Auditing;
 using Tamaneen.Infrastructure.Persistence;
 using Tamaneen.SharedKernel;
@@ -40,7 +42,15 @@ public static partial class StaffProfileEndpoints
         int CurrentPatients,
         bool AcceptingNewPatients,
         bool LicenseVerified,
-        IReadOnlyList<string> SpecialtyCatalog);
+        IReadOnlyList<string> SpecialtyCatalog,
+        DateOnly? LicenseExpiresOn,
+        string? LicenseVerifiedBy,
+        DateTimeOffset? LicenseVerifiedAt,
+        bool LicenseExpiringSoon);
+
+    public sealed record LicenseRequest(bool? Verified, DateOnly? ExpiresOn);
+
+    public sealed record LicenseDto(Guid UserId, bool Verified, DateOnly? ExpiresOn, string? VerifiedBy, DateTimeOffset? VerifiedAt, bool ExpiringSoon);
 
     public sealed record UpdateStaffProfileRequest(
         string? DisplayNameAr,
@@ -59,13 +69,48 @@ public static partial class StaffProfileEndpoints
         var g = app.MapGroup("/v1/staff/profile").RequireAuthorization(p => p.RequireAuthenticatedUser().RequireRole(AppRoles.Therapist));
         g.MapGet("", GetAsync);
         g.MapPut("", UpdateAsync);
+
+        // Licence verification: an admin or the clinical lead only (the S05 / S09 screens come later; this is the API they use).
+        app.MapPut("/v1/staff/therapists/{userId:guid}/license", SetLicenseAsync)
+            .RequireAuthorization(p => p.RequireAuthenticatedUser().RequireRole(AppRoles.Admin, AppRoles.ClinicalLead));
         return app;
     }
 
-    internal static async Task<Ok<StaffProfileDto>> GetAsync(ICurrentUser user, TamaneenDbContext db, CancellationToken ct) =>
-        TypedResults.Ok(await LoadAsync(db, user.UserId!.Value, ct).ConfigureAwait(false));
+    internal static async Task<Ok<StaffProfileDto>> GetAsync(ICurrentUser user, TamaneenDbContext db, IOptions<PlatformOptions> platform, IClock clock, CancellationToken ct) =>
+        TypedResults.Ok(await LoadAsync(db, user, Today(platform, clock), ct).ConfigureAwait(false));
 
-    internal static async Task<Ok<StaffProfileDto>> UpdateAsync(UpdateStaffProfileRequest request, ICurrentUser user, TamaneenDbContext db, IAuditLog audit, CancellationToken ct)
+    /// <summary>Verifies the licence with its expiry date (in the future), or withdraws the verification. Audited.</summary>
+    internal static async Task<Ok<LicenseDto>> SetLicenseAsync(Guid userId, LicenseRequest request, ICurrentUser user, TamaneenDbContext db, IAuditLog audit, IOptions<PlatformOptions> platform, IClock clock, CancellationToken ct)
+    {
+        var today = Today(platform, clock);
+        if (request.Verified is not { } verified)
+        {
+            throw MeEndpoints.Invalid("verified");
+        }
+
+        if (verified && (request.ExpiresOn is null || request.ExpiresOn <= today))
+        {
+            throw MeEndpoints.Invalid("expiresOn");
+        }
+
+        var therapist = await db.TherapistProfiles.FirstOrDefaultAsync(t => t.UserId == userId, ct).ConfigureAwait(false)
+            ?? throw new DomainException(ErrorCodes.NotFound, "No therapist profile.");
+        therapist.SetLicenseVerification(verified, request.ExpiresOn, today, user.UserId!.Value, clock);
+        audit.Append(verified ? "therapist.license_verified" : "therapist.license_unverified", "TherapistProfile", userId.ToString(), null, therapist.LicenseExpiresOn is { } e ? $"expires={e:yyyy-MM-dd}" : null);
+        await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        var by = await VerifierNameAsync(db, therapist, user.Language, ct).ConfigureAwait(false);
+        return TypedResults.Ok(new LicenseDto(userId, therapist.LicenseVerified, therapist.LicenseExpiresOn, by, therapist.LicenseVerifiedAtUtc, therapist.LicenseExpiringSoon(today)));
+    }
+
+    private static DateOnly Today(IOptions<PlatformOptions> platform, IClock clock) =>
+        DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(clock.UtcNow, AvailabilityEndpoints.Zone(platform.Value)).DateTime);
+
+    private static async Task<string?> VerifierNameAsync(TamaneenDbContext db, TherapistProfile t, string language, CancellationToken ct) =>
+        t.LicenseVerifiedByUserId is { } by
+            ? (await db.StaffProfiles.AsNoTracking().FirstOrDefaultAsync(s => s.UserId == by, ct).ConfigureAwait(false))?.DisplayName(language)
+            : null;
+
+    internal static async Task<Ok<StaffProfileDto>> UpdateAsync(UpdateStaffProfileRequest request, ICurrentUser user, TamaneenDbContext db, IAuditLog audit, IOptions<PlatformOptions> platform, IClock clock, CancellationToken ct)
     {
         var me = user.UserId!.Value;
         var therapist = await db.TherapistProfiles.FirstOrDefaultAsync(t => t.UserId == me, ct).ConfigureAwait(false)
@@ -133,7 +178,7 @@ public static partial class StaffProfileEndpoints
         staff.Rename(nameAr, nameEn);
         audit.Append("therapist.profile_updated", "TherapistProfile", me.ToString(), null, $"capacity={capacity};accepting={therapist.AcceptingNewPatients}");
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
-        return TypedResults.Ok(await LoadAsync(db, me, ct).ConfigureAwait(false));
+        return TypedResults.Ok(await LoadAsync(db, user, Today(platform, clock), ct).ConfigureAwait(false));
     }
 
     /// <summary>A phone number (7+ digits, Latin or Arabic-Indic), an e-mail address or a link.</summary>
@@ -142,8 +187,9 @@ public static partial class StaffProfileEndpoints
     private static Task<int> CurrentPatientsAsync(TamaneenDbContext db, Guid me, CancellationToken ct) =>
         db.CareAssignments.CountAsync(a => a.TherapistUserId == me && a.EndedAtUtc == null, ct);
 
-    private static async Task<StaffProfileDto> LoadAsync(TamaneenDbContext db, Guid me, CancellationToken ct)
+    private static async Task<StaffProfileDto> LoadAsync(TamaneenDbContext db, ICurrentUser user, DateOnly today, CancellationToken ct)
     {
+        var me = user.UserId!.Value;
         var t = await db.TherapistProfiles.AsNoTracking().FirstOrDefaultAsync(x => x.UserId == me, ct).ConfigureAwait(false)
             ?? throw new DomainException(ErrorCodes.NotFound, "No therapist profile.");
         var s = await db.StaffProfiles.AsNoTracking().FirstOrDefaultAsync(x => x.UserId == me, ct).ConfigureAwait(false);
@@ -164,7 +210,11 @@ public static partial class StaffProfileEndpoints
             current,
             t.AcceptingNewPatients,
             t.LicenseVerified,
-            TherapistProfile.SpecialtyCodes.Order(StringComparer.Ordinal).ToList());
+            TherapistProfile.SpecialtyCodes.Order(StringComparer.Ordinal).ToList(),
+            t.LicenseExpiresOn,
+            await VerifierNameAsync(db, t, user.Language, ct).ConfigureAwait(false),
+            t.LicenseVerifiedAtUtc,
+            t.LicenseExpiringSoon(today));
     }
 
     [GeneratedRegex(@"([0-9٠-٩][\s\-\.]?){7,}|[^\s@]+@[^\s@]+\.[^\s@]+|https?://|www\.|\b[a-z0-9-]+\.(com|net|org|sa|io|me)\b", RegexOptions.IgnoreCase)]
