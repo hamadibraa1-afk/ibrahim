@@ -19,7 +19,7 @@ This file is the shared memory between AI agents (Codex, Claude, any other) and 
 
 | Id | Task | Status | Owner | Branch |
 |---|---|---|---|---|
-| T-501 | Patient app button for "I want to continue care" (`POST /v1/me/care/continue`) during ongoing care. The API exists. Use the care-journey spec in `docs/design/spec`; Arabic and English text; unit test and e2e. | todo | | |
+| T-501 | Patient app button for "I want to continue care" (`POST /v1/me/care/continue`) during ongoing care. The API exists. Use the care-journey spec in `docs/design/spec`; Arabic and English text; unit test and e2e. | in-progress | Codex, 2026-10-30 | codex/T-501-continue-care |
 | T-502 | Add the phase 5 screens (P41–P44, P46, P53, P54, P56, P63, P66, P67, S18–S22, S32, S33, S35, S41, S57, closures queue) to the bilingual test map PDF, as `docs/testmap/` source plus the generated PDF. | todo | | |
 | T-503 | Phase 5 gate: full §4 run, a design-conformance review of the new button, Docker rebuild, and owner sign-off. | todo | | |
 
