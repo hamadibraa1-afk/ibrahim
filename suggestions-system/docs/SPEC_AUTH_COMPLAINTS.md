@@ -33,6 +33,8 @@
 | التطبيق المكتبي | ✅ دخول تلقائي (Windows Integrated / Kerberos) | ❌ رسالة: ادخل من المتصفح |
 | الإيقاف المؤقت | 5 محاولات خاطئة = 15 دقيقة داخل المنصة (يحمي حساب الويندوز من القفل) | 5 محاولات = 15 دقيقة |
 
+أسماء حسابات الدومين أرقام وظيفية (مثل `0462`)، لذلك **اسم الدخول فريد عبر النوعين**: لا يُقبل حساب محلي باسم يساوي `DomainLogin` لأي حساب داخلي والعكس، ويُبحث بالاسم المُطبَّع (بدون البادئة/اللاحقة، أحرف صغيرة) بنفس الصيغة دائماً.
+
 حقول جديدة في `User`: `AccountType` (Domain/Local)، `DomainLogin` (sAMAccountName بأحرف صغيرة، فريد عند وجوده)، `MustChangePassword` (للمحلي).
 
 ### قواعد ثابتة
@@ -44,16 +46,16 @@
 
 ### إعدادات الخادم (appsettings)
 ```json
-"Directory": { "Enabled": true, "Domain": "shjc.sharjah.ae", "NetbiosName": "SHJC",
-               "Server": "shjc.sharjah.ae", "Port": 636, "UseLdaps": true, "TimeoutSeconds": 10 },
-"Bootstrap": { "AdminDomainLogin": "" }
+"Directory": { "Enabled": true, "Domain": "shjci.com", "NetbiosName": "SHJCI",
+               "Server": "shjci.com", "Port": 636, "UseLdaps": true, "TimeoutSeconds": 10 },
+"Bootstrap": { "AdminDomainLogin": "0462" }
 ```
-القيم الفعلية يضعها مسؤول الشبكة. الاستضافة: IIS على ويندوز سيرفر منضم للدومين، مع تفعيل Windows Authentication و Anonymous معاً، وتسجيل SPN لاسم الموقع.
+الدومين `shjci.com` وأول مدير نظام `0462` مؤكدان من صاحب المشروع. **يُؤكَّد لاحقاً:** الاسم المختصر (NetBIOS، افتراضياً `SHJCI`) واسم خادم الدومين وإتاحة المنفذ 636. الاستضافة: IIS على ويندوز سيرفر منضم للدومين، مع تفعيل Windows Authentication و Anonymous معاً، وتسجيل SPN لاسم الموقع.
 
 ### عقد API
 | الطلب | الوصف | الاستجابة |
 |---|---|---|
-| `POST /api/auth/login` `{ username, password }` | المتصفح. `username` يقبل: `ibrahim.hamad` أو `SHJC\ibrahim.hamad` أو `ibrahim.hamad@shjc.sharjah.ae` (داخلي) أو الرقم الوظيفي (محلي) | 200 `{ expiresAt, user, mustChangePassword }` أو 401 بالرسالة العامة |
+| `POST /api/auth/login` `{ username, password }` | المتصفح. `username` يقبل: `0462` أو `SHJCI\0462` أو `0462@shjci.com` (داخلي) أو اسم المستخدم المحلي | 200 `{ expiresAt, user, mustChangePassword }` أو 401 بالرسالة العامة |
 | `POST /api/auth/windows` + ترويسة `X-Client: desktop` | التطبيق المكتبي. مصادقة Negotiate؛ يرد 401 مع `WWW-Authenticate: Negotiate` حتى يكمل WebView2 المصافحة تلقائياً | 200 مثل login · 403 `{ code: "local_account", message }` · 403 `{ code: "not_registered", message }` · 403 `{ code: "unavailable", message }` |
 | `GET /api/auth/me` | كما هو + الحقول `accountType`, `mustChangePassword` | |
 | `POST /api/auth/change-password` | للحساب المحلي فقط؛ الداخلي يرد 400 "غيّر كلمة المرور من الويندوز" | |
