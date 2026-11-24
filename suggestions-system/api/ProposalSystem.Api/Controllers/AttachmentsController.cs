@@ -47,7 +47,7 @@ public sealed class AttachmentsController(
         if (p.Attachments.Count + files.Count > o.MaxFiles)
             throw ApiException.BadRequest($"الحد الأقصى {o.MaxFiles} ملفات لكل مقترح.");
         if (p.Attachments.Sum(a => a.SizeBytes) + files.Sum(f => f.Length) > o.MaxTotalBytes)
-            throw ApiException.BadRequest("الحجم الإجمالي للمرفقات يتجاوز 15 ميجابايت.");
+            throw ApiException.BadRequest($"الحجم الإجمالي للمرفقات يتجاوز {Megabytes(o.MaxTotalBytes)} ميجابايت.");
 
         // Validate the whole batch before touching the disk: one bad file refuses all of them,
         // and nothing is left behind.
@@ -59,7 +59,7 @@ public sealed class AttachmentsController(
             if (!o.AllowedExtensions.Contains(ext))
                 throw ApiException.BadRequest($"نوع الملف \"{name}\" غير مسموح به.");
             if (file.Length == 0 || file.Length > o.MaxFileBytes)
-                throw ApiException.BadRequest($"حجم الملف \"{name}\" غير مقبول (الحد 10 ميجابايت).");
+                throw ApiException.BadRequest($"حجم الملف \"{name}\" غير مقبول (الحد {Megabytes(o.MaxFileBytes)} ميجابايت).");
             accepted.Add((file, name, ext));
         }
 
@@ -163,6 +163,8 @@ public sealed class AttachmentsController(
             throw ApiException.Forbidden("ليست لديك صلاحية لعرض هذا المقترح.");
         return p;
     }
+
+    private static string Megabytes(long bytes) => (bytes / (1024d * 1024d)).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
 
     internal static string StorageDirectory(IWebHostEnvironment env, AttachmentOptions o) =>
         Path.IsPathRooted(o.StoragePath) ? o.StoragePath : Path.Combine(env.ContentRootPath, o.StoragePath);

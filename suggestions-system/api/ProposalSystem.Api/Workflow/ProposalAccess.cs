@@ -95,6 +95,10 @@ public sealed class ProposalAccess(IOptions<SlaOptions> sla, TimeProvider clock)
         p.LastSlaAlertAt = null;
         p.EscalationLevel = 0;
         p.EscalatedToId = null;
+        // The badge, the dashboard count and the "escalated" filter all read EscalatedAt; the
+        // history of the earlier escalation stays in the audit trail.
+        p.EscalatedAt = null;
+        p.EscalationNote = null;
     }
 
     private int StageHours(ProposalStatus status)

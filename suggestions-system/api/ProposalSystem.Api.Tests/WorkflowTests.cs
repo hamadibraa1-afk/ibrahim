@@ -167,6 +167,8 @@ public sealed class WorkflowTests : IDisposable
         Assert.Equal("WithCommittee", screened.GetProperty("status").GetString());
         Assert.Equal(0, screened.GetProperty("escalationLevel").GetInt32());
         Assert.Equal(JsonValueKind.Null, screened.GetProperty("escalatedToId").ValueKind);
+        Assert.Equal(JsonValueKind.Null, screened.GetProperty("escalatedAt").ValueKind);
+        Assert.Empty(await admin.GetJsonAsync<JsonElement[]>("/api/proposals?escalated=true"));
     }
 
     // ------------------------------------------------------------------ impact / ROI
